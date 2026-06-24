@@ -1,0 +1,6 @@
+{
+  "name": "Mine Safety Compliance & PPE Audit Engine",
+  "description": "Eliminates mining regulatory risks by auditing operational hazards against South African National Standards (SANS) and PPE specifications.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
