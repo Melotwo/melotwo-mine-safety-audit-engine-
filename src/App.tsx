@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import { MineParams, AuditReportResponse } from "./types";
 import { MINE_PRESETS } from "./data";
 import { AuditForm } from "./components/AuditForm";
@@ -8,7 +8,8 @@ import { SANSReferenceTable } from "./components/SANSReferenceTable";
 
 import { 
   ShieldCheck, AlertOctagon, Landmark, Database, HelpCircle, 
-  RefreshCw, Layers, Sparkles, BookOpen, Clock, FileText 
+  RefreshCw, Layers, Sparkles, BookOpen, Clock, FileText,
+  Lock, ShieldAlert
 } from "lucide-react";
 
 export default function App() {
@@ -18,6 +19,39 @@ export default function App() {
   
   const [currentParams, setCurrentParams] = useState<MineParams | null>(null);
   const [auditReport, setAuditReport] = useState<AuditReportResponse | null>(null);
+
+  // Free audits and premium status state variables
+  const [auditCount, setAuditCount] = useState<number>(() => {
+    const saved = localStorage.getItem("sans_audit_count");
+    return saved ? Number(saved) : 0;
+  });
+
+  const [isPremium, setIsPremium] = useState<boolean>(() => {
+    return localStorage.getItem("sans_trial_active") === "true";
+  });
+
+  const [paywallResponse, setPaywallResponse] = useState<any | null>(null);
+  const [showTrialModal, setShowTrialModal] = useState(false);
+  const [enterpriseName, setEnterpriseName] = useState("");
+  const [operationType, setOperationType] = useState("Mining");
+  const [workforceSize, setWorkforceSize] = useState("");
+  const [submittingTrial, setSubmittingTrial] = useState(false);
+  const [trialError, setTrialError] = useState("");
+
+  // Periodically check local storage to keep tabs synchronised
+  useEffect(() => {
+    const checkPremium = () => {
+      const active = localStorage.getItem("sans_trial_active") === "true";
+      if (active !== isPremium) {
+        setIsPremium(active);
+        if (active) {
+          setPaywallResponse(null); // Instantly bypass paywall screen
+        }
+      }
+    };
+    const interval = setInterval(checkPremium, 1000);
+    return () => clearInterval(interval);
+  }, [isPremium]);
 
   // Simulated live African Standard Time clock
   const [currentTime, setCurrentTime] = useState("");
@@ -46,11 +80,63 @@ export default function App() {
     }
   }, []);
 
+  // Handle Trial activation from inside App.tsx (e.g. from the paywall)
+  const handleStartTrial = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!enterpriseName.trim() || !workforceSize.trim()) {
+      setTrialError("Please fill in all fields.");
+      return;
+    }
+    setSubmittingTrial(true);
+    setTrialError("");
+
+    try {
+      const response = await fetch("/api/paystack/initialize-trial", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          enterpriseName,
+          operationType,
+          workforceSize,
+          email: "turoka15@gmail.com",
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to initialize free trial subscription.");
+      }
+
+      const data = await response.json();
+      if (data.success) {
+        localStorage.setItem("sans_trial_active", "true");
+        setIsPremium(true);
+        setPaywallResponse(null);
+        setShowTrialModal(false);
+      } else {
+        setTrialError(data.error || "An error occurred.");
+      }
+    } catch (err: any) {
+      setTrialError(err.message || "Network error. Please try again.");
+    } finally {
+      setSubmittingTrial(false);
+    }
+  };
+
   // Execute the audit by calling our server.ts backend endpoint
   const handleRunAudit = async (params: MineParams) => {
     setIsLoading(true);
     setErrorMsg(null);
     setCurrentParams(params);
+
+    // Dynamic state fetch
+    const currentIsPremium = localStorage.getItem("sans_trial_active") === "true";
+    const nextCount = auditCount + 1;
+    
+    // Save count to localStorage and state
+    setAuditCount(nextCount);
+    localStorage.setItem("sans_audit_count", nextCount.toString());
 
     try {
       const response = await fetch("/api/audit", {
@@ -58,15 +144,27 @@ export default function App() {
         headers: {
           "Content-Type": "application/json"
         },
-        body: JSON.stringify(params)
+        body: JSON.stringify({
+          ...params,
+          audit_count: nextCount,
+          is_premium: currentIsPremium
+        })
       });
 
       if (!response.ok) {
         throw new Error(`Technical Server Error (Status ${response.status})`);
       }
 
-      const reportData: AuditReportResponse = await response.json();
-      setAuditReport(reportData);
+      const reportData = await response.json();
+      
+      // If paywall_locked status is returned, store paywall state
+      if (reportData.status === "paywall_locked") {
+        setPaywallResponse(reportData);
+        setAuditReport(null);
+      } else {
+        setAuditReport(reportData);
+        setPaywallResponse(null);
+      }
     } catch (err: any) {
       console.error("Failed to fetch SANS audit details:", err);
       setErrorMsg(err.message || "Auditing node failed to establish connection. Double check configuration.");
@@ -77,6 +175,7 @@ export default function App() {
 
   const handleClearAudit = () => {
     setAuditReport(null);
+    setPaywallResponse(null);
     setErrorMsg(null);
   };
 
@@ -110,6 +209,13 @@ export default function App() {
             <div className="bg-[#0f172a] border border-slate-700 px-3 py-1.5 rounded-lg flex items-center gap-2 text-slate-300">
               <Clock className="w-3.5 h-3.5 text-sky-400" />
               <span>{currentTime || "SAST Terminal Ready"}</span>
+            </div>
+
+            <div className="bg-[#0f172a] border border-slate-700 px-3 py-1.5 rounded-lg flex items-center gap-2 text-slate-300" id="audit-count-indicator">
+              <span className="text-[10px] uppercase font-bold text-slate-500">Audits:</span>
+              <span className={`font-mono font-bold ${auditCount >= 3 && !isPremium ? "text-rose-400" : "text-sky-400"}`}>
+                {isPremium ? "SANS UNLOCKED" : `${Math.min(3, auditCount)}/3 Free`}
+              </span>
             </div>
             
             <div className="bg-[#0f172a] border border-slate-700 px-3 py-1.5 rounded-lg flex items-center gap-1.5 text-sky-400 font-bold">
@@ -243,12 +349,75 @@ export default function App() {
                 </div>
               )}
 
-              {/* Standard active parameters form OR produced final report cards */}
-              {!isLoading && !auditReport && (
+              {/* Standard active parameters form OR produced final report cards OR paywall screen */}
+              {!isLoading && !auditReport && !paywallResponse && (
                 <AuditForm onRunAudit={handleRunAudit} isLoading={isLoading} />
               )}
 
-              {!isLoading && auditReport && currentParams && (
+              {!isLoading && paywallResponse && (
+                <div className="bg-[#1e293b] rounded-2xl border border-slate-700 p-8 shadow-xl text-center relative overflow-hidden animate-fade-in" id="paywall-screen-gate">
+                  {/* Glowing warning accent line */}
+                  <div className="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-red-500 via-amber-500 to-sky-500" />
+                  
+                  <div className="max-w-2xl mx-auto py-6 space-y-6">
+                    <div className="h-16 w-16 bg-red-500/10 border border-red-500/30 rounded-full flex items-center justify-center mx-auto text-red-400">
+                      <Lock className="w-8 h-8 animate-pulse" />
+                    </div>
+
+                    <div className="space-y-2">
+                      <span className="text-[10px] bg-red-500/10 border border-red-500/30 text-red-400 px-2.5 py-1 rounded font-mono font-bold tracking-wider uppercase inline-block">
+                        {paywallResponse.status ? paywallResponse.status.replace("_", " ") : "PAYWALL LOCKED"}
+                      </span>
+                      <h3 className="text-xl font-black uppercase tracking-tight text-slate-100 font-display">
+                        Limit Reached: SANS Regulatory Audit Gate
+                      </h3>
+                      <p className="text-sm text-slate-350 leading-relaxed font-sans">
+                        {paywallResponse.message}
+                      </p>
+                    </div>
+
+                    <div className="p-4 bg-slate-950 rounded-xl border border-slate-800 text-left space-y-3 font-sans">
+                      <span className="text-xs font-bold text-[#38bdf8] uppercase tracking-wider block">Included with Paystack Enterprise Beta Shield:</span>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs text-slate-450">
+                        <div className="flex items-center gap-2">
+                          <ShieldCheck className="w-4 h-4 text-sky-400 shrink-0" />
+                          <span>Unlimited SANS Compliance Audits</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <ShieldCheck className="w-4 h-4 text-sky-400 shrink-0" />
+                          <span>Continuous Degradation Monitoring</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <ShieldCheck className="w-4 h-4 text-sky-400 shrink-0" />
+                          <span>Tender Spec Blueprint Exporter</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <ShieldCheck className="w-4 h-4 text-sky-400 shrink-0" />
+                          <span>Official Certificate Print Portal</span>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="flex flex-col sm:flex-row justify-center gap-3 pt-2">
+                      <button
+                        onClick={handleClearAudit}
+                        className="bg-slate-950 hover:bg-slate-900 border border-slate-700 text-slate-450 font-bold px-6 py-3 rounded-xl text-xs uppercase tracking-wider transition-colors cursor-pointer font-sans"
+                      >
+                        Reset & Modify Profile
+                      </button>
+                      <button
+                        onClick={() => setShowTrialModal(true)}
+                        className="bg-gradient-to-r from-sky-400 to-blue-600 hover:from-sky-300 hover:to-blue-500 text-slate-950 font-black px-6 py-3 rounded-xl text-xs uppercase tracking-wider transition-all shadow-lg shadow-sky-950/50 cursor-pointer flex items-center justify-center gap-2 font-sans"
+                        id="upgrade-button-paywall"
+                      >
+                        Start 14-Day Free Beta Trial
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {!isLoading && auditReport && currentParams && !paywallResponse && (
                 <AuditReport 
                   report={auditReport} 
                   originalParams={currentParams} 
@@ -292,6 +461,91 @@ export default function App() {
           </p>
         </div>
       </footer>
+
+      {showTrialModal && (
+        <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-md flex items-center justify-center p-4 z-50">
+          <div className="bg-[#1e293b] border border-slate-700 rounded-2xl w-full max-w-md p-6 shadow-2xl relative overflow-hidden">
+            {/* Visual Sky Accent Line */}
+            <div className="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-sky-400 to-blue-500" />
+            
+            <h3 className="text-lg font-black text-slate-100 uppercase tracking-wider mb-2 font-display flex items-center gap-2 mt-2">
+              <ShieldCheck className="w-5 h-5 text-sky-400" />
+              Activate SANS Beta Access
+            </h3>
+            
+            <p className="text-xs text-slate-400 mb-4 leading-relaxed font-sans">
+              Enter your corporate operational scope to register your 14-day deferred billing trial and generate official procurement blueprints.
+            </p>
+
+            <form onSubmit={handleStartTrial} className="space-y-4">
+              <div>
+                <label className="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-1 font-sans">
+                  Enterprise Name
+                </label>
+                <input
+                  type="text"
+                  required
+                  placeholder="e.g. Anglo American Platinum"
+                  value={enterpriseName}
+                  onChange={(e) => setEnterpriseName(e.target.value)}
+                  className="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-100 placeholder-slate-500 focus:outline-none focus:ring-1 focus:ring-sky-500/50 font-sans"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-1 font-sans">
+                  Primary Operation Type
+                </label>
+                <select
+                  value={operationType}
+                  onChange={(e) => setOperationType(e.target.value)}
+                  className="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-100 focus:outline-none focus:ring-1 focus:ring-sky-500/50 cursor-pointer font-sans"
+                >
+                  <option value="Mining">Mining Operations (Deep/Open-Cast)</option>
+                  <option value="Construction">Civil Engineering & Construction</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-1 font-sans">
+                  Workforce Size
+                </label>
+                <input
+                  type="text"
+                  required
+                  placeholder="e.g. 1500 personnel"
+                  value={workforceSize}
+                  onChange={(e) => setWorkforceSize(e.target.value)}
+                  className="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-100 placeholder-slate-500 focus:outline-none focus:ring-1 focus:ring-sky-500/50 font-sans"
+                />
+              </div>
+
+              {trialError && (
+                <div className="text-xs text-rose-400 font-sans bg-rose-950/20 border border-rose-500/20 p-2.5 rounded-lg">
+                  {trialError}
+                </div>
+              )}
+
+              <div className="flex gap-2 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setShowTrialModal(false)}
+                  className="w-1/2 bg-slate-950 hover:bg-slate-900 border border-slate-700 text-slate-450 font-bold px-4 py-2.5 rounded-xl text-xs uppercase tracking-wider transition-colors cursor-pointer font-sans"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={submittingTrial}
+                  className="w-1/2 bg-gradient-to-r from-sky-400 to-blue-600 hover:from-sky-300 hover:to-blue-500 text-slate-950 font-black px-4 py-2.5 rounded-xl text-xs uppercase tracking-wider transition-all disabled:opacity-50 cursor-pointer font-sans"
+                >
+                  {submittingTrial ? "Activating..." : "Confirm & Unlock"}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
 
     </div>
   );
