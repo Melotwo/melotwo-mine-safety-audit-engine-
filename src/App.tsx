@@ -37,6 +37,10 @@ export default function App() {
   const [workforceSize, setWorkforceSize] = useState("");
   const [submittingTrial, setSubmittingTrial] = useState(false);
   const [trialError, setTrialError] = useState("");
+  const [auditHistory, setAuditHistory] = useState<any[]>(() => {
+    const saved = localStorage.getItem("sans_audit_history");
+    return saved ? JSON.parse(saved) : [];
+  });
 
   // Periodically check local storage to keep tabs synchronised
   useEffect(() => {
@@ -125,18 +129,21 @@ export default function App() {
   };
 
   // Execute the audit by calling our server.ts backend endpoint
-  const handleRunAudit = async (params: MineParams) => {
+  const handleRunAudit = async (params: MineParams, dailyShiftCheck?: boolean) => {
     setIsLoading(true);
     setErrorMsg(null);
     setCurrentParams(params);
 
     // Dynamic state fetch
     const currentIsPremium = localStorage.getItem("sans_trial_active") === "true";
-    const nextCount = auditCount + 1;
+    let countToUse = auditCount;
     
-    // Save count to localStorage and state
-    setAuditCount(nextCount);
-    localStorage.setItem("sans_audit_count", nextCount.toString());
+    if (!dailyShiftCheck) {
+      countToUse = auditCount + 1;
+      // Save count to localStorage and state only if it is NOT a free daily shift check
+      setAuditCount(countToUse);
+      localStorage.setItem("sans_audit_count", countToUse.toString());
+    }
 
     try {
       const response = await fetch("/api/audit", {
@@ -146,8 +153,9 @@ export default function App() {
         },
         body: JSON.stringify({
           ...params,
-          audit_count: nextCount,
-          is_premium: currentIsPremium
+          audit_count: countToUse,
+          is_premium: currentIsPremium,
+          daily_shift_check: dailyShiftCheck ? true : false
         })
       });
 
@@ -164,6 +172,16 @@ export default function App() {
       } else {
         setAuditReport(reportData);
         setPaywallResponse(null);
+
+        // Save to audit history logs if historyLog is present
+        if (reportData.historyLog) {
+          setAuditHistory(prev => {
+            const updated = [reportData.historyLog, ...prev.filter(h => h.id !== reportData.historyLog.id)];
+            const trimmed = updated.slice(0, 10);
+            localStorage.setItem("sans_audit_history", JSON.stringify(trimmed));
+            return trimmed;
+          });
+        }
       }
     } catch (err: any) {
       console.error("Failed to fetch SANS audit details:", err);
@@ -422,6 +440,7 @@ export default function App() {
                   report={auditReport} 
                   originalParams={currentParams} 
                   onRunAuditAgain={handleClearAudit} 
+                  historyLogs={auditHistory}
                 />
               )}
             </div>
