@@ -115,6 +115,72 @@ function getSANSFallbackAudit(params: any): any {
 
   coreVow = `Engineering absolute safety protection: We pledge to eliminate ${riskLevel} risks by deploying fully verified, high-performance inherent materials certified to South African mining standards.`;
 
+  // 1. History Log
+  const historyLog = {
+    id: `AUD-${Math.floor(100000 + Math.random() * 900000)}`,
+    date: new Date().toISOString().split("T")[0],
+    mineName: params.mineName || "Melotwo Mine Shaft 2",
+    complianceScore: Math.max(0, complianceScore),
+    riskLevel,
+    summary: threats[0] || "General SANS industrial safety standard audit conducted on deep sublevel PPE."
+  };
+
+  // 2. Risk Heatmap
+  let likelihood = "Possible";
+  let consequence = "Moderate";
+  if (riskLevel === "CRITICAL") {
+    likelihood = "Almost Certain";
+    consequence = "Catastrophic";
+  } else if (riskLevel === "HIGH") {
+    likelihood = "Likely";
+    consequence = "Major";
+  } else if (riskLevel === "MEDIUM") {
+    likelihood = "Possible";
+    consequence = "Moderate";
+  } else {
+    likelihood = "Rare";
+    consequence = "Minor";
+  }
+
+  const riskHeatmap = {
+    likelihood,
+    consequence,
+    score: `${complianceScore}/100`,
+    zone: riskLevel,
+    mitigation: remediation[0] || "Ensure high-vis fabrics are clean and sole tread depth exceeds SANS limits."
+  };
+
+  // 3. PDF Export format sections
+  const pdfExport = {
+    title: `SANS SAFETY COMPLIANCE REPORT`,
+    subtitle: `Authorized Audit - ${params.mineName || "Melotwo Mine"} (${(miningSector || "GOLD")?.toUpperCase()})`,
+    sections: [
+      {
+        header: "1. Executive Summary & Scoring",
+        content: [
+          `This document certifies the SANS compliance audit conducted on ${params.mineName || "Melotwo Mine"}.`,
+          `Current SANS Compliance Score: ${complianceScore}/100.`,
+          `Subterranean Threat Profile: ${threats[0] || "No severe structural PPE non-conformances detected."}`
+        ]
+      },
+      {
+        header: "2. Deep-Sublevel Hazard Mapping",
+        content: [
+          `Identified operational sector: ${(miningSector || "GOLD")?.toUpperCase()} sector face operating at ${depthLevel} meters.`,
+          `Physical risk analysis: ${villainText.trim() || "PPE material specifications are within nominal limits."}`,
+          `Technical degradation deficit: ${techDeficit.trim() || "No micro-structure material fatigue detected."}`
+        ]
+      },
+      {
+        header: "3. Directives & Action Plan",
+        content: [
+          `The Chief Safety Officer commits to: ${coreVow}`,
+          ...remediation.map((step, i) => `${i + 1}. ${step}`)
+        ]
+      }
+    ]
+  };
+
   return {
     auditSummary: {
       complianceScore: Math.max(0, complianceScore),
@@ -139,6 +205,81 @@ function getSANSFallbackAudit(params: any): any {
     vendorMatchingCriteria: {
       targetSupplierCategory: "Industrial SHEQ / SANS Certified Mining Outfitters (South Africa)",
       bulkOrderSpecsSummary: `Requires inherent thermal-protective mine fatigues and SANS 20345 dual-density nitrile-soled protective safety footwear tailored for the South African labor demographic.`
+    },
+    historyLog,
+    riskHeatmap,
+    pdfExport
+  };
+}
+
+function getDailyShiftFallbackBriefing(params: any): any {
+  const sector = params.miningSector || "gold";
+  const mineName = params.mineName || "Melotwo Mine Shaft 2";
+  
+  let hazardsOverview = "";
+  let gearChecklist: string[] = [];
+  let toolboxMessage = "";
+  
+  if (sector === "coal") {
+    hazardsOverview = "High risk of combustible coal dust accumulation and invisible methane pockets in the face.";
+    gearChecklist = [
+      "Verify High-Vis Vest reflectivity is pristine and clear of grease layers.",
+      "Check boot sole pattern depth and ensure no static-conductive metal particles are trapped.",
+      "Ensure oxygen self-rescuer pressure dial reads strictly in the green safe zone.",
+      "Inspect safety helmet suspension for dust grit wear and strap security."
+    ];
+    toolboxMessage = "Stay sharp in the dark! Prioritize high-visibility and ensure methane detection is active. No shortcuts under coal faces today. Go home safe!";
+  } else if (sector === "gold") {
+    hazardsOverview = "Deep subterranean pressure stress and high humidity causing slick walkways and high ambient heat.";
+    gearChecklist = [
+      "Inspect safety footwear: verify sole pattern depth is over 4mm for wet floor traction.",
+      "Check for outsole cracks/chemical degradation from pyritic acid mine drainage water.",
+      "Verify your sweat-resistant high-absorbency shift-suit fabric is dry and clean.",
+      "Ensure waterproof battery seals on headlamps are fully locked."
+    ];
+    toolboxMessage = "Deep-level alertness is our first line of defense. Acid waters degrade substandard PU soles fast. Keep dry, watch the ground, and stay hydrated down there!";
+  } else {
+    hazardsOverview = "Heavy mechanical vehicle operations in confined spaces. High noise levels and seismic vibrations.";
+    gearChecklist = [
+      "Check steel toe cap alignment on both safety boots for balance.",
+      "Ensure ear protection/muffs are present, clean, and seal tightly.",
+      "Inspect safety gloves for physical grip coating fatigue and side tears.",
+      "Test emergency alert whistle tether security."
+    ];
+    toolboxMessage = "Team, heavy haulers are moving across the face today. Keep eyes open, check your grip gloves, and verify steel caps. Let's work together to make this shift accident-free!";
+  }
+
+  return {
+    auditSummary: {
+      complianceScore: 100,
+      riskLevel: "LOW",
+      regulatoryFrameworksChecked: ["SANS 20345", "SANS 434"],
+      primaryThreatIdentified: "None - Daily shift check completed"
+    },
+    riskAnalysis: {
+      theVillain: "Operational complacency before descending.",
+      technicalDeficitReasoning: "Pre-shift fatigue and uninspected personal safety gear.",
+      potentialFinancialImpact: "Zero active liabilities when pre-shift toolbox briefings are strictly followed."
+    },
+    complianceActionPlan: {
+      theVow: "To execute pre-shift safety protocols without fail.",
+      immediateRemediationSteps: ["Equip PPE", "Attend morning toolbox briefing", "Perform descending check"],
+      requiredMaterialSpecifications: {
+        fabricTypeRequired: "Inherent FR Blend",
+        minimumPerformanceRating: "8.4 cal/cm²",
+        footwearSpecification: "SANS 20345 dual-density nitrile sole"
+      }
+    },
+    vendorMatchingCriteria: {
+      targetSupplierCategory: "Industrial Outfitters",
+      bulkOrderSpecsSummary: "Daily check active"
+    },
+    dailyShiftBriefing: {
+      briefingTitle: `Pre-Descending Shift Check: ${mineName} (${sector.toUpperCase()})`,
+      mineType: sector.charAt(0).toUpperCase() + sector.slice(1),
+      hazardsOverview,
+      gearChecklist,
+      toolboxMessage
     }
   };
 }
@@ -151,9 +292,11 @@ app.post("/api/audit", async (req, res) => {
     // Extract critical paywall variables passed in the system context
     const auditCount = Number(params.audit_count) || 0;
     const isPremium = params.is_premium === true || params.is_premium === "true";
+    const dailyShiftCheck = params.daily_shift_check === true || params.daily_shift_check === "true";
 
-    // Rigid Gatekeeping: If audit count is greater than 3 and the user is not premium, halt processing immediately.
-    if (auditCount > 3 && !isPremium) {
+    // Rigid Gatekeeping: If audit count is greater than 3 and the user is not premium,
+    // AND this is NOT a daily shift check (which is always free), halt processing immediately.
+    if (auditCount > 3 && !isPremium && !dailyShiftCheck) {
       console.log(`[Gatekeeper Alert] Hard Paywall Triggered. audit_count: ${auditCount}, is_premium: ${isPremium}`);
       return res.status(200).json({
         status: "paywall_locked",
@@ -168,9 +311,15 @@ app.post("/api/audit", async (req, res) => {
     
     if (!apiKey || apiKey === "MY_GEMINI_API_KEY" || apiKey.trim() === "") {
       // Return high-quality localized standard algorithm output
-      console.log("No valid GEMINI_API_KEY. Using local South African Mine Standards engine fallback.");
-      const mockResult = getSANSFallbackAudit(params);
-      return res.json(mockResult);
+      if (dailyShiftCheck) {
+        console.log("No valid GEMINI_API_KEY. Using local Daily Shift Briefing fallback.");
+        const fallbackResult = getDailyShiftFallbackBriefing(params);
+        return res.json(fallbackResult);
+      } else {
+        console.log("No valid GEMINI_API_KEY. Using local South African Mine Standards engine fallback.");
+        const mockResult = getSANSFallbackAudit(params);
+        return res.json(mockResult);
+      }
     }
 
     try {
@@ -183,6 +332,57 @@ app.post("/api/audit", async (req, res) => {
           }
         }
       });
+
+      if (dailyShiftCheck) {
+        const systemPrompt = `You are a high-engagement, safety-focused SHEQ shift officer for Melotwo Mine Safety.
+Your task is to analyze the operational sector and mine details, then generate a fast, highly engaging, 60-second \"Daily Shift Safety Briefing & Pre-Descending Gear Check\" tailored specifically for the specified mine type.
+Focus heavily on daily hazards (e.g., checking boot sole integrity for acid exposure, checking high-vis clothing reflectivity, helmet degradation, atmospheric checks). Keep it concise, motivational, and extremely easy for everyday underground mine workers to read on a mobile device during morning toolbox meetings.
+
+Output strictly valid JSON matching this schema. Do not include markdown ticks or conversational text:
+{
+  "dailyShiftBriefing": {
+    "briefingTitle": "<A strong, motivational toolbox title, e.g., Gold Shaft 2 Pre-Descending Briefing>",
+    "mineType": "<The capitalized mine type name, e.g. Gold / Coal / Platinum>",
+    "hazardsOverview": "<A concise 2-sentence overview of the specific daily hazards to expect in this sector (e.g. wet slick floors, high heat, pyritic acid, coal dust, ventilation leaks)>",
+    "gearChecklist": [
+      "Checklist item 1 (Focus on checking boot soles/material, leather degradation, water ingress)",
+      "Checklist item 2 (Focus on checking high-vis state, vest dirt/grease layers, or strip state)",
+      "Checklist item 3 (Focus on helmet, batteries, or breathing safety rescue packs)",
+      "Checklist item 4 (Focus on gloves, grip fatigue, or mechanical protection)"
+    ],
+    "toolboxMessage": "<A fast, highly engaging 60-second safety message to motivate workers to keep their gear checked and return home safely to their families. Keep it warm but firm.>"
+  },
+  "auditSummary": {
+    "complianceScore": 100,
+    "riskLevel": "LOW",
+    "regulatoryFrameworksChecked": ["SANS 20345", "SANS 434"],
+    "primaryThreatIdentified": "None - Shift check successful"
+  },
+  "riskAnalysis": { "theVillain": "complacency", "technicalDeficitReasoning": "uninspected gear", "potentialFinancialImpact": "0" },
+  "complianceActionPlan": { "theVow": "Stay vigilant.", "immediateRemediationSteps": ["Check gear"], "requiredMaterialSpecifications": { "fabricTypeRequired": "FR", "minimumPerformanceRating": "8", "footwearSpecification": "Nitrile" } },
+  "vendorMatchingCriteria": { "targetSupplierCategory": "Outfitters", "bulkOrderSpecsSummary": "Daily check" }
+}`;
+
+        const promptMsg = `Generate Daily Shift Safety Briefing for:
+- Sector/Mine Type: ${params.miningSector || "gold"}
+- Mine Name: ${params.mineName || "Melotwo Mine Shaft 2"}
+- Staffing Headcount: ${params.headcount || 120} workers`;
+
+        const response = await ai.models.generateContent({
+          model: "gemini-3.5-flash",
+          contents: promptMsg,
+          config: {
+            systemInstruction: systemPrompt,
+            responseMimeType: "application/json",
+            temperature: 0.25,
+          }
+        });
+
+        const rawText = response.text || "";
+        const cleanedJson = rawText.replace(/```json/gi, "").replace(/```/g, "").trim();
+        const parsedBriefing = JSON.parse(cleanedJson);
+        return res.json(parsedBriefing);
+      }
 
       const systemPrompt = `You are the lead engineering auditor and chief SHEQ (Safety, Health, Environment, Quality) compliance officer for the Melotwo Mine Safety Compliance & PPE Audit Engine.
 Your task is to analyze details. You operate strictly under South African National Standards (SANS) and South African Department of Mineral Resources and Energy (DMRE) guidelines.
@@ -219,11 +419,45 @@ Response JSON Schema:
   "vendorMatchingCriteria": {
     "targetSupplierCategory": "<Target manufacturer specifications in South Africa>",
     "bulkOrderSpecsSummary": "<Technical outline to copy-paste into procurement tenders>"
+  },
+  "historyLog": {
+    "id": "<Unique audit ID, e.g. AUD-987412>",
+    "date": "<Current date in YYYY-MM-DD format>",
+    "mineName": "<The name of the mine audited>",
+    "complianceScore": <The compliance score as a number>,
+    "riskLevel": "<CRITICAL | HIGH | MEDIUM | LOW>",
+    "summary": "<Short 1-sentence summary of the main finding>"
+  },
+  "riskHeatmap": {
+    "likelihood": "<Likelihood value, e.g. Almost Certain | Likely | Possible | Rare>",
+    "consequence": "<Consequence value, e.g. Catastrophic | Major | Moderate | Minor>",
+    "score": "<Formatted score string, e.g. 16/25 (High) or 75/100>",
+    "zone": "<Risk level, e.g. CRITICAL | HIGH | MEDIUM | LOW>",
+    "mitigation": "<Primary technical recommendation to mitigate this risk>"
+  },
+  "pdfExport": {
+    "title": "<Document title, e.g., SANS COMPLIANCE AUDIT CERTIFICATION>",
+    "subtitle": "<Document subtitle showing mine name and date>",
+    "sections": [
+      {
+        "header": "1. Executive Summary & Scoring",
+        "content": ["Sentence 1 about the audit score and safety posture.", "Sentence 2 on primary threats and SANS certifications."]
+      },
+      {
+        "header": "2. Sublevel Risk Exposure Analysis",
+        "content": ["Sentence 1 detailing technical materials failure details like sole hydrolysis or treated FR wash-out.", "Sentence 2 detailing ZAR financial liabilities and Section 54 DMRE shutdown risks."]
+      },
+      {
+        "header": "3. Immediate Corrective Action Directives",
+        "content": ["Step 1 required.", "Step 2 required.", "Technical material specs required."]
+      }
+    ]
   }
 }`;
 
       const promptMsg = `Mine Details to Audit:
 - Sector: ${req.body.miningSector}
+- Mine Name: ${req.body.mineName || "Melotwo Mine"}
 - Shaft Depth: ${req.body.depthLevel} meters
 - Headcount / Staffing: ${req.body.headcount} workers
 - Environmental Hazards: ${JSON.stringify(req.body.environmentHazards)}
@@ -254,7 +488,6 @@ Response JSON Schema:
     } catch (apiError) {
       console.error("Gemini API Error, falling back to local SANS rules engine:", apiError);
       const fallbackResult = getSANSFallbackAudit(params);
-      // Let's add a small flag indicating fallback for auditing
       fallbackResult._fallback = true;
       res.json(fallbackResult);
     }
