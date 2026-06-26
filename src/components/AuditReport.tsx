@@ -10,9 +10,10 @@ interface AuditReportProps {
   report: AuditReportResponse;
   originalParams: MineParams;
   onRunAuditAgain: () => void;
+  historyLogs?: any[];
 }
 
-export function AuditReport({ report, originalParams, onRunAuditAgain }: AuditReportProps) {
+export function AuditReport({ report, originalParams, onRunAuditAgain, historyLogs }: AuditReportProps) {
   const [completedSteps, setCompletedSteps] = useState<Record<number, boolean>>({});
   const [copiedSpecs, setCopiedSpecs] = useState(false);
   const [isTrialActive, setIsTrialActive] = useState(() => {
@@ -152,6 +153,82 @@ Bulk specs summary: ${vendorMatchingCriteria.bulkOrderSpecsSummary}`;
         <div className="bg-blue-950/20 border border-blue-500/20 rounded-xl p-3 text-xs text-slate-300 flex items-center gap-2 font-mono">
           <InfoIcon className="w-4 h-4 text-blue-400 shrink-0" />
           <span>Local SANS Auditing Engine: Active Offline Evaluation (Regulatory Logic Implemented)</span>
+        </div>
+      )}
+
+      {/* Daily Toolbox Shift Briefing Card */}
+      {report.dailyShiftBriefing && (
+        <div className="bg-[#0f172a] border-2 border-emerald-500/40 rounded-2xl p-6 shadow-xl shadow-emerald-950/20 relative overflow-hidden" id="daily-shift-briefing-panel">
+          <div className="absolute top-0 right-0 bg-emerald-500 text-slate-950 text-[9px] font-black tracking-widest px-4 py-1.5 uppercase rounded-bl-xl shadow flex items-center gap-1">
+            <span className="w-2 h-2 rounded-full bg-slate-950 animate-ping" /> Free Daily Shift Mode
+          </div>
+          
+          <div className="flex items-center gap-3 border-b border-emerald-500/20 pb-4 mb-4">
+            <div className="bg-emerald-500/10 border border-emerald-500/20 p-2.5 rounded-xl">
+              <ShieldCheck className="w-6 h-6 text-emerald-400" />
+            </div>
+            <div>
+              <h3 className="text-lg font-black text-slate-100 uppercase tracking-wider font-display">
+                {report.dailyShiftBriefing.briefingTitle}
+              </h3>
+              <p className="text-xs text-emerald-400 font-mono">
+                SANS-Compliant Pre-Descending Safe Checklist • Sector: {report.dailyShiftBriefing.mineType}
+              </p>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="space-y-4">
+              <div className="bg-emerald-950/20 border border-emerald-500/10 rounded-xl p-4">
+                <span className="text-[10px] font-bold text-emerald-400 uppercase tracking-widest block mb-1">Today's Subterranean Hazards Overview</span>
+                <p className="text-xs text-slate-300 leading-relaxed font-sans">
+                  {report.dailyShiftBriefing.hazardsOverview}
+                </p>
+              </div>
+
+              <div className="border-l-4 border-emerald-500 bg-slate-900/60 p-4 rounded-r-xl">
+                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block mb-1">60-Second Shift Motivation & Toolbox Message</span>
+                <p className="text-xs text-emerald-300 italic font-medium leading-relaxed font-sans">
+                  "{report.dailyShiftBriefing.toolboxMessage}"
+                </p>
+              </div>
+            </div>
+
+            <div className="bg-slate-900/50 border border-slate-700/60 rounded-xl p-4 flex flex-col justify-between">
+              <div>
+                <span className="text-[10px] font-bold text-emerald-400 uppercase tracking-widest block mb-2.5">Interactive Pre-Descending Gear Check (Tap to Verify)</span>
+                <div className="space-y-2">
+                  {report.dailyShiftBriefing.gearChecklist.map((item, idx) => {
+                    const stepKey = 1000 + idx;
+                    const isChecked = completedSteps[stepKey] || false;
+                    return (
+                      <button
+                        key={idx}
+                        type="button"
+                        onClick={() => toggleStep(stepKey)}
+                        className={`w-full text-left p-3 rounded-lg text-xs leading-normal font-semibold transition-all flex items-start gap-2.5 border cursor-pointer ${
+                          isChecked 
+                            ? "bg-emerald-950/10 border-emerald-500/20 text-slate-500 line-through" 
+                            : "bg-slate-950 border-slate-800 text-slate-200 hover:border-emerald-500/30"
+                        }`}
+                        id={`gear-check-item-${idx}`}
+                      >
+                        {isChecked ? (
+                          <CheckSquare className="w-4.5 h-4.5 text-emerald-400 shrink-0" />
+                        ) : (
+                          <Square className="w-4.5 h-4.5 text-slate-600 shrink-0" />
+                        )}
+                        <span>{item}</span>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+              <div className="text-[10px] text-slate-400 font-mono mt-4 text-center">
+                Completed {Object.keys(completedSteps).filter(k => Number(k) >= 1000 && completedSteps[Number(k)]).length} of {report.dailyShiftBriefing.gearChecklist.length} daily inspections
+              </div>
+            </div>
+          </div>
         </div>
       )}
 
@@ -362,6 +439,202 @@ Bulk specs summary: ${vendorMatchingCriteria.bulkOrderSpecsSummary}`;
         </div>
 
       </div>
+
+      {/* Risk Heatmap Matrix */}
+      {report.riskHeatmap && (
+        <div className="bg-[#1e293b] rounded-2xl border border-slate-700 p-6 shadow-lg" id="risk-heatmap-panel">
+          <div className="flex items-center justify-between border-b border-slate-700 pb-3 mb-4">
+            <div className="flex items-center gap-2">
+              <div className="bg-amber-500/10 border border-amber-500/20 p-2 rounded-lg">
+                <FileText className="w-5 h-5 text-amber-400" />
+              </div>
+              <div>
+                <h4 className="text-sm font-black text-slate-200 uppercase tracking-wider font-display">Deep-Sublevel Risk Heatmap Matrix</h4>
+                <p className="text-[11px] text-slate-400">Continuous SANS probability vs severity compliance evaluation</p>
+              </div>
+            </div>
+            <div className="text-right">
+              <span className="text-[10px] text-slate-400 uppercase font-semibold block">Risk Profile Cell:</span>
+              <span className="text-xs font-mono font-bold text-amber-400 bg-amber-950/40 px-2 py-0.5 rounded border border-amber-500/20 mt-0.5 inline-block">
+                {report.riskHeatmap.likelihood} × {report.riskHeatmap.consequence} ({report.riskHeatmap.zone})
+              </span>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            {/* The visual 4x4 grid */}
+            <div className="lg:col-span-2 space-y-2">
+              <span className="text-[10px] text-slate-400 block uppercase font-bold text-center sm:text-left mb-1">Probability vs Severity Matrix Mapping</span>
+              <div className="grid grid-cols-5 gap-1.5 text-center font-mono text-[9px] text-slate-400">
+                {/* Headers */}
+                <div></div>
+                <div className="py-1 font-bold">Minor</div>
+                <div className="py-1 font-bold">Moderate</div>
+                <div className="py-1 font-bold">Major</div>
+                <div className="py-1 font-bold">Catastrophic</div>
+
+                {/* Almost Certain row */}
+                <div className="flex items-center justify-end pr-1 font-bold">Almost Certain</div>
+                <div className={`p-2.5 rounded font-black ${report.riskHeatmap.likelihood === "Almost Certain" && report.riskHeatmap.consequence === "Minor" ? "bg-red-500 text-slate-950 ring-2 ring-white animate-pulse" : "bg-yellow-500/10 text-yellow-500/40"}`}>Med</div>
+                <div className={`p-2.5 rounded font-black ${report.riskHeatmap.likelihood === "Almost Certain" && report.riskHeatmap.consequence === "Moderate" ? "bg-red-500 text-slate-950 ring-2 ring-white animate-pulse" : "bg-orange-500/15 text-orange-500/40"}`}>High</div>
+                <div className={`p-2.5 rounded font-black ${report.riskHeatmap.likelihood === "Almost Certain" && report.riskHeatmap.consequence === "Major" ? "bg-red-500 text-slate-950 ring-2 ring-white animate-pulse" : "bg-red-500/20 text-red-500/40"}`}>Critical</div>
+                <div className={`p-2.5 rounded font-black ${report.riskHeatmap.likelihood === "Almost Certain" && report.riskHeatmap.consequence === "Catastrophic" ? "bg-red-500 text-slate-950 ring-2 ring-white animate-pulse" : "bg-red-600/30 text-red-400"}`}>Critical</div>
+
+                {/* Likely row */}
+                <div className="flex items-center justify-end pr-1 font-bold">Likely</div>
+                <div className={`p-2.5 rounded font-black ${report.riskHeatmap.likelihood === "Likely" && report.riskHeatmap.consequence === "Minor" ? "bg-orange-500 text-slate-950 ring-2 ring-white animate-pulse" : "bg-yellow-500/10 text-yellow-500/40"}`}>Med</div>
+                <div className={`p-2.5 rounded font-black ${report.riskHeatmap.likelihood === "Likely" && report.riskHeatmap.consequence === "Moderate" ? "bg-orange-500 text-slate-950 ring-2 ring-white animate-pulse" : "bg-orange-500/15 text-orange-500/40"}`}>High</div>
+                <div className={`p-2.5 rounded font-black ${report.riskHeatmap.likelihood === "Likely" && report.riskHeatmap.consequence === "Major" ? "bg-red-500 text-slate-950 ring-2 ring-white animate-pulse" : "bg-red-500/20 text-red-400/40"}`}>High</div>
+                <div className={`p-2.5 rounded font-black ${report.riskHeatmap.likelihood === "Likely" && report.riskHeatmap.consequence === "Catastrophic" ? "bg-red-500 text-slate-950 ring-2 ring-white animate-pulse" : "bg-red-500/25 text-red-400"}`}>Critical</div>
+
+                {/* Possible row */}
+                <div className="flex items-center justify-end pr-1 font-bold">Possible</div>
+                <div className={`p-2.5 rounded font-black ${report.riskHeatmap.likelihood === "Possible" && report.riskHeatmap.consequence === "Minor" ? "bg-yellow-500 text-slate-950 ring-2 ring-white animate-pulse" : "bg-emerald-500/10 text-emerald-500/40"}`}>Low</div>
+                <div className={`p-2.5 rounded font-black ${report.riskHeatmap.likelihood === "Possible" && report.riskHeatmap.consequence === "Moderate" ? "bg-yellow-500 text-slate-950 ring-2 ring-white animate-pulse" : "bg-yellow-500/15 text-yellow-400/40"}`}>Med</div>
+                <div className={`p-2.5 rounded font-black ${report.riskHeatmap.likelihood === "Possible" && report.riskHeatmap.consequence === "Major" ? "bg-orange-500 text-slate-950 ring-2 ring-white animate-pulse" : "bg-orange-500/15 text-orange-400/40"}`}>High</div>
+                <div className={`p-2.5 rounded font-black ${report.riskHeatmap.likelihood === "Possible" && report.riskHeatmap.consequence === "Catastrophic" ? "bg-red-500 text-slate-950 ring-2 ring-white animate-pulse" : "bg-red-500/20 text-red-400"}`}>High</div>
+
+                {/* Rare row */}
+                <div className="flex items-center justify-end pr-1 font-bold">Rare</div>
+                <div className={`p-2.5 rounded font-black ${report.riskHeatmap.likelihood === "Rare" && report.riskHeatmap.consequence === "Minor" ? "bg-emerald-500 text-slate-950 ring-2 ring-white animate-pulse" : "bg-emerald-500/10 text-emerald-500/40"}`}>Low</div>
+                <div className={`p-2.5 rounded font-black ${report.riskHeatmap.likelihood === "Rare" && report.riskHeatmap.consequence === "Moderate" ? "bg-emerald-500 text-slate-950 ring-2 ring-white animate-pulse" : "bg-emerald-500/10 text-emerald-500/40"}`}>Low</div>
+                <div className={`p-2.5 rounded font-black ${report.riskHeatmap.likelihood === "Rare" && report.riskHeatmap.consequence === "Major" ? "bg-yellow-500 text-slate-950 ring-2 ring-white animate-pulse" : "bg-yellow-500/10 text-yellow-500/40"}`}>Med</div>
+                <div className={`p-2.5 rounded font-black ${report.riskHeatmap.likelihood === "Rare" && report.riskHeatmap.consequence === "Catastrophic" ? "bg-orange-500 text-slate-950 ring-2 ring-white animate-pulse" : "bg-orange-500/15 text-orange-400"}`}>High</div>
+              </div>
+            </div>
+
+            {/* Severity Details Panel */}
+            <div className="bg-slate-950/45 border border-slate-750 p-4 rounded-xl flex flex-col justify-between">
+              <div>
+                <span className="text-[10px] text-slate-400 uppercase font-bold block mb-1">Audit Score Context</span>
+                <span className="text-xl font-black text-slate-100 font-mono block mb-3">{report.riskHeatmap.score} Compliance</span>
+                
+                <span className="text-[10px] text-slate-400 uppercase font-bold block mb-1">Targeted Threat Mitigation Action</span>
+                <p className="text-xs text-slate-300 leading-relaxed font-sans">
+                  {report.riskHeatmap.mitigation}
+                </p>
+              </div>
+              
+              <div className="mt-4 pt-3 border-t border-slate-800 text-[10px] text-slate-500 leading-normal">
+                Continuous compliance mapping adheres to the SANS probability thresholds for mining deep levels.
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Historical Logs Cap */}
+      {historyLogs && historyLogs.length > 0 && (
+        <div className="bg-[#1e293b] rounded-2xl border border-slate-700 p-6 shadow-lg" id="audit-history-panel">
+          <div className="flex items-center gap-2 border-b border-slate-700 pb-3 mb-4">
+            <div className="bg-slate-900 border border-slate-750 p-2 rounded-lg">
+              <Landmark className="w-5 h-5 text-sky-400" />
+            </div>
+            <div>
+              <h4 className="text-sm font-black text-slate-200 uppercase tracking-wider font-display">Historical Mine Safety Records</h4>
+              <p className="text-[11px] text-slate-400">Authenticated SHEQ compliance logs cached in current terminal</p>
+            </div>
+          </div>
+
+          <div className="space-y-2 max-h-[220px] overflow-y-auto pr-1">
+            {historyLogs.map((log) => (
+              <div 
+                key={log.id} 
+                className="bg-slate-950/40 hover:bg-slate-950/60 border border-slate-800 rounded-xl p-3 flex flex-col sm:flex-row sm:items-center justify-between gap-3 transition-colors"
+                id={`history-log-${log.id}`}
+              >
+                <div className="flex items-start gap-2.5">
+                  <div className={`p-1.5 rounded-lg border text-[10px] font-bold font-mono ${
+                    log.complianceScore >= 85 ? "bg-emerald-550/10 border-emerald-500/20 text-emerald-400" :
+                    log.complianceScore >= 60 ? "bg-amber-550/10 border-amber-500/20 text-amber-400" :
+                    "bg-rose-550/10 border-rose-500/20 text-rose-400"
+                  }`}>
+                    {log.complianceScore}/100
+                  </div>
+                  <div>
+                    <span className="text-xs font-bold text-slate-200 block leading-tight">{log.mineName}</span>
+                    <span className="text-[10px] text-slate-400 font-medium block mt-0.5">{log.summary}</span>
+                  </div>
+                </div>
+                <div className="text-right shrink-0">
+                  <span className="text-[10px] font-mono text-slate-400 block">{log.date}</span>
+                  <span className="text-[9px] font-bold text-sky-400 font-mono tracking-wider uppercase block mt-0.5">{log.id}</span>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* PDF Export Formatting Section */}
+      {report.pdfExport && (
+        <div className="bg-[#1e293b] rounded-2xl border border-slate-700 p-6 shadow-lg relative overflow-hidden" id="pdf-export-panel">
+          <div className="flex items-center justify-between border-b border-slate-700 pb-3 mb-4">
+            <div className="flex items-center gap-2">
+              <div className="bg-sky-500/10 border border-sky-500/20 p-2 rounded-lg">
+                <FileText className="w-5 h-5 text-sky-400" />
+              </div>
+              <div>
+                <h4 className="text-sm font-black text-slate-200 uppercase tracking-wider font-display">SANS Audit PDF Export Center</h4>
+                <p className="text-[11px] text-slate-400">Structured print formatting ready for official DMRE submission</p>
+              </div>
+            </div>
+          </div>
+
+          <div className="relative border border-slate-800 bg-slate-900/40 rounded-xl p-5 overflow-hidden font-sans text-xs text-slate-300 leading-relaxed shadow-inner">
+            {/* Blueprint Overlay for PDF Export */}
+            {!isTrialActive && (
+              <div className="absolute inset-0 flex flex-col items-center justify-center p-6 bg-slate-950/90 backdrop-blur-md text-center z-10 transition-all">
+                <div className="max-w-md">
+                  <h5 className="text-xs font-black text-sky-400 uppercase tracking-wider mb-2 flex items-center justify-center gap-1.5 font-display">
+                    <ShieldCheck className="w-4 h-4 text-sky-400" /> Official Compliance Shield Required
+                  </h5>
+                  <p className="text-[11px] text-slate-400 mb-4 font-sans leading-relaxed">
+                    PDF document generation and official certificates are locked under the corporate beta trial. Activate to download legally defensible compliance exports.
+                  </p>
+                  <button
+                    onClick={() => setShowModal(true)}
+                    className="bg-sky-500 hover:bg-sky-400 text-slate-950 font-black px-4 py-2 rounded-lg text-[10px] uppercase tracking-wider transition-all cursor-pointer font-sans"
+                  >
+                    Unlock Free Beta Trial
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* Simulated Paper Document Header */}
+            <div className="border-b border-slate-750 pb-3 mb-4 flex justify-between items-start font-mono text-[10px] text-slate-450">
+              <div>
+                <span className="font-bold block text-slate-200">{report.pdfExport.title}</span>
+                <span className="block mt-0.5">{report.pdfExport.subtitle}</span>
+              </div>
+              <div className="text-right">
+                <span>CONFIDENTIAL • INTERNAL SHEQ</span>
+                <span className="block mt-0.5">SANS AUDIT ENGINE 2026</span>
+              </div>
+            </div>
+
+            {/* Simulated Document Sections */}
+            <div className="space-y-4">
+              {report.pdfExport.sections.map((section, idx) => (
+                <div key={idx} className="space-y-1.5">
+                  <span className="font-bold text-slate-200 block uppercase tracking-wide border-b border-slate-800/60 pb-0.5 font-display">{section.header}</span>
+                  <div className="space-y-1 pl-2">
+                    {section.content.map((para, pIdx) => (
+                      <p key={pIdx} className="text-[11px] text-slate-350 leading-normal font-sans">• {para}</p>
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            {/* Document Footer */}
+            <div className="border-t border-slate-750 pt-3 mt-5 text-center font-mono text-[9px] text-slate-500">
+              This formatted record is officially compiled by Melotwo Mine Safety Services under licensing key {originalParams.mineName?.slice(0, 3)?.toUpperCase()}-2026.
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Procurement & Copy tender wrapper with relative layout for overlay */}
       <div className="relative overflow-hidden rounded-2xl border border-slate-700 shadow-lg" id="procurement-card-container">
