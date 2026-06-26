@@ -46,6 +46,36 @@ export interface AuditReportResponse {
   riskAnalysis: RiskAnalysis;
   complianceActionPlan: ComplianceActionPlan;
   vendorMatchingCriteria: VendorMatchingCriteria;
+  historyLog?: {
+    id: string;
+    date: string;
+    mineName: string;
+    complianceScore: number;
+    riskLevel: string;
+    summary: string;
+  };
+  riskHeatmap?: {
+    likelihood: string;
+    consequence: string;
+    score: string;
+    zone: string;
+    mitigation: string;
+  };
+  pdfExport?: {
+    title: string;
+    subtitle: string;
+    sections: {
+      header: string;
+      content: string[];
+    }[];
+  };
+  dailyShiftBriefing?: {
+    briefingTitle: string;
+    mineType: string;
+    hazardsOverview: string;
+    gearChecklist: string[];
+    toolboxMessage: string;
+  };
   _fallback?: boolean;
 }
 
