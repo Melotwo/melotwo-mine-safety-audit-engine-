@@ -148,6 +148,21 @@ app.post("/api/audit", async (req, res) => {
   try {
     const params = req.body;
     
+    // Extract critical paywall variables passed in the system context
+    const auditCount = Number(params.audit_count) || 0;
+    const isPremium = params.is_premium === true || params.is_premium === "true";
+
+    // Rigid Gatekeeping: If audit count is greater than 3 and the user is not premium, halt processing immediately.
+    if (auditCount > 3 && !isPremium) {
+      console.log(`[Gatekeeper Alert] Hard Paywall Triggered. audit_count: ${auditCount}, is_premium: ${isPremium}`);
+      return res.status(200).json({
+        status: "paywall_locked",
+        message: "You have reached the limit of your 3 free compliance audits. To unlock unlimited audits, continuous monitoring, and official reporting features, please upgrade to our premium tier.",
+        trigger_payment_gateway: true,
+        gateway: "Paystack"
+      });
+    }
+
     // Check if the user has an active Gemini API key configured
     const apiKey = process.env.GEMINI_API_KEY;
     
