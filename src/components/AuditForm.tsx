@@ -4,7 +4,7 @@ import { MINE_PRESETS, MINE_SECTOR_LABELS } from "../data";
 import { Flame, Beaker, Users, ShieldAlert, Sliders, CheckCircle2, ChevronRight, HelpCircle } from "lucide-react";
 
 interface AuditFormProps {
-  onRunAudit: (params: MineParams) => void;
+  onRunAudit: (params: MineParams, dailyShiftCheck?: boolean) => void;
   isLoading: boolean;
 }
 
@@ -72,6 +72,24 @@ export function AuditForm({ onRunAudit, isLoading }: AuditFormProps) {
         arcRatingValue: arcValue
       }
     });
+  };
+
+  const handleDailyShiftCheck = (e: React.MouseEvent) => {
+    e.preventDefault();
+    onRunAudit({
+      mineName,
+      miningSector: sector,
+      depthLevel: depth,
+      headcount,
+      environmentHazards: selectedHazards,
+      currentPPE: {
+        fabricType,
+        fabricWashCycles: washCycles,
+        footwearSoleMaterial: footwearSole,
+        footwearSpecification: footwearSpec,
+        arcRatingValue: arcValue
+      }
+    }, true);
   };
 
   // Auto-warning calculator for instant UX feedback
@@ -338,12 +356,22 @@ export function AuditForm({ onRunAudit, isLoading }: AuditFormProps) {
           </div>
         )}
 
-        {/* Bottom submit button */}
-        <div className="flex md:justify-end">
+        {/* Bottom buttons */}
+        <div className="flex flex-col sm:flex-row justify-end gap-3">
+          <button
+            type="button"
+            onClick={handleDailyShiftCheck}
+            disabled={isLoading}
+            className="w-full sm:w-auto px-6 py-3.5 rounded-lg font-bold text-xs sm:text-sm tracking-wider uppercase transition-all duration-300 flex items-center justify-center gap-2 cursor-pointer border border-emerald-500/30 bg-emerald-950/40 hover:bg-emerald-900/40 text-emerald-400 font-sans"
+            id="daily-shift-briefing-btn"
+          >
+            Daily Toolbox Shift Briefing ⚡
+          </button>
+          
           <button
             type="submit"
             disabled={isLoading}
-            className={`w-full md:w-auto px-8 py-3.5 rounded-lg font-bold text-sm tracking-widest uppercase transition-all duration-300 flex items-center justify-center gap-2 cursor-pointer ${
+            className={`w-full sm:w-auto px-6 py-3.5 rounded-lg font-bold text-xs sm:text-sm tracking-widest uppercase transition-all duration-300 flex items-center justify-center gap-2 cursor-pointer ${
               isLoading
                 ? "bg-slate-800 text-slate-400 cursor-wait border border-slate-700"
                 : "bg-gradient-to-r from-sky-500 to-blue-600 hover:from-sky-400 hover:to-blue-500 text-slate-950 font-black shadow-lg shadow-sky-950/45 transform hover:-translate-y-0.5 active:translate-y-0"
@@ -356,11 +384,11 @@ export function AuditForm({ onRunAudit, isLoading }: AuditFormProps) {
                   <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
                   <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
                 </svg>
-                Processing SANS Calculations...
+                Processing...
               </>
             ) : (
               <>
-                Initialize Compliance Safety Audit
+                SANS Compliance Audit
                 <ChevronRight className="w-4 h-4" />
               </>
             )}
