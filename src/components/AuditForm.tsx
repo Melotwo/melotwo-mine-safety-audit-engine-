@@ -4,7 +4,7 @@ import { MINE_PRESETS, MINE_SECTOR_LABELS } from "../data";
 import { Flame, Beaker, Users, ShieldAlert, Sliders, CheckCircle2, ChevronRight, HelpCircle } from "lucide-react";
 
 interface AuditFormProps {
-  onRunAudit: (params: MineParams, dailyShiftCheck?: boolean) => void;
+  onRunAudit: (params: MineParams, dailyShiftCheck?: boolean, dailyDstiCheck?: boolean) => void;
   isLoading: boolean;
 }
 
@@ -21,6 +21,30 @@ export function AuditForm({ onRunAudit, isLoading }: AuditFormProps) {
   const [footwearSole, setFootwearSole] = useState("Standard PU (Polyurethane) Sole");
   const [footwearSpec, setFootwearSpec] = useState("None / Generic Steel-toe");
   const [arcValue, setArcValue] = useState("No rating");
+
+  // Load saved state from localStorage if available
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem("last_sans_params");
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (parsed.mineName) setMineName(parsed.mineName);
+        if (parsed.miningSector) setSector(parsed.miningSector);
+        if (parsed.depthLevel !== undefined) setDepth(parsed.depthLevel);
+        if (parsed.headcount !== undefined) setHeadcount(parsed.headcount);
+        if (parsed.environmentHazards) setSelectedHazards(parsed.environmentHazards);
+        if (parsed.currentPPE) {
+          if (parsed.currentPPE.fabricType) setFabricType(parsed.currentPPE.fabricType);
+          if (parsed.currentPPE.fabricWashCycles !== undefined) setWashCycles(parsed.currentPPE.fabricWashCycles);
+          if (parsed.currentPPE.footwearSoleMaterial) setFootwearSole(parsed.currentPPE.footwearSoleMaterial);
+          if (parsed.currentPPE.footwearSpecification) setFootwearSpec(parsed.currentPPE.footwearSpecification);
+          if (parsed.currentPPE.arcRatingValue) setArcValue(parsed.currentPPE.arcRatingValue);
+        }
+      }
+    } catch (err) {
+      console.error("Failed to load saved params:", err);
+    }
+  }, []);
 
   // Multi-select handler
   const toggleHazard = (hazard: string) => {
@@ -90,6 +114,24 @@ export function AuditForm({ onRunAudit, isLoading }: AuditFormProps) {
         arcRatingValue: arcValue
       }
     }, true);
+  };
+
+  const handleDailyDstiCheck = (e: React.MouseEvent) => {
+    e.preventDefault();
+    onRunAudit({
+      mineName,
+      miningSector: sector,
+      depthLevel: depth,
+      headcount,
+      environmentHazards: selectedHazards,
+      currentPPE: {
+        fabricType,
+        fabricWashCycles: washCycles,
+        footwearSoleMaterial: footwearSole,
+        footwearSpecification: footwearSpec,
+        arcRatingValue: arcValue
+      }
+    }, false, true);
   };
 
   // Auto-warning calculator for instant UX feedback
@@ -358,6 +400,16 @@ export function AuditForm({ onRunAudit, isLoading }: AuditFormProps) {
 
         {/* Bottom buttons */}
         <div className="flex flex-col sm:flex-row justify-end gap-3">
+          <button
+            type="button"
+            onClick={handleDailyDstiCheck}
+            disabled={isLoading}
+            className="w-full sm:w-auto px-6 py-3.5 rounded-lg font-bold text-xs sm:text-sm tracking-wider uppercase transition-all duration-300 flex items-center justify-center gap-2 cursor-pointer border border-orange-500/30 bg-orange-950/40 hover:bg-orange-900/40 text-orange-400 font-sans shadow-lg shadow-orange-950/25"
+            id="daily-dsti-briefing-btn"
+          >
+            Daily Construction DSTI 🏗️
+          </button>
+
           <button
             type="button"
             onClick={handleDailyShiftCheck}
