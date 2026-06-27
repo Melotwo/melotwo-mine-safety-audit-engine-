@@ -293,10 +293,11 @@ app.post("/api/audit", async (req, res) => {
     const auditCount = Number(params.audit_count) || 0;
     const isPremium = params.is_premium === true || params.is_premium === "true";
     const dailyShiftCheck = params.daily_shift_check === true || params.daily_shift_check === "true";
+    const dailyDstiCheck = params.daily_dsti_check === true || params.daily_dsti_check === "true";
 
     // Rigid Gatekeeping: If audit count is greater than 3 and the user is not premium,
-    // AND this is NOT a daily shift check (which is always free), halt processing immediately.
-    if (auditCount > 3 && !isPremium && !dailyShiftCheck) {
+    // AND this is NOT a daily shift check or daily DSTI check (which are always free), halt processing immediately.
+    if (auditCount > 3 && !isPremium && !dailyShiftCheck && !dailyDstiCheck) {
       console.log(`[Gatekeeper Alert] Hard Paywall Triggered. audit_count: ${auditCount}, is_premium: ${isPremium}`);
       return res.status(200).json({
         status: "paywall_locked",
@@ -311,7 +312,58 @@ app.post("/api/audit", async (req, res) => {
     
     if (!apiKey || apiKey === "MY_GEMINI_API_KEY" || apiKey.trim() === "") {
       // Return high-quality localized standard algorithm output
-      if (dailyShiftCheck) {
+      if (dailyDstiCheck) {
+        console.log("No valid GEMINI_API_KEY. Using local Daily Construction DSTI fallback.");
+        const dstiFallback = {
+          auditSummary: {
+            complianceScore: 100,
+            riskLevel: "LOW",
+            regulatoryFrameworksChecked: ["SANS 10085 (Design of access scaffolding)", "SANS 50353 (Fall protection systems)", "South African Construction Regulations 2014"],
+            primaryThreatIdentified: "None - Daily Construction DSTI completed successfully"
+          },
+          riskAnalysis: {
+            theVillain: "Elevated fall hazards and scaffolding failures before tasks start.",
+            technicalDeficitReasoning: "Uninspected working at heights harness lines and base structural checks.",
+            potentialFinancialImpact: "Zero active construction liabilities when daily pre-task instructions are strictly completed."
+          },
+          complianceActionPlan: {
+            theVow: "To execute daily construction Safe Task Instructions without compromise.",
+            immediateRemediationSteps: ["Inspect fall harnesses", "Lock scaffold wheel systems", "Check tagging on portable drills"],
+            requiredMaterialSpecifications: {
+              fabricTypeRequired: "Heavy-duty high-vis flame retardant workwear",
+              minimumPerformanceRating: "SANS 50353 fall arrest rated",
+              footwearSpecification: "SANS 20345 steel toe shoes with anti-slip tread"
+            }
+          },
+          vendorMatchingCriteria: {
+            targetSupplierCategory: "Construction Safety Outfitters",
+            bulkOrderSpecsSummary: "Daily Construction DSTI active"
+          },
+          dailyDstiBriefing: {
+            briefingTitle: "Daily Construction Safe Task Instruction (DSTI)",
+            siteName: params.mineName || "MeloTwo Construction Site Block 4",
+            constructionSector: (params.miningSector || "gold").charAt(0).toUpperCase() + (params.miningSector || "gold").slice(1),
+            hazardsOverview: "Elevated structural rigging, potential falls from heights, unstable scaffolding footings, and electrical shock hazards in wet workspace zones.",
+            toolboxMessage: "Let's work safely today! Always inspect your double-lanyard harness before working above 1.5 meters. Verify that the mobile scaffold's wheels are double-locked before anyone ascends. Never use an electrical tool unless its safety inspection tag is present and valid.",
+            heightsChecklist: [
+              "Double-Lanyard Inspection: Inspect all safety harnesses for fraying, dynamic stress tears, and solid D-ring integrity.",
+              "Anchor Points: Confirm that structural anchor points are load-certified and fall-arrest tethers are secured.",
+              "Drop Zone Barriers: Ensure drop zones below elevated assembly spots are clearly barricaded and warning signages are posted."
+            ],
+            scaffoldChecklist: [
+              "Green Safe Scaff-Tag: Verify that a valid, signed 'Green Tag' is clearly displayed, proving inspection within 24 hours.",
+              "Ground Footing Check: Check that base jacks rest firmly on solid ground with adequate timber sole-boards to spread load.",
+              "Guardrail Security: Confirm that guardrails, intermediate safety midrails, and toe-boards are fully locked into position."
+            ],
+            electricalChecklist: [
+              "Valid Color Tagging: Verify that the portable electric drill/grinder displays a current, color-coded safety inspection tag.",
+              "Cable & Jacket Integrity: Inspect all supply cords for exposed wiring, or temporary electrical tape jointing.",
+              "Earth Leakage Switch test: Perform a fast push-button trip test on the portable Earth Leakage Protection board before operation."
+            ]
+          }
+        };
+        return res.json(dstiFallback);
+      } else if (dailyShiftCheck) {
         console.log("No valid GEMINI_API_KEY. Using local Daily Shift Briefing fallback.");
         const fallbackResult = getDailyShiftFallbackBriefing(params);
         return res.json(fallbackResult);
