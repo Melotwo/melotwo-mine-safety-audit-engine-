@@ -9,10 +9,12 @@ import { SANSReferenceTable } from "./components/SANSReferenceTable";
 import { 
   ShieldCheck, AlertOctagon, Landmark, Database, HelpCircle, 
   RefreshCw, Layers, Sparkles, BookOpen, Clock, FileText,
-  Lock, ShieldAlert
+  Lock, ShieldAlert,
+  Shield, CheckCircle, AlertTriangle, Cpu, Factory, Users, ArrowRight
 } from "lucide-react";
 
 export default function App() {
+  const [showLanding, setShowLanding] = useState(true);
   const [activeTab, setActiveTab] = useState<'audit' | 'simulator' | 'legislation'>('audit');
   const [isLoading, setIsLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
@@ -518,6 +520,127 @@ export default function App() {
     setPaywallResponse(null);
     setErrorMsg(null);
   };
+
+  if (showLanding) {
+    return (
+      <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col font-sans selection:bg-amber-500/35 selection:text-slate-100 relative overflow-hidden" id="melotwo-safety-landing">
+        {/* Amber glowing background ambient highlights */}
+        <div className="absolute top-[-20%] left-[-10%] w-[50%] h-[50%] bg-amber-500/10 rounded-full blur-[120px] pointer-events-none" />
+        <div className="absolute bottom-[-20%] right-[-10%] w-[50%] h-[50%] bg-sky-500/10 rounded-full blur-[120px] pointer-events-none" />
+        
+        {/* Subtle grid pattern overlay */}
+        <div className="absolute inset-0 bg-[linear-gradient(to_right,#1e293b_1px,transparent_1px),linear-gradient(to_bottom,#1e293b_1px,transparent_1px)] bg-[size:4rem_4rem] [mask-image:radial-gradient(ellipse_60%_50%_at_50%_50%,#000_70%,transparent_100%)] opacity-35 pointer-events-none" />
+
+        {/* Top bar warning stripe */}
+        <div className="h-1.5 w-full bg-[repeating-linear-gradient(45deg,#f59e0b,#f59e0b_10px,#090d16_10px,#090d16_20px)]" />
+
+        {/* Header container */}
+        <header className="max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-6 flex items-center justify-between relative z-10">
+          <div className="flex items-center gap-3">
+            <div className="h-10 w-10 bg-gradient-to-br from-amber-500 to-amber-600 rounded-lg flex items-center justify-center shadow-lg shadow-amber-950/45 shrink-0 border border-amber-400/25">
+              <Shield className="w-6 h-6 text-slate-950 stroke-[2.5]" id="landing-logo-shield" />
+            </div>
+            <div>
+              <div className="flex items-center gap-2">
+                <span className="text-lg font-black uppercase tracking-tight text-amber-500 font-display">MELOTWO</span>
+                <span className="text-[9px] bg-amber-500/10 border border-amber-500/30 text-amber-400 px-1.5 py-0.5 rounded font-mono font-bold tracking-wider uppercase">
+                  S-Tier SECURE
+                </span>
+              </div>
+              <span className="text-[10px] text-slate-400 font-mono tracking-wider">PORTAL ID: ZA-9942-K</span>
+            </div>
+          </div>
+          <div className="text-xs font-mono bg-slate-900/80 border border-slate-800 px-3 py-1.5 rounded-lg text-amber-500 flex items-center gap-2">
+            <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse" />
+            <span>SHEQ CORE READY</span>
+          </div>
+        </header>
+
+        {/* Hero Section */}
+        <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 flex flex-col justify-center items-center py-12 md:py-20 relative z-10">
+          <div className="text-center max-w-4xl space-y-6">
+            <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-amber-500/10 border border-amber-500/20 text-amber-400 text-xs font-mono uppercase tracking-wider mb-2">
+              <AlertTriangle className="w-3.5 h-3.5 text-amber-500" />
+              DMRE Compliance &amp; Litigation Defense Engine
+            </div>
+
+            <h1 className="text-4xl sm:text-6xl font-black uppercase tracking-tight text-slate-100 font-display leading-[1.1]" id="landing-hero-heading">
+              Melotwo Mine <span className="text-amber-500">Safety Engine</span>
+            </h1>
+
+            <p className="text-base sm:text-lg text-slate-300 leading-relaxed max-w-2xl mx-auto font-sans">
+              Advanced compliance audit terminal for South African National Standards (<strong className="text-amber-400">SANS 724, 20345, and 434</strong>). Defend deep-level operations against invisible material decay and safety litigation risks.
+            </p>
+
+            {/* Action Buttons */}
+            <div className="flex flex-col sm:flex-row items-center justify-center gap-4 pt-6">
+              <button
+                onClick={() => setShowLanding(false)}
+                className="w-full sm:w-auto bg-gradient-to-r from-amber-400 to-amber-600 hover:from-amber-300 hover:to-amber-500 text-slate-950 font-black px-8 py-4 rounded-xl text-sm uppercase tracking-wider transition-all shadow-xl shadow-amber-950/40 cursor-pointer flex items-center justify-center gap-2 group font-sans"
+                id="cta-secure-audit"
+              >
+                Secure Your Operational Audit
+                <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-1" />
+              </button>
+              <button
+                onClick={() => setShowLanding(false)}
+                className="w-full sm:w-auto bg-slate-900/60 hover:bg-slate-900 border border-slate-700 hover:border-slate-600 text-slate-200 font-bold px-8 py-4 rounded-xl text-sm uppercase tracking-wider transition-all cursor-pointer font-sans"
+                id="cta-explore-platform"
+              >
+                Explore the Platform
+              </button>
+            </div>
+          </div>
+
+          {/* Grid highlights */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 w-full max-w-5xl mt-16 md:mt-24">
+            <div className="bg-slate-900/40 border border-slate-800 rounded-2xl p-6 space-y-3 backdrop-blur-sm hover:border-amber-500/30 transition-colors" id="feature-sans-audit">
+              <div className="h-10 w-10 bg-amber-500/10 border border-amber-500/20 rounded-lg flex items-center justify-center text-amber-500">
+                <CheckCircle className="w-5 h-5" />
+              </div>
+              <h3 className="text-sm font-bold uppercase tracking-wider text-slate-100 font-display">S-Tier SANS Auditing</h3>
+              <p className="text-xs text-slate-400 leading-relaxed font-sans">
+                Audit material resilience including inherent aramid atomic-level flame retardancy versus surface chemical treatments under severe South African thermal profiles.
+              </p>
+            </div>
+
+            <div className="bg-slate-900/40 border border-slate-800 rounded-2xl p-6 space-y-3 backdrop-blur-sm hover:border-amber-500/30 transition-colors" id="feature-offline-resilience">
+              <div className="h-10 w-10 bg-amber-500/10 border border-amber-500/20 rounded-lg flex items-center justify-center text-amber-500">
+                <Cpu className="w-5 h-5" />
+              </div>
+              <h3 className="text-sm font-bold uppercase tracking-wider text-slate-100 font-display">Offline Fallback Engine</h3>
+              <p className="text-xs text-slate-400 leading-relaxed font-sans">
+                Full client-side fallback compliance calculators. Continue active pre-shift inspections and DSTI briefs securely even when underground or out of cell coverage.
+              </p>
+            </div>
+
+            <div className="bg-slate-900/40 border border-slate-800 rounded-2xl p-6 space-y-3 backdrop-blur-sm hover:border-amber-500/30 transition-colors" id="feature-degradation-simulator">
+              <div className="h-10 w-10 bg-amber-500/10 border border-amber-500/20 rounded-lg flex items-center justify-center text-amber-500">
+                <Factory className="w-5 h-5" />
+              </div>
+              <h3 className="text-sm font-bold uppercase tracking-wider text-slate-100 font-display">Degradation Simulator</h3>
+              <p className="text-xs text-slate-400 leading-relaxed font-sans">
+                Model chemical wash cycles, track polyurethane sole hydrolytic degradation under Acid Mine Drainage (AMD), and maintain rigorous SHEQ oversight.
+              </p>
+            </div>
+          </div>
+        </main>
+
+        {/* Quiet footer */}
+        <footer className="border-t border-slate-900 py-6 text-center text-[11px] text-slate-500 relative z-10 bg-slate-950" id="landing-footer">
+          <div className="max-w-7xl mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-4">
+            <div className="flex items-center gap-1.5 font-mono">
+              <Users className="w-4 h-4 text-amber-500" />
+              <span className="font-bold tracking-wider uppercase">SANS COMPLIANCE INTERFACE</span>
+            </div>
+            <p className="font-sans text-slate-650">
+              Approved for regulatory risk mitigation under DMRE guidelines. All Rights Reserved.
+            </p>
+          </div>
+        </footer>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-sleek-radial text-slate-100 flex flex-col font-sans selection:bg-sky-500/35 selection:text-slate-100" id="main-safety-app-root">
