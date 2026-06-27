@@ -128,21 +128,329 @@ export default function App() {
     }
   };
 
+  // Client-Side High-Fidelity SANS & DSTI Evaluation Engine
+  const getClientSideAuditReport = (params: MineParams, dailyShiftCheck?: boolean, dailyDstiCheck?: boolean): any => {
+    if (dailyDstiCheck) {
+      const mineName = params.mineName || "MeloTwo Construction Site Block 4";
+      const sector = params.miningSector || "gold";
+      return {
+        auditSummary: {
+          complianceScore: 100,
+          riskLevel: "LOW",
+          regulatoryFrameworksChecked: ["SANS 10085 (Design of access scaffolding)", "SANS 50353 (Fall protection systems)", "South African Construction Regulations 2014"],
+          primaryThreatIdentified: "None - Daily Construction DSTI completed successfully"
+        },
+        riskAnalysis: {
+          theVillain: "Elevated fall hazards and scaffolding failures before tasks start.",
+          technicalDeficitReasoning: "Uninspected working at heights harness lines and base structural checks.",
+          potentialFinancialImpact: "Zero active construction liabilities when daily pre-task instructions are strictly completed."
+        },
+        complianceActionPlan: {
+          theVow: "To execute daily construction Safe Task Instructions without compromise.",
+          immediateRemediationSteps: ["Inspect fall harnesses", "Lock scaffold wheel systems", "Check tagging on portable drills"],
+          requiredMaterialSpecifications: {
+            fabricTypeRequired: "Heavy-duty high-vis flame retardant workwear",
+            minimumPerformanceRating: "SANS 50353 fall arrest rated",
+            footwearSpecification: "SANS 20345 steel toe shoes with anti-slip tread"
+          }
+        },
+        vendorMatchingCriteria: {
+          targetSupplierCategory: "Construction Safety Outfitters",
+          bulkOrderSpecsSummary: "Daily Construction DSTI active"
+        },
+        dailyDstiBriefing: {
+          briefingTitle: "Daily Construction Safe Task Instruction (DSTI)",
+          siteName: mineName,
+          constructionSector: sector.charAt(0).toUpperCase() + sector.slice(1),
+          hazardsOverview: "Elevated structural rigging, potential falls from heights, unstable scaffolding footings, and electrical shock hazards in wet workspace zones.",
+          toolboxMessage: "Let's work safely today! Always inspect your double-lanyard harness before working above 1.5 meters. Verify that the mobile scaffold's wheels are double-locked before anyone ascends. Never use an electrical tool unless its safety inspection tag is present and valid.",
+          heightsChecklist: [
+            "Double-Lanyard Inspection: Inspect all safety harnesses for fraying, dynamic stress tears, and solid D-ring integrity.",
+            "Anchor Points: Confirm that structural anchor points are load-certified and fall-arrest tethers are secured.",
+            "Drop Zone Barriers: Ensure drop zones below elevated assembly spots are clearly barricaded and warning signages are posted."
+          ],
+          scaffoldChecklist: [
+            "Green Safe Scaff-Tag: Verify that a valid, signed 'Green Tag' is clearly displayed, proving inspection within 24 hours.",
+            "Ground Footing Check: Check that base jacks rest firmly on solid ground with adequate timber sole-boards to spread load.",
+            "Guardrail Security: Confirm that guardrails, intermediate safety midrails, and toe-boards are fully locked into position."
+          ],
+          electricalChecklist: [
+            "Valid Color Tagging: Verify that the portable electric drill/grinder displays a current, color-coded safety inspection tag.",
+            "Cable & Jacket Integrity: Inspect all supply cords for exposed wiring, internal cuts, or temporary electrical tape jointing.",
+            "Earth Leakage Switch test: Perform a fast push-button trip test on the portable Earth Leakage Protection board before operation."
+          ]
+        },
+        _fallback: true
+      };
+    }
+
+    if (dailyShiftCheck) {
+      const sector = params.miningSector || "gold";
+      const mineName = params.mineName || "Melotwo Mine Shaft 2";
+      
+      let hazardsOverview = "";
+      let gearChecklist: string[] = [];
+      let toolboxMessage = "";
+      
+      if (sector === "coal") {
+        hazardsOverview = "High risk of combustible coal dust accumulation and invisible methane pockets in the face.";
+        gearChecklist = [
+          "Verify High-Vis Vest reflectivity is pristine and clear of grease layers.",
+          "Check boot sole pattern depth and ensure no static-conductive metal particles are trapped.",
+          "Ensure oxygen self-rescuer pressure dial reads strictly in the green safe zone.",
+          "Inspect safety helmet suspension for dust grit wear and strap security."
+        ];
+        toolboxMessage = "Stay sharp in the dark! Prioritize high-visibility and ensure methane detection is active. No shortcuts under coal faces today. Go home safe!";
+      } else if (sector === "gold") {
+        hazardsOverview = "Deep subterranean pressure stress and high humidity causing slick walkways and high ambient heat.";
+        gearChecklist = [
+          "Inspect safety footwear: verify sole pattern depth is over 4mm for wet floor traction.",
+          "Check for outsole cracks/chemical degradation from pyritic acid mine drainage water.",
+          "Verify your sweat-resistant high-absorbency shift-suit fabric is dry and clean.",
+          "Ensure waterproof battery seals on headlamps are fully locked."
+        ];
+        toolboxMessage = "Deep-level alertness is our first line of defense. Acid waters degrade substandard PU soles fast. Keep dry, watch the ground, and stay hydrated down there!";
+      } else {
+        hazardsOverview = "Heavy mechanical vehicle operations in confined spaces. High noise levels and seismic vibrations.";
+        gearChecklist = [
+          "Check steel toe cap alignment on both safety boots for balance.",
+          "Ensure ear protection/muffs are present, clean, and seal tightly.",
+          "Inspect safety gloves for physical grip coating fatigue and side tears.",
+          "Test emergency alert whistle tether security."
+        ];
+        toolboxMessage = "Team, heavy haulers are moving across the face today. Keep eyes open, check your grip gloves, and verify steel caps. Let's work together to make this shift accident-free!";
+      }
+
+      return {
+        auditSummary: {
+          complianceScore: 100,
+          riskLevel: "LOW",
+          regulatoryFrameworksChecked: ["SANS 20345", "SANS 434"],
+          primaryThreatIdentified: "None - Daily shift check completed"
+        },
+        riskAnalysis: {
+          theVow: "Pre-shift focus alignment.",
+          theVillain: "Operational complacency before descending.",
+          technicalDeficitReasoning: "Pre-shift fatigue and uninspected personal safety gear.",
+          potentialFinancialImpact: "Zero active liabilities when pre-shift toolbox briefings are strictly followed."
+        },
+        complianceActionPlan: {
+          theVow: "To execute pre-shift safety protocols without fail.",
+          immediateRemediationSteps: ["Equip PPE", "Attend morning toolbox briefing", "Perform descending check"],
+          requiredMaterialSpecifications: {
+            fabricTypeRequired: "Inherent FR Blend",
+            minimumPerformanceRating: "8.4 cal/cm²",
+            footwearSpecification: "SANS 20345 dual-density nitrile sole"
+          }
+        },
+        vendorMatchingCriteria: {
+          targetSupplierCategory: "Industrial Outfitters",
+          bulkOrderSpecsSummary: "Daily check active"
+        },
+        dailyShiftBriefing: {
+          briefingTitle: `Pre-Descending Shift Check: ${mineName} (${sector.toUpperCase()})`,
+          mineType: sector.charAt(0).toUpperCase() + sector.slice(1),
+          hazardsOverview,
+          gearChecklist,
+          toolboxMessage
+        },
+        _fallback: true
+      };
+    }
+
+    // Normal local SANS compliance audit
+    const { miningSector, depthLevel = 1000, environmentHazards = [] } = params;
+    const currentPPE = (params.currentPPE || {}) as any;
+    const fabric = currentPPE.fabricType || "D59 Cotton";
+    const washCycles = Number(currentPPE.fabricWashCycles) || 0;
+    const footwear = currentPPE.footwearSoleMaterial || "Standard PU (Polyurethane)";
+    const arcRating = currentPPE.arcRatingValue || "No rating";
+
+    let complianceScore = 85;
+    const frameworks = ["SANS 434"];
+    const threats: string[] = [];
+    const remediation: string[] = [];
+    let riskLevel: "CRITICAL" | "HIGH" | "MEDIUM" | "LOW" = "MEDIUM";
+    
+    let villainText = "";
+    let techDeficit = "";
+    let financialImpact = "";
+    let requiredFabricType = "Inherent FR Blend (Aramid/Modacrylic)";
+    let requiredArcMin = "8 cal/cm²";
+    let requiredFootwear = "Vulcanized AMD-resistant Nitrile Sole (SANS 20345)";
+
+    const hasAMD = environmentHazards.includes("Acid Mine Drainage") || depthLevel > 1500 || miningSector === "gold";
+    if (hasAMD) {
+      frameworks.push("SANS 20345");
+      if (footwear.includes("PU") || footwear.includes("Polyurethane")) {
+        complianceScore -= 25;
+        threats.push("Acid Mine Drainage Sole Disintegration");
+        remediation.push("Immediately replace standard PU (Polyurethane) safety boots with dual-density vulcanized Nitrile rubber soles.");
+        villainText += "Acid Mine Drainage (AMD) containing sulfuric acid from deep pyritic strata directly reacts with and disintegrates Polyurethane outsoles. ";
+        techDeficit += "PU soles suffer hydrolytic attack when exposed to acidic water, making them brittle and leading to sudden tread loss. ";
+        financialImpact += "Worker slip-and-fall injuries, exposure to caustic acidic waters, medical claims, and standard SANS 20345 non-compliance fines up to ZAR 500k. ";
+      }
+    }
+
+    const isCoal = miningSector === "coal";
+    const hasFlashFire = environmentHazards.includes("Thermal/Flash Fire") || isCoal || environmentHazards.includes("Electric Arc");
+    if (hasFlashFire) {
+      if (isCoal) frameworks.push("SANS 1423");
+      if (environmentHazards.includes("Electric Arc")) frameworks.push("SANS 724");
+
+      const isPoly = fabric.includes("Poly");
+      const isTreated = fabric.includes("Treated");
+      
+      if (isPoly) {
+        complianceScore -= 40;
+        threats.push("Polyester Melting & Skin Fusion Threat");
+        remediation.push("Ban all polyester-blend garments from active underground or smelter faces. Enforce inherent non-melting protection.");
+        villainText += "Synthetic plastic fabrics in explosive/combustible thermal zones. ";
+        techDeficit += "Polyester under extreme high-temperature electric arc or flash fire shocks melts directly into severe, deep-dermal third-degree burns. ";
+        financialImpact += "ZAR Millions in employee treatment, legal litigation under section 86 of the MHSA, and potential Section 54 shaft shutdown instructions by the DMRE. ";
+      } else if (isTreated && washCycles > 30) {
+        complianceScore -= 20;
+        threats.push("Invisible FR Protection Wash-out Gaps");
+        remediation.push("Institute a strict RFID/barcode laundering tracking manifest or migrate to inherent atomic-level FR fibers.");
+        villainText += "Flame-retardant capabilities leaching away invisibly during laundry cycles. ";
+        techDeficit += "Treated Flame-Retardant cotton relies on surface chemical coatings. Regular harsh mine washing degrades these surface chemicals over 30-50 wash cycles. ";
+        financialImpact += "Catastrophic third-degree burns during flash fire ignitions, severe liability for SHEQ officers. ";
+      }
+    }
+
+    if (environmentHazards.includes("Electric Arc")) {
+      if (arcRating === "No rating" || parseInt(arcRating) < 8) {
+        complianceScore -= 20;
+        threats.push("Insufficient Electric Arc Blast PPE Rating");
+        remediation.push("Upgrade all electrical switching staff to certified SANS 724 garments with Arc Thermal Performance Value (ATPV) exceeding 8 cal/cm².");
+        villainText += "Sub-standard ATPV clothing exposed to high-energy substation switches. ";
+        techDeficit += "Current garments offer insufficient insulation under plasma-arc fault explosions. ";
+        financialImpact += "Compensable fatal injuries, total switchboard destruction downtime (costing upwards of ZAR 1.5M/day). ";
+      }
+    }
+
+    if (complianceScore < 50) {
+      riskLevel = "CRITICAL";
+    } else if (complianceScore < 75) {
+      riskLevel = "HIGH";
+    } else if (complianceScore < 90) {
+      riskLevel = "MEDIUM";
+    } else {
+      riskLevel = "LOW";
+    }
+
+    const generatedId = `AUD-${Math.floor(100000 + Math.random() * 900000)}`;
+    const dateStr = new Date().toISOString().split("T")[0];
+
+    return {
+      auditSummary: {
+        complianceScore: Math.max(10, complianceScore),
+        riskLevel,
+        regulatoryFrameworksChecked: frameworks,
+        primaryThreatIdentified: threats[0] || "None - Gear aligns with primary localized SANS guidelines"
+      },
+      riskAnalysis: {
+        theVillain: villainText || "Minor unmitigated equipment friction gaps.",
+        technicalDeficitReasoning: techDeficit || "Standard mechanical wear on personal protective garments.",
+        potentialFinancialImpact: financialImpact || "No direct DMRE action. Maintain current proactive equipment refresh cycles."
+      },
+      complianceActionPlan: {
+        theVow: "To enforce permanent safety alignment under South African safety benchmarks.",
+        immediateRemediationSteps: remediation.length > 0 ? remediation : ["Conduct continuous quarterly fitment checks", "Record all PPE washing cycles"],
+        requiredMaterialSpecifications: {
+          fabricTypeRequired: requiredFabricType,
+          minimumPerformanceRating: requiredArcMin,
+          footwearSpecification: requiredFootwear
+        }
+      },
+      vendorMatchingCriteria: {
+        targetSupplierCategory: "SANS-Certified Protective Equipment Distributors",
+        bulkOrderSpecsSummary: `Requires protective uniforms and safety boots meeting SANS 20345 specifications.`
+      },
+      historyLog: {
+        id: generatedId,
+        date: dateStr,
+        mineName: params.mineName || "Melotwo Mine Shaft 2",
+        complianceScore: Math.max(10, complianceScore),
+        riskLevel,
+        summary: threats[0] || "Compliant safety posture under current inventory checks."
+      },
+      riskHeatmap: {
+        likelihood: complianceScore < 60 ? "Almost Certain" : complianceScore < 80 ? "Likely" : "Possible",
+        consequence: hasFlashFire ? "Catastrophic" : hasAMD ? "Major" : "Moderate",
+        score: `${Math.max(10, complianceScore)}/100`,
+        zone: riskLevel,
+        mitigation: remediation[0] || "Maintain quarterly safety gear audit audits."
+      },
+      pdfExport: {
+        title: "OFFLINE SANS COMPLIANCE AUDIT RECORD",
+        subtitle: `${params.mineName || "Melotwo Mine Shaft 2"} - Compiled Offline`,
+        sections: [
+          {
+            header: "1. Executive Summary & Scoring",
+            content: [`Compliance Score: ${Math.max(10, complianceScore)}/100 (Risk: ${riskLevel})`, `Primary threat: ${threats[0] || "None detected."}`]
+          },
+          {
+            header: "2. Technical Material Defense Assessment",
+            content: [villainText || "Inventory fully matched to regional SANS hazard blueprints."]
+          }
+        ]
+      },
+      _fallback: true
+    };
+  };
+
   // Execute the audit by calling our server.ts backend endpoint
-  const handleRunAudit = async (params: MineParams, dailyShiftCheck?: boolean) => {
+  const handleRunAudit = async (params: MineParams, dailyShiftCheck?: boolean, dailyDstiCheck?: boolean) => {
     setIsLoading(true);
     setErrorMsg(null);
     setCurrentParams(params);
 
-    // Dynamic state fetch
+    // Save parameters locally to browser's localStorage immediately (Frontline offline resilience)
+    try {
+      localStorage.setItem("last_sans_params", JSON.stringify(params));
+    } catch (e) {
+      console.error("Local caching of audit parameters failed", e);
+    }
+
+    // Dynamic premium check
     const currentIsPremium = localStorage.getItem("sans_trial_active") === "true";
     let countToUse = auditCount;
     
-    if (!dailyShiftCheck) {
+    if (!dailyShiftCheck && !dailyDstiCheck) {
       countToUse = auditCount + 1;
-      // Save count to localStorage and state only if it is NOT a free daily shift check
       setAuditCount(countToUse);
       localStorage.setItem("sans_audit_count", countToUse.toString());
+    }
+
+    // Optimization for static deployments (e.g. GitHub Pages) or offline network states
+    const isStaticDeploy = window.location.hostname.includes("github.io") || !navigator.onLine;
+
+    if (isStaticDeploy) {
+      // Instant standalone client-side calculation to bypass non-existent server
+      setTimeout(() => {
+        try {
+          const reportData = getClientSideAuditReport(params, dailyShiftCheck, dailyDstiCheck);
+          setAuditReport(reportData);
+          setPaywallResponse(null);
+
+          // Save to history logs
+          if (reportData.historyLog) {
+            setAuditHistory(prev => {
+              const updated = [reportData.historyLog, ...prev.filter(h => h.id !== reportData.historyLog.id)];
+              const trimmed = updated.slice(0, 10);
+              localStorage.setItem("sans_audit_history", JSON.stringify(trimmed));
+              return trimmed;
+            });
+          }
+        } catch (err: any) {
+          console.error("Local client-side audit engine error:", err);
+          setErrorMsg("Local compliance evaluator failed to resolve. Check parameters.");
+        } finally {
+          setIsLoading(false);
+        }
+      }, 500);
+      return;
     }
 
     try {
@@ -155,7 +463,8 @@ export default function App() {
           ...params,
           audit_count: countToUse,
           is_premium: currentIsPremium,
-          daily_shift_check: dailyShiftCheck ? true : false
+          daily_shift_check: dailyShiftCheck ? true : false,
+          daily_dsti_check: dailyDstiCheck ? true : false
         })
       });
 
@@ -165,7 +474,6 @@ export default function App() {
 
       const reportData = await response.json();
       
-      // If paywall_locked status is returned, store paywall state
       if (reportData.status === "paywall_locked") {
         setPaywallResponse(reportData);
         setAuditReport(null);
@@ -173,7 +481,6 @@ export default function App() {
         setAuditReport(reportData);
         setPaywallResponse(null);
 
-        // Save to audit history logs if historyLog is present
         if (reportData.historyLog) {
           setAuditHistory(prev => {
             const updated = [reportData.historyLog, ...prev.filter(h => h.id !== reportData.historyLog.id)];
@@ -184,8 +491,23 @@ export default function App() {
         }
       }
     } catch (err: any) {
-      console.error("Failed to fetch SANS audit details:", err);
-      setErrorMsg(err.message || "Auditing node failed to establish connection. Double check configuration.");
+      console.warn("Server node unavailable. Falling back to local offline-safe SANS evaluator.", err);
+      // Beautiful seamless fallback to high-fidelity client-side calculations
+      try {
+        const fallbackReport = getClientSideAuditReport(params, dailyShiftCheck, dailyDstiCheck);
+        setAuditReport(fallbackReport);
+        setPaywallResponse(null);
+        if (fallbackReport.historyLog) {
+          setAuditHistory(prev => {
+            const updated = [fallbackReport.historyLog, ...prev.filter(h => h.id !== fallbackReport.historyLog.id)];
+            const trimmed = updated.slice(0, 10);
+            localStorage.setItem("sans_audit_history", JSON.stringify(trimmed));
+            return trimmed;
+          });
+        }
+      } catch (fallbackErr) {
+        setErrorMsg("Failed to establish server connection and local SANS evaluator is unavailable.");
+      }
     } finally {
       setIsLoading(false);
     }
@@ -243,6 +565,15 @@ export default function App() {
           </div>
         </div>
       </header>
+
+      {/* Offline Mode Banner */}
+      <div className="bg-amber-500 text-slate-950 font-sans text-xs px-4 py-2 flex items-center justify-center gap-2 font-bold shadow-md select-none relative z-40 shrink-0 print:hidden" id="offline-mode-status-banner">
+        <Database className="w-4 h-4 animate-pulse shrink-0 text-slate-950" />
+        <span>Running in Offline-Safe Local Mode. Data saved to device.</span>
+        <span className="hidden md:inline bg-slate-950 text-amber-400 text-[9px] font-black tracking-widest px-1.5 py-0.5 rounded font-mono uppercase">
+          SANS &amp; DSTI Active
+        </span>
+      </div>
 
       {/* 2. Main Workspace Layout */}
       <main className="flex-1 max-w-7xl w-full mx-auto px-4 py-8 sm:px-6 lg:px-8 space-y-8 print:p-0 print:m-0" id="app-workspace-body">
