@@ -156,6 +156,147 @@ Bulk specs summary: ${vendorMatchingCriteria.bulkOrderSpecsSummary}`;
         </div>
       )}
 
+      {/* Daily Construction DSTI Card */}
+      {report.dailyDstiBriefing && (
+        <div className="bg-[#0f172a] border-2 border-orange-500/40 rounded-2xl p-6 shadow-xl shadow-orange-950/20 relative overflow-hidden animate-fade-in" id="daily-dsti-briefing-panel">
+          <div className="absolute top-0 right-0 bg-orange-500 text-slate-950 text-[9px] font-black tracking-widest px-4 py-1.5 uppercase rounded-bl-xl shadow flex items-center gap-1">
+            <span className="w-2 h-2 rounded-full bg-slate-950 animate-ping" /> Free Construction DSTI Mode
+          </div>
+          
+          <div className="flex items-center gap-3 border-b border-orange-500/20 pb-4 mb-4">
+            <div className="bg-orange-500/10 border border-orange-500/20 p-2.5 rounded-xl">
+              <Building className="w-6 h-6 text-orange-400" />
+            </div>
+            <div>
+              <h3 className="text-lg font-black text-slate-100 uppercase tracking-wider font-display">
+                {report.dailyDstiBriefing.briefingTitle}
+              </h3>
+              <p className="text-xs text-orange-400 font-mono">
+                SANS-Compliant Safe Task Instruction Checklist • Site: {report.dailyDstiBriefing.siteName}
+              </p>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <div className="lg:col-span-1 space-y-4">
+              <div className="bg-orange-950/20 border border-orange-500/10 rounded-xl p-4">
+                <span className="text-[10px] font-bold text-orange-400 uppercase tracking-widest block mb-1">DSTI Site Hazards Overview</span>
+                <p className="text-xs text-slate-300 leading-relaxed font-sans">
+                  {report.dailyDstiBriefing.hazardsOverview}
+                </p>
+              </div>
+
+              <div className="border-l-4 border-orange-500 bg-slate-900/60 p-4 rounded-r-xl">
+                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block mb-1">60-Second Motivation & Briefing Message</span>
+                <p className="text-xs text-orange-300 italic font-medium leading-relaxed font-sans">
+                  "{report.dailyDstiBriefing.toolboxMessage}"
+                </p>
+              </div>
+            </div>
+
+            <div className="lg:col-span-2 space-y-4">
+              <span className="text-[10px] font-bold text-orange-400 uppercase tracking-widest block">Interactive SANS Construction Checks (Tap to Verify)</span>
+              
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                {/* 1. Working at Heights */}
+                <div className="bg-slate-900/40 border border-slate-800 rounded-xl p-3 space-y-2">
+                  <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block border-b border-slate-800 pb-1.5">Heights & Fall Protection</span>
+                  <div className="space-y-1.5">
+                    {report.dailyDstiBriefing.heightsChecklist.map((item, idx) => {
+                      const stepKey = 2000 + idx;
+                      const isChecked = completedSteps[stepKey] || false;
+                      return (
+                        <button
+                          key={idx}
+                          type="button"
+                          onClick={() => toggleStep(stepKey)}
+                          className={`w-full text-left p-2 rounded text-[10px] leading-normal font-semibold transition-all flex items-start gap-1.5 border cursor-pointer ${
+                            isChecked 
+                              ? "bg-orange-950/10 border-orange-500/10 text-slate-500 line-through" 
+                              : "bg-slate-950 border-slate-800/80 text-slate-300 hover:border-orange-500/20"
+                          }`}
+                        >
+                          {isChecked ? (
+                            <CheckSquare className="w-3.5 h-3.5 text-orange-400 shrink-0 mt-0.5" />
+                          ) : (
+                            <Square className="w-3.5 h-3.5 text-slate-600 shrink-0 mt-0.5" />
+                          )}
+                          <span>{item.includes(":") ? item.split(":")[1] : item}</span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                {/* 2. Scaffold Stability */}
+                <div className="bg-slate-900/40 border border-slate-800 rounded-xl p-3 space-y-2">
+                  <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block border-b border-slate-800 pb-1.5">Scaffold Stability</span>
+                  <div className="space-y-1.5">
+                    {report.dailyDstiBriefing.scaffoldChecklist.map((item, idx) => {
+                      const stepKey = 3000 + idx;
+                      const isChecked = completedSteps[stepKey] || false;
+                      return (
+                        <button
+                          key={idx}
+                          type="button"
+                          onClick={() => toggleStep(stepKey)}
+                          className={`w-full text-left p-2 rounded text-[10px] leading-normal font-semibold transition-all flex items-start gap-1.5 border cursor-pointer ${
+                            isChecked 
+                              ? "bg-orange-950/10 border-orange-500/10 text-slate-500 line-through" 
+                              : "bg-slate-950 border-slate-800/80 text-slate-300 hover:border-orange-500/20"
+                          }`}
+                        >
+                          {isChecked ? (
+                            <CheckSquare className="w-3.5 h-3.5 text-orange-400 shrink-0 mt-0.5" />
+                          ) : (
+                            <Square className="w-3.5 h-3.5 text-slate-600 shrink-0 mt-0.5" />
+                          )}
+                          <span>{item.includes(":") ? item.split(":")[1] : item}</span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                {/* 3. Electrical Tagging */}
+                <div className="bg-slate-900/40 border border-slate-800 rounded-xl p-3 space-y-2">
+                  <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block border-b border-slate-800 pb-1.5">Electrical Tool Tagging</span>
+                  <div className="space-y-1.5">
+                    {report.dailyDstiBriefing.electricalChecklist.map((item, idx) => {
+                      const stepKey = 4000 + idx;
+                      const isChecked = completedSteps[stepKey] || false;
+                      return (
+                        <button
+                          key={idx}
+                          type="button"
+                          onClick={() => toggleStep(stepKey)}
+                          className={`w-full text-left p-2 rounded text-[10px] leading-normal font-semibold transition-all flex items-start gap-1.5 border cursor-pointer ${
+                            isChecked 
+                              ? "bg-orange-950/10 border-orange-500/10 text-slate-500 line-through" 
+                              : "bg-slate-950 border-slate-800/80 text-slate-300 hover:border-orange-500/20"
+                          }`}
+                        >
+                          {isChecked ? (
+                            <CheckSquare className="w-3.5 h-3.5 text-orange-400 shrink-0 mt-0.5" />
+                          ) : (
+                            <Square className="w-3.5 h-3.5 text-slate-600 shrink-0 mt-0.5" />
+                          )}
+                          <span>{item.includes(":") ? item.split(":")[1] : item}</span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              </div>
+
+              <div className="text-[10px] text-slate-400 font-mono text-center">
+                Completed {Object.keys(completedSteps).filter(k => (Number(k) >= 2000 && Number(k) < 5000) && completedSteps[Number(k)]).length} of 9 daily construction inspections
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Daily Toolbox Shift Briefing Card */}
       {report.dailyShiftBriefing && (
         <div className="bg-[#0f172a] border-2 border-emerald-500/40 rounded-2xl p-6 shadow-xl shadow-emerald-950/20 relative overflow-hidden" id="daily-shift-briefing-panel">
