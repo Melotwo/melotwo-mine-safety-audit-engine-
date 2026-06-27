@@ -76,6 +76,16 @@ export interface AuditReportResponse {
     gearChecklist: string[];
     toolboxMessage: string;
   };
+  dailyDstiBriefing?: {
+    briefingTitle: string;
+    siteName: string;
+    constructionSector: string;
+    hazardsOverview: string;
+    toolboxMessage: string;
+    heightsChecklist: string[];
+    scaffoldChecklist: string[];
+    electricalChecklist: string[];
+  };
   _fallback?: boolean;
 }
 
