@@ -87,7 +87,7 @@ const App: React.FC = () => {
     }, [currentPage]);
 
     return (
-        <div className="min-h-screen bg-gray-50 font-sans relative flex flex-col">
+        <div className="flex flex-col min-h-screen bg-gray-50 font-sans relative">
             <Navbar 
                 currentPage={currentPage} 
                 setPage={setCurrentPage} 
