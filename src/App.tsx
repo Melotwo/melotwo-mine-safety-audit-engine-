@@ -1488,6 +1488,7 @@ const AppFooter: React.FC = () => (
 // --- Component: SafetyInspectorPage ---
 const SafetyInspectorPage: React.FC = () => {
     // State initialization
+    const [showTerminal, setShowTerminal] = useState(false);
     const [scenario, setScenario] = useState(() => localStorage.getItem('melotwo_inspector_scenario_draft') || '');
     const [systemPrompt, setSystemPrompt] = useState(() => localStorage.getItem('melotwo_inspector_system_prompt_draft') || 'You are a helpful and ethical AI assistant. Do not generate harmful or illegal content.');
     const [response, setResponse] = useState<SafetyInspectionResult | null>(null);
@@ -1604,69 +1605,6 @@ const SafetyInspectorPage: React.FC = () => {
 
     return (
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
-            {/* Dark Industrial Cohesive Marketing Hero Header */}
-            <div className="bg-gradient-to-br from-slate-900 via-indigo-950 to-slate-950 rounded-3xl p-8 md:p-12 shadow-2xl border border-slate-800 relative overflow-hidden mb-12 animate-fade-in">
-                {/* Visual grid overlay for tech/industrial feel */}
-                <div className="absolute inset-0 bg-[linear-gradient(to_right,#1e293b_1px,transparent_1px),linear-gradient(to_bottom,#1e293b_1px,transparent_1px)] bg-[size:4rem_4rem] [mask-image:radial-gradient(ellipse_60%_50%_at_50%_0%,#000_70%,transparent_100%)] opacity-25"></div>
-                
-                {/* Amber decorative safety status line at top */}
-                <div className="absolute top-0 inset-x-0 h-1.5 bg-gradient-to-r from-amber-500 via-indigo-500 to-amber-500"></div>
-                
-                <div className="relative z-10 max-w-4xl mx-auto text-center">
-                    <span className="inline-flex items-center gap-1.5 px-3 py-1 text-xs font-black bg-amber-500/10 border border-amber-500/30 text-amber-500 rounded-full tracking-wider uppercase mb-6 shadow-sm">
-                        <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse"></span>
-                        SANS 10330 & SANS 10142 SUITE
-                    </span>
-                    
-                    <h1 className="text-3xl md:text-5xl font-black text-white tracking-tight leading-tight mb-6">
-                        S-Tier Mine Compliance <span className="text-transparent bg-clip-text bg-gradient-to-r from-amber-400 to-indigo-300">&amp; PPE Material Auditing</span>
-                    </h1>
-                    
-                    <p className="text-slate-300 text-base md:text-lg leading-relaxed max-w-3xl mx-auto mb-10 font-medium">
-                        Empowering SHEQ officers and procurement teams to mitigate litigation risks, simulate material degradation, and enforce SANS compliance automatically.
-                    </p>
-                    
-                    {/* Action Row */}
-                    <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-12">
-                        <button
-                            onClick={() => {
-                                document.getElementById('auditing-terminal-form')?.scrollIntoView({ behavior: 'smooth' });
-                                trackGA4Event('hero_cta_clicked', { action: 'launch_terminal' });
-                            }}
-                            className="w-full sm:w-auto inline-flex items-center justify-center px-8 py-4 bg-amber-500 hover:bg-amber-600 text-slate-950 font-extrabold rounded-2xl shadow-lg shadow-amber-500/20 transform hover:-translate-y-0.5 transition-all duration-200 cursor-pointer"
-                        >
-                            <Zap className="w-5 h-5 mr-2 text-slate-950" />
-                            Launch Auditing Terminal
-                        </button>
-                        
-                        <button
-                            onClick={() => {
-                                setIsDemoModalOpen(true);
-                                trackGA4Event('hero_cta_clicked', { action: 'request_demo_modal' });
-                            }}
-                            className="w-full sm:w-auto inline-flex items-center justify-center px-8 py-4 bg-slate-800/80 hover:bg-slate-800 border border-slate-700 hover:border-slate-600 text-white font-extrabold rounded-2xl shadow-md transform hover:-translate-y-0.5 transition-all duration-200 cursor-pointer"
-                        >
-                            Request Enterprise Demo
-                        </button>
-                    </div>
-
-                    {/* Technical metrics/features row - raw, clean presentation */}
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6 pt-8 border-t border-slate-800/80 text-left">
-                        <div className="p-4 rounded-2xl bg-slate-900/50 border border-slate-800">
-                            <span className="text-xs font-bold text-amber-500 uppercase tracking-widest block mb-1">SANS 10330 HACCP</span>
-                            <p className="text-xs text-slate-400 font-medium leading-relaxed">Portion temperature controls and micro-audit logging for canteen and food prep areas.</p>
-                        </div>
-                        <div className="p-4 rounded-2xl bg-slate-900/50 border border-slate-800">
-                            <span className="text-xs font-bold text-indigo-400 uppercase tracking-widest block mb-1">SANS 10142-1 Wiring</span>
-                            <p className="text-xs text-slate-400 font-medium leading-relaxed">Commercial isolator clearances and insulation testing audits in heavy operations.</p>
-                        </div>
-                        <div className="p-4 rounded-2xl bg-slate-900/50 border border-slate-800">
-                            <span className="text-xs font-bold text-slate-300 uppercase tracking-widest block mb-1">Compliance Ledger</span>
-                            <p className="text-xs text-slate-400 font-medium leading-relaxed">Integrated PII scrubbing and automated threat telemetry logging across audits.</p>
-                        </div>
-                    </div>
-                </div>
-            </div>
 
             {/* Request Enterprise Demo Modal Overlay */}
             {isDemoModalOpen && (
@@ -1777,7 +1715,25 @@ const SafetyInspectorPage: React.FC = () => {
                 </div>
             )}
 
-            <div id="auditing-terminal-form" className="grid lg:grid-cols-12 gap-8 items-start">
+            {showTerminal ? (
+                /* Technical Terminal Layout */
+                <div>
+                    {/* Authorized session back header */}
+                    <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8 bg-slate-900 text-white p-6 rounded-3xl border border-slate-800 shadow-xl animate-fade-in">
+                        <div>
+                            <span className="text-[10px] font-bold tracking-widest text-amber-500 uppercase block mb-0.5 font-mono">AUTHORIZED TERMINAL SESSION</span>
+                            <h2 className="text-lg font-black text-white">SANS 10330 &amp; 10142 Audit Suite</h2>
+                        </div>
+                        <button
+                            type="button"
+                            onClick={() => setShowTerminal(false)}
+                            className="inline-flex items-center px-4 py-2 bg-slate-800 hover:bg-slate-700 text-amber-500 font-bold text-xs rounded-xl border border-slate-700 hover:border-slate-600 transition cursor-pointer"
+                        >
+                            ← Return to Marketing Overview
+                        </button>
+                    </div>
+
+                    <div id="auditing-terminal-form" className="grid lg:grid-cols-12 gap-8 items-start">
                 
                 {/* Left Column: Input Form & Sidebar Widgets */}
                 <div className="lg:col-span-5 flex flex-col gap-6">
@@ -2001,6 +1957,74 @@ const SafetyInspectorPage: React.FC = () => {
                     <PromptMetricsDashboard />
                 </div>
             </div>
+        </div>
+        ) : (
+            /* Premium Landing Page Hero Layout */
+            <div className="bg-gradient-to-br from-slate-900 via-indigo-950 to-slate-950 rounded-3xl p-8 md:p-12 shadow-2xl border border-slate-800 relative overflow-hidden mb-12 animate-fade-in">
+                {/* Visual grid overlay for tech/industrial feel */}
+                <div className="absolute inset-0 bg-[linear-gradient(to_right,#1e293b_1px,transparent_1px),linear-gradient(to_bottom,#1e293b_1px,transparent_1px)] bg-[size:4rem_4rem] [mask-image:radial-gradient(ellipse_60%_50%_at_50%_0%,#000_70%,transparent_100%)] opacity-25"></div>
+                
+                {/* Amber decorative safety status line at top */}
+                <div className="absolute top-0 inset-x-0 h-1.5 bg-gradient-to-r from-amber-500 via-indigo-500 to-amber-500"></div>
+                
+                <div className="relative z-10 max-w-4xl mx-auto text-center">
+                    <span className="inline-flex items-center gap-1.5 px-3 py-1 text-xs font-black bg-amber-500/10 border border-amber-500/30 text-amber-500 rounded-full tracking-wider uppercase mb-6 shadow-sm">
+                        <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse"></span>
+                        SANS 10330 & SANS 10142 SUITE
+                    </span>
+                    
+                    <h1 className="text-3xl md:text-5xl font-black text-white tracking-tight leading-tight mb-6">
+                        S-Tier Mine Compliance <span className="text-transparent bg-clip-text bg-gradient-to-r from-amber-400 to-indigo-300">&amp; PPE Material Auditing</span>
+                    </h1>
+                    
+                    <p className="text-slate-300 text-base md:text-lg leading-relaxed max-w-3xl mx-auto mb-10 font-medium">
+                        Empowering SHEQ officers and procurement teams to mitigate litigation risks, simulate material degradation, and enforce SANS compliance automatically.
+                    </p>
+                    
+                    {/* Action Row */}
+                    <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-12">
+                        <button
+                            type="button"
+                            onClick={() => {
+                                setShowTerminal(true);
+                                trackGA4Event('hero_cta_clicked', { action: 'launch_terminal' });
+                            }}
+                            className="w-full sm:w-auto inline-flex items-center justify-center px-8 py-4 bg-amber-500 hover:bg-amber-600 text-slate-950 font-extrabold rounded-2xl shadow-lg shadow-amber-500/20 transform hover:-translate-y-0.5 transition-all duration-200 cursor-pointer"
+                        >
+                            <Zap className="w-5 h-5 mr-2 text-slate-950" />
+                            Launch Auditing Terminal
+                        </button>
+                        
+                        <button
+                            type="button"
+                            onClick={() => {
+                                setIsDemoModalOpen(true);
+                                trackGA4Event('hero_cta_clicked', { action: 'request_demo_modal' });
+                            }}
+                            className="w-full sm:w-auto inline-flex items-center justify-center px-8 py-4 bg-slate-800/80 hover:bg-slate-800 border border-slate-700 hover:border-slate-600 text-white font-extrabold rounded-2xl shadow-md transform hover:-translate-y-0.5 transition-all duration-200 cursor-pointer"
+                        >
+                            Request Enterprise Demo
+                        </button>
+                    </div>
+
+                    {/* Technical metrics/features row - raw, clean presentation */}
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6 pt-8 border-t border-slate-800/80 text-left">
+                        <div className="p-4 rounded-2xl bg-slate-900/50 border border-slate-800">
+                            <span className="text-xs font-bold text-amber-500 uppercase tracking-widest block mb-1">SANS 10330 HACCP</span>
+                            <p className="text-xs text-slate-400 font-medium leading-relaxed">Portion temperature controls and micro-audit logging for canteen and food prep areas.</p>
+                        </div>
+                        <div className="p-4 rounded-2xl bg-slate-900/50 border border-slate-800">
+                            <span className="text-xs font-bold text-indigo-400 uppercase tracking-widest block mb-1">SANS 10142-1 Wiring</span>
+                            <p className="text-xs text-slate-400 font-medium leading-relaxed">Commercial isolator clearances and insulation testing audits in heavy operations.</p>
+                        </div>
+                        <div className="p-4 rounded-2xl bg-slate-900/50 border border-slate-800">
+                            <span className="text-xs font-bold text-slate-300 uppercase tracking-widest block mb-1">Compliance Ledger</span>
+                            <p className="text-xs text-slate-400 font-medium leading-relaxed">Integrated PII scrubbing and automated threat telemetry logging across audits.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        )}
         </div>
     );
 };
