@@ -1496,6 +1496,13 @@ const SafetyInspectorPage: React.FC = () => {
     const [history, setHistory] = useState<InspectionHistoryItem[]>([]);
     const [historySearchTerm, setHistorySearchTerm] = useState('');
 
+    // Lead generation states for Enterprise Demo
+    const [isDemoModalOpen, setIsDemoModalOpen] = useState(false);
+    const [demoName, setDemoName] = useState('');
+    const [demoEmail, setDemoEmail] = useState('');
+    const [demoCompany, setDemoCompany] = useState('');
+    const [demoSubmitted, setDemoSubmitted] = useState(false);
+
     // Effects
     useEffect(() => { localStorage.setItem('melotwo_inspector_scenario_draft', scenario); }, [scenario]);
     useEffect(() => { localStorage.setItem('melotwo_inspector_system_prompt_draft', systemPrompt); }, [systemPrompt]);
@@ -1597,14 +1604,180 @@ const SafetyInspectorPage: React.FC = () => {
 
     return (
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
-            <div className="text-center mb-12">
-                <h1 className="text-4xl font-extrabold text-gray-900 tracking-tight">SANS Compliance & Safety Inspector</h1>
-                <p className="mt-3 text-lg text-gray-500">
-                    Verify South African National Standards compliance, simulate red-team attacks, and secure operational audits.
-                </p>
+            {/* Dark Industrial Cohesive Marketing Hero Header */}
+            <div className="bg-gradient-to-br from-slate-900 via-indigo-950 to-slate-950 rounded-3xl p-8 md:p-12 shadow-2xl border border-slate-800 relative overflow-hidden mb-12 animate-fade-in">
+                {/* Visual grid overlay for tech/industrial feel */}
+                <div className="absolute inset-0 bg-[linear-gradient(to_right,#1e293b_1px,transparent_1px),linear-gradient(to_bottom,#1e293b_1px,transparent_1px)] bg-[size:4rem_4rem] [mask-image:radial-gradient(ellipse_60%_50%_at_50%_0%,#000_70%,transparent_100%)] opacity-25"></div>
+                
+                {/* Amber decorative safety status line at top */}
+                <div className="absolute top-0 inset-x-0 h-1.5 bg-gradient-to-r from-amber-500 via-indigo-500 to-amber-500"></div>
+                
+                <div className="relative z-10 max-w-4xl mx-auto text-center">
+                    <span className="inline-flex items-center gap-1.5 px-3 py-1 text-xs font-black bg-amber-500/10 border border-amber-500/30 text-amber-500 rounded-full tracking-wider uppercase mb-6 shadow-sm">
+                        <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse"></span>
+                        SANS 10330 & SANS 10142 SUITE
+                    </span>
+                    
+                    <h1 className="text-3xl md:text-5xl font-black text-white tracking-tight leading-tight mb-6">
+                        S-Tier Mine Compliance <span className="text-transparent bg-clip-text bg-gradient-to-r from-amber-400 to-indigo-300">&amp; PPE Material Auditing</span>
+                    </h1>
+                    
+                    <p className="text-slate-300 text-base md:text-lg leading-relaxed max-w-3xl mx-auto mb-10 font-medium">
+                        Empowering SHEQ officers and procurement teams to mitigate litigation risks, simulate material degradation, and enforce SANS compliance automatically.
+                    </p>
+                    
+                    {/* Action Row */}
+                    <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-12">
+                        <button
+                            onClick={() => {
+                                document.getElementById('auditing-terminal-form')?.scrollIntoView({ behavior: 'smooth' });
+                                trackGA4Event('hero_cta_clicked', { action: 'launch_terminal' });
+                            }}
+                            className="w-full sm:w-auto inline-flex items-center justify-center px-8 py-4 bg-amber-500 hover:bg-amber-600 text-slate-950 font-extrabold rounded-2xl shadow-lg shadow-amber-500/20 transform hover:-translate-y-0.5 transition-all duration-200 cursor-pointer"
+                        >
+                            <Zap className="w-5 h-5 mr-2 text-slate-950" />
+                            Launch Auditing Terminal
+                        </button>
+                        
+                        <button
+                            onClick={() => {
+                                setIsDemoModalOpen(true);
+                                trackGA4Event('hero_cta_clicked', { action: 'request_demo_modal' });
+                            }}
+                            className="w-full sm:w-auto inline-flex items-center justify-center px-8 py-4 bg-slate-800/80 hover:bg-slate-800 border border-slate-700 hover:border-slate-600 text-white font-extrabold rounded-2xl shadow-md transform hover:-translate-y-0.5 transition-all duration-200 cursor-pointer"
+                        >
+                            Request Enterprise Demo
+                        </button>
+                    </div>
+
+                    {/* Technical metrics/features row - raw, clean presentation */}
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6 pt-8 border-t border-slate-800/80 text-left">
+                        <div className="p-4 rounded-2xl bg-slate-900/50 border border-slate-800">
+                            <span className="text-xs font-bold text-amber-500 uppercase tracking-widest block mb-1">SANS 10330 HACCP</span>
+                            <p className="text-xs text-slate-400 font-medium leading-relaxed">Portion temperature controls and micro-audit logging for canteen and food prep areas.</p>
+                        </div>
+                        <div className="p-4 rounded-2xl bg-slate-900/50 border border-slate-800">
+                            <span className="text-xs font-bold text-indigo-400 uppercase tracking-widest block mb-1">SANS 10142-1 Wiring</span>
+                            <p className="text-xs text-slate-400 font-medium leading-relaxed">Commercial isolator clearances and insulation testing audits in heavy operations.</p>
+                        </div>
+                        <div className="p-4 rounded-2xl bg-slate-900/50 border border-slate-800">
+                            <span className="text-xs font-bold text-slate-300 uppercase tracking-widest block mb-1">Compliance Ledger</span>
+                            <p className="text-xs text-slate-400 font-medium leading-relaxed">Integrated PII scrubbing and automated threat telemetry logging across audits.</p>
+                        </div>
+                    </div>
+                </div>
             </div>
 
-            <div className="grid lg:grid-cols-12 gap-8 items-start">
+            {/* Request Enterprise Demo Modal Overlay */}
+            {isDemoModalOpen && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm animate-fade-in">
+                    <div className="bg-white rounded-3xl shadow-2xl border border-gray-100 max-w-lg w-full overflow-hidden animate-scale-up">
+                        <div className="bg-slate-900 p-6 text-white relative">
+                            <button
+                                onClick={() => {
+                                    setIsDemoModalOpen(false);
+                                    setDemoSubmitted(false);
+                                }}
+                                className="absolute top-4 right-4 text-slate-400 hover:text-white text-lg font-bold"
+                            >
+                                ✕
+                            </button>
+                            <span className="text-xs font-bold text-amber-400 uppercase tracking-widest block mb-1">Secure Enterprise Access</span>
+                            <h3 className="text-xl font-bold">Request Enterprise Demo</h3>
+                            <p className="text-xs text-slate-400 mt-1">Get SANS 10330, SANS 10049 & SANS 10142 fully automated compliance pipelines customized for your operational metrics.</p>
+                        </div>
+                        
+                        <div className="p-8">
+                            {demoSubmitted ? (
+                                <div className="text-center py-6">
+                                    <div className="w-12 h-12 bg-green-100 text-green-600 rounded-full flex items-center justify-center mx-auto mb-4">
+                                        <svg className="w-6 h-6 stroke-[3]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                            <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                                        </svg>
+                                    </div>
+                                    <h4 className="text-lg font-bold text-gray-900 mb-1">Demo Request Received</h4>
+                                    <p className="text-sm text-gray-500 mb-6">Our SHEQ integration engineer will contact you shortly at <strong>{demoEmail}</strong>.</p>
+                                    <button
+                                        onClick={() => {
+                                            setIsDemoModalOpen(false);
+                                            setDemoSubmitted(false);
+                                        }}
+                                        className="px-6 py-2.5 text-xs font-bold text-white bg-slate-900 rounded-xl hover:bg-slate-800 transition"
+                                    >
+                                        Return to Terminal
+                                    </button>
+                                </div>
+                            ) : (
+                                <form
+                                    onSubmit={(e) => {
+                                        e.preventDefault();
+                                        if (demoName && demoEmail && demoCompany) {
+                                            setDemoSubmitted(true);
+                                            trackGA4Event('enterprise_demo_submitted', {
+                                                company: demoCompany,
+                                                email_domain: demoEmail.split('@')[1] || ''
+                                            });
+                                        }
+                                    }}
+                                    className="space-y-4"
+                                >
+                                    <div>
+                                        <label className="block text-xs font-bold text-gray-500 uppercase tracking-wide mb-1.5">Full Name</label>
+                                        <input
+                                            type="text"
+                                            required
+                                            value={demoName}
+                                            onChange={(e) => setDemoName(e.target.value)}
+                                            placeholder="e.g. Johnathan Smith"
+                                            className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition"
+                                        />
+                                    </div>
+                                    <div>
+                                        <label className="block text-xs font-bold text-gray-500 uppercase tracking-wide mb-1.5">Company / Operation Name</label>
+                                        <input
+                                            type="text"
+                                            required
+                                            value={demoCompany}
+                                            onChange={(e) => setDemoCompany(e.target.value)}
+                                            placeholder="e.g. Witwatersrand Deep Reef Gold Ltd"
+                                            className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition"
+                                        />
+                                    </div>
+                                    <div>
+                                        <label className="block text-xs font-bold text-gray-500 uppercase tracking-wide mb-1.5">Work Email Address</label>
+                                        <input
+                                            type="email"
+                                            required
+                                            value={demoEmail}
+                                            onChange={(e) => setDemoEmail(e.target.value)}
+                                            placeholder="e.g. j.smith@witgold.co.za"
+                                            className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition"
+                                        />
+                                    </div>
+                                    
+                                    <div className="pt-4 flex gap-3">
+                                        <button
+                                            type="button"
+                                            onClick={() => setIsDemoModalOpen(false)}
+                                            className="flex-1 px-4 py-3 border border-gray-200 text-gray-700 rounded-xl font-bold text-xs hover:bg-gray-50 transition"
+                                        >
+                                            Cancel
+                                        </button>
+                                        <button
+                                            type="submit"
+                                            className="flex-1 px-4 py-3 bg-amber-500 hover:bg-amber-600 text-slate-950 rounded-xl font-black text-xs shadow-md shadow-amber-500/10 transition"
+                                        >
+                                            Submit Request
+                                        </button>
+                                    </div>
+                                </form>
+                            )}
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            <div id="auditing-terminal-form" className="grid lg:grid-cols-12 gap-8 items-start">
                 
                 {/* Left Column: Input Form & Sidebar Widgets */}
                 <div className="lg:col-span-5 flex flex-col gap-6">
