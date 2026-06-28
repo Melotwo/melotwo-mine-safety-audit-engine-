@@ -2,7 +2,6 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { initializeApp } from 'firebase/app';
 import { getAuth, signInAnonymously, signInWithCustomToken } from 'firebase/auth';
 
-import { SolutionsPage } from './pages/SolutionsPage';
 import { SafetyInspectorPage } from './pages/SafetyInspectorPage';
 import { GA4MonitorConsole } from './components/GA4MonitorConsole';
 import { Page } from './types';
@@ -193,15 +192,8 @@ const App: React.FC = () => {
     }, []);
 
     const renderPage = useMemo(() => {
-        switch (currentPage) {
-            case 'solutions':
-                return <SolutionsPage />;
-            case 'inspector':
-            case 'home':
-            default:
-                return <SafetyInspectorPage />;
-        }
-    }, [currentPage]);
+        return <SafetyInspectorPage />;
+    }, []);
 
     return (
         <div className="flex flex-col min-h-screen bg-gray-50 font-sans relative">
