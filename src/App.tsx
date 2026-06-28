@@ -10,6 +10,9 @@ import { SafetyInspectorPage } from './pages/SafetyInspectorPage';
 import { GA4MonitorConsole } from './components/GA4MonitorConsole';
 import { Page } from './types';
 
+// --- Global Setup ---
+// These globals are injected by the AI Studio preview environment.
+// For GitHub Pages or local development, you may need to rely on the fallback or process.env.
 declare const __firebase_config: string | undefined;
 declare const __initial_auth_token: string | undefined;
 
@@ -19,8 +22,10 @@ const App: React.FC = () => {
     const [isAuthReady, setIsAuthReady] = useState(false);
 
     useEffect(() => {
+        // 1. Try to get config from the AI Studio global
         let config = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : null;
 
+        // 2. If valid config not found, check for standard environment variable (common in build pipelines)
         if ((!config || Object.keys(config).length === 0) && typeof process !== 'undefined' && process.env?.REACT_APP_FIREBASE_CONFIG) {
              try {
                  config = JSON.parse(process.env.REACT_APP_FIREBASE_CONFIG);
@@ -29,8 +34,9 @@ const App: React.FC = () => {
              }
         }
 
+        // 3. Fallback: If no config is present, we skip real Auth (Safe for GitHub Pages demo)
         if (!config || Object.keys(config).length === 0) {
-            console.warn("No valid Firebase config found. App will run in offline/demo mode.");
+            console.warn("No valid Firebase config found. App will run in offline/demo mode with a random User ID.");
             setUserId(crypto.randomUUID());
             setIsAuthReady(true);
             return;
@@ -52,6 +58,7 @@ const App: React.FC = () => {
                     setUserId(currentUser?.uid || crypto.randomUUID());
                 } catch (error) {
                     console.error("Firebase Auth flow failed:", error);
+                    // Fallback to random ID so the app remains usable
                     setUserId(crypto.randomUUID()); 
                 } finally {
                     setIsAuthReady(true);
@@ -64,6 +71,7 @@ const App: React.FC = () => {
             setUserId(crypto.randomUUID());
             setIsAuthReady(true);
         }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
     const renderPage = useMemo(() => {
