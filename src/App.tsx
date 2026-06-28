@@ -1,6 +1,4 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
-import { initializeApp } from 'firebase/app';
-import { getAuth, signInAnonymously, signInWithCustomToken } from 'firebase/auth';
 
 // Services
 import { runSafetyInspector } from './services/geminiService';
@@ -1305,54 +1303,9 @@ const App: React.FC = () => {
     const [isAuthReady, setIsAuthReady] = useState(false);
 
     useEffect(() => {
-        // 1. Try to get config from the AI Studio global
-        let config = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : null;
-
-        // 2. If valid config not found, check for standard environment variable
-        if ((!config || Object.keys(config).length === 0) && typeof process !== 'undefined' && process.env?.REACT_APP_FIREBASE_CONFIG) {
-             try {
-                 config = JSON.parse(process.env.REACT_APP_FIREBASE_CONFIG);
-             } catch (e) {
-                 console.warn("Failed to parse REACT_APP_FIREBASE_CONFIG");
-             }
-        }
-
-        // 3. Fallback: Demo Mode
-        if (!config || Object.keys(config).length === 0) {
-            console.warn("No valid Firebase config found. App will run in offline/demo mode with a random User ID.");
-            setUserId(crypto.randomUUID());
-            setIsAuthReady(true);
-            return;
-        }
-
-        try {
-            const app = initializeApp(config);
-            const authInstance = getAuth(app);
-            
-            const authenticate = async () => {
-                try {
-                    const token = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
-                    if (token) {
-                        await signInWithCustomToken(authInstance, token);
-                    } else {
-                        await signInAnonymously(authInstance);
-                    }
-                    const currentUser = authInstance.currentUser;
-                    setUserId(currentUser?.uid || crypto.randomUUID());
-                } catch (error) {
-                    console.error("Firebase Auth flow failed:", error);
-                    setUserId(crypto.randomUUID()); 
-                } finally {
-                    setIsAuthReady(true);
-                }
-            };
-
-            authenticate();
-        } catch (err) {
-            console.error("Failed to initialize Firebase app:", err);
-            setUserId(crypto.randomUUID());
-            setIsAuthReady(true);
-        }
+        // Run with standard local session ID
+        setUserId(crypto.randomUUID());
+        setIsAuthReady(true);
     }, []);
 
     const renderPage = useMemo(() => {
