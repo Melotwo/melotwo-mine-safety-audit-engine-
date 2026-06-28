@@ -1,29 +1,28 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Melotwo Safety Compliance Engine</title>
+    <title>Melotwo AI Safety Inspector</title>
+    <meta name="description" content="AI Safety Guardrails and Inspection Tool" />
 
-    <!-- Mobile App Saveability (PWA Base) -->
-    <meta name="apple-mobile-web-app-capable" content="yes" />
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-    <meta name="apple-mobile-web-app-title" content="Melotwo Safety" />
-    <meta name="mobile-web-app-capable" content="yes" />
-
-    <!-- Google tag (gtag.js) -->
-    <script async src="https://www.googletagmanager.com/gtag/js?id=G-K7P1HPKS7R"></script>
-    <script>
-      window.dataLayer = window.dataLayer || [];
-      function gtag(){dataLayer.push(arguments);}
-      gtag('js', new Date());
-      gtag('config', 'G-K7P1HPKS7R');
-    </script>
-    <script type="module" crossorigin src="./assets/index-Dw3xruDB.js"></script>
-    <link rel="stylesheet" crossorigin href="./assets/index-CgRxtiEf.css">
-  <link rel="manifest" href="./manifest.webmanifest"><script id="vite-plugin-pwa:register-sw" src="./registerSW.js"></script></head>
-  <body>
+  <script type="importmap">
+{
+  "imports": {
+    "react": "https://aistudiocdn.com/react@^19.2.0",
+    "react-dom/": "https://aistudiocdn.com/react-dom@^19.2.0/",
+    "react/": "https://aistudiocdn.com/react@^19.2.0/",
+    "@google/genai": "https://aistudiocdn.com/@google/genai@^1.30.0",
+    "firebase/": "https://aistudiocdn.com/firebase@^12.6.0/",
+    "vite": "https://aistudiocdn.com/vite@^7.2.6",
+    "@vitejs/plugin-react": "https://aistudiocdn.com/@vitejs/plugin-react@^5.1.1"
+  }
+}
+</script>
+  <script type="module" crossorigin src="/assets/index-QiQWbNdD.js"></script>
+  <link rel="stylesheet" crossorigin href="/assets/index-D5Unmxs0.css">
+</head>
+  <body class="bg-gray-50 antialiased text-gray-900">
     <div id="root"></div>
   </body>
 </html>
-
