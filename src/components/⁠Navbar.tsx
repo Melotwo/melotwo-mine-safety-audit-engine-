@@ -9,7 +9,7 @@ interface NavbarProps {
     isAuthReady: boolean;
 }
 
-export const Navbar: React.FC<NavbarProps> = ({ currentPage, setPage, userId, isAuthReady }) => {
+export const AppNavbar: React.FC<NavbarProps> = ({ currentPage, setPage, userId, isAuthReady }) => {
     const navItems: { name: string; page: Page }[] = [
         { name: 'Home', page: 'home' },
         { name: 'Solutions', page: 'solutions' },
@@ -24,6 +24,7 @@ export const Navbar: React.FC<NavbarProps> = ({ currentPage, setPage, userId, is
                     <span className="text-2xl font-extrabold text-gray-900 tracking-tight">Melotwo</span>
                 </button>
                 
+                {/* Changed breakpoint from md to lg for main nav to handle tablet width better */}
                 <nav className="hidden lg:flex space-x-8">
                     {navItems.map(item => (
                         <button
@@ -41,11 +42,13 @@ export const Navbar: React.FC<NavbarProps> = ({ currentPage, setPage, userId, is
                 </nav>
 
                 <div className="flex items-center space-x-3 md:space-x-4">
+                    {/* Auth Status Indicator - Styled as a Polished User Profile Chip */}
                     {isAuthReady && userId ? (
                         <div 
                             id="user-profile-chip" 
                             className="flex items-center gap-2 bg-indigo-50 border border-indigo-100 rounded-full pl-1.5 pr-3.5 py-1 shadow-sm transition-all hover:bg-indigo-100/50"
                         >
+                            {/* Styled Profile Circle / Avatar */}
                             <div className="w-7 h-7 rounded-full bg-gradient-to-tr from-indigo-500 to-purple-600 flex items-center justify-center text-white shadow-sm shrink-0">
                                 <User className="w-4 h-4 stroke-[2.5]" />
                             </div>
@@ -65,6 +68,7 @@ export const Navbar: React.FC<NavbarProps> = ({ currentPage, setPage, userId, is
                 </div>
             </div>
             
+            {/* Mobile/Tablet Sub-nav for smaller screens where main nav is hidden */}
             <div className="lg:hidden border-t border-gray-100 py-2 overflow-x-auto">
                  <div className="flex justify-around px-4 min-w-max">
                     {navItems.map(item => (
