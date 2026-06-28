@@ -1,0 +1,195 @@
+import React, { useState } from 'react';
+import { trackGA4Event } from '../services/analyticsService';
+
+export const UserFeedbackWidget: React.FC = () => {
+  const [isOpen, setIsOpen] = useState(false);
+  const [framework, setFramework] = useState('');
+  const [region, setRegion] = useState('');
+  const [email, setEmail] = useState('');
+  const [submitted, setSubmitted] = useState(false);
+  const [loading, setLoading] = useState(false);
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!framework.trim() || !region.trim()) return;
+
+    setLoading(true);
+    trackGA4Event('ai_generation_requested', {
+      source: 'User Feedback Submission',
+      region,
+      framework
+    });
+
+    setTimeout(() => {
+      // Store in local storage
+      const savedFeedback = localStorage.getItem('melotwo_user_feedback');
+      const list = savedFeedback ? JSON.parse(savedFeedback) : [];
+      list.push({
+        id: crypto.randomUUID(),
+        timestamp: Date.now(),
+        framework,
+        region,
+        email: email || 'anonymous',
+      });
+      localStorage.setItem('melotwo_user_feedback', JSON.stringify(list));
+
+      // Fire success telemetry event
+      trackGA4Event('ai_generation_success', {
+        action: 'submit_compliance_feedback',
+        framework,
+        region,
+        email_provided: !!email
+      });
+
+      setLoading(false);
+      setSubmitted(true);
+      setTimeout(() => {
+        setIsOpen(false);
+        // Reset state after closing
+        setFramework('');
+        setRegion('');
+        setEmail('');
+        setSubmitted(false);
+      }, 2000);
+    }, 600);
+  };
+
+  return (
+    <>
+      {/* High-Contrast Interactive Card Trigger */}
+      <div 
+        id="feedback-hook-trigger"
+        className="bg-gradient-to-br from-indigo-900 via-slate-900 to-indigo-950 border-2 border-amber-500/80 rounded-2xl p-5 shadow-[0_4px_25px_rgba(245,158,11,0.15)] flex flex-col gap-3 relative overflow-hidden"
+      >
+        {/* Decorative caution stripes */}
+        <div className="absolute top-0 right-0 w-16 h-16 pointer-events-none opacity-20">
+          <svg className="w-full h-full text-amber-500" viewBox="0 0 100 100" fill="currentColor">
+            <path d="M0,0 L100,100 M20,0 L100,80 M40,0 L100,60 M60,0 L100,40 M80,0 L100,20 M0,20 L80,100 M0,40 L60,100 M0,60 L40,100 M0,80 L20,100" stroke="currentColor" strokeWidth="15" />
+          </svg>
+        </div>
+
+        <div className="flex items-center gap-2">
+          <span className="flex h-2.5 w-2.5 relative">
+            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75"></span>
+            <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-amber-500"></span>
+          </span>
+          <span className="text-[10px] font-bold tracking-widest text-amber-500 uppercase font-mono">Global Expansion</span>
+        </div>
+
+        <p className="text-slate-200 text-sm font-semibold leading-relaxed">
+          Testing from outside South Africa? Let us know what compliance framework you need!
+        </p>
+
+        <button
+          onClick={() => {
+            setIsOpen(true);
+            trackGA4Event('feedback_modal_opened', { source: 'sidebar_widget' });
+          }}
+          className="self-start mt-1 px-4 py-2 bg-amber-500 hover:bg-amber-600 active:scale-95 text-slate-950 text-xs font-bold rounded-lg transition-all shadow-md flex items-center gap-1.5 cursor-pointer"
+        >
+          Drop Feedback
+          <svg className="w-3.5 h-3.5 stroke-[2]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" d="M6 12L3.269 3.126A59.768 59.768 0 0121.485 12 59.77 59.77 0 013.27 20.876L5.999 12zm0 0h7.5" />
+          </svg>
+        </button>
+      </div>
+
+      {/* Modal Backdrop & Dialog */}
+      {isOpen && (
+        <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4 z-50 animate-fade-in-up">
+          <div className="bg-slate-900 border border-slate-800 rounded-3xl w-full max-w-md p-6 shadow-2xl relative text-slate-100 ring-1 ring-amber-500/20">
+            {/* Caution Line */}
+            <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-amber-500 via-yellow-500 to-amber-600"></div>
+
+            <button
+              onClick={() => setIsOpen(false)}
+              className="absolute top-4 right-4 text-slate-400 hover:text-white transition-colors p-1"
+              aria-label="Close Modal"
+            >
+              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+
+            {!submitted ? (
+              <form onSubmit={handleSubmit} className="space-y-4">
+                <div className="mb-2">
+                  <h3 className="text-xl font-bold text-white tracking-tight">Compliance Request</h3>
+                  <p className="text-xs text-slate-400 mt-1">Help us map international frameworks like FDA, ISO 22000, and NIST.</p>
+                </div>
+
+                <div>
+                  <label className="block text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-1.5 font-mono">Requested Framework</label>
+                  <input
+                    type="text"
+                    required
+                    value={framework}
+                    onChange={e => setFramework(e.target.value)}
+                    placeholder="e.g. ISO 22000, FDA Hygiene, NIST SP 800-53"
+                    className="w-full p-2.5 bg-slate-950 border border-slate-800 rounded-xl text-sm focus:ring-2 focus:ring-amber-500 focus:border-amber-500 outline-none text-slate-100 placeholder:text-slate-600 transition-all"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-1.5 font-mono">Your Operating Region</label>
+                  <input
+                    type="text"
+                    required
+                    value={region}
+                    onChange={e => setRegion(e.target.value)}
+                    placeholder="e.g. United Kingdom, Singapore, Texas (USA)"
+                    className="w-full p-2.5 bg-slate-950 border border-slate-800 rounded-xl text-sm focus:ring-2 focus:ring-amber-500 focus:border-amber-500 outline-none text-slate-100 placeholder:text-slate-600 transition-all"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-1.5 font-mono">Corporate Email (Optional)</label>
+                  <input
+                    type="email"
+                    value={email}
+                    onChange={e => setEmail(e.target.value)}
+                    placeholder="you@company.com"
+                    className="w-full p-2.5 bg-slate-950 border border-slate-800 rounded-xl text-sm focus:ring-2 focus:ring-amber-500 focus:border-amber-500 outline-none text-slate-100 placeholder:text-slate-600 transition-all"
+                  />
+                </div>
+
+                <div className="flex gap-2 pt-2 justify-end">
+                  <button
+                    type="button"
+                    onClick={() => setIsOpen(false)}
+                    className="px-4 py-2 text-xs font-semibold text-slate-400 hover:text-white transition-colors"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={loading}
+                    className="px-5 py-2 bg-amber-500 hover:bg-amber-600 text-slate-950 text-xs font-bold rounded-xl transition-all shadow-[0_0_12px_rgba(245,158,11,0.2)] disabled:opacity-50 flex items-center gap-1.5 cursor-pointer"
+                  >
+                    {loading && (
+                      <svg className="animate-spin h-3.5 w-3.5 text-slate-950" fill="none" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                      </svg>
+                    )}
+                    Submit Framework
+                  </button>
+                </div>
+              </form>
+            ) : (
+              <div className="py-8 flex flex-col items-center justify-center text-center space-y-3">
+                <div className="w-12 h-12 bg-amber-500/10 border border-amber-500 rounded-full flex items-center justify-center text-amber-500 animate-bounce">
+                  <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
+                  </svg>
+                </div>
+                <h3 className="text-lg font-bold text-white">Feedback Received!</h3>
+                <p className="text-xs text-slate-400">Our SANS Compliance mapping team has logged your operational request.</p>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+    </>
+  );
+};
