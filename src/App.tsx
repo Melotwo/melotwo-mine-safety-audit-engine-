@@ -2,8 +2,8 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { initializeApp } from 'firebase/app';
 import { getAuth, signInAnonymously, signInWithCustomToken } from 'firebase/auth';
 
-import { Navbar } from './components/Navbar';
-import { Footer } from './components/Footer';
+import { AppNavbar } from './components/AppNavbar';
+import { AppFooter } from './components/AppFooter';
 import { HomePage } from './pages/HomePage';
 import { SolutionsPage } from './pages/SolutionsPage';
 import { SafetyInspectorPage } from './pages/SafetyInspectorPage';
@@ -88,7 +88,7 @@ const App: React.FC = () => {
 
     return (
         <div className="flex flex-col min-h-screen bg-gray-50 font-sans relative">
-            <Navbar 
+            <AppNavbar 
                 currentPage={currentPage} 
                 setPage={setCurrentPage} 
                 userId={userId} 
@@ -97,7 +97,7 @@ const App: React.FC = () => {
             <main className="flex-grow pt-4">
                 {renderPage}
             </main>
-            <Footer />
+            <AppFooter />
             <GA4MonitorConsole />
         </div>
     );
