@@ -2,7 +2,6 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { initializeApp } from 'firebase/app';
 import { getAuth, signInAnonymously, signInWithCustomToken } from 'firebase/auth';
 
-import { HomePage } from './pages/HomePage';
 import { SolutionsPage } from './pages/SolutionsPage';
 import { SafetyInspectorPage } from './pages/SafetyInspectorPage';
 import { GA4MonitorConsole } from './components/GA4MonitorConsole';
@@ -198,10 +197,9 @@ const App: React.FC = () => {
             case 'solutions':
                 return <SolutionsPage />;
             case 'inspector':
-                return <SafetyInspectorPage />;
             case 'home':
             default:
-                return <HomePage />;
+                return <SafetyInspectorPage />;
         }
     }, [currentPage]);
 
