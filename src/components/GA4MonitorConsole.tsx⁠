@@ -1,0 +1,95 @@
+import React, { useState, useEffect, useRef } from 'react';
+import { subscribeToAnalytics, GA4Event } from '../services/analyticsService';
+
+export const GA4MonitorConsole: React.FC = () => {
+  const [isOpen, setIsOpen] = useState(false);
+  const [events, setEvents] = useState<GA4Event[]>([]);
+  const consoleEndRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const unsubscribe = subscribeToAnalytics((newEvent) => {
+      setEvents(prev => [...prev, newEvent].slice(-30)); // Keep last 30 logs
+      setIsOpen(true); // Auto-expand when a new event fires to showcase telemetry activity
+    });
+    return () => unsubscribe();
+  }, []);
+
+  useEffect(() => {
+    if (consoleEndRef.current) {
+      consoleEndRef.current.scrollIntoView({ behavior: 'smooth' });
+    }
+  }, [events, isOpen]);
+
+  return (
+    <div 
+      className="fixed bottom-4 right-4 z-50 flex flex-col font-mono"
+      id="ga4-telemetry-console"
+    >
+      {/* Trigger Button with pulsing dot */}
+      <button
+        onClick={() => setIsOpen(!isOpen)}
+        className="flex items-center gap-2 px-3 py-2 bg-slate-900 border border-slate-800 rounded-xl text-xs text-slate-300 hover:text-white shadow-2xl transition-all hover:border-blue-500/50 cursor-pointer self-end"
+      >
+        <span className="flex h-2 w-2 relative">
+          <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-75"></span>
+          <span className="relative inline-flex rounded-full h-2 w-2 bg-blue-500"></span>
+        </span>
+        <span>GA4 Telemetry Console ({events.length})</span>
+        <svg 
+          className={`w-3 h-3 transform transition-transform ${isOpen ? 'rotate-180' : ''}`} 
+          fill="none" 
+          viewBox="0 0 24 24" 
+          stroke="currentColor"
+        >
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M19 9l-7 7-7-7" />
+        </svg>
+      </button>
+
+      {/* Console Drawer */}
+      {isOpen && (
+        <div className="mt-2 w-80 md:w-96 bg-slate-950 border border-slate-800 rounded-2xl shadow-2xl overflow-hidden flex flex-col h-64 ring-1 ring-blue-500/20 animate-fade-in-up">
+          {/* Header */}
+          <div className="bg-slate-900 px-4 py-2 border-b border-slate-800 flex justify-between items-center text-[10px] font-bold text-slate-400 tracking-wider uppercase">
+            <span>Live GA4 Event Logger</span>
+            <button 
+              onClick={() => setEvents([])} 
+              className="text-slate-500 hover:text-white transition-colors text-[9px]"
+            >
+              Clear Logs
+            </button>
+          </div>
+
+          {/* Log Stream */}
+          <div className="flex-1 overflow-y-auto p-3 space-y-2 text-[10px] leading-relaxed select-text custom-scrollbar">
+            {events.length === 0 ? (
+              <div className="h-full flex flex-col items-center justify-center text-slate-600 text-center px-4">
+                <p>&gt;_ Waiting for events...</p>
+                <p className="text-[9px] mt-1 text-slate-700">Trigger actions like running an audit, dropping feedback, or modifying charts to see live unmasked GA4 event logs.</p>
+              </div>
+            ) : (
+              events.map((event) => (
+                <div key={event.id} className="border-b border-slate-900/50 pb-2">
+                  <div className="flex justify-between text-slate-500 mb-0.5">
+                    <span>{event.timestamp}</span>
+                    <span className="text-blue-400 font-bold">gtag(&apos;event&apos;)</span>
+                  </div>
+                  <p className="text-amber-400 font-bold">{event.eventName}</p>
+                  <pre className="text-[9px] text-slate-400 mt-1 bg-slate-900/40 p-1.5 rounded-lg overflow-x-auto max-w-full">
+                    {JSON.stringify(event.params, null, 2)}
+                  </pre>
+                </div>
+              ))
+            )}
+            <div ref={consoleEndRef} />
+          </div>
+          
+          {/* Footer */}
+          <div className="bg-slate-900/50 px-4 py-1.5 border-t border-slate-800/80 text-[8px] text-slate-500 flex justify-between">
+            <span>Status: Listening...</span>
+            <span>Unmasked Compliance Agent</span>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
