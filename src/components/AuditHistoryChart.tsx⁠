@@ -1,0 +1,323 @@
+import React, { useState, useEffect, useMemo } from 'react';
+import { trackGA4Event } from '../services/analyticsService';
+
+interface DataPoint {
+  label: string; // date or audit ID
+  complianceScore: number; // 0 - 100
+  riskLevel: number; // 1 - 10
+  ppeDegradation: number; // 0 - 100
+}
+
+export const AuditHistoryChart: React.FC = () => {
+  const [metric, setMetric] = useState<'compliance' | 'risk' | 'ppe'>('compliance');
+  const [hoveredPoint, setHoveredPoint] = useState<number | null>(null);
+
+  // Initial historical audit data
+  const [data, setData] = useState<DataPoint[]>(() => {
+    const saved = localStorage.getItem('melotwo_audit_chart_data');
+    if (saved) {
+      try { return JSON.parse(saved); } catch (e) { /* fallback */ }
+    }
+    return [
+      { label: 'Audit #01', complianceScore: 78, riskLevel: 4, ppeDegradation: 12 },
+      { label: 'Audit #02', complianceScore: 82, riskLevel: 3, ppeDegradation: 18 },
+      { label: 'Audit #03', complianceScore: 65, riskLevel: 6, ppeDegradation: 25 },
+      { label: 'Audit #04', complianceScore: 89, riskLevel: 2, ppeDegradation: 31 },
+      { label: 'Audit #05', complianceScore: 94, riskLevel: 1, ppeDegradation: 42 },
+      { label: 'Audit #06', complianceScore: 91, riskLevel: 2, ppeDegradation: 48 },
+    ];
+  });
+
+  useEffect(() => {
+    localStorage.setItem('melotwo_audit_chart_data', JSON.stringify(data));
+  }, [data]);
+
+  // Method to handle user manually adding an audit record to the history chart
+  const handleAddAuditData = () => {
+    trackGA4Event('ai_generation_requested', {
+      source: 'Add Audit History Chart Action',
+      current_points: data.length
+    });
+
+    const newAuditNum = data.length + 1;
+    const previousPoint = data[data.length - 1] || { complianceScore: 80, riskLevel: 3, ppeDegradation: 30 };
+    
+    // Create organic trending values with slight randomness
+    const variance = Math.floor(Math.random() * 15) - 7; // -7% to +7%
+    const newComplianceScore = Math.max(40, Math.min(100, previousPoint.complianceScore + variance));
+    const newRiskLevel = Math.max(1, Math.min(10, Math.round(10 - (newComplianceScore / 10))));
+    const newPpeDegradation = Math.min(100, previousPoint.ppeDegradation + Math.floor(Math.random() * 10) + 2);
+
+    const newPoint: DataPoint = {
+      label: `Audit #${newAuditNum.toString().padStart(2, '0')}`,
+      complianceScore: newComplianceScore,
+      riskLevel: newRiskLevel,
+      ppeDegradation: newPpeDegradation
+    };
+
+    setTimeout(() => {
+      setData(prev => [...prev, newPoint]);
+      trackGA4Event('ai_generation_success', {
+        action: 'add_audit_history_point',
+        new_point_label: newPoint.label,
+        compliance_score: newPoint.complianceScore,
+        risk_level: newPoint.riskLevel,
+        ppe_degradation: newPoint.ppeDegradation
+      });
+    }, 400); // simulate brief operational computation
+  };
+
+  const activePoints = useMemo(() => {
+    return data.map((d, index) => {
+      let value = d.complianceScore;
+      let maxVal = 100;
+      if (metric === 'risk') {
+        value = d.riskLevel;
+        maxVal = 10;
+      } else if (metric === 'ppe') {
+        value = d.ppeDegradation;
+        maxVal = 100;
+      }
+      return {
+        index,
+        label: d.label,
+        value,
+        raw: d,
+        maxVal
+      };
+    });
+  }, [data, metric]);
+
+  // Chart layout calculations
+  const width = 600;
+  const height = 240;
+  const paddingX = 50;
+  const paddingY = 30;
+
+  const pointsCoordinates = useMemo(() => {
+    if (activePoints.length === 0) return [];
+    const stepX = (width - paddingX * 2) / Math.max(1, activePoints.length - 1);
+    
+    return activePoints.map((p, i) => {
+      const x = paddingX + i * stepX;
+      // SVG Y-0 is top, so invert the value scale
+      const y = height - paddingY - ((p.value / p.maxVal) * (height - paddingY * 2));
+      return { x, y, value: p.value, label: p.label, index: p.index };
+    });
+  }, [activePoints, width, height, paddingX, paddingY]);
+
+  // Generate SVG Path for line
+  const linePath = useMemo(() => {
+    if (pointsCoordinates.length === 0) return '';
+    return pointsCoordinates.reduce((path, p, i) => {
+      return i === 0 ? `M ${p.x} ${p.y}` : `${path} L ${p.x} ${p.y}`;
+    }, '');
+  }, [pointsCoordinates]);
+
+  // Generate SVG Area Path (shaded area below line)
+  const areaPath = useMemo(() => {
+    if (pointsCoordinates.length === 0) return '';
+    const first = pointsCoordinates[0];
+    const last = pointsCoordinates[pointsCoordinates.length - 1];
+    const basePath = pointsCoordinates.reduce((path, p) => `${path} L ${p.x} ${p.y}`, `M ${first.x} ${height - paddingY}`);
+    return `${basePath} L ${last.x} ${height - paddingY} Z`;
+  }, [pointsCoordinates, height, paddingY]);
+
+  const activeYLabel = {
+    compliance: 'Compliance Rate (%)',
+    risk: 'Regional Risk Level (1-10)',
+    ppe: 'PPE Degradation Rate (%)'
+  }[metric];
+
+  return (
+    <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl text-slate-100 flex flex-col gap-6 w-full relative overflow-hidden" id="compliance-history-widget">
+      {/* Decorative safety glow stripe */}
+      <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-amber-500 via-orange-500 to-amber-600 animate-pulse"></div>
+
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 border-b border-slate-800 pb-4">
+        <div>
+          <h3 className="text-lg font-bold tracking-tight text-white flex items-center">
+            <span className="w-2.5 h-2.5 rounded-full bg-amber-500 animate-ping mr-2.5"></span>
+            Operational Compliance & Red Team Analytics
+          </h3>
+          <p className="text-xs text-slate-400 mt-1">Real-time telemetry and South African safety metrics tracking</p>
+        </div>
+
+        {/* Action Button: Add Audit History Chart */}
+        <button
+          onClick={handleAddAuditData}
+          id="btn-add-audit-chart"
+          className="px-3.5 py-1.5 bg-amber-500 hover:bg-amber-600 active:scale-95 text-slate-950 font-bold text-xs rounded-lg transition-all flex items-center shadow-[0_0_15px_rgba(245,158,11,0.3)] hover:shadow-[0_0_22px_rgba(245,158,11,0.5)] cursor-pointer"
+        >
+          <svg className="w-3.5 h-3.5 mr-1.5 stroke-[2.5]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+          </svg>
+          Add Audit History Chart
+        </button>
+      </div>
+
+      {/* Tabs to select metric */}
+      <div className="flex gap-2 bg-slate-950 p-1 rounded-xl border border-slate-800 self-start">
+        <button
+          onClick={() => setMetric('compliance')}
+          className={`px-3 py-1 text-xs font-semibold rounded-lg transition-all ${metric === 'compliance' ? 'bg-amber-500 text-slate-950' : 'text-slate-400 hover:text-white'}`}
+        >
+          Compliance Scores
+        </button>
+        <button
+          onClick={() => setMetric('risk')}
+          className={`px-3 py-1 text-xs font-semibold rounded-lg transition-all ${metric === 'risk' ? 'bg-amber-500 text-slate-950' : 'text-slate-400 hover:text-white'}`}
+        >
+          Risk Levels
+        </button>
+        <button
+          onClick={() => setMetric('ppe')}
+          className={`px-3 py-1 text-xs font-semibold rounded-lg transition-all ${metric === 'ppe' ? 'bg-amber-500 text-slate-950' : 'text-slate-400 hover:text-white'}`}
+        >
+          PPE Degradation
+        </button>
+      </div>
+
+      {/* Responsive SVG Chart */}
+      <div className="relative flex-1 w-full bg-slate-950/40 border border-slate-800/60 rounded-xl p-4 min-h-[250px] flex items-center justify-center">
+        <svg 
+          viewBox={`0 0 ${width} ${height}`} 
+          className="w-full h-full max-h-[240px]"
+        >
+          {/* Y-axis gridlines & labels */}
+          {[0, 0.25, 0.5, 0.75, 1].map((ratio, i) => {
+            const y = paddingY + ratio * (height - paddingY * 2);
+            const val = metric === 'risk' 
+              ? Math.round(10 - ratio * 10) 
+              : Math.round(100 - ratio * 100);
+            return (
+              <g key={i} className="opacity-40">
+                <line 
+                  x1={paddingX} 
+                  y1={y} 
+                  x2={width - paddingX} 
+                  y2={y} 
+                  stroke="#334155" 
+                  strokeWidth={1} 
+                  strokeDasharray="4 4" 
+                />
+                <text 
+                  x={paddingX - 10} 
+                  y={y + 4} 
+                  fill="#94a3b8" 
+                  fontSize={10} 
+                  fontFamily="monospace"
+                  textAnchor="end"
+                >
+                  {val}
+                </text>
+              </g>
+            );
+          })}
+
+          {/* X-axis labels */}
+          {pointsCoordinates.map((p, i) => (
+            <text
+              key={i}
+              x={p.x}
+              y={height - 8}
+              fill="#94a3b8"
+              fontSize={10}
+              fontFamily="monospace"
+              textAnchor="middle"
+              className="opacity-70"
+            >
+              {p.label}
+            </text>
+          ))}
+
+          {/* Area under curve (Shaded Amber) */}
+          <path
+            d={areaPath}
+            fill="url(#amber-gradient)"
+            className="opacity-10 transition-all duration-500"
+          />
+
+          {/* Main Line Plot (Amber/Orange Glow) */}
+          <path
+            d={linePath}
+            fill="none"
+            stroke="#f59e0b"
+            strokeWidth={3}
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            filter="url(#glow-filter)"
+            className="transition-all duration-500"
+          />
+
+          {/* Circular Data Points */}
+          {pointsCoordinates.map((p, i) => (
+            <g 
+              key={i}
+              onMouseEnter={() => setHoveredPoint(p.index)}
+              onMouseLeave={() => setHoveredPoint(null)}
+              className="cursor-pointer group"
+            >
+              {/* Pulse effect on hover */}
+              <circle
+                cx={p.x}
+                cy={p.y}
+                r={hoveredPoint === p.index ? 10 : 0}
+                fill="#f59e0b"
+                className="fill-opacity-20 animate-ping transition-all duration-200"
+              />
+              <circle
+                cx={p.x}
+                cy={p.y}
+                r={hoveredPoint === p.index ? 6 : 4}
+                fill={hoveredPoint === p.index ? '#fbbf24' : '#f59e0b'}
+                stroke="#1e293b"
+                strokeWidth={2}
+                className="transition-all duration-200"
+              />
+            </g>
+          ))}
+
+          {/* Gradients and Filters definition */}
+          <defs>
+            <linearGradient id="amber-gradient" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stopColor="#f59e0b" stopOpacity="0.8"/>
+              <stop offset="100%" stopColor="#f59e0b" stopOpacity="0.0"/>
+            </linearGradient>
+            <filter id="glow-filter" x="-20%" y="-20%" width="140%" height="140%">
+              <feGaussianBlur stdDeviation="4" result="blur" />
+              <feMerge>
+                <feMergeNode in="blur" />
+                <feMergeNode in="SourceGraphic" />
+              </feMerge>
+            </filter>
+          </defs>
+        </svg>
+
+        {/* Hover Tooltip Overlay */}
+        {hoveredPoint !== null && pointsCoordinates[hoveredPoint] && (
+          <div 
+            className="absolute bg-slate-950 border border-amber-500/50 p-3 rounded-lg shadow-2xl z-20 pointer-events-none text-xs font-mono"
+            style={{
+              left: `${Math.min(75, Math.max(10, (pointsCoordinates[hoveredPoint].x / width) * 100))}%`,
+              top: `${Math.min(65, Math.max(10, (pointsCoordinates[hoveredPoint].y / height) * 100 - 25))}%`
+            }}
+          >
+            <p className="text-amber-500 font-bold">{data[hoveredPoint].label}</p>
+            <p className="text-slate-300 mt-1">Compliance: <span className="text-white font-bold">{data[hoveredPoint].complianceScore}%</span></p>
+            <p className="text-slate-300">Risk Factor: <span className="text-white font-bold">{data[hoveredPoint].riskLevel}/10</span></p>
+            <p className="text-slate-300">PPE Degradation: <span className="text-white font-bold">{data[hoveredPoint].ppeDegradation}%</span></p>
+          </div>
+        )}
+      </div>
+
+      <div className="flex justify-between items-center bg-slate-950/60 border border-slate-800 px-4 py-3 rounded-xl text-xs text-slate-400">
+        <div className="flex items-center gap-1.5">
+          <span className="w-1.5 h-1.5 rounded-full bg-green-500"></span>
+          <span>Target Standard: SANS 10330 / HACCP</span>
+        </div>
+        <span>Data persistent across local session audits</span>
+      </div>
+    </div>
+  );
+};
