@@ -1,51 +1,22 @@
-import tailwindcss from '@tailwindcss/vite';
+import { defineConfig, loadEnv } from 'vite';
 import react from '@vitejs/plugin-react';
-import path from 'path';
-import {defineConfig} from 'vite';
-import {VitePWA} from 'vite-plugin-pwa';
+import tailwindcss from '@tailwindcss/vite';
 
-export default defineConfig(() => {
+// https://vitejs.dev/config/
+export default defineConfig(({ mode }) => {
+  const env = loadEnv(mode, '.', '');
+  
   return {
-    base: './',
     plugins: [
       react(),
-      tailwindcss(),
-      VitePWA({
-        registerType: 'autoUpdate',
-        includeAssets: ['favicon.ico', 'apple-touch-icon.png', 'mask-icon.svg'],
-        manifest: {
-          name: 'Melotwo Mine Safety Engine',
-          short_name: 'Melotwo Safety',
-          description: 'S-Tier Compliance & PPE Audit Engine',
-          theme_color: '#0b132b',
-          background_color: '#0b132b',
-          display: 'standalone',
-          icons: [
-            {
-              src: 'pwa-192x192.png',
-              sizes: '192x192',
-              type: 'image/png'
-            },
-            {
-              src: 'pwa-512x512.png',
-              sizes: '512x512',
-              type: 'image/png'
-            }
-          ]
-        }
-      })
+      tailwindcss()
     ],
-    resolve: {
-      alias: {
-        '@': path.resolve(__dirname, '.'),
-      },
+    build: {
+      outDir: 'dist',
+      assetsDir: 'assets',
     },
-    server: {
-      // HMR is disabled in AI Studio via DISABLE_HMR env var.
-      // Do not modifyâfile watching is disabled to prevent flickering during agent edits.
-      hmr: process.env.DISABLE_HMR !== 'true',
-      // Disable file watching when DISABLE_HMR is true to save CPU during agent edits.
-      watch: process.env.DISABLE_HMR === 'true' ? null : {},
-    },
+    define: {
+      'process.env.API_KEY': JSON.stringify(env.API_KEY || process.env.API_KEY)
+    }
   };
 });
