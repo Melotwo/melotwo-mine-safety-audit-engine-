@@ -37,6 +37,87 @@ export interface InspectorTemplate {
   systemPrompt: string;
 }
 
+// --- Mine Compliance Profile Interfaces & Mock Data ---
+export interface MineProfile {
+  id: string;
+  name: string;
+  type: string;
+  location: string;
+  complianceScore: number;
+  activeAuditsCount: number;
+  safetyRating: string;
+  stats: {
+    airQuality: number; // %
+    waterRecycling: number; // %
+    noiseLevel: number; // dBA
+    ppeAdherence: number; // %
+  };
+  audits: { id: string; date: string; category: string; score: number; status: 'Passed' | 'Action Required' }[];
+}
+
+export const MINE_PROFILES_BASELINE: MineProfile[] = [
+  {
+    id: 'witwatersrand-gold',
+    name: 'Witwatersrand Gold Deep Reef',
+    type: 'Gold Mine (Deep Reef Reef)',
+    location: 'Gauteng, South Africa',
+    complianceScore: 92,
+    activeAuditsCount: 14,
+    safetyRating: 'A+',
+    stats: {
+      airQuality: 94,
+      waterRecycling: 88,
+      noiseLevel: 82,
+      ppeAdherence: 98,
+    },
+    audits: [
+      { id: 'AUD-W-102', date: '2026-06-15', category: 'SANS 10330: HACCP / Canteen', score: 95, status: 'Passed' },
+      { id: 'AUD-W-101', date: '2026-05-10', category: 'SANS 10142: Electrical', score: 91, status: 'Passed' },
+      { id: 'AUD-W-100', date: '2026-04-02', category: 'SANS 10049: Hygiene', score: 90, status: 'Passed' },
+    ]
+  },
+  {
+    id: 'mpumalanga-coal',
+    name: 'Mpumalanga Coal Open-Cast',
+    type: 'Coal Mine (Open-Cast Operations)',
+    location: 'Mpumalanga, South Africa',
+    complianceScore: 84,
+    activeAuditsCount: 8,
+    safetyRating: 'B',
+    stats: {
+      airQuality: 78,
+      waterRecycling: 92,
+      noiseLevel: 89,
+      ppeAdherence: 85,
+    },
+    audits: [
+      { id: 'AUD-M-202', date: '2026-06-20', category: 'SANS 10142: Electrical', score: 82, status: 'Action Required' },
+      { id: 'AUD-M-201', date: '2026-05-15', category: 'SANS 10330: HACCP / Canteen', score: 88, status: 'Passed' },
+      { id: 'AUD-M-200', date: '2026-03-22', category: 'SANS 10049: Hygiene', score: 81, status: 'Action Required' },
+    ]
+  },
+  {
+    id: 'western-cape-rare-earth',
+    name: 'Western Cape Rare Earths',
+    type: 'Rare Earth Elements (Surface Excavation)',
+    location: 'Western Cape, South Africa',
+    complianceScore: 96,
+    activeAuditsCount: 6,
+    safetyRating: 'A',
+    stats: {
+      airQuality: 98,
+      waterRecycling: 95,
+      noiseLevel: 72,
+      ppeAdherence: 96,
+    },
+    audits: [
+      { id: 'AUD-R-302', date: '2026-06-25', category: 'SANS 10049: Hygiene', score: 97, status: 'Passed' },
+      { id: 'AUD-R-301', date: '2026-05-18', category: 'SANS 10330: HACCP / Canteen', score: 95, status: 'Passed' },
+      { id: 'AUD-R-300', date: '2026-04-11', category: 'SANS 10142: Electrical', score: 96, status: 'Passed' },
+    ]
+  }
+];
+
 // --- Analytics Service Inline Integration ---
 export interface GA4Event {
   eventName: string;
@@ -470,6 +551,137 @@ const GA4MonitorConsole: React.FC = () => {
           </div>
         </div>
       )}
+    </div>
+  );
+};
+
+
+// --- Component: MineCompliancePanel ---
+const MineCompliancePanel: React.FC = () => {
+  const [activeProfile, setActiveProfile] = useState<MineProfile>(MINE_PROFILES_BASELINE[0]);
+
+  return (
+    <div className="bg-white rounded-3xl shadow-xl border border-gray-100 overflow-hidden mb-8 animate-fade-in-up">
+      <div className="p-8 border-b border-gray-100 bg-gradient-to-r from-gray-50 to-white flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+        <div>
+          <span className="text-xs font-bold text-indigo-600 tracking-wider uppercase">Industrial Operations</span>
+          <h2 className="text-2xl font-extrabold text-gray-900 tracking-tight mt-1">Mine Compliance Profiles</h2>
+        </div>
+        <div className="flex flex-wrap gap-2">
+          {MINE_PROFILES_BASELINE.map((profile) => (
+            <button
+              key={profile.id}
+              onClick={() => setActiveProfile(profile)}
+              className={`px-4 py-2 text-xs font-semibold rounded-xl transition-all duration-200 ${
+                activeProfile.id === profile.id
+                  ? 'bg-indigo-600 text-white shadow-md'
+                  : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+              }`}
+            >
+              {profile.name}
+            </button>
+          ))}
+        </div>
+      </div>
+      
+      <div className="p-8 grid md:grid-cols-12 gap-8">
+        <div className="md:col-span-4 flex flex-col justify-between border-b md:border-b-0 md:border-r border-gray-100 pb-6 md:pb-0 md:pr-8">
+          <div>
+            <div className="flex justify-between items-center mb-4">
+              <span className="text-xs font-bold text-gray-400 uppercase tracking-wider">{activeProfile.type}</span>
+              <span className="px-3 py-1 text-xs font-black bg-indigo-50 text-indigo-700 rounded-full">{activeProfile.safetyRating} Safety Grade</span>
+            </div>
+            <h3 className="text-xl font-bold text-gray-900 mb-1">{activeProfile.name}</h3>
+            <p className="text-sm text-gray-500 mb-6">{activeProfile.location}</p>
+          </div>
+          <div className="bg-gradient-to-tr from-slate-900 to-indigo-950 p-6 rounded-2xl text-white shadow-lg">
+            <span className="text-[10px] font-bold tracking-widest text-indigo-300 uppercase block mb-1">Overall Compliance</span>
+            <div className="flex items-baseline gap-2">
+              <span className="text-4xl font-black">{activeProfile.complianceScore}%</span>
+              <span className="text-xs text-green-400 font-medium">↑ Verified</span>
+            </div>
+            <div className="w-full bg-slate-800/80 h-2 rounded-full mt-4 overflow-hidden">
+              <div className="bg-indigo-400 h-full rounded-full transition-all duration-500" style={{ width: `${activeProfile.complianceScore}%` }}></div>
+            </div>
+          </div>
+        </div>
+
+        <div className="md:col-span-8 space-y-6">
+          <h4 className="text-sm font-bold text-gray-500 uppercase tracking-wider">SANS Operational Metrics</h4>
+          <div className="grid sm:grid-cols-2 gap-4">
+            <div className="p-4 bg-gray-50 rounded-2xl border border-gray-100">
+              <div className="flex justify-between text-xs text-gray-500 mb-2 font-medium">
+                <span>Environmental Air Quality</span>
+                <span className="font-bold text-gray-900">{activeProfile.stats.airQuality}%</span>
+              </div>
+              <div className="w-full bg-gray-200 h-1.5 rounded-full overflow-hidden">
+                <div className="bg-teal-500 h-full rounded-full" style={{ width: `${activeProfile.stats.airQuality}%` }}></div>
+              </div>
+            </div>
+            <div className="p-4 bg-gray-50 rounded-2xl border border-gray-100">
+              <div className="flex justify-between text-xs text-gray-500 mb-2 font-medium">
+                <span>PPE Adherence Rate</span>
+                <span className="font-bold text-gray-900">{activeProfile.stats.ppeAdherence}%</span>
+              </div>
+              <div className="w-full bg-gray-200 h-1.5 rounded-full overflow-hidden">
+                <div className="bg-indigo-500 h-full rounded-full" style={{ width: `${activeProfile.stats.ppeAdherence}%` }}></div>
+              </div>
+            </div>
+            <div className="p-4 bg-gray-50 rounded-2xl border border-gray-100">
+              <div className="flex justify-between text-xs text-gray-500 mb-2 font-medium">
+                <span>Water Recycling Index</span>
+                <span className="font-bold text-gray-900">{activeProfile.stats.waterRecycling}%</span>
+              </div>
+              <div className="w-full bg-gray-200 h-1.5 rounded-full overflow-hidden">
+                <div className="bg-blue-500 h-full rounded-full" style={{ width: `${activeProfile.stats.waterRecycling}%` }}></div>
+              </div>
+            </div>
+            <div className="p-4 bg-gray-50 rounded-2xl border border-gray-100">
+              <div className="flex justify-between text-xs text-gray-500 mb-2 font-medium">
+                <span>Noise Level Regulation</span>
+                <span className="font-bold text-gray-900">{activeProfile.stats.noiseLevel} dBA</span>
+              </div>
+              <div className="w-full bg-gray-200 h-1.5 rounded-full overflow-hidden">
+                <div className="bg-amber-500 h-full rounded-full" style={{ width: `${Math.min(100, (activeProfile.stats.noiseLevel / 90) * 100)}%` }}></div>
+              </div>
+            </div>
+          </div>
+
+          <div className="mt-4 pt-4 border-t border-gray-100">
+            <h4 className="text-sm font-bold text-gray-500 uppercase tracking-wider mb-3">Active SANS Audits</h4>
+            <div className="overflow-x-auto">
+              <table className="w-full text-left border-collapse text-xs">
+                <thead>
+                  <tr className="border-b border-gray-100 text-gray-400 font-bold uppercase tracking-wider">
+                    <th className="pb-2">Audit ID</th>
+                    <th className="pb-2">Standard Category</th>
+                    <th className="pb-2">Audit Date</th>
+                    <th className="pb-2 text-right">Score</th>
+                    <th className="pb-2 text-right">Status</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-50 text-gray-600">
+                  {activeProfile.audits.map((audit) => (
+                    <tr key={audit.id} className="hover:bg-gray-50/50">
+                      <td className="py-2.5 font-mono font-semibold text-gray-900">{audit.id}</td>
+                      <td className="py-2.5">{audit.category}</td>
+                      <td className="py-2.5 text-gray-500">{audit.date}</td>
+                      <td className="py-2.5 text-right font-bold text-gray-900">{audit.score}%</td>
+                      <td className="py-2.5 text-right">
+                        <span className={`px-2 py-0.5 rounded-full font-bold text-[10px] ${
+                          audit.status === 'Passed' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'
+                        }`}>
+                          {audit.status}
+                        </span>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
   );
 };
@@ -1536,6 +1748,9 @@ const SafetyInspectorPage: React.FC = () => {
 
                 {/* Right Column: Results & Graphs Grid */}
                 <div className="lg:col-span-7 flex flex-col gap-6">
+                    {/* Mine Profiles Compliance Dashboard */}
+                    <MineCompliancePanel />
+
                     {/* Analysis Report Card */}
                     {error && (
                         <div className="bg-red-50 border border-red-200 rounded-2xl p-6 flex items-start animate-fade-in-up shadow-sm">
