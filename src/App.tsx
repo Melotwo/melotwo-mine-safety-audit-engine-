@@ -120,6 +120,7 @@ export const MINE_PROFILES_BASELINE: MineProfile[] = [
 
 // --- Analytics Service Inline Integration ---
 export interface GA4Event {
+  id: string;
   eventName: string;
   params?: Record<string, any>;
   timestamp: string;
@@ -129,6 +130,7 @@ const analyticsListeners = new Set<(event: GA4Event) => void>();
 
 export function trackGA4Event(eventName: string, params?: Record<string, any>) {
   const newEvent: GA4Event = {
+    id: `ev-${Date.now()}-${Math.random().toString(36).substr(2, 4)}`,
     eventName,
     params,
     timestamp: new Date().toISOString()
@@ -460,7 +462,6 @@ export const INSPECTOR_TEMPLATES: InspectorTemplate[] = [
     }
 ];
 
-
 // --- Component: GA4MonitorConsole ---
 const GA4MonitorConsole: React.FC = () => {
   const [isOpen, setIsOpen] = useState(false);
@@ -554,7 +555,6 @@ const GA4MonitorConsole: React.FC = () => {
     </div>
   );
 };
-
 
 // --- Component: MineCompliancePanel ---
 const MineCompliancePanel: React.FC = () => {
@@ -685,7 +685,6 @@ const MineCompliancePanel: React.FC = () => {
     </div>
   );
 };
-
 
 // --- Component: AuditHistoryChart ---
 interface DataPoint {
@@ -1003,7 +1002,6 @@ const AuditHistoryChart: React.FC = () => {
   );
 };
 
-
 // --- Component: UserFeedbackWidget ---
 const UserFeedbackWidget: React.FC = () => {
   const [isOpen, setIsOpen] = useState(false);
@@ -1198,7 +1196,6 @@ const UserFeedbackWidget: React.FC = () => {
   );
 };
 
-
 // --- Component: PromptMetricsDashboard ---
 const PromptMetricsDashboard: React.FC = () => {
   const [records, setRecords] = useState<InterceptedPrompt[]>([]);
@@ -1362,8 +1359,7 @@ const PromptMetricsDashboard: React.FC = () => {
   );
 };
 
-
-// --- Component: Navbar ---
+// --- Component: AppNavbar ---
 interface NavbarProps {
     currentPage: Page;
     setPage: (page: Page) => void;
@@ -1376,26 +1372,30 @@ const AppNavbar: React.FC<NavbarProps> = ({ currentPage, setPage, userId, isAuth
     const navItems: { name: string; page: Page }[] = [
         { name: 'Home', page: 'home' },
         { name: 'Solutions', page: 'solutions' },
-        { name: 'AI Safety Inspector', page: 'inspector' },
+        { name: 'Auditing Terminal', page: 'inspector' },
     ];
 
     return (
-        <header className="sticky top-0 z-40 bg-white/80 backdrop-blur-md border-b border-gray-100 shadow-sm">
-            <div className="flex items-center justify-between max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-                <button onClick={() => setPage('home')} className="flex items-center space-x-2 shrink-0" aria-label="Go to homepage">
-                    <Shield className="w-7 h-7 text-indigo-600" />
-                    <span className="text-2xl font-extrabold text-gray-900 tracking-tight">Melotwo</span>
+        <header className="sticky top-0 z-40 bg-white/80 backdrop-blur-md border-b border-gray-100 shadow-sm transition-all">
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+                <button onClick={() => setPage('home')} className="flex items-center space-x-2 shrink-0 cursor-pointer" aria-label="Go to homepage">
+                    <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-amber-500 to-indigo-600 flex items-center justify-center shadow-md">
+                        <Shield className="w-5 h-5 text-white" />
+                    </div>
+                    <span className="text-lg font-black tracking-tight text-gray-900 font-sans">
+                        MeloTwo <span className="text-amber-500 font-extrabold text-xs px-2 py-0.5 rounded-full bg-amber-50/80 border border-amber-200">SHEQ</span>
+                    </span>
                 </button>
-                
-                <nav className="hidden lg:flex space-x-8">
-                    {navItems.map(item => (
+
+                <nav className="hidden md:flex space-x-1">
+                    {navItems.map((item) => (
                         <button
                             key={item.page}
                             onClick={() => setPage(item.page)}
-                            className={`px-3 py-2 text-sm font-medium transition duration-150 ease-in-out rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 ${
+                            className={`px-4 py-2 rounded-xl text-xs font-bold transition cursor-pointer ${
                                 currentPage === item.page
-                                    ? 'text-indigo-600 border-b-2 border-indigo-600 font-semibold'
-                                    : 'text-gray-500 hover:text-gray-900'
+                                    ? 'bg-indigo-50 text-indigo-700 font-extrabold'
+                                    : 'text-gray-500 hover:text-gray-900 hover:bg-gray-50'
                             }`}
                         >
                             {item.name}
@@ -1403,20 +1403,11 @@ const AppNavbar: React.FC<NavbarProps> = ({ currentPage, setPage, userId, isAuth
                     ))}
                 </nav>
 
-                <div className="flex items-center space-x-3 md:space-x-4">
-                    {isAuthReady && userId ? (
-                        <div 
-                            id="user-profile-chip" 
-                            className="flex items-center gap-2 bg-indigo-50 border border-indigo-100 rounded-full pl-1.5 pr-3.5 py-1 shadow-sm transition-all hover:bg-indigo-100/50"
-                        >
-                            <div className="w-7 h-7 rounded-full bg-gradient-to-tr from-indigo-500 to-purple-600 flex items-center justify-center text-white shadow-sm shrink-0">
-                                <User className="w-4 h-4 stroke-[2.5]" />
-                            </div>
-                            
-                            <span className="font-mono text-xs font-semibold text-indigo-950" title={userId}>
-                                <span className="text-indigo-500 font-bold mr-1">Session ID:</span>
-                                {userId.slice(0, 6)}...
-                            </span>
+                <div className="flex items-center space-x-3">
+                    {isAuthReady ? (
+                        <div className="inline-flex items-center px-3 py-1.5 bg-gray-50 border border-gray-100 rounded-xl text-xs font-bold text-gray-600 font-mono">
+                            <span className="w-2 h-2 rounded-full bg-green-500 mr-2 animate-pulse"></span>
+                            <span>ID: {userId?.substring(0, 8)}</span>
                         </div>
                     ) : (
                          <div className="h-9 w-32 bg-gray-100 animate-pulse rounded-full"></div>
@@ -1430,85 +1421,260 @@ const AppNavbar: React.FC<NavbarProps> = ({ currentPage, setPage, userId, isAuth
                     </button>
                 </div>
             </div>
-            
-            <div className="lg:hidden border-t border-gray-100 py-2 overflow-x-auto">
-                 <div className="flex justify-around px-4 min-w-max">
-                    {navItems.map(item => (
-                        <button
-                            key={item.page}
-                            onClick={() => setPage(item.page)}
-                            className={`px-3 py-2 text-sm font-medium whitespace-nowrap ${
-                                currentPage === item.page
-                                    ? 'text-indigo-600'
-                                    : 'text-gray-500'
-                            }`}
-                        >
-                            {item.name}
-                        </button>
-                    ))}
-                 </div>
+            {/* Small screen navigation list */}
+            <div className="md:hidden border-t border-gray-100 bg-white/95 flex justify-around py-2 shadow-inner">
+                {navItems.map((item) => (
+                    <button
+                        key={item.page}
+                        onClick={() => setPage(item.page)}
+                        className={`px-3 py-1.5 rounded-lg text-xs font-bold transition cursor-pointer ${
+                            currentPage === item.page
+                                ? 'bg-indigo-50 text-indigo-700'
+                                : 'text-gray-500 hover:text-gray-900'
+                        }`}
+                    >
+                        {item.name}
+                    </button>
+                ))}
             </div>
         </header>
     );
 };
 
-
-// --- Component: Footer ---
+// --- Component: AppFooter ---
 const AppFooter: React.FC = () => (
-    <footer className="bg-gray-800 mt-16">
-        <div className="max-w-7xl mx-auto py-12 px-4 overflow-hidden sm:px-6 lg:px-8">
-            <nav className="flex flex-wrap justify-center -mx-5 -my-2">
-                <div className="px-5 py-2">
-                    <a href="#" className="text-base text-gray-300 hover:text-white">Home</a>
-                </div>
-                <div className="px-5 py-2">
-                    <a href="#" className="text-base text-gray-300 hover:text-white">Solutions</a>
-                </div>
-                <div className="px-5 py-2">
-                    <a href="#" className="text-base text-gray-300 hover:text-white">Inspector</a>
-                </div>
-                <div className="px-5 py-2">
-                    <a href="#" className="text-base text-gray-300 hover:text-white">Careers</a>
-                </div>
-            </nav>
-            <div className="mt-8">
-                <h4 className="text-lg font-semibold text-center text-gray-300 mb-4">Affiliate Links</h4>
-                <div className="flex justify-center space-x-6">
-                    {AFFILIATE_LINKS.map(link => (
-                        <a key={link.id} href={link.url} className="text-sm text-indigo-400 hover:text-indigo-300 transition duration-150 ease-in-out">
+    <footer className="bg-white border-t border-gray-100 mt-20">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+            <div className="md:flex md:items-center md:justify-between">
+                <div className="flex justify-center space-x-6 md:order-2">
+                    {AFFILIATE_LINKS.map((link) => (
+                        <a 
+                            key={link.id} 
+                            href={link.url} 
+                            className="text-gray-400 hover:text-gray-500 text-xs font-medium"
+                            title={link.description}
+                        >
                             {link.name}
                         </a>
                     ))}
                 </div>
+                <div className="mt-8 md:mt-0 md:order-1">
+                    <p className="text-center text-xs text-gray-400">
+                        &copy; {new Date().getFullYear()} MeloTwo SHEQ Compliance, Inc. All rights reserved. Registered SANS 10330, SANS 10049, & SANS 10142 auditor.
+                    </p>
+                </div>
             </div>
-            <p className="mt-8 text-center text-base text-gray-400">
-                &copy; {new Date().getFullYear()} Melotwo, Inc. All rights reserved.
-            </p>
         </div>
     </footer>
 );
 
+// --- Component: EnterpriseDemoModal ---
+interface EnterpriseDemoModalProps {
+    isOpen: boolean;
+    onClose: () => void;
+}
 
-interface SafetyInspectorPageProps {
-    currentPage: Page;
+const EnterpriseDemoModal: React.FC<EnterpriseDemoModalProps> = ({ isOpen, onClose }) => {
+    const [demoName, setDemoName] = useState('');
+    const [demoEmail, setDemoEmail] = useState('');
+    const [demoCompany, setDemoCompany] = useState('');
+    const [demoSubmitted, setDemoSubmitted] = useState(false);
+
+    useEffect(() => {
+        if (!isOpen) {
+            setDemoSubmitted(false);
+        }
+    }, [isOpen]);
+
+    if (!isOpen) return null;
+
+    return (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm animate-fade-in">
+            <div className="bg-white rounded-3xl shadow-2xl border border-gray-100 max-w-lg w-full overflow-hidden animate-scale-up">
+                <div className="bg-slate-900 p-6 text-white relative">
+                    <button
+                        onClick={onClose}
+                        className="absolute top-4 right-4 text-slate-400 hover:text-white text-lg font-bold cursor-pointer"
+                    >
+                        ✕
+                    </button>
+                    <span className="text-xs font-bold text-amber-400 uppercase tracking-widest block mb-1">Secure Enterprise Access</span>
+                    <h3 className="text-xl font-bold">Request Enterprise Demo</h3>
+                    <p className="text-xs text-slate-400 mt-1">Get SANS 10330, SANS 10049 & SANS 10142 fully automated compliance pipelines customized for your operational metrics.</p>
+                </div>
+                
+                <div className="p-8">
+                    {demoSubmitted ? (
+                        <div className="text-center py-6">
+                            <div className="w-12 h-12 bg-green-100 text-green-600 rounded-full flex items-center justify-center mx-auto mb-4">
+                                <svg className="w-6 h-6 stroke-[3]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                                </svg>
+                            </div>
+                            <h4 className="text-lg font-bold text-gray-900 mb-1">Demo Request Received</h4>
+                            <p className="text-sm text-gray-500 mb-6">Our SHEQ integration engineer will contact you shortly at <strong>{demoEmail}</strong>.</p>
+                            <button
+                                onClick={onClose}
+                                className="px-6 py-2.5 text-xs font-bold text-white bg-slate-900 rounded-xl hover:bg-slate-800 transition cursor-pointer"
+                            >
+                                Close Modal
+                            </button>
+                        </div>
+                    ) : (
+                        <form
+                            onSubmit={(e) => {
+                                e.preventDefault();
+                                if (demoName && demoEmail && demoCompany) {
+                                    setDemoSubmitted(true);
+                                    trackGA4Event('enterprise_demo_submitted', {
+                                        company: demoCompany,
+                                        email_domain: demoEmail.split('@')[1] || ''
+                                    });
+                                }
+                            }}
+                            className="space-y-4"
+                        >
+                            <div>
+                                <label className="block text-xs font-bold text-gray-500 uppercase tracking-wide mb-1.5">Full Name</label>
+                                <input
+                                    type="text"
+                                    required
+                                    value={demoName}
+                                    onChange={(e) => setDemoName(e.target.value)}
+                                    placeholder="e.g. Johnathan Smith"
+                                    className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition"
+                                />
+                            </div>
+                            <div>
+                                <label className="block text-xs font-bold text-gray-500 uppercase tracking-wide mb-1.5">Company / Operation Name</label>
+                                <input
+                                    type="text"
+                                    required
+                                    value={demoCompany}
+                                    onChange={(e) => setDemoCompany(e.target.value)}
+                                    placeholder="e.g. Witwatersrand Deep Reef Gold Ltd"
+                                    className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition"
+                                />
+                            </div>
+                            <div>
+                                <label className="block text-xs font-bold text-gray-500 uppercase tracking-wide mb-1.5">Work Email Address</label>
+                                <input
+                                    type="email"
+                                    required
+                                    value={demoEmail}
+                                    onChange={(e) => setDemoEmail(e.target.value)}
+                                    placeholder="e.g. j.smith@witgold.co.za"
+                                    className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition"
+                                />
+                            </div>
+                            
+                            <div className="pt-4 flex gap-3">
+                                <button
+                                    type="button"
+                                    onClick={onClose}
+                                    className="flex-1 px-4 py-3 border border-gray-200 text-gray-700 rounded-xl font-bold text-xs hover:bg-gray-50 transition cursor-pointer"
+                                >
+                                    Cancel
+                                </button>
+                                <button
+                                    type="submit"
+                                    className="flex-1 px-4 py-3 bg-amber-500 hover:bg-amber-600 text-slate-950 rounded-xl font-black text-xs shadow-md shadow-amber-500/10 transition cursor-pointer"
+                                >
+                                    Submit Request
+                                </button>
+                            </div>
+                        </form>
+                    )}
+                </div>
+            </div>
+        </div>
+    );
+};
+
+// --- Component: LandingPage ---
+interface LandingPageProps {
     setPage: (page: Page) => void;
-    isDemoModalOpen: boolean;
     setIsDemoModalOpen: (open: boolean) => void;
 }
 
-// --- Component: SafetyInspectorPage ---
-const SafetyInspectorPage: React.FC<SafetyInspectorPageProps> = ({
-    currentPage,
-    setPage,
-    isDemoModalOpen,
-    setIsDemoModalOpen
-}) => {
-    // State initialization derived from page route
-    const showLandingPage = currentPage === 'home' || currentPage === 'solutions';
-    const setShowLandingPage = (show: boolean) => {
-        setPage(show ? 'home' : 'inspector');
-    };
+const LandingPage: React.FC<LandingPageProps> = ({ setPage, setIsDemoModalOpen }) => {
+    return (
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
+            {/* Premium Landing Page Hero Layout */}
+            <div className="bg-gradient-to-br from-slate-900 via-indigo-950 to-slate-950 rounded-3xl p-8 md:p-12 shadow-2xl border border-slate-800 relative overflow-hidden mb-12 animate-fade-in">
+                {/* Visual grid overlay for tech/industrial feel */}
+                <div className="absolute inset-0 bg-[linear-gradient(to_right,#1e293b_1px,transparent_1px),linear-gradient(to_bottom,#1e293b_1px,transparent_1px)] bg-[size:4rem_4rem] [mask-image:radial-gradient(ellipse_60%_50%_at_50%_0%,#000_70%,transparent_100%)] opacity-25"></div>
+                
+                {/* Amber decorative safety status line at top */}
+                <div className="absolute top-0 inset-x-0 h-1.5 bg-gradient-to-r from-amber-500 via-indigo-500 to-amber-500"></div>
+                
+                <div className="relative z-10 max-w-4xl mx-auto text-center">
+                    <span className="inline-flex items-center gap-1.5 px-3 py-1 text-xs font-black bg-amber-500/10 border border-amber-500/30 text-amber-500 rounded-full tracking-wider uppercase mb-6 shadow-sm">
+                        <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse"></span>
+                        SANS 10330 & SANS 10142 SUITE
+                    </span>
+                    
+                    <h1 className="text-3xl md:text-5xl font-black text-white tracking-tight leading-tight mb-6">
+                        S-Tier Mine Compliance <span className="text-transparent bg-clip-text bg-gradient-to-r from-amber-400 to-indigo-300">&amp; PPE Material Auditing</span>
+                    </h1>
+                    
+                    <p className="text-slate-300 text-base md:text-lg leading-relaxed max-w-3xl mx-auto mb-10 font-medium">
+                        Empowering SHEQ officers and procurement teams to mitigate litigation risks, simulate material degradation, and enforce SANS compliance automatically.
+                    </p>
+                    
+                    {/* Action Row */}
+                    <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-12">
+                        <button
+                            type="button"
+                            onClick={() => {
+                                setPage('inspector');
+                                trackGA4Event('hero_cta_clicked', { action: 'launch_terminal' });
+                            }}
+                            className="w-full sm:w-auto inline-flex items-center justify-center px-8 py-4 bg-amber-500 hover:bg-amber-600 text-slate-950 font-extrabold rounded-2xl shadow-lg shadow-amber-500/20 transform hover:-translate-y-0.5 transition-all duration-200 cursor-pointer"
+                        >
+                            <Zap className="w-5 h-5 mr-2 text-slate-950" />
+                            Launch Auditing Terminal
+                        </button>
+                        
+                        <button
+                            type="button"
+                            onClick={() => {
+                                setIsDemoModalOpen(true);
+                                trackGA4Event('hero_cta_clicked', { action: 'request_demo_modal' });
+                            }}
+                            className="w-full sm:w-auto inline-flex items-center justify-center px-8 py-4 bg-slate-800/80 hover:bg-slate-800 border border-slate-700 hover:border-slate-600 text-white font-extrabold rounded-2xl shadow-md transform hover:-translate-y-0.5 transition-all duration-200 cursor-pointer"
+                        >
+                            Request Enterprise Demo
+                        </button>
+                    </div>
 
+                    {/* Technical metrics/features row - raw, clean presentation */}
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6 pt-8 border-t border-slate-800/80 text-left">
+                        <div className="p-4 rounded-2xl bg-slate-900/50 border border-slate-800">
+                            <span className="text-xs font-bold text-amber-500 uppercase tracking-widest block mb-1">SANS 10330 HACCP</span>
+                            <p className="text-xs text-slate-400 font-medium leading-relaxed">Portion temperature controls and micro-audit logging for canteen and food prep areas.</p>
+                        </div>
+                        <div className="p-4 rounded-2xl bg-slate-900/50 border border-slate-800">
+                            <span className="text-xs font-bold text-indigo-400 uppercase tracking-widest block mb-1">SANS 10142-1 Wiring</span>
+                            <p className="text-xs text-slate-400 font-medium leading-relaxed">Commercial isolator clearances and insulation testing audits in heavy operations.</p>
+                        </div>
+                        <div className="p-4 rounded-2xl bg-slate-900/50 border border-slate-800">
+                            <span className="text-xs font-bold text-slate-300 uppercase tracking-widest block mb-1">Compliance Ledger</span>
+                            <p className="text-xs text-slate-400 font-medium leading-relaxed">Integrated PII scrubbing and automated threat telemetry logging across audits.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    );
+};
+
+// --- Component: SafetyInspectorPage ---
+interface SafetyInspectorPageProps {
+    setPage: (page: Page) => void;
+}
+
+const SafetyInspectorPage: React.FC<SafetyInspectorPageProps> = ({ setPage }) => {
     const [scenario, setScenario] = useState(() => localStorage.getItem('melotwo_inspector_scenario_draft') || '');
     const [systemPrompt, setSystemPrompt] = useState(() => localStorage.getItem('melotwo_inspector_system_prompt_draft') || 'You are a helpful and ethical AI assistant. Do not generate harmful or illegal content.');
     const [response, setResponse] = useState<SafetyInspectionResult | null>(null);
@@ -1516,12 +1682,6 @@ const SafetyInspectorPage: React.FC<SafetyInspectorPageProps> = ({
     const [error, setError] = useState<string | null>(null);
     const [history, setHistory] = useState<InspectionHistoryItem[]>([]);
     const [historySearchTerm, setHistorySearchTerm] = useState('');
-
-    // Lead generation states for Enterprise Demo
-    const [demoName, setDemoName] = useState('');
-    const [demoEmail, setDemoEmail] = useState('');
-    const [demoCompany, setDemoCompany] = useState('');
-    const [demoSubmitted, setDemoSubmitted] = useState(false);
 
     // Effects
     useEffect(() => { localStorage.setItem('melotwo_inspector_scenario_draft', scenario); }, [scenario]);
@@ -1624,430 +1784,251 @@ const SafetyInspectorPage: React.FC<SafetyInspectorPageProps> = ({
 
     return (
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
+            {/* Technical Terminal Layout */}
+            <div>
+                {/* Authorized session back header */}
+                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8 bg-slate-900 text-white p-6 rounded-3xl border border-slate-800 shadow-xl animate-fade-in">
+                    <div>
+                        <span className="text-[10px] font-bold tracking-widest text-amber-500 uppercase block mb-0.5 font-mono">AUTHORIZED TERMINAL SESSION</span>
+                        <h2 className="text-lg font-black text-white">SANS 10330 &amp; 10142 Audit Suite</h2>
+                    </div>
+                    <button
+                        type="button"
+                        onClick={() => setPage('home')}
+                        className="inline-flex items-center px-4 py-2 bg-slate-800 hover:bg-slate-700 text-amber-500 font-bold text-xs rounded-xl border border-slate-700 hover:border-slate-600 transition cursor-pointer"
+                    >
+                        ← Return to Marketing Overview
+                    </button>
+                </div>
 
-            {/* Request Enterprise Demo Modal Overlay */}
-            {isDemoModalOpen && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm animate-fade-in">
-                    <div className="bg-white rounded-3xl shadow-2xl border border-gray-100 max-w-lg w-full overflow-hidden animate-scale-up">
-                        <div className="bg-slate-900 p-6 text-white relative">
-                            <button
-                                onClick={() => {
-                                    setIsDemoModalOpen(false);
-                                    setDemoSubmitted(false);
-                                }}
-                                className="absolute top-4 right-4 text-slate-400 hover:text-white text-lg font-bold"
-                            >
-                                ✕
-                            </button>
-                            <span className="text-xs font-bold text-amber-400 uppercase tracking-widest block mb-1">Secure Enterprise Access</span>
-                            <h3 className="text-xl font-bold">Request Enterprise Demo</h3>
-                            <p className="text-xs text-slate-400 mt-1">Get SANS 10330, SANS 10049 & SANS 10142 fully automated compliance pipelines customized for your operational metrics.</p>
-                        </div>
-                        
-                        <div className="p-8">
-                            {demoSubmitted ? (
-                                <div className="text-center py-6">
-                                    <div className="w-12 h-12 bg-green-100 text-green-600 rounded-full flex items-center justify-center mx-auto mb-4">
-                                        <svg className="w-6 h-6 stroke-[3]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                            <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-                                        </svg>
-                                    </div>
-                                    <h4 className="text-lg font-bold text-gray-900 mb-1">Demo Request Received</h4>
-                                    <p className="text-sm text-gray-500 mb-6">Our SHEQ integration engineer will contact you shortly at <strong>{demoEmail}</strong>.</p>
-                                    <button
-                                        onClick={() => {
-                                            setIsDemoModalOpen(false);
-                                            setDemoSubmitted(false);
-                                        }}
-                                        className="px-6 py-2.5 text-xs font-bold text-white bg-slate-900 rounded-xl hover:bg-slate-800 transition"
-                                    >
-                                        Return to Terminal
-                                    </button>
-                                </div>
-                            ) : (
-                                <form
-                                    onSubmit={(e) => {
-                                        e.preventDefault();
-                                        if (demoName && demoEmail && demoCompany) {
-                                            setDemoSubmitted(true);
-                                            trackGA4Event('enterprise_demo_submitted', {
-                                                company: demoCompany,
-                                                email_domain: demoEmail.split('@')[1] || ''
-                                            });
-                                        }
-                                    }}
-                                    className="space-y-4"
-                                >
+                <div id="auditing-terminal-form" className="grid lg:grid-cols-12 gap-8 items-start">
+                    
+                    {/* Left Column: Input Form & Sidebar Widgets */}
+                    <div className="lg:col-span-5 flex flex-col gap-6">
+                        <div className="bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden">
+                            <div className="bg-gray-50 px-6 py-4 border-b border-gray-100">
+                                <h2 className="font-semibold text-gray-900 flex items-center">
+                                    <Settings className="w-5 h-5 mr-2 text-indigo-500"/> Audit Configuration
+                                </h2>
+                            </div>
+                            <div className="p-6">
+                                <form onSubmit={(e) => { e.preventDefault(); runAudit(false); }} className="space-y-6">
                                     <div>
-                                        <label className="block text-xs font-bold text-gray-500 uppercase tracking-wide mb-1.5">Full Name</label>
-                                        <input
-                                            type="text"
-                                            required
-                                            value={demoName}
-                                            onChange={(e) => setDemoName(e.target.value)}
-                                            placeholder="e.g. Johnathan Smith"
-                                            className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition"
+                                        <label className="block text-xs font-bold text-gray-500 uppercase tracking-wide mb-2">Load Template</label>
+                                        <div className="relative">
+                                            <FileText className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
+                                            <select onChange={handleTemplateChange} defaultValue="" className="w-full pl-10 pr-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm text-gray-700 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition-all appearance-none cursor-pointer hover:bg-white hover:border-gray-300">
+                                                <option value="" disabled>Select a predefined scenario...</option>
+                                                {INSPECTOR_TEMPLATES.map(t => <option key={t.id} value={t.id}>{t.name}</option>)}
+                                            </select>
+                                        </div>
+                                    </div>
+
+                                    <div>
+                                        <label className="block text-xs font-bold text-gray-500 uppercase tracking-wide mb-2">User Prompt / Scenario</label>
+                                        <textarea 
+                                            value={scenario}
+                                            onChange={(e) => setScenario(e.target.value)}
+                                            rows={5}
+                                            className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition-all resize-none"
+                                            placeholder="e.g. Enter SANS 10330 HACCP temperatures, or general prompts..."
                                         />
                                     </div>
+
                                     <div>
-                                        <label className="block text-xs font-bold text-gray-500 uppercase tracking-wide mb-1.5">Company / Operation Name</label>
-                                        <input
-                                            type="text"
-                                            required
-                                            value={demoCompany}
-                                            onChange={(e) => setDemoCompany(e.target.value)}
-                                            placeholder="e.g. Witwatersrand Deep Reef Gold Ltd"
-                                            className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition"
+                                        <label className="block text-xs font-bold text-gray-500 uppercase tracking-wide mb-2">System Instructions (Guardrail)</label>
+                                        <textarea 
+                                            value={systemPrompt}
+                                            onChange={(e) => setSystemPrompt(e.target.value)}
+                                            rows={3}
+                                            className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition-all resize-none"
+                                            placeholder="Define the AI's persona and safety constraints..."
                                         />
                                     </div>
-                                    <div>
-                                        <label className="block text-xs font-bold text-gray-500 uppercase tracking-wide mb-1.5">Work Email Address</label>
-                                        <input
-                                            type="email"
-                                            required
-                                            value={demoEmail}
-                                            onChange={(e) => setDemoEmail(e.target.value)}
-                                            placeholder="e.g. j.smith@witgold.co.za"
-                                            className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition"
-                                        />
-                                    </div>
-                                    
-                                    <div className="pt-4 flex gap-3">
-                                        <button
+
+                                    <div className="flex flex-col gap-3 pt-2">
+                                        <div className="flex gap-3">
+                                            <button 
+                                                type="button" 
+                                                onClick={() => { setScenario(''); setResponse(null); setError(null); }} 
+                                                className="px-5 py-2.5 text-sm font-medium text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition"
+                                            >
+                                                Clear
+                                            </button>
+                                            <button 
+                                                type="button"
+                                                onClick={() => runAudit(false)}
+                                                disabled={loading} 
+                                                id="btn-run-inspector"
+                                                className="flex-1 inline-flex items-center justify-center px-4 py-2.5 text-sm font-medium text-white bg-indigo-600 rounded-lg hover:bg-indigo-700 disabled:opacity-50 transition cursor-pointer"
+                                            >
+                                                {loading ? <Loader2 className="w-5 h-5 mr-2 animate-spin" /> : <Zap className="w-5 h-5 mr-2" />}
+                                                {loading ? 'Analyzing...' : 'Run Red-Team'}
+                                            </button>
+                                        </div>
+
+                                        {/* EXPLICIT ACTION COMPONENT: Secure Your Operational Audit */}
+                                        <button 
                                             type="button"
-                                            onClick={() => setIsDemoModalOpen(false)}
-                                            className="flex-1 px-4 py-3 border border-gray-200 text-gray-700 rounded-xl font-bold text-xs hover:bg-gray-50 transition"
+                                            onClick={() => runAudit(true)}
+                                            disabled={loading}
+                                            id="btn-secure-audit"
+                                            className="w-full inline-flex items-center justify-center px-6 py-3 border border-transparent text-sm font-bold rounded-xl shadow-[0_4px_15px_rgba(245,158,11,0.2)] text-slate-950 bg-amber-500 hover:bg-amber-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-amber-500 transition-all duration-200 cursor-pointer disabled:opacity-50"
                                         >
-                                            Cancel
-                                        </button>
-                                        <button
-                                            type="submit"
-                                            className="flex-1 px-4 py-3 bg-amber-500 hover:bg-amber-600 text-slate-950 rounded-xl font-black text-xs shadow-md shadow-amber-500/10 transition"
-                                        >
-                                            Submit Request
+                                            {loading ? <Loader2 className="w-4 h-4 mr-2 animate-spin text-slate-950" /> : (
+                                                <svg className="w-4 h-4 mr-2 stroke-[2.5]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                    <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12c0 1.268-.63 2.39-1.593 3.068a3.745 3.745 0 01-1.043 3.296 3.745 3.745 0 01-3.296 1.043A3.745 3.745 0 0112 21c-1.268 0-2.39-.63-3.068-1.593a3.746 3.746 0 01-3.296-1.043 3.745 3.745 0 01-1.043-3.296A3.745 3.745 0 013 12c0-1.268.63-2.39 1.593-3.068a3.745 3.745 0 011.043-3.296 3.746 3.746 0 013.296-1.043A3.746 3.746 0 0112 3c1.268 0 2.39.63 3.068 1.593a3.746 3.746 0 013.296 1.043 3.746 3.746 0 011.043 3.296A3.745 3.745 0 0121 12z" />
+                                                </svg>
+                                            )}
+                                            Secure Your Operational Audit
                                         </button>
                                     </div>
                                 </form>
-                            )}
-                        </div>
-                    </div>
-                </div>
-            )}
-
-            {showLandingPage ? (
-                /* Premium Landing Page Hero Layout */
-                <div className="bg-gradient-to-br from-slate-900 via-indigo-950 to-slate-950 rounded-3xl p-8 md:p-12 shadow-2xl border border-slate-800 relative overflow-hidden mb-12 animate-fade-in">
-                    {/* Visual grid overlay for tech/industrial feel */}
-                    <div className="absolute inset-0 bg-[linear-gradient(to_right,#1e293b_1px,transparent_1px),linear-gradient(to_bottom,#1e293b_1px,transparent_1px)] bg-[size:4rem_4rem] [mask-image:radial-gradient(ellipse_60%_50%_at_50%_0%,#000_70%,transparent_100%)] opacity-25"></div>
-                    
-                    {/* Amber decorative safety status line at top */}
-                    <div className="absolute top-0 inset-x-0 h-1.5 bg-gradient-to-r from-amber-500 via-indigo-500 to-amber-500"></div>
-                    
-                    <div className="relative z-10 max-w-4xl mx-auto text-center">
-                        <span className="inline-flex items-center gap-1.5 px-3 py-1 text-xs font-black bg-amber-500/10 border border-amber-500/30 text-amber-500 rounded-full tracking-wider uppercase mb-6 shadow-sm">
-                            <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse"></span>
-                            SANS 10330 & SANS 10142 SUITE
-                        </span>
-                        
-                        <h1 className="text-3xl md:text-5xl font-black text-white tracking-tight leading-tight mb-6">
-                            S-Tier Mine Compliance <span className="text-transparent bg-clip-text bg-gradient-to-r from-amber-400 to-indigo-300">&amp; PPE Material Auditing</span>
-                        </h1>
-                        
-                        <p className="text-slate-300 text-base md:text-lg leading-relaxed max-w-3xl mx-auto mb-10 font-medium">
-                            Empowering SHEQ officers and procurement teams to mitigate litigation risks, simulate material degradation, and enforce SANS compliance automatically.
-                        </p>
-                        
-                        {/* Action Row */}
-                        <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-12">
-                            <button
-                                type="button"
-                                onClick={() => {
-                                    setShowLandingPage(false);
-                                    trackGA4Event('hero_cta_clicked', { action: 'launch_terminal' });
-                                }}
-                                className="w-full sm:w-auto inline-flex items-center justify-center px-8 py-4 bg-amber-500 hover:bg-amber-600 text-slate-950 font-extrabold rounded-2xl shadow-lg shadow-amber-500/20 transform hover:-translate-y-0.5 transition-all duration-200 cursor-pointer"
-                            >
-                                <Zap className="w-5 h-5 mr-2 text-slate-950" />
-                                Launch Auditing Terminal
-                            </button>
-                            
-                            <button
-                                type="button"
-                                onClick={() => {
-                                    setIsDemoModalOpen(true);
-                                    trackGA4Event('hero_cta_clicked', { action: 'request_demo_modal' });
-                                }}
-                                className="w-full sm:w-auto inline-flex items-center justify-center px-8 py-4 bg-slate-800/80 hover:bg-slate-800 border border-slate-700 hover:border-slate-600 text-white font-extrabold rounded-2xl shadow-md transform hover:-translate-y-0.5 transition-all duration-200 cursor-pointer"
-                            >
-                                Request Enterprise Demo
-                            </button>
-                        </div>
-
-                        {/* Technical metrics/features row - raw, clean presentation */}
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 pt-8 border-t border-slate-800/80 text-left">
-                            <div className="p-4 rounded-2xl bg-slate-900/50 border border-slate-800">
-                                <span className="text-xs font-bold text-amber-500 uppercase tracking-widest block mb-1">SANS 10330 HACCP</span>
-                                <p className="text-xs text-slate-400 font-medium leading-relaxed">Portion temperature controls and micro-audit logging for canteen and food prep areas.</p>
-                            </div>
-                            <div className="p-4 rounded-2xl bg-slate-900/50 border border-slate-800">
-                                <span className="text-xs font-bold text-indigo-400 uppercase tracking-widest block mb-1">SANS 10142-1 Wiring</span>
-                                <p className="text-xs text-slate-400 font-medium leading-relaxed">Commercial isolator clearances and insulation testing audits in heavy operations.</p>
-                            </div>
-                            <div className="p-4 rounded-2xl bg-slate-900/50 border border-slate-800">
-                                <span className="text-xs font-bold text-slate-300 uppercase tracking-widest block mb-1">Compliance Ledger</span>
-                                <p className="text-xs text-slate-400 font-medium leading-relaxed">Integrated PII scrubbing and automated threat telemetry logging across audits.</p>
                             </div>
                         </div>
-                    </div>
-                </div>
-            ) : (
-                /* Technical Terminal Layout */
-                <div>
-                    {/* Authorized session back header */}
-                    <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8 bg-slate-900 text-white p-6 rounded-3xl border border-slate-800 shadow-xl animate-fade-in">
-                        <div>
-                            <span className="text-[10px] font-bold tracking-widest text-amber-500 uppercase block mb-0.5 font-mono">AUTHORIZED TERMINAL SESSION</span>
-                            <h2 className="text-lg font-black text-white">SANS 10330 &amp; 10142 Audit Suite</h2>
-                        </div>
-                        <button
-                            type="button"
-                            onClick={() => setShowLandingPage(true)}
-                            className="inline-flex items-center px-4 py-2 bg-slate-800 hover:bg-slate-700 text-amber-500 font-bold text-xs rounded-xl border border-slate-700 hover:border-slate-600 transition cursor-pointer"
-                        >
-                            ← Return to Marketing Overview
-                        </button>
-                    </div>
 
-                    <div id="auditing-terminal-form" className="grid lg:grid-cols-12 gap-8 items-start">
-                
-                {/* Left Column: Input Form & Sidebar Widgets */}
-                <div className="lg:col-span-5 flex flex-col gap-6">
-                    <div className="bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden">
-                        <div className="bg-gray-50 px-6 py-4 border-b border-gray-100">
-                            <h2 className="font-semibold text-gray-900 flex items-center">
-                                <Settings className="w-5 h-5 mr-2 text-indigo-500"/> Audit Configuration
-                            </h2>
-                        </div>
-                        <div className="p-6">
-                            <form onSubmit={(e) => { e.preventDefault(); runAudit(false); }} className="space-y-6">
-                                <div>
-                                    <label className="block text-xs font-bold text-gray-500 uppercase tracking-wide mb-2">Load Template</label>
-                                    <div className="relative">
-                                        <FileText className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
-                                        <select onChange={handleTemplateChange} defaultValue="" className="w-full pl-10 pr-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm text-gray-700 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition-all appearance-none cursor-pointer hover:bg-white hover:border-gray-300">
-                                            <option value="" disabled>Select a predefined scenario...</option>
-                                            {INSPECTOR_TEMPLATES.map(t => <option key={t.id} value={t.id}>{t.name}</option>)}
-                                        </select>
-                                    </div>
-                                </div>
+                        {/* SANS Regional Feedback Hook Widget */}
+                        <UserFeedbackWidget />
 
-                                <div>
-                                    <label className="block text-xs font-bold text-gray-500 uppercase tracking-wide mb-2">User Prompt / Scenario</label>
-                                    <textarea 
-                                        value={scenario}
-                                        onChange={(e) => setScenario(e.target.value)}
-                                        rows={5}
-                                        className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition-all resize-none"
-                                        placeholder="e.g. Enter SANS 10330 HACCP temperatures, or general prompts..."
-                                    />
-                                </div>
-
-                                <div>
-                                    <label className="block text-xs font-bold text-gray-500 uppercase tracking-wide mb-2">System Instructions (Guardrail)</label>
-                                    <textarea 
-                                        value={systemPrompt}
-                                        onChange={(e) => setSystemPrompt(e.target.value)}
-                                        rows={3}
-                                        className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition-all resize-none"
-                                        placeholder="Define the AI's persona and safety constraints..."
-                                    />
-                                </div>
-
-                                <div className="flex flex-col gap-3 pt-2">
-                                    <div className="flex gap-3">
-                                        <button 
-                                            type="button" 
-                                            onClick={() => { setScenario(''); setResponse(null); setError(null); }} 
-                                            className="px-5 py-2.5 text-sm font-medium text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition"
-                                        >
-                                            Clear
-                                        </button>
-                                        <button 
-                                            type="button"
-                                            onClick={() => runAudit(false)}
-                                            disabled={loading} 
-                                            id="btn-run-inspector"
-                                            className="flex-1 inline-flex items-center justify-center px-4 py-2.5 text-sm font-medium text-white bg-indigo-600 rounded-lg hover:bg-indigo-700 disabled:opacity-50 transition cursor-pointer"
-                                        >
-                                            {loading ? <Loader2 className="w-5 h-5 mr-2 animate-spin" /> : <Zap className="w-5 h-5 mr-2" />}
-                                            {loading ? 'Analyzing...' : 'Run Red-Team'}
-                                        </button>
-                                    </div>
-
-                                    {/* EXPLICIT ACTION COMPONENT: Secure Your Operational Audit */}
+                        {/* History Panel */}
+                        <div className="bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden flex flex-col h-[300px]">
+                            <div className="bg-gray-50 px-6 py-4 border-b border-gray-100 flex justify-between items-center">
+                                <h3 className="font-semibold text-gray-900 flex items-center">
+                                    <Clock className="w-5 h-5 mr-2 text-indigo-500"/> Recent Tests & Audits
+                                </h3>
+                                {history.length > 0 && (
                                     <button 
-                                        type="button"
-                                        onClick={() => runAudit(true)}
-                                        disabled={loading}
-                                        id="btn-secure-audit"
-                                        className="w-full inline-flex items-center justify-center px-6 py-3 border border-transparent text-sm font-bold rounded-xl shadow-[0_4px_15px_rgba(245,158,11,0.2)] text-slate-950 bg-amber-500 hover:bg-amber-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-amber-500 transition-all duration-200 cursor-pointer disabled:opacity-50"
+                                        onClick={() => { if(confirm('Clear history?')) {setHistory([]); localStorage.removeItem('melotwo_inspector_history');}}} 
+                                        className="text-xs text-red-500 hover:text-red-700 hover:bg-red-50 p-1.5 rounded-md transition-colors"
+                                        title="Clear History"
                                     >
-                                        {loading ? <Loader2 className="w-4 h-4 mr-2 animate-spin text-slate-950" /> : (
-                                            <svg className="w-4 h-4 mr-2 stroke-[2.5]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                                <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12c0 1.268-.63 2.39-1.593 3.068a3.745 3.745 0 01-1.043 3.296 3.745 3.745 0 01-3.296 1.043A3.745 3.745 0 0112 21c-1.268 0-2.39-.63-3.068-1.593a3.746 3.746 0 01-3.296-1.043 3.745 3.745 0 01-1.043-3.296A3.745 3.745 0 013 12c0-1.268.63-2.39 1.593-3.068a3.745 3.745 0 011.043-3.296 3.746 3.746 0 013.296-1.043A3.746 3.746 0 0112 3c1.268 0 2.39.63 3.068 1.593a3.746 3.746 0 013.296 1.043 3.746 3.746 0 011.043 3.296A3.745 3.745 0 0121 12z" />
-                                            </svg>
-                                        )}
-                                        Secure Your Operational Audit
+                                        <Trash2 className="w-4 h-4"/>
                                     </button>
+                                )}
+                            </div>
+                            
+                            <div className="p-4 border-b border-gray-100 bg-white">
+                                <div className="relative">
+                                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                                    <input 
+                                        type="text" 
+                                        placeholder="Search past results..." 
+                                        value={historySearchTerm} 
+                                        onChange={e => setHistorySearchTerm(e.target.value)} 
+                                        className="w-full pl-10 pr-4 py-2 text-sm bg-gray-50 border border-gray-200 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none"
+                                    />
                                 </div>
-                            </form>
+                            </div>
+
+                            <div className="flex-1 overflow-y-auto p-2 space-y-1">
+                                {history.length === 0 ? (
+                                    <div className="h-full flex flex-col items-center justify-center text-gray-400 p-8 text-center">
+                                        <Clock className="w-8 h-8 mb-2 opacity-20" />
+                                        <p className="text-sm">No tests run yet.</p>
+                                    </div>
+                                ) : (
+                                    filteredHistory.map(item => (
+                                        <div key={item.id} onClick={() => loadHistoryItem(item)} className="p-3 rounded-xl border border-transparent hover:border-indigo-100 hover:bg-indigo-50/50 cursor-pointer transition-all group">
+                                            <div className="flex justify-between items-start mb-1.5">
+                                                <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${item.result.color.replace('text-', 'text-opacity-90 ').replace('bg-', 'bg-opacity-60 ')}`}>
+                                                    {item.result.label}
+                                                </span>
+                                                <span className="text-[10px] text-gray-400 font-mono">{new Date(item.timestamp).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</span>
+                                            </div>
+                                            <p className="text-xs text-gray-600 line-clamp-2 font-medium group-hover:text-indigo-900 transition-colors">{item.scenario}</p>
+                                        </div>
+                                    ))
+                                )}
+                            </div>
                         </div>
                     </div>
 
-                    {/* SANS Regional Feedback Hook Widget */}
-                    <UserFeedbackWidget />
+                    {/* Right Column: Results & Graphs Grid */}
+                    <div className="lg:col-span-7 flex flex-col gap-6">
+                        {/* Mine Profiles Compliance Dashboard */}
+                        <MineCompliancePanel />
 
-                    {/* History Panel */}
-                    <div className="bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden flex flex-col h-[300px]">
-                        <div className="bg-gray-50 px-6 py-4 border-b border-gray-100 flex justify-between items-center">
-                            <h3 className="font-semibold text-gray-900 flex items-center">
-                                <Clock className="w-5 h-5 mr-2 text-indigo-500"/> Recent Tests & Audits
-                            </h3>
-                            {history.length > 0 && (
-                                <button 
-                                    onClick={() => { if(confirm('Clear history?')) {setHistory([]); localStorage.removeItem('melotwo_inspector_history');}}} 
-                                    className="text-xs text-red-500 hover:text-red-700 hover:bg-red-50 p-1.5 rounded-md transition-colors"
-                                    title="Clear History"
-                                >
-                                    <Trash2 className="w-4 h-4"/>
-                                </button>
-                            )}
-                        </div>
-                        
-                        <div className="p-4 border-b border-gray-100 bg-white">
-                            <div className="relative">
-                                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-                                <input 
-                                    type="text" 
-                                    placeholder="Search past results..." 
-                                    value={historySearchTerm} 
-                                    onChange={e => setHistorySearchTerm(e.target.value)} 
-                                    className="w-full pl-10 pr-4 py-2 text-sm bg-gray-50 border border-gray-200 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none"
-                                />
-                            </div>
-                        </div>
-
-                        <div className="flex-1 overflow-y-auto p-2 space-y-1">
-                            {history.length === 0 ? (
-                                <div className="h-full flex flex-col items-center justify-center text-gray-400 p-8 text-center">
-                                    <Clock className="w-8 h-8 mb-2 opacity-20" />
-                                    <p className="text-sm">No tests run yet.</p>
+                        {/* Analysis Report Card */}
+                        {error && (
+                            <div className="bg-red-50 border border-red-200 rounded-2xl p-6 flex items-start animate-fade-in-up shadow-sm">
+                                <div className="p-2 bg-red-100 rounded-lg mr-4">
+                                    <AlertTriangle className="w-6 h-6 text-red-600" />
                                 </div>
-                            ) : (
-                                filteredHistory.map(item => (
-                                    <div key={item.id} onClick={() => loadHistoryItem(item)} className="p-3 rounded-xl border border-transparent hover:border-indigo-100 hover:bg-indigo-50/50 cursor-pointer transition-all group">
-                                        <div className="flex justify-between items-start mb-1.5">
-                                            <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${item.result.color.replace('text-', 'text-opacity-90 ').replace('bg-', 'bg-opacity-60 ')}`}>
-                                                {item.result.label}
-                                            </span>
-                                            <span className="text-[10px] text-gray-400 font-mono">{new Date(item.timestamp).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</span>
-                                        </div>
-                                        <p className="text-xs text-gray-600 line-clamp-2 font-medium group-hover:text-indigo-900 transition-colors">{item.scenario}</p>
-                                    </div>
-                                ))
-                            )}
-                        </div>
-                    </div>
-                </div>
-
-                {/* Right Column: Results & Graphs Grid */}
-                <div className="lg:col-span-7 flex flex-col gap-6">
-                    {/* Mine Profiles Compliance Dashboard */}
-                    <MineCompliancePanel />
-
-                    {/* Analysis Report Card */}
-                    {error && (
-                        <div className="bg-red-50 border border-red-200 rounded-2xl p-6 flex items-start animate-fade-in-up shadow-sm">
-                            <div className="p-2 bg-red-100 rounded-lg mr-4">
-                                <AlertTriangle className="w-6 h-6 text-red-600" />
+                                <div>
+                                    <h3 className="text-red-900 font-bold mb-1">Analysis Failed</h3>
+                                    <p className="text-sm text-red-700">{error}</p>
+                                </div>
                             </div>
-                            <div>
-                                <h3 className="text-red-900 font-bold mb-1">Analysis Failed</h3>
-                                <p className="text-sm text-red-700">{error}</p>
-                            </div>
-                        </div>
-                    )}
+                        )}
 
-                    {!response && !error ? (
-                        <div className="h-[400px] flex flex-col items-center justify-center text-gray-400 border-2 border-dashed border-gray-200 rounded-3xl bg-gray-50/50">
-                            <div className="w-16 h-16 bg-white rounded-full shadow-sm flex items-center justify-center mb-4">
-                                <Zap className="w-8 h-8 text-gray-300" />
+                        {!response && !error ? (
+                            <div className="h-[400px] flex flex-col items-center justify-center text-gray-400 border-2 border-dashed border-gray-200 rounded-3xl bg-gray-50/50">
+                                <div className="w-16 h-16 bg-white rounded-full shadow-sm flex items-center justify-center mb-4">
+                                    <Zap className="w-8 h-8 text-gray-300" />
+                                </div>
+                                <h3 className="text-lg font-semibold text-gray-900 mb-2">Ready to Inspect & Audit</h3>
+                                <p className="text-gray-500 max-w-sm text-center text-sm">Select a pre-configured template (like SANS 10330 HACCP) or input custom data on the left to trigger safety audits.</p>
                             </div>
-                            <h3 className="text-lg font-semibold text-gray-900 mb-2">Ready to Inspect & Audit</h3>
-                            <p className="text-gray-500 max-w-sm text-center text-sm">Select a pre-configured template (like SANS 10330 HACCP) or input custom data on the left to trigger safety audits.</p>
-                        </div>
-                    ) : (
-                        response && (
-                            <div className="bg-white rounded-3xl shadow-xl border border-gray-100 overflow-hidden animate-fade-in-up ring-1 ring-black/5">
-                                {/* Result Header */}
-                                <div className="p-8 border-b border-gray-100 bg-gradient-to-r from-gray-50 to-white flex flex-col sm:flex-row sm:items-center justify-between gap-6">
-                                    <div>
-                                        <h2 className="text-2xl font-bold text-gray-900">Analysis Report</h2>
-                                        <p className="text-sm text-gray-500 mt-1 flex items-center">
-                                            <Zap className="w-3 h-3 mr-1 text-indigo-500" /> Powered by Gemini 2.5 Flash
-                                        </p>
-                                    </div>
-                                    <div className={`flex items-center px-6 py-3 rounded-2xl border ${response.color} bg-white shadow-sm`}>
-                                        <div className="text-center mr-6">
-                                            <div className="text-[10px] font-bold uppercase tracking-wider opacity-60 mb-0.5">Audit Score</div>
-                                            <div className="text-2xl font-black tracking-tight">{response.score}</div>
-                                        </div>
-                                        <div className="h-10 w-px bg-current opacity-10 mr-6"></div>
+                        ) : (
+                            response && (
+                                <div className="bg-white rounded-3xl shadow-xl border border-gray-100 overflow-hidden animate-fade-in-up ring-1 ring-black/5">
+                                    {/* Result Header */}
+                                    <div className="p-8 border-b border-gray-100 bg-gradient-to-r from-gray-50 to-white flex flex-col sm:flex-row sm:items-center justify-between gap-6">
                                         <div>
-                                            <div className="text-[10px] font-bold uppercase tracking-wider opacity-60 mb-0.5">Assessment</div>
-                                            <div className="text-lg font-bold whitespace-nowrap">{response.label}</div>
+                                            <h2 className="text-2xl font-bold text-gray-900">Analysis Report</h2>
+                                            <p className="text-sm text-gray-500 mt-1 flex items-center">
+                                                <Zap className="w-3 h-3 mr-1 text-indigo-500" /> Powered by Gemini 2.5 Flash
+                                            </p>
+                                        </div>
+                                        <div className={`flex items-center px-6 py-3 rounded-2xl border ${response.color} bg-white shadow-sm`}>
+                                            <div className="text-center mr-6">
+                                                <div className="text-[10px] font-bold uppercase tracking-wider opacity-60 mb-0.5">Audit Score</div>
+                                                <div className="text-2xl font-black tracking-tight">{response.score}</div>
+                                            </div>
+                                            <div className="h-10 w-px bg-current opacity-10 mr-6"></div>
+                                            <div>
+                                                <div className="text-[10px] font-bold uppercase tracking-wider opacity-60 mb-0.5">Assessment</div>
+                                                <div className="text-lg font-bold whitespace-nowrap">{response.label}</div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    {/* Result Body */}
+                                    <div className="p-8">
+                                        <h3 className="text-sm font-bold text-gray-900 uppercase tracking-wide mb-4 flex items-center">
+                                            <div className="w-1.5 h-1.5 rounded-full bg-indigo-500 mr-2.5"></div>
+                                            Compliance Analysis Output
+                                        </h3>
+                                        <div className="bg-slate-900 rounded-2xl p-6 shadow-inner overflow-hidden relative group">
+                                            <div className="absolute top-3 right-3 flex space-x-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                                                <button 
+                                                    onClick={() => navigator.clipboard.writeText(response.text)}
+                                                    className="text-xs text-slate-400 hover:text-white bg-slate-800 hover:bg-slate-700 px-2 py-1 rounded cursor-pointer"
+                                                >
+                                                    Copy
+                                                </button>
+                                            </div>
+                                            <pre className="text-sm text-slate-300 font-mono whitespace-pre-wrap leading-relaxed max-h-[300px] overflow-y-auto custom-scrollbar">
+                                                {response.text}
+                                                {loading && <span className="inline-block w-2 h-4 ml-1 bg-indigo-400 animate-pulse align-middle"/>}
+                                            </pre>
                                         </div>
                                     </div>
                                 </div>
+                            )
+                        )}
 
-                                {/* Result Body */}
-                                <div className="p-8">
-                                    <h3 className="text-sm font-bold text-gray-900 uppercase tracking-wide mb-4 flex items-center">
-                                        <div className="w-1.5 h-1.5 rounded-full bg-indigo-500 mr-2.5"></div>
-                                        Compliance Analysis Output
-                                    </h3>
-                                    <div className="bg-slate-900 rounded-2xl p-6 shadow-inner overflow-hidden relative group">
-                                        <div className="absolute top-3 right-3 flex space-x-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                                            <button 
-                                                onClick={() => navigator.clipboard.writeText(response.text)}
-                                                className="text-xs text-slate-400 hover:text-white bg-slate-800 hover:bg-slate-700 px-2 py-1 rounded cursor-pointer"
-                                            >
-                                                Copy
-                                            </button>
-                                        </div>
-                                        <pre className="text-sm text-slate-300 font-mono whitespace-pre-wrap leading-relaxed max-h-[300px] overflow-y-auto custom-scrollbar">
-                                            {response.text}
-                                            {loading && <span className="inline-block w-2 h-4 ml-1 bg-indigo-400 animate-pulse align-middle"/>}
-                                        </pre>
-                                    </div>
-                                </div>
-                            </div>
-                        )
-                    )}
+                        {/* Highly Polished Amber Industrial Chart */}
+                        <AuditHistoryChart />
 
-                    {/* Highly Polished Amber Industrial Chart */}
-                    <AuditHistoryChart />
-
-                    {/* Secure Intercepted Prompt Analytics Dashboard */}
-                    <PromptMetricsDashboard />
+                        {/* Secure Intercepted Prompt Analytics Dashboard */}
+                        <PromptMetricsDashboard />
+                    </div>
                 </div>
             </div>
         </div>
-        )}
-        </div>
     );
 };
-
 
 // --- Component: Main App ---
 const App: React.FC = () => {
@@ -2063,15 +2044,22 @@ const App: React.FC = () => {
     }, []);
 
     const renderPage = useMemo(() => {
-        return (
-            <SafetyInspectorPage 
-                currentPage={currentPage} 
-                setPage={setCurrentPage} 
-                isDemoModalOpen={isDemoModalOpen}
-                setIsDemoModalOpen={setIsDemoModalOpen}
-            />
-        );
-    }, [currentPage, isDemoModalOpen]);
+        if (currentPage === 'home' || currentPage === 'solutions') {
+            return (
+                <LandingPage 
+                    setPage={setCurrentPage} 
+                    setIsDemoModalOpen={setIsDemoModalOpen}
+                />
+            );
+        } else if (currentPage === 'inspector') {
+            return (
+                <SafetyInspectorPage 
+                    setPage={setCurrentPage} 
+                />
+            );
+        }
+        return null;
+    }, [currentPage]);
 
     return (
         <div className="flex flex-col min-h-screen bg-gray-50 font-sans relative">
@@ -2087,6 +2075,11 @@ const App: React.FC = () => {
             </main>
             <AppFooter />
             <GA4MonitorConsole />
+
+            <EnterpriseDemoModal 
+                isOpen={isDemoModalOpen} 
+                onClose={() => setIsDemoModalOpen(false)} 
+            />
         </div>
     );
 };
