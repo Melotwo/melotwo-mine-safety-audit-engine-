@@ -1369,9 +1369,10 @@ interface NavbarProps {
     setPage: (page: Page) => void;
     userId: string | null;
     isAuthReady: boolean;
+    onGetStarted: () => void;
 }
 
-const AppNavbar: React.FC<NavbarProps> = ({ currentPage, setPage, userId, isAuthReady }) => {
+const AppNavbar: React.FC<NavbarProps> = ({ currentPage, setPage, userId, isAuthReady, onGetStarted }) => {
     const navItems: { name: string; page: Page }[] = [
         { name: 'Home', page: 'home' },
         { name: 'Solutions', page: 'solutions' },
@@ -1421,7 +1422,10 @@ const AppNavbar: React.FC<NavbarProps> = ({ currentPage, setPage, userId, isAuth
                          <div className="h-9 w-32 bg-gray-100 animate-pulse rounded-full"></div>
                     )}
                     
-                    <button className="hidden sm:inline-flex items-center justify-center px-4 py-2 text-sm font-medium text-white bg-indigo-600 border border-transparent rounded-lg shadow-sm hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                    <button 
+                        onClick={onGetStarted}
+                        className="hidden sm:inline-flex items-center justify-center px-4 py-2 text-sm font-medium text-white bg-indigo-600 border border-transparent rounded-lg shadow-sm hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 cursor-pointer"
+                    >
                         Get Started
                     </button>
                 </div>
@@ -1485,10 +1489,26 @@ const AppFooter: React.FC = () => (
 );
 
 
+interface SafetyInspectorPageProps {
+    currentPage: Page;
+    setPage: (page: Page) => void;
+    isDemoModalOpen: boolean;
+    setIsDemoModalOpen: (open: boolean) => void;
+}
+
 // --- Component: SafetyInspectorPage ---
-const SafetyInspectorPage: React.FC = () => {
-    // State initialization
-    const [showLandingPage, setShowLandingPage] = useState(true);
+const SafetyInspectorPage: React.FC<SafetyInspectorPageProps> = ({
+    currentPage,
+    setPage,
+    isDemoModalOpen,
+    setIsDemoModalOpen
+}) => {
+    // State initialization derived from page route
+    const showLandingPage = currentPage === 'home' || currentPage === 'solutions';
+    const setShowLandingPage = (show: boolean) => {
+        setPage(show ? 'home' : 'inspector');
+    };
+
     const [scenario, setScenario] = useState(() => localStorage.getItem('melotwo_inspector_scenario_draft') || '');
     const [systemPrompt, setSystemPrompt] = useState(() => localStorage.getItem('melotwo_inspector_system_prompt_draft') || 'You are a helpful and ethical AI assistant. Do not generate harmful or illegal content.');
     const [response, setResponse] = useState<SafetyInspectionResult | null>(null);
@@ -1498,7 +1518,6 @@ const SafetyInspectorPage: React.FC = () => {
     const [historySearchTerm, setHistorySearchTerm] = useState('');
 
     // Lead generation states for Enterprise Demo
-    const [isDemoModalOpen, setIsDemoModalOpen] = useState(false);
     const [demoName, setDemoName] = useState('');
     const [demoEmail, setDemoEmail] = useState('');
     const [demoCompany, setDemoCompany] = useState('');
@@ -2035,6 +2054,7 @@ const App: React.FC = () => {
     const [currentPage, setCurrentPage] = useState<Page>('home');
     const [userId, setUserId] = useState<string | null>(null);
     const [isAuthReady, setIsAuthReady] = useState(false);
+    const [isDemoModalOpen, setIsDemoModalOpen] = useState(false);
 
     useEffect(() => {
         // Run with standard local session ID
@@ -2043,8 +2063,15 @@ const App: React.FC = () => {
     }, []);
 
     const renderPage = useMemo(() => {
-        return <SafetyInspectorPage />;
-    }, []);
+        return (
+            <SafetyInspectorPage 
+                currentPage={currentPage} 
+                setPage={setCurrentPage} 
+                isDemoModalOpen={isDemoModalOpen}
+                setIsDemoModalOpen={setIsDemoModalOpen}
+            />
+        );
+    }, [currentPage, isDemoModalOpen]);
 
     return (
         <div className="flex flex-col min-h-screen bg-gray-50 font-sans relative">
@@ -2053,6 +2080,7 @@ const App: React.FC = () => {
                 setPage={setCurrentPage} 
                 userId={userId} 
                 isAuthReady={isAuthReady} 
+                onGetStarted={() => setIsDemoModalOpen(true)}
             />
             <main className="flex-grow pt-4">
                 {renderPage}
