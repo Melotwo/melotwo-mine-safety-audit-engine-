@@ -2032,7 +2032,6 @@ const SafetyInspectorPage: React.FC = () => {
 
 // --- Component: Main App ---
 const App: React.FC = () => {
-    // Default page routing state set to 'home'
     const [currentPage, setCurrentPage] = useState<Page>('home');
     const [userId, setUserId] = useState<string | null>(null);
     const [isAuthReady, setIsAuthReady] = useState(false);
