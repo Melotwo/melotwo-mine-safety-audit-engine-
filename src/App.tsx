@@ -558,7 +558,82 @@ const GA4MonitorConsole: React.FC = () => {
 
 // --- Component: MineCompliancePanel ---
 const MineCompliancePanel: React.FC = () => {
-  const [activeProfile, setActiveProfile] = useState<MineProfile>(MINE_PROFILES_BASELINE[0]);
+  const [profiles, setProfiles] = useState<MineProfile[]>(() => {
+    const saved = localStorage.getItem('melotwo_mine_profiles');
+    if (saved) {
+      try {
+        return JSON.parse(saved);
+      } catch (e) {
+        console.error(e);
+      }
+    }
+    return MINE_PROFILES_BASELINE;
+  });
+
+  const [activeProfile, setActiveProfile] = useState<MineProfile>(() => {
+    return profiles[0] || MINE_PROFILES_BASELINE[0];
+  });
+
+  const [showAddForm, setShowAddForm] = useState(false);
+  const [newMineName, setNewMineName] = useState('');
+  const [newMineType, setNewMineType] = useState('Chrome & Platinum Operation');
+  const [newMineLocation, setNewMineLocation] = useState('Mokopane, South Africa');
+
+  useEffect(() => {
+    localStorage.setItem('melotwo_mine_profiles', JSON.stringify(profiles));
+  }, [profiles]);
+
+  const selectProfile = (profile: MineProfile) => {
+    setActiveProfile(profile);
+  };
+
+  const handleAddProfile = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newMineName.trim()) return;
+
+    const newId = `mine-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`;
+    
+    // Generate organic metrics
+    const complianceScore = Math.floor(Math.random() * 15) + 82; // 82 to 97%
+    const safetyRating = complianceScore >= 95 ? 'A+' : complianceScore >= 90 ? 'A' : complianceScore >= 85 ? 'B+' : 'B';
+    
+    const newProfile: MineProfile = {
+      id: newId,
+      name: newMineName.trim(),
+      type: newMineType.trim(),
+      location: newMineLocation.trim(),
+      complianceScore,
+      activeAuditsCount: 3,
+      safetyRating,
+      stats: {
+        airQuality: Math.floor(Math.random() * 15) + 80,
+        waterRecycling: Math.floor(Math.random() * 15) + 80,
+        noiseLevel: Math.floor(Math.random() * 15) + 75,
+        ppeAdherence: Math.floor(Math.random() * 8) + 90,
+      },
+      audits: [
+        { id: `AUD-${newId.substring(5, 8).toUpperCase()}-101`, date: new Date().toISOString().split('T')[0], category: 'SANS 10330: HACCP / Canteen', score: complianceScore, status: 'Passed' },
+        { id: `AUD-${newId.substring(5, 8).toUpperCase()}-102`, date: new Date(Date.now() - 86400000 * 4).toISOString().split('T')[0], category: 'SANS 10142: Electrical', score: Math.max(70, complianceScore - 4), status: complianceScore - 4 >= 80 ? 'Passed' : 'Action Required' },
+        { id: `AUD-${newId.substring(5, 8).toUpperCase()}-103`, date: new Date(Date.now() - 86400000 * 12).toISOString().split('T')[0], category: 'SANS 10049: Hygiene', score: Math.max(70, complianceScore - 2), status: 'Passed' },
+      ]
+    };
+
+    const updated = [...profiles, newProfile];
+    setProfiles(updated);
+    setActiveProfile(newProfile);
+    setShowAddForm(false);
+    setNewMineName('');
+    setNewMineType('Chrome & Platinum Operation');
+    setNewMineLocation('Mokopane, South Africa');
+    
+    trackGA4Event('ai_generation_success', {
+      action: 'add_custom_mine_profile',
+      mine_name: newProfile.name,
+      mine_type: newProfile.type,
+      location: newProfile.location,
+      compliance_score: newProfile.complianceScore
+    });
+  };
 
   return (
     <div className="bg-white rounded-3xl shadow-xl border border-gray-100 overflow-hidden mb-8 animate-fade-in-up">
@@ -567,11 +642,11 @@ const MineCompliancePanel: React.FC = () => {
           <span className="text-xs font-bold text-indigo-600 tracking-wider uppercase">Industrial Operations</span>
           <h2 className="text-2xl font-extrabold text-gray-900 tracking-tight mt-1">Mine Compliance Profiles</h2>
         </div>
-        <div className="flex flex-wrap gap-2">
-          {MINE_PROFILES_BASELINE.map((profile) => (
+        <div className="flex flex-wrap gap-2 items-center">
+          {profiles.map((profile) => (
             <button
               key={profile.id}
-              onClick={() => setActiveProfile(profile)}
+              onClick={() => selectProfile(profile)}
               className={`px-4 py-2 text-xs font-semibold rounded-xl transition-all duration-200 ${
                 activeProfile.id === profile.id
                   ? 'bg-indigo-600 text-white shadow-md'
@@ -581,18 +656,90 @@ const MineCompliancePanel: React.FC = () => {
               {profile.name}
             </button>
           ))}
+          
+          <button
+            onClick={() => setShowAddForm(!showAddForm)}
+            className="px-4 py-2 text-xs font-bold rounded-xl transition-all duration-200 bg-amber-500 hover:bg-amber-600 text-slate-950 flex items-center shadow-sm cursor-pointer"
+          >
+            ＋ Add Custom Profile
+          </button>
         </div>
       </div>
+
+      {showAddForm && (
+        <form onSubmit={handleAddProfile} className="p-8 bg-slate-50 border-b border-gray-100 animate-fade-in-up">
+          <div className="max-w-3xl mx-auto space-y-4">
+            <div className="flex items-center justify-between border-b border-gray-200 pb-2 mb-4">
+              <h3 className="text-xs font-bold text-gray-800 uppercase tracking-wider flex items-center font-mono">
+                <span className="w-2 h-2 rounded-full bg-amber-500 mr-2 animate-pulse"></span>
+                Register Custom Mine Profile (Mokopane & Regional Operations)
+              </h3>
+              <button 
+                type="button" 
+                onClick={() => setShowAddForm(false)} 
+                className="text-gray-400 hover:text-gray-600 text-xs font-bold cursor-pointer"
+              >
+                ✕
+              </button>
+            </div>
+            
+            <div className="grid md:grid-cols-3 gap-4">
+              <div>
+                <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-wide mb-1.5 font-mono">Mine / Operation Name</label>
+                <input
+                  type="text"
+                  required
+                  value={newMineName}
+                  onChange={(e) => setNewMineName(e.target.value)}
+                  placeholder="e.g. Ivanplats Platinum, Mokopane Chrome"
+                  className="w-full px-3 py-2 bg-white border border-gray-200 rounded-xl text-xs focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition"
+                />
+              </div>
+              <div>
+                <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-wide mb-1.5 font-mono">Operation Type</label>
+                <input
+                  type="text"
+                  required
+                  value={newMineType}
+                  onChange={(e) => setNewMineType(e.target.value)}
+                  placeholder="e.g. Platinum & Chrome, Gold Deep Reef"
+                  className="w-full px-3 py-2 bg-white border border-gray-200 rounded-xl text-xs focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition"
+                />
+              </div>
+              <div>
+                <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-wide mb-1.5 font-mono">Geographic Location</label>
+                <input
+                  type="text"
+                  required
+                  value={newMineLocation}
+                  onChange={(e) => setNewMineLocation(e.target.value)}
+                  placeholder="e.g. Mokopane, South Africa"
+                  className="w-full px-3 py-2 bg-white border border-gray-200 rounded-xl text-xs focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition"
+                />
+              </div>
+            </div>
+            
+            <div className="flex justify-end pt-2">
+              <button
+                type="submit"
+                className="px-5 py-2 text-xs font-bold text-white bg-indigo-600 hover:bg-indigo-700 rounded-xl transition shadow-md cursor-pointer"
+              >
+                Save & Select Profile
+              </button>
+            </div>
+          </div>
+        </form>
+      )}
       
       <div className="p-8 grid md:grid-cols-12 gap-8">
         <div className="md:col-span-4 flex flex-col justify-between border-b md:border-b-0 md:border-r border-gray-100 pb-6 md:pb-0 md:pr-8">
           <div>
             <div className="flex justify-between items-center mb-4">
-              <span className="text-xs font-bold text-gray-400 uppercase tracking-wider">{activeProfile.type}</span>
-              <span className="px-3 py-1 text-xs font-black bg-indigo-50 text-indigo-700 rounded-full">{activeProfile.safetyRating} Safety Grade</span>
+              <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">{activeProfile.type}</span>
+              <span className="px-3 py-1 text-[10px] font-black bg-indigo-50 text-indigo-700 rounded-full">{activeProfile.safetyRating} Safety Grade</span>
             </div>
             <h3 className="text-xl font-bold text-gray-900 mb-1">{activeProfile.name}</h3>
-            <p className="text-sm text-gray-500 mb-6">{activeProfile.location}</p>
+            <p className="text-xs text-gray-500 mb-6">{activeProfile.location}</p>
           </div>
           <div className="bg-gradient-to-tr from-slate-900 to-indigo-950 p-6 rounded-2xl text-white shadow-lg">
             <span className="text-[10px] font-bold tracking-widest text-indigo-300 uppercase block mb-1">Overall Compliance</span>
@@ -607,7 +754,7 @@ const MineCompliancePanel: React.FC = () => {
         </div>
 
         <div className="md:col-span-8 space-y-6">
-          <h4 className="text-sm font-bold text-gray-500 uppercase tracking-wider">SANS Operational Metrics</h4>
+          <h4 className="text-xs font-bold text-gray-500 uppercase tracking-wider">SANS Operational Metrics</h4>
           <div className="grid sm:grid-cols-2 gap-4">
             <div className="p-4 bg-gray-50 rounded-2xl border border-gray-100">
               <div className="flex justify-between text-xs text-gray-500 mb-2 font-medium">
@@ -648,7 +795,7 @@ const MineCompliancePanel: React.FC = () => {
           </div>
 
           <div className="mt-4 pt-4 border-t border-gray-100">
-            <h4 className="text-sm font-bold text-gray-500 uppercase tracking-wider mb-3">Active SANS Audits</h4>
+            <h4 className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-3">Active SANS Audits</h4>
             <div className="overflow-x-auto">
               <table className="w-full text-left border-collapse text-xs">
                 <thead>
@@ -698,6 +845,98 @@ const AuditHistoryChart: React.FC = () => {
   const [metric, setMetric] = useState<'compliance' | 'risk' | 'ppe'>('compliance');
   const [hoveredPoint, setHoveredPoint] = useState<number | null>(null);
 
+  // Heatmap constants
+  const heatmapDays = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+  const heatmapShifts = [
+    { name: 'Graveyard Shift (00:00-06:00)', short: 'Graveyard' },
+    { name: 'Morning Shift (06:00-12:00)', short: 'Morning' },
+    { name: 'Afternoon Shift (12:00-18:00)', short: 'Afternoon' },
+    { name: 'Evening Shift (18:00-24:00)', short: 'Evening' },
+  ];
+
+  // Persistent heatmap data
+  const [heatmapData, setHeatmapData] = useState<number[][]>(() => {
+    const saved = localStorage.getItem('melotwo_audit_heatmap_data');
+    if (saved) {
+      try { return JSON.parse(saved); } catch (e) { /* fallback */ }
+    }
+    return [
+      [2, 0, 1, 4, 1, 2, 0], // Graveyard
+      [8, 12, 7, 15, 9, 4, 3], // Morning
+      [14, 18, 12, 22, 11, 6, 5], // Afternoon
+      [6, 8, 5, 10, 7, 3, 2], // Evening
+    ];
+  });
+
+  const [hoveredCell, setHoveredCell] = useState<{ row: number; col: number } | null>(null);
+
+  useEffect(() => {
+    localStorage.setItem('melotwo_audit_heatmap_data', JSON.stringify(heatmapData));
+  }, [heatmapData]);
+
+  const handleCellClick = (r: number, c: number) => {
+    setHeatmapData(prev => {
+      const copy = prev.map(row => [...row]);
+      copy[r][c] += 1;
+      return copy;
+    });
+    trackGA4Event('heatmap_cell_incremented', {
+      shift: heatmapShifts[r].name,
+      day: heatmapDays[c],
+      new_intensity: heatmapData[r][c] + 1
+    });
+  };
+
+  const handleSimulatePatrol = () => {
+    setHeatmapData(prev => {
+      const copy = prev.map(row => [...row]);
+      for (let i = 0; i < 4; i++) {
+        const rRow = Math.floor(Math.random() * heatmapShifts.length);
+        const rCol = Math.floor(Math.random() * heatmapDays.length);
+        copy[rRow][rCol] += Math.floor(Math.random() * 3) + 1;
+      }
+      return copy;
+    });
+    trackGA4Event('heatmap_patrol_simulated', {
+      timestamp: new Date().toISOString()
+    });
+  };
+
+  const handleDownloadCSV = () => {
+    const csvHeaders = ['Shift Window', ...heatmapDays, 'Weekly Total'];
+    const csvRows = heatmapShifts.map((shift, rIdx) => {
+      const rowData = heatmapData[rIdx];
+      const rowSum = rowData.reduce((a, b) => a + b, 0);
+      return [
+        `"${shift.name}"`,
+        ...rowData,
+        rowSum
+      ].join(',');
+    });
+
+    const colTotals = heatmapDays.map((_, cIdx) => {
+      return heatmapShifts.reduce((sum, _, rIdx) => sum + heatmapData[rIdx][cIdx], 0);
+    });
+    const totalSum = colTotals.reduce((a, b) => a + b, 0);
+    const totalsRow = ['"Total Checks"', ...colTotals, totalSum].join(',');
+
+    const csvContent = [csvHeaders.join(','), ...csvRows, totalsRow].join('\n');
+    
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.setAttribute('download', `melotwo_safety_audit_intensity_${new Date().toISOString().split('T')[0]}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+
+    trackGA4Event('heatmap_csv_downloaded', {
+      total_checks: totalSum,
+      timestamp: new Date().toISOString()
+    });
+  };
+
   // Initial historical audit data
   const [data, setData] = useState<DataPoint[]>(() => {
     const saved = localStorage.getItem('melotwo_audit_chart_data');
@@ -743,6 +982,16 @@ const AuditHistoryChart: React.FC = () => {
 
     setTimeout(() => {
       setData(prev => [...prev, newPoint]);
+      
+      // Update heatmap with random intensity on historical audit logging
+      setHeatmapData(prev => {
+        const copy = prev.map(row => [...row]);
+        const rRow = Math.floor(Math.random() * heatmapShifts.length);
+        const rCol = Math.floor(Math.random() * heatmapDays.length);
+        copy[rRow][rCol] += Math.floor(Math.random() * 3) + 2;
+        return copy;
+      });
+
       trackGA4Event('ai_generation_success', {
         action: 'add_audit_history_point',
         new_point_label: newPoint.label,
@@ -989,6 +1238,160 @@ const AuditHistoryChart: React.FC = () => {
             <p className="text-slate-300">PPE Degradation: <span className="text-white font-bold">{data[hoveredPoint].ppeDegradation}%</span></p>
           </div>
         )}
+      </div>
+
+      {/* Visual Safety Audit Heatmap Widget */}
+      <div className="border border-slate-800 bg-slate-950/40 rounded-xl p-5 flex flex-col gap-4">
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 border-b border-slate-800/80 pb-3">
+          <div>
+            <h4 className="text-sm font-bold text-slate-100 flex items-center gap-2">
+              <svg className="w-4 h-4 text-amber-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+              </svg>
+              Safety Audit Intensity Heatmap
+            </h4>
+            <p className="text-[11px] text-slate-400 mt-0.5">
+              Weekly audit activity density across shift windows. Click cells to manually log custom checks.
+            </p>
+          </div>
+          
+          <div className="flex items-center gap-2 self-end">
+            <button
+              onClick={handleDownloadCSV}
+              className="px-2.5 py-1 text-[10px] font-bold text-slate-300 hover:text-white hover:bg-slate-800 border border-slate-700 rounded-lg transition-all flex items-center gap-1.5 cursor-pointer"
+            >
+              <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+              </svg>
+              Download CSV
+            </button>
+
+            <button
+              onClick={handleSimulatePatrol}
+              className="px-2.5 py-1 text-[10px] font-bold text-amber-400 hover:text-slate-950 hover:bg-amber-400 border border-amber-400/30 rounded-lg transition-all flex items-center gap-1.5 cursor-pointer"
+            >
+              <svg className="w-3 h-3 animate-spin" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 1121.21 8H18" />
+              </svg>
+              Simulate Live Patrols
+            </button>
+          </div>
+        </div>
+
+        {/* Heatmap Grid container */}
+        <div className="overflow-x-auto">
+          <div className="min-w-[600px] select-none">
+            {/* Days Column Headers */}
+            <div className="grid grid-cols-12 gap-1 mb-2">
+              <div className="col-span-3"></div> {/* spacer for Row headers */}
+              {heatmapDays.map((day, dIdx) => (
+                <div key={dIdx} className="col-span-1 text-center text-[10px] font-bold text-slate-400 uppercase tracking-wider font-mono">
+                  {day}
+                </div>
+              ))}
+              <div className="col-span-2 text-right text-[10px] font-bold text-slate-400 uppercase tracking-wider pr-1 font-mono">Weekly</div>
+            </div>
+
+            {/* Grid rows */}
+            <div className="space-y-1.5">
+              {heatmapShifts.map((shift, rIdx) => {
+                const rowSum = heatmapData[rIdx].reduce((a, b) => a + b, 0);
+                return (
+                  <div key={rIdx} className="grid grid-cols-12 gap-1 items-center">
+                    {/* Shift Row Label */}
+                    <div className="col-span-3 text-[11px] font-medium text-slate-300 truncate pr-2 font-mono">
+                      {shift.short}
+                    </div>
+
+                    {/* Cells */}
+                    {heatmapDays.map((_, cIdx) => {
+                      const value = heatmapData[rIdx][cIdx];
+                      // Choose cell styles based on intensity value
+                      let cellClass = "bg-slate-900 border border-slate-800 text-slate-600";
+                      let cellHoverClass = "hover:border-slate-600 hover:shadow-[0_0_10px_rgba(255,255,255,0.06)]";
+                      let tooltipText = "0 Safety Checks (No Patrols)";
+                      
+                      if (value >= 15) {
+                        cellClass = "bg-amber-400 border-amber-300 text-slate-950 font-extrabold shadow-[0_0_8px_rgba(245,158,11,0.5)]";
+                        cellHoverClass = "hover:border-amber-200 hover:shadow-[0_0_20px_rgba(245,158,11,0.9)]";
+                        tooltipText = `${value} Safety Checks (Critical Level)`;
+                      } else if (value >= 9) {
+                        cellClass = "bg-amber-500/80 border-amber-500/40 text-slate-950 font-semibold";
+                        cellHoverClass = "hover:border-amber-300 hover:shadow-[0_0_16px_rgba(245,158,11,0.7)]";
+                        tooltipText = `${value} Safety Checks (High Intensity)`;
+                      } else if (value >= 4) {
+                        cellClass = "bg-amber-500/40 border-amber-500/20 text-amber-200 font-medium";
+                        cellHoverClass = "hover:border-amber-400 hover:shadow-[0_0_14px_rgba(245,158,11,0.55)]";
+                        tooltipText = `${value} Safety Checks (Moderate Intensity)`;
+                      } else if (value >= 1) {
+                        cellClass = "bg-amber-500/15 border-amber-500/10 text-amber-500/70";
+                        cellHoverClass = "hover:border-amber-400/50 hover:shadow-[0_0_10px_rgba(245,158,11,0.35)]";
+                        tooltipText = `${value} Safety Checks (Low Intensity)`;
+                      }
+
+                      return (
+                        <div
+                          key={cIdx}
+                          onClick={() => handleCellClick(rIdx, cIdx)}
+                          onMouseEnter={() => setHoveredCell({ row: rIdx, col: cIdx })}
+                          onMouseLeave={() => setHoveredCell(null)}
+                          className={`col-span-1 h-9 rounded-lg flex items-center justify-center text-xs cursor-pointer transition-all duration-300 ease-out relative hover:scale-112 hover:-translate-y-0.5 hover:z-10 ${cellClass} ${cellHoverClass}`}
+                        >
+                          {value}
+
+                          {/* Individual cell tooltip */}
+                          {hoveredCell && hoveredCell.row === rIdx && hoveredCell.col === cIdx && (
+                            <div className="absolute bottom-full mb-2 left-1/2 -translate-x-1/2 bg-slate-950 border border-slate-700 text-white text-[10px] py-1 px-2.5 rounded-md shadow-2xl pointer-events-none whitespace-nowrap z-30 font-mono">
+                              <p className="font-bold text-amber-400">{heatmapDays[cIdx]} • {shift.short}</p>
+                              <p className="text-slate-300 mt-0.5">{tooltipText}</p>
+                              <p className="text-slate-400 text-[8px] italic mt-0.5">Click to log check</p>
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })}
+
+                    {/* Row Sum label */}
+                    <div className="col-span-2 text-right text-xs font-semibold text-slate-400 pr-1.5 font-mono">
+                      {rowSum}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+
+        {/* Heatmap Legend */}
+        <div className="flex flex-wrap justify-between items-center gap-3 border-t border-slate-900/60 pt-3">
+          <div className="flex items-center gap-2 text-[10px] text-slate-400 font-mono">
+            <span>Intensity:</span>
+            <div className="flex items-center gap-1">
+              <div className="w-3 h-3 bg-slate-900 border border-slate-800 rounded"></div>
+              <span>0</span>
+            </div>
+            <div className="flex items-center gap-1">
+              <div className="w-3 h-3 bg-amber-500/15 border border-amber-500/10 rounded"></div>
+              <span>1-3</span>
+            </div>
+            <div className="flex items-center gap-1">
+              <div className="w-3 h-3 bg-amber-500/40 border border-amber-500/20 rounded"></div>
+              <span>4-8</span>
+            </div>
+            <div className="flex items-center gap-1">
+              <div className="w-3 h-3 bg-amber-500/80 border border-amber-500/40 rounded"></div>
+              <span>9-14</span>
+            </div>
+            <div className="flex items-center gap-1">
+              <div className="w-3 h-3 bg-amber-400 border border-amber-300 rounded shadow-[0_0_5px_rgba(245,158,11,0.3)]"></div>
+              <span>15+</span>
+            </div>
+          </div>
+          
+          <div className="text-[10px] text-slate-500 italic font-mono">
+            Total active checks today: {heatmapData.reduce((acc, row) => acc + row.reduce((a, b) => a + b, 0), 0)}
+          </div>
+        </div>
       </div>
 
       <div className="flex justify-between items-center bg-slate-950/60 border border-slate-800 px-4 py-3 rounded-xl text-xs text-slate-400">
@@ -1593,11 +1996,26 @@ const EnterpriseDemoModal: React.FC<EnterpriseDemoModalProps> = ({ isOpen, onClo
 
 // --- Component: LandingPage ---
 interface LandingPageProps {
+    currentPage: Page;
     setPage: (page: Page) => void;
     setIsDemoModalOpen: (open: boolean) => void;
 }
 
-const LandingPage: React.FC<LandingPageProps> = ({ setPage, setIsDemoModalOpen }) => {
+const LandingPage: React.FC<LandingPageProps> = ({ currentPage, setPage, setIsDemoModalOpen }) => {
+    useEffect(() => {
+        if (currentPage === 'solutions') {
+            const el = document.getElementById('solutions-section');
+            if (el) {
+                const timer = setTimeout(() => {
+                    el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                }, 100);
+                return () => clearTimeout(timer);
+            }
+        } else if (currentPage === 'home') {
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+    }, [currentPage]);
+
     return (
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
             {/* Premium Landing Page Hero Layout */}
@@ -1661,6 +2079,94 @@ const LandingPage: React.FC<LandingPageProps> = ({ setPage, setIsDemoModalOpen }
                         <div className="p-4 rounded-2xl bg-slate-900/50 border border-slate-800">
                             <span className="text-xs font-bold text-slate-300 uppercase tracking-widest block mb-1">Compliance Ledger</span>
                             <p className="text-xs text-slate-400 font-medium leading-relaxed">Integrated PII scrubbing and automated threat telemetry logging across audits.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            {/* MeloTwo S-Tier Solutions Section */}
+            <div id="solutions-section" className="scroll-mt-24 pt-4 mb-16">
+                <div className="text-center max-w-3xl mx-auto mb-12">
+                    <span className="text-xs font-bold text-indigo-600 tracking-wider uppercase bg-indigo-50 px-3 py-1 rounded-full">Suite of Services</span>
+                    <h2 className="text-3xl font-extrabold text-gray-900 tracking-tight mt-2">MeloTwo SANS Compliance Solutions</h2>
+                    <p className="text-gray-500 text-sm mt-3 leading-relaxed">
+                        Fully aligned with South African National Standards to automate verification, identify operational hazards, and simulate PPE safety boundaries.
+                    </p>
+                </div>
+
+                <div className="grid md:grid-cols-3 gap-8">
+                    {/* Solution Card 1 */}
+                    <div className="bg-white border border-gray-100 rounded-3xl p-8 shadow-xl hover:shadow-2xl transition-all duration-300 flex flex-col justify-between">
+                        <div>
+                            <div className="w-12 h-12 rounded-2xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center mb-6">
+                                <Shield className="w-6 h-6 text-amber-500" />
+                            </div>
+                            <h3 className="text-lg font-bold text-gray-950 mb-2">SANS 10330: HACCP / Canteen</h3>
+                            <p className="text-xs text-gray-500 leading-relaxed">
+                                Automated audits of catering and portion management. Validates raw poultry storage temperatures, cooked core targets (72°C held for 15s), blast cooling intervals, and critical control points (CCPs).
+                            </p>
+                        </div>
+                        <div className="mt-8 pt-4 border-t border-gray-50 flex items-center justify-between">
+                            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Active Audits Standard</span>
+                            <button 
+                                onClick={() => {
+                                    setPage('inspector');
+                                    trackGA4Event('solutions_card_clicked', { standard: 'sans-10330' });
+                                }}
+                                className="text-xs font-bold text-indigo-600 hover:text-indigo-800 flex items-center gap-1 transition cursor-pointer"
+                            >
+                                Launch →
+                            </button>
+                        </div>
+                    </div>
+
+                    {/* Solution Card 2 */}
+                    <div className="bg-white border border-gray-100 rounded-3xl p-8 shadow-xl hover:shadow-2xl transition-all duration-300 flex flex-col justify-between">
+                        <div>
+                            <div className="w-12 h-12 rounded-2xl bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center mb-6">
+                                <Settings className="w-6 h-6 text-indigo-500" />
+                            </div>
+                            <h3 className="text-lg font-bold text-gray-950 mb-2">SANS 10142-1: Wiring & Isolators</h3>
+                            <p className="text-xs text-gray-500 leading-relaxed">
+                                Heavy-duty machinery electrical clearance audits. Inspects 3-phase commercial isolators, combi oven clearances from steam exhausts, and metal wet prep sink distances to plug sockets.
+                            </p>
+                        </div>
+                        <div className="mt-8 pt-4 border-t border-gray-50 flex items-center justify-between">
+                            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Wiring Code Verified</span>
+                            <button 
+                                onClick={() => {
+                                    setPage('inspector');
+                                    trackGA4Event('solutions_card_clicked', { standard: 'sans-10142' });
+                                }}
+                                className="text-xs font-bold text-indigo-600 hover:text-indigo-800 flex items-center gap-1 transition cursor-pointer"
+                            >
+                                Launch →
+                            </button>
+                        </div>
+                    </div>
+
+                    {/* Solution Card 3 */}
+                    <div className="bg-white border border-gray-100 rounded-3xl p-8 shadow-xl hover:shadow-2xl transition-all duration-300 flex flex-col justify-between">
+                        <div>
+                            <div className="w-12 h-12 rounded-2xl bg-teal-500/10 border border-teal-500/20 flex items-center justify-center mb-6">
+                                <Zap className="w-6 h-6 text-teal-600" />
+                            </div>
+                            <h3 className="text-lg font-bold text-gray-950 mb-2">SANS 10049: Hygiene & PPE</h3>
+                            <p className="text-xs text-gray-500 leading-relaxed">
+                                Operational health and personnel pre-requisite audits. Inspects staff sanitation, open refuse handling, chemical concentration rates, and tracks PPE material degradation index trends.
+                            </p>
+                        </div>
+                        <div className="mt-8 pt-4 border-t border-gray-50 flex items-center justify-between">
+                            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Pre-requisite Programs</span>
+                            <button 
+                                onClick={() => {
+                                    setPage('inspector');
+                                    trackGA4Event('solutions_card_clicked', { standard: 'sans-10049' });
+                                }}
+                                className="text-xs font-bold text-indigo-600 hover:text-indigo-800 flex items-center gap-1 transition cursor-pointer"
+                            >
+                                Launch →
+                            </button>
                         </div>
                     </div>
                 </div>
@@ -2047,6 +2553,7 @@ const App: React.FC = () => {
         if (currentPage === 'home' || currentPage === 'solutions') {
             return (
                 <LandingPage 
+                    currentPage={currentPage}
                     setPage={setCurrentPage} 
                     setIsDemoModalOpen={setIsDemoModalOpen}
                 />
