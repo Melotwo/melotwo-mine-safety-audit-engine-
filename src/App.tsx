@@ -275,11 +275,16 @@ const runSafetyInspector = async (
     systemInstruction: string,
     onStreamUpdate?: (text: string) => void
 ): Promise<SafetyInspectionResult> => {
-    if (!process.env.API_KEY) {
-        throw new Error("API_KEY environment variable not set. Please ensure it is configured in your environment.");
+    // Robust multi-environment API Key lookup
+    const apiKey = 
+        (typeof import.meta !== 'undefined' && import.meta.env && (import.meta.env.VITE_GEMINI_API_KEY || import.meta.env.VITE_API_KEY)) ||
+        (typeof process !== 'undefined' && process.env && (process.env.GEMINI_API_KEY || process.env.API_KEY));
+
+    if (!apiKey) {
+        throw new Error("Gemini API Key is not set. Please ensure VITE_GEMINI_API_KEY is configured in your hosting/environment settings.");
     }
 
-    const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+    const ai = new GoogleGenAI({ apiKey });
 
     try {
         const streamResponse = await ai.models.generateContentStream({
@@ -2255,7 +2260,7 @@ const SafetyInspectorPage: React.FC<SafetyInspectorPageProps> = ({ setPage }) =>
 
         try {
             const finalResult = await runSafetyInspector(scenario, systemPrompt, (streamedText) => {
-                setResponse(prev => prev ? { ...prev, text: streamedText } : null);
+                setResponse(prev => prev ? { ...prev, text: streamedText, label: 'Streaming...' } : null);
             });
             setResponse(finalResult);
             saveToHistory(finalResult, scenario, systemPrompt);
@@ -2268,7 +2273,11 @@ const SafetyInspectorPage: React.FC<SafetyInspectorPageProps> = ({ setPage }) =>
                 prompt_length: scenario.length
             });
         } catch (err: any) {
-            const errMsg = err.message || 'An unknown error occurred.';
+            let errMsg = err.message || 'An unknown error occurred.';
+            // Gracefully normalize old API_KEY errors or similar env messages
+            if (errMsg.includes('API_KEY') || errMsg.includes('apiKey')) {
+                errMsg = "Gemini API Key is not set. Please ensure VITE_GEMINI_API_KEY is configured in your hosting/environment settings.";
+            }
             setError(errMsg);
             setResponse(null);
 
