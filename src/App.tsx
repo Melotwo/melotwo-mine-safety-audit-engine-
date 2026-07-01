@@ -275,9 +275,9 @@ const runSafetyInspector = async (
     systemInstruction: string,
     onStreamUpdate?: (text: string) => void
 ): Promise<SafetyInspectionResult> => {
-    // Secure client-side lookup exclusively using import.meta.env to prevent runtime evaluation errors in pure browser environments like GitHub Pages.
+    // Strictly load the Gemini API Key from import.meta.env.VITE_GEMINI_API_KEY
     const apiKey = 
-        (typeof import.meta !== 'undefined' && import.meta.env && (import.meta.env.VITE_GEMINI_API_KEY || import.meta.env.VITE_API_KEY)) || 
+        (typeof import.meta !== 'undefined' && import.meta.env && import.meta.env.VITE_GEMINI_API_KEY) || 
         (typeof window !== 'undefined' && (window as any)?.__GEMINI_API_KEY__) || 
         '';
 
