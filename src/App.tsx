@@ -850,6 +850,9 @@ interface DataPoint {
 const AuditHistoryChart: React.FC = () => {
   const [metric, setMetric] = useState<'compliance' | 'risk' | 'ppe'>('compliance');
   const [hoveredPoint, setHoveredPoint] = useState<number | null>(null);
+  const [showComparator, setShowComparator] = useState<boolean>(true);
+  const [compareA, setCompareA] = useState<number>(0);
+  const [compareB, setCompareB] = useState<number>(1);
 
   // Heatmap constants
   const heatmapDays = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
@@ -1064,6 +1067,46 @@ const AuditHistoryChart: React.FC = () => {
     return `${basePath} L ${last.x} ${height - paddingY} Z`;
   }, [pointsCoordinates, height, paddingY]);
 
+  const safeCompareA = compareA < data.length ? compareA : Math.max(0, data.length - 2);
+  const safeCompareB = compareB < data.length ? compareB : Math.max(0, data.length - 1);
+
+  const compAItem = data[safeCompareA] || data[0];
+  const compBItem = data[safeCompareB] || data[data.length - 1] || data[0];
+
+  const complianceDelta = compBItem && compAItem ? compBItem.complianceScore - compAItem.complianceScore : 0;
+  const riskDelta = compBItem && compAItem ? compBItem.riskLevel - compAItem.riskLevel : 0;
+  const ppeDelta = compBItem && compAItem ? compBItem.ppeDegradation - compAItem.ppeDegradation : 0;
+
+  const getInsightText = (a: DataPoint, b: DataPoint, compD: number, riskD: number, ppeD: number) => {
+    if (!a || !b) return 'Select two audits above to compute safety delta insights.';
+    const parts: string[] = [];
+
+    // Compliance Insights
+    if (compD > 0) {
+      parts.push(`Compliance score improved significantly by +${compD}% points (from ${a.complianceScore}% to ${b.complianceScore}%), reflecting strong alignment with South African SANS 10330 standards.`);
+    } else if (compD < 0) {
+      parts.push(`Critical standard regression of ${compD}% detected (dropped from ${a.complianceScore}% to ${b.complianceScore}%). Immediate calibration of refrigeration zones and portion cooking safety is advised.`);
+    } else {
+      parts.push(`Compliance score remains flat at ${a.complianceScore}%. Ensure routine sanitization logs are kept up to date.`);
+    }
+
+    // Risk Insights
+    if (riskD < 0) {
+      parts.push(`Operational risk factor diminished by ${Math.abs(riskD)} points (from ${a.riskLevel}/10 to ${b.riskLevel}/10). This correlates with high check density and intensified patrol patterns.`);
+    } else if (riskD > 0) {
+      parts.push(`Risk index escalated by +${riskD} points. Red Team recommends introducing a dedicated patrol segment on high-variance morning and afternoon windows.`);
+    }
+
+    // PPE Insights
+    if (ppeD > 0) {
+      parts.push(`Critical garment & utensil degradation increased by +${ppeD}% points, indicating accelerated kitchen hardware wear.`);
+    } else if (ppeD < 0) {
+      parts.push(`PPE wear rating dropped by ${Math.abs(ppeD)}% points due to timely asset rotation.`);
+    }
+
+    return parts.join(' ');
+  };
+
   return (
     <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl text-slate-100 flex flex-col gap-6 w-full relative overflow-hidden" id="compliance-history-widget">
       {/* Decorative safety glow stripe */}
@@ -1092,24 +1135,41 @@ const AuditHistoryChart: React.FC = () => {
       </div>
 
       {/* Tabs to select metric */}
-      <div className="flex gap-2 bg-slate-950 p-1 rounded-xl border border-slate-800 self-start">
+      <div className="flex flex-wrap justify-between items-center gap-4 bg-slate-950/40 p-2 rounded-xl border border-slate-800/80">
+        <div className="flex gap-1 bg-slate-950 p-1 rounded-lg border border-slate-800">
+          <button
+            onClick={() => setMetric('compliance')}
+            className={`px-3 py-1 text-xs font-semibold rounded-lg transition-all ${metric === 'compliance' ? 'bg-amber-500 text-slate-950' : 'text-slate-400 hover:text-white'}`}
+          >
+            Compliance Scores
+          </button>
+          <button
+            onClick={() => setMetric('risk')}
+            className={`px-3 py-1 text-xs font-semibold rounded-lg transition-all ${metric === 'risk' ? 'bg-amber-500 text-slate-950' : 'text-slate-400 hover:text-white'}`}
+          >
+            Risk Levels
+          </button>
+          <button
+            onClick={() => setMetric('ppe')}
+            className={`px-3 py-1 text-xs font-semibold rounded-lg transition-all ${metric === 'ppe' ? 'bg-amber-500 text-slate-950' : 'text-slate-400 hover:text-white'}`}
+          >
+            PPE Degradation
+          </button>
+        </div>
+
+        {/* Comparison toggle */}
         <button
-          onClick={() => setMetric('compliance')}
-          className={`px-3 py-1 text-xs font-semibold rounded-lg transition-all ${metric === 'compliance' ? 'bg-amber-500 text-slate-950' : 'text-slate-400 hover:text-white'}`}
+          onClick={() => setShowComparator(!showComparator)}
+          className={`px-3 py-1.5 text-xs font-bold rounded-lg border transition-all flex items-center gap-1.5 cursor-pointer ${
+            showComparator 
+              ? 'bg-amber-500/20 text-amber-400 border-amber-500/40 shadow-[0_0_12px_rgba(245,158,11,0.15)]' 
+              : 'text-slate-400 hover:text-white border-slate-800 hover:bg-slate-900'
+          }`}
         >
-          Compliance Scores
-        </button>
-        <button
-          onClick={() => setMetric('risk')}
-          className={`px-3 py-1 text-xs font-semibold rounded-lg transition-all ${metric === 'risk' ? 'bg-amber-500 text-slate-950' : 'text-slate-400 hover:text-white'}`}
-        >
-          Risk Levels
-        </button>
-        <button
-          onClick={() => setMetric('ppe')}
-          className={`px-3 py-1 text-xs font-semibold rounded-lg transition-all ${metric === 'ppe' ? 'bg-amber-500 text-slate-950' : 'text-slate-400 hover:text-white'}`}
-        >
-          PPE Degradation
+          <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+            <path strokeLinecap="round" strokeLinejoin="round" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2m0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+          </svg>
+          Compare Past Audits
         </button>
       </div>
 
@@ -1245,6 +1305,210 @@ const AuditHistoryChart: React.FC = () => {
           </div>
         )}
       </div>
+
+      {showComparator && (
+        <div className="bg-slate-950/80 border border-slate-800 rounded-xl p-5 mt-2 flex flex-col gap-5">
+          <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4 pb-3 border-b border-slate-800/60">
+            <div>
+              <h4 className="text-sm font-bold text-slate-100 flex items-center gap-2">
+                <svg className="w-4 h-4 text-amber-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+                </svg>
+                Comparative Audit Delta Analyzer
+              </h4>
+              <p className="text-[11px] text-slate-400 mt-0.5">Select two historical audit logs to compare compliance variance and run Red Team analysis.</p>
+            </div>
+            
+            {/* Dropdowns to select audits */}
+            <div className="flex flex-wrap items-center gap-3 w-full lg:w-auto">
+              <div className="flex items-center gap-2">
+                <span className="text-[10px] uppercase font-bold text-slate-400 font-mono">Base Audit A:</span>
+                <select
+                  value={safeCompareA}
+                  onChange={(e) => setCompareA(Number(e.target.value))}
+                  className="bg-slate-900 border border-slate-800 text-slate-100 text-xs font-mono rounded-lg py-1 px-2.5 focus:border-amber-500 focus:ring-1 focus:ring-amber-500 focus:outline-none"
+                >
+                  {data.map((d, i) => (
+                    <option key={i} value={i}>
+                      {d.label} ({d.complianceScore}%)
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="text-slate-600 font-bold hidden sm:inline">vs</div>
+
+              <div className="flex items-center gap-2">
+                <span className="text-[10px] uppercase font-bold text-slate-400 font-mono">Target Audit B:</span>
+                <select
+                  value={safeCompareB}
+                  onChange={(e) => setCompareB(Number(e.target.value))}
+                  className="bg-slate-900 border border-slate-800 text-slate-100 text-xs font-mono rounded-lg py-1 px-2.5 focus:border-amber-500 focus:ring-1 focus:ring-amber-500 focus:outline-none"
+                >
+                  {data.map((d, i) => (
+                    <option key={i} value={i}>
+                      {d.label} ({d.complianceScore}%)
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </div>
+          </div>
+
+          {/* Grid of 3 Comparison Cards */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            {/* Card 1: Compliance */}
+            <div className="bg-slate-900/50 border border-slate-800/80 rounded-xl p-4 flex flex-col gap-3 relative">
+              <span className="text-[10px] uppercase font-bold text-slate-400 tracking-wider font-mono">Compliance Score</span>
+              <div className="flex justify-between items-baseline">
+                <div className="flex flex-col">
+                  <span className="text-slate-500 text-[10px] font-mono">{data[safeCompareA]?.label || 'N/A'}</span>
+                  <span className="text-xl font-extrabold text-slate-300 font-mono">{data[safeCompareA]?.complianceScore || 0}%</span>
+                </div>
+                <div className="text-slate-600 text-sm font-bold font-mono">→</div>
+                <div className="flex flex-col items-end">
+                  <span className="text-slate-500 text-[10px] font-mono">{data[safeCompareB]?.label || 'N/A'}</span>
+                  <span className="text-xl font-extrabold text-white font-mono">{data[safeCompareB]?.complianceScore || 0}%</span>
+                </div>
+              </div>
+              
+              {/* Progress bar comparison */}
+              <div className="relative h-1.5 bg-slate-950 rounded-full overflow-hidden mt-1">
+                <div 
+                  className="absolute left-0 top-0 h-full bg-slate-700 rounded-full"
+                  style={{ width: `${data[safeCompareA]?.complianceScore || 0}%` }}
+                ></div>
+                <div 
+                  className={`absolute left-0 top-0 h-full rounded-full ${complianceDelta >= 0 ? 'bg-emerald-500' : 'bg-rose-500'}`}
+                  style={{ 
+                    left: `${Math.min(data[safeCompareA]?.complianceScore || 0, data[safeCompareB]?.complianceScore || 0)}%`,
+                    width: `${Math.abs(complianceDelta)}%` 
+                  }}
+                ></div>
+              </div>
+
+              {/* Delta badge */}
+              <div className="flex justify-between items-center mt-1">
+                <span className="text-[10px] text-slate-400 font-mono">Variance delta:</span>
+                <span className={`text-xs font-bold font-mono px-2 py-0.5 rounded-full flex items-center gap-1 ${
+                  complianceDelta > 0 
+                    ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' 
+                    : complianceDelta < 0 
+                      ? 'bg-rose-500/10 text-rose-400 border border-rose-500/20' 
+                      : 'bg-slate-800 text-slate-400'
+                }`}>
+                  {complianceDelta > 0 ? `▲ +${complianceDelta}%` : complianceDelta < 0 ? `▼ ${complianceDelta}%` : 'No Change'}
+                </span>
+              </div>
+            </div>
+
+            {/* Card 2: Risk Level */}
+            <div className="bg-slate-900/50 border border-slate-800/80 rounded-xl p-4 flex flex-col gap-3 relative">
+              <span className="text-[10px] uppercase font-bold text-slate-400 tracking-wider font-mono">Risk Level</span>
+              <div className="flex justify-between items-baseline">
+                <div className="flex flex-col">
+                  <span className="text-slate-500 text-[10px] font-mono">{data[safeCompareA]?.label || 'N/A'}</span>
+                  <span className="text-xl font-extrabold text-slate-300 font-mono">{data[safeCompareA]?.riskLevel || 0}/10</span>
+                </div>
+                <div className="text-slate-600 text-sm font-bold font-mono">→</div>
+                <div className="flex flex-col items-end">
+                  <span className="text-slate-500 text-[10px] font-mono">{data[safeCompareB]?.label || 'N/A'}</span>
+                  <span className="text-xl font-extrabold text-white font-mono">{data[safeCompareB]?.riskLevel || 0}/10</span>
+                </div>
+              </div>
+
+              {/* Progress bar comparison */}
+              <div className="relative h-1.5 bg-slate-950 rounded-full overflow-hidden mt-1">
+                <div 
+                  className="absolute left-0 top-0 h-full bg-slate-700 rounded-full"
+                  style={{ width: `${(data[safeCompareA]?.riskLevel || 0) * 10}%` }}
+                ></div>
+                <div 
+                  className={`absolute left-0 top-0 h-full rounded-full ${riskDelta <= 0 ? 'bg-emerald-500' : 'bg-rose-500'}`}
+                  style={{ 
+                    left: `${Math.min(data[safeCompareA]?.riskLevel || 0, data[safeCompareB]?.riskLevel || 0) * 10}%`,
+                    width: `${Math.abs(riskDelta) * 10}%` 
+                  }}
+                ></div>
+              </div>
+
+              {/* Delta badge */}
+              <div className="flex justify-between items-center mt-1">
+                <span className="text-[10px] text-slate-400 font-mono">Variance delta:</span>
+                <span className={`text-xs font-bold font-mono px-2 py-0.5 rounded-full flex items-center gap-1 ${
+                  riskDelta < 0 
+                    ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' 
+                    : riskDelta > 0 
+                      ? 'bg-rose-500/10 text-rose-400 border border-rose-500/20' 
+                      : 'bg-slate-800 text-slate-400'
+                }`}>
+                  {riskDelta < 0 ? `▼ ${riskDelta} (Improved)` : riskDelta > 0 ? `▲ +${riskDelta} (Escalated)` : 'No Change'}
+                </span>
+              </div>
+            </div>
+
+            {/* Card 3: PPE Degradation */}
+            <div className="bg-slate-900/50 border border-slate-800/80 rounded-xl p-4 flex flex-col gap-3 relative">
+              <span className="text-[10px] uppercase font-bold text-slate-400 tracking-wider font-mono">PPE Degradation</span>
+              <div className="flex justify-between items-baseline">
+                <div className="flex flex-col">
+                  <span className="text-slate-500 text-[10px] font-mono">{data[safeCompareA]?.label || 'N/A'}</span>
+                  <span className="text-xl font-extrabold text-slate-300 font-mono">{data[safeCompareA]?.ppeDegradation || 0}%</span>
+                </div>
+                <div className="text-slate-600 text-sm font-bold font-mono">→</div>
+                <div className="flex flex-col items-end">
+                  <span className="text-slate-500 text-[10px] font-mono">{data[safeCompareB]?.label || 'N/A'}</span>
+                  <span className="text-xl font-extrabold text-white font-mono">{data[safeCompareB]?.ppeDegradation || 0}%</span>
+                </div>
+              </div>
+
+              {/* Progress bar comparison */}
+              <div className="relative h-1.5 bg-slate-950 rounded-full overflow-hidden mt-1">
+                <div 
+                  className="absolute left-0 top-0 h-full bg-slate-700 rounded-full"
+                  style={{ width: `${data[safeCompareA]?.ppeDegradation || 0}%` }}
+                ></div>
+                <div 
+                  className={`absolute left-0 top-0 h-full rounded-full ${ppeDelta <= 0 ? 'bg-emerald-500' : 'bg-amber-500'}`}
+                  style={{ 
+                    left: `${Math.min(data[safeCompareA]?.ppeDegradation || 0, data[safeCompareB]?.ppeDegradation || 0)}%`,
+                    width: `${Math.abs(ppeDelta)}%` 
+                  }}
+                ></div>
+              </div>
+
+              {/* Delta badge */}
+              <div className="flex justify-between items-center mt-1">
+                <span className="text-[10px] text-slate-400 font-mono">Variance delta:</span>
+                <span className={`text-xs font-bold font-mono px-2 py-0.5 rounded-full flex items-center gap-1 ${
+                  ppeDelta < 0 
+                    ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' 
+                    : ppeDelta > 0 
+                      ? 'bg-amber-500/10 text-amber-400 border border-amber-500/20' 
+                      : 'bg-slate-800 text-slate-400'
+                }`}>
+                  {ppeDelta < 0 ? `▼ ${ppeDelta}% (Extended)` : ppeDelta > 0 ? `▲ +${ppeDelta}% (Degraded)` : 'No Change'}
+                </span>
+              </div>
+            </div>
+          </div>
+
+          {/* SANS Delta Analysis Insights Callout */}
+          <div className="bg-slate-900 border border-slate-800 p-3.5 rounded-xl flex items-start gap-3">
+            <div className="p-1.5 bg-amber-500/10 border border-amber-500/20 rounded-lg text-amber-500 flex-shrink-0">
+              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+            </div>
+            <div className="flex-1">
+              <h5 className="text-[11px] font-bold uppercase text-slate-300 tracking-wider font-mono">Red Team Regulatory Analysis & Insights</h5>
+              <p className="text-xs text-slate-300 mt-1 leading-relaxed">
+                {getInsightText(compAItem, compBItem, complianceDelta, riskDelta, ppeDelta)}
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Visual Safety Audit Heatmap Widget */}
       <div className="border border-slate-800 bg-slate-950/40 rounded-xl p-5 flex flex-col gap-4">
