@@ -275,10 +275,11 @@ const runSafetyInspector = async (
     systemInstruction: string,
     onStreamUpdate?: (text: string) => void
 ): Promise<SafetyInspectionResult> => {
-    // Robust multi-environment API Key lookup
+    // Secure client-side lookup exclusively using import.meta.env to prevent runtime evaluation errors in pure browser environments like GitHub Pages.
     const apiKey = 
-        (typeof import.meta !== 'undefined' && import.meta.env && (import.meta.env.VITE_GEMINI_API_KEY || import.meta.env.VITE_API_KEY)) ||
-        (typeof process !== 'undefined' && process.env && (process.env.GEMINI_API_KEY || process.env.API_KEY));
+        (typeof import.meta !== 'undefined' && import.meta.env && (import.meta.env.VITE_GEMINI_API_KEY || import.meta.env.VITE_API_KEY)) || 
+        (typeof window !== 'undefined' && (window as any)?.__GEMINI_API_KEY__) || 
+        '';
 
     if (!apiKey) {
         throw new Error("Gemini API Key is not set. Please ensure VITE_GEMINI_API_KEY is configured in your hosting/environment settings.");
@@ -2022,7 +2023,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ currentPage, setPage, setIsDe
     }, [currentPage]);
 
     return (
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-10 pb-24">
             {/* Premium Landing Page Hero Layout */}
             <div className="bg-gradient-to-br from-slate-900 via-indigo-950 to-slate-950 rounded-3xl p-8 md:p-12 shadow-2xl border border-slate-800 relative overflow-hidden mb-12 animate-fade-in">
                 {/* Visual grid overlay for tech/industrial feel */}
@@ -2260,7 +2261,12 @@ const SafetyInspectorPage: React.FC<SafetyInspectorPageProps> = ({ setPage }) =>
 
         try {
             const finalResult = await runSafetyInspector(scenario, systemPrompt, (streamedText) => {
-                setResponse(prev => prev ? { ...prev, text: streamedText, label: 'Streaming...' } : null);
+                setResponse({
+                    text: streamedText,
+                    score: '...',
+                    label: 'Streaming...',
+                    color: 'text-amber-500 bg-amber-50/50 border-amber-200 shadow-[0_4px_15px_rgba(245,158,11,0.1)]'
+                });
             });
             setResponse(finalResult);
             saveToHistory(finalResult, scenario, systemPrompt);
@@ -2298,7 +2304,7 @@ const SafetyInspectorPage: React.FC<SafetyInspectorPageProps> = ({ setPage }) =>
     );
 
     return (
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-10 pb-24">
             {/* Technical Terminal Layout */}
             <div>
                 {/* Authorized session back header */}
@@ -2466,12 +2472,12 @@ const SafetyInspectorPage: React.FC<SafetyInspectorPageProps> = ({ setPage }) =>
                         {/* Analysis Report Card */}
                         {error && (
                             <div className="bg-red-50 border border-red-200 rounded-2xl p-6 flex items-start animate-fade-in-up shadow-sm">
-                                <div className="p-2 bg-red-100 rounded-lg mr-4">
+                                <div className="p-2 bg-red-100 rounded-lg mr-4 flex-shrink-0">
                                     <AlertTriangle className="w-6 h-6 text-red-600" />
                                 </div>
-                                <div>
+                                <div className="flex-1 min-w-0">
                                     <h3 className="text-red-900 font-bold mb-1">Analysis Failed</h3>
-                                    <p className="text-sm text-red-700">{error}</p>
+                                    <p className="text-sm text-red-700 break-words max-h-36 overflow-y-auto custom-scrollbar">{error}</p>
                                 </div>
                             </div>
                         )}
