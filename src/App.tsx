@@ -276,12 +276,17 @@ const runSafetyInspector = async (
     onStreamUpdate?: (text: string) => void
 ): Promise<SafetyInspectionResult> => {
     // Strictly load the Gemini API Key from import.meta.env.VITE_GEMINI_API_KEY
-    const apiKey = 
+    let apiKey = 
         (typeof import.meta !== 'undefined' && import.meta.env && import.meta.env.VITE_GEMINI_API_KEY) || 
         (typeof window !== 'undefined' && (window as any)?.__GEMINI_API_KEY__) || 
         '';
 
-    if (!apiKey) {
+    // Sanitize the API key by trimming and removing any accidental quotes or placeholder texts
+    if (apiKey) {
+        apiKey = apiKey.trim().replace(/^["']|["']$/g, '');
+    }
+
+    if (!apiKey || apiKey === 'undefined' || apiKey === 'null' || apiKey.includes('YOUR_') || apiKey.includes('<your_')) {
         throw new Error("Gemini API Key is not set. Please ensure VITE_GEMINI_API_KEY is configured in your hosting/environment settings.");
     }
 
@@ -289,7 +294,7 @@ const runSafetyInspector = async (
 
     try {
         const streamResponse = await ai.models.generateContentStream({
-            model: 'gemini-2.5-flash',
+            model: 'gemini-3.5-flash',
             contents: [{ parts: [{ text: scenario }] }],
             config: {
                 systemInstruction: systemInstruction,
@@ -364,6 +369,9 @@ const runSafetyInspector = async (
 
         const msgLower = errorMessage.toLowerCase();
         
+        if (msgLower.includes('401') || msgLower.includes('unauthorized')) {
+             throw new Error("Authentication Failed (401): The Gemini API Key built into your GitHub Pages deployment is invalid or rejected by Google. Please check your GitHub Repository Secrets for 'VITE_GEMINI_API_KEY' and make sure there are no extra quotes, spaces, or typos.");
+        }
         if (msgLower.includes('api key') || msgLower.includes('403')) {
              throw new Error("Authentication Failed: Invalid API Key or access denied. Please check your configuration.");
         }
