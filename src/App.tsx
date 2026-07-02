@@ -173,6 +173,7 @@ export const MINE_PROFILES_BASELINE: MineProfile[] = [
       ppeAdherence: 98,
     },
     audits: [
+      { id: 'AUD-W-103', date: '2026-06-28', category: 'SANS 10108: Hazardous Areas', score: 89, status: 'Passed' },
       { id: 'AUD-W-102', date: '2026-06-15', category: 'SANS 10330: HACCP / Canteen', score: 95, status: 'Passed' },
       { id: 'AUD-W-101', date: '2026-05-10', category: 'SANS 10142: Electrical', score: 91, status: 'Passed' },
       { id: 'AUD-W-100', date: '2026-04-02', category: 'SANS 10049: Hygiene', score: 90, status: 'Passed' },
@@ -193,6 +194,7 @@ export const MINE_PROFILES_BASELINE: MineProfile[] = [
       ppeAdherence: 85,
     },
     audits: [
+      { id: 'AUD-M-203', date: '2026-06-18', category: 'SANS 10108: Hazardous Areas', score: 59, status: 'Action Required' },
       { id: 'AUD-M-202', date: '2026-06-20', category: 'SANS 10142: Electrical', score: 82, status: 'Action Required' },
       { id: 'AUD-M-201', date: '2026-05-15', category: 'SANS 10330: HACCP / Canteen', score: 88, status: 'Passed' },
       { id: 'AUD-M-200', date: '2026-03-22', category: 'SANS 10049: Hygiene', score: 81, status: 'Action Required' },
@@ -213,6 +215,7 @@ export const MINE_PROFILES_BASELINE: MineProfile[] = [
       ppeAdherence: 96,
     },
     audits: [
+      { id: 'AUD-R-303', date: '2026-06-29', category: 'SANS 10108: Hazardous Areas', score: 98, status: 'Passed' },
       { id: 'AUD-R-302', date: '2026-06-25', category: 'SANS 10049: Hygiene', score: 97, status: 'Passed' },
       { id: 'AUD-R-301', date: '2026-05-18', category: 'SANS 10330: HACCP / Canteen', score: 95, status: 'Passed' },
       { id: 'AUD-R-300', date: '2026-04-11', category: 'SANS 10142: Electrical', score: 96, status: 'Passed' },
@@ -383,6 +386,8 @@ const runSafetyInspector = async (
     
     const isSANS10142 = scenarioLower.includes('10142') || scenarioLower.includes('wiring') || scenarioLower.includes('isolator') || scenarioLower.includes('electrical') || scenarioLower.includes('phase') || scenarioLower.includes('sink');
     const isSANS10049 = scenarioLower.includes('10049') || scenarioLower.includes('hygiene') || scenarioLower.includes('ppe') || scenarioLower.includes('protective') || scenarioLower.includes('goggle') || scenarioLower.includes('sanitation');
+    const isSANS10108 = scenarioLower.includes('10108') || scenarioLower.includes('explosion') || scenarioLower.includes('flameproof') || scenarioLower.includes('intrinsically') || scenarioLower.includes('hazardous');
+    const isISO42001 = scenarioLower.includes('42001') || scenarioLower.includes('governance') || scenarioLower.includes('ai systems') || scenarioLower.includes('model governance') || scenarioLower.includes('aims');
 
     let reportStandard = 'SANS 10330: HACCP / Canteen';
     let complianceScore = 72;
@@ -400,6 +405,16 @@ const runSafetyInspector = async (
         complianceScore = 86;
         label = 'Passed with Warnings';
         color = 'text-teal-600 bg-teal-50 border-teal-200 shadow-[0_4px_15px_rgba(13,148,136,0.05)]';
+    } else if (isSANS10108) {
+        reportStandard = 'SANS 10108: Hazardous Areas (Explosion Prevention)';
+        complianceScore = 59;
+        label = 'Critical Action Required';
+        color = 'text-rose-600 bg-rose-50 border-rose-300 shadow-[0_4px_15px_rgba(220,38,38,0.05)]';
+    } else if (isISO42001) {
+        reportStandard = 'ISO/IEC 42001: AI Governance & Risk';
+        complianceScore = 52;
+        label = 'Critical Action Required';
+        color = 'text-rose-600 bg-rose-50 border-rose-300 shadow-[0_4px_15px_rgba(220,38,38,0.05)]';
     }
 
     let operationName = 'Witwatersrand Reef Operation';
@@ -466,6 +481,68 @@ SECTION 2: MANDATORY CORRECTIVE ACTION TIMELINE (SANS ENFORCED)
 1. Immediate (Within 24 Hours): Replenish hand wash stations and configure visual level indicator alerts.
 2. High Priority (Within 3 Days): Conduct a mandatory 5-minute shift safety briefing focusing on protective apparel wear.
 3. Medium Priority (Within 7 Days): Upgrade drying-room ventilation airflow draft to arrest metal oxidation cycles.
+
+======================================================================
+This report serves as an official automated compliance assessment blueprint.
+`;
+    } else if (isSANS10108) {
+        textOutput = `======================================================================
+MELOTWO AUTOMATED COMPLIANCE ASSESSMENT - SANS 10108:2020
+======================================================================
+Target Operation:  ${operationName}
+Audit Pipeline:    ${reportStandard}
+Audit Timestamp:   ${new Date().toLocaleDateString('en-ZA')}
+Compliance Score:  ${complianceScore}% (Label: ${label})
+
+----------------------------------------------------------------------
+SECTION 1: DETECTED COMPLIANCE DEVIATIONS & FIELD RISK VECTORS
+----------------------------------------------------------------------
+[DEVIATION] Missing Flameproof Tag:
+Battery-charging room ventilation exhaust fan is operating without an active flameproof (Ex-d) compliance tag, failing Zone 1 safety requirements.
+
+[HIGH RISK VECTOR] Standard Wiring in Gas Zone:
+Non-certified instrumentation wiring and pressure sensors are routed directly through Zone 1 hazardous gas category IIC boundaries without intrinsically safe (Ex-i) isolation.
+
+[WARNING] Grounding Loop Resistance:
+Electrostatic copper earthing strap on the main ore intake chute has oxidized. Resistance is measured at 14.2 Ohms, exceeding the maximum safe limit of 10.0 Ohms.
+
+----------------------------------------------------------------------
+SECTION 2: MANDATORY CORRECTIVE ACTION TIMELINE (SANS ENFORCED)
+----------------------------------------------------------------------
+1. Immediate (Within 24 Hours): Upgrade the Zone 1 battery room exhaust system to certified flameproof Ex-d configurations.
+2. High Priority (Within 3 Days): Re-route instrumentation wiring through certified intrinsically safe blue-jacketed conduits.
+3. Medium Priority (Within 7 Days): Clean and secure the earthing strap connection, and verify loop resistance drops below 10.0 Ohms.
+
+======================================================================
+This report serves as an official automated compliance assessment blueprint.
+`;
+    } else if (isISO42001) {
+        textOutput = `======================================================================
+MELOTWO AUTOMATED COMPLIANCE ASSESSMENT - ISO/IEC 42001:2023 (AIMS)
+======================================================================
+Target Operation:  ${operationName}
+Audit Pipeline:    ${reportStandard}
+Audit Timestamp:   ${new Date().toLocaleDateString('en-ZA')}
+Compliance Score:  ${complianceScore}% (Label: ${label})
+
+----------------------------------------------------------------------
+SECTION 1: DETECTED COMPLIANCE DEVIATIONS & FIELD RISK VECTORS
+----------------------------------------------------------------------
+[CRITICAL DEVIATION] Systemic Impact Assessment Omission:
+A customer-facing generative AI copilot (v2.4) has been deployed in a production context without a formally documented AI Systemic Impact Assessment. ISO/IEC 42001 Clause 6 mandates comprehensive impact logging prior to live deployment.
+
+[HIGH RISK VECTOR] Unscrubbed Feedback Loops & PII Leakage:
+Training and telemetry feedback loops contain unmasked user feedback records with clear Personal Identifiable Information (PII). This violates strict data pedigree guidelines and exposes the system to data privacy breaches.
+
+[ALERT] Missing Drift-Detection & Safety Bounds:
+No drift-detection alert profiles or real-time human-in-the-loop override safety boundaries have been configured in the model telemetry dashboard, creating a high exposure risk for model hallucinations.
+
+----------------------------------------------------------------------
+SECTION 2: MANDATORY CORRECTIVE ACTION TIMELINE (ISO ENFORCED)
+----------------------------------------------------------------------
+1. Immediate (Within 24 Hours): Suspend unscrubbed feedback pipeline loops and run automated PII scrubbing protocols on existing training stores.
+2. High Priority (Within 5 Days): Conduct a comprehensive, multi-stakeholder AI Systemic Impact Assessment and log it in the central registry.
+3. Medium Priority (Within 10 Days): Establish automated drift alert triggers and human-override bounds in the model runtime environment.
 
 ======================================================================
 This report serves as an official automated compliance assessment blueprint.
@@ -567,6 +644,14 @@ const FileText: React.FC<IconProps> = (props) => (
   <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z" /><polyline points="14 2 14 8 20 8" /><line x1="16" y1="13" x2="8" y2="13" /><line x1="16" y1="17" x2="8" y2="17" /><line x1="10" y1="9" x2="8" y2="9" /></svg>
 );
 
+const Flame: React.FC<IconProps> = (props) => (
+  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" {...props}><path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z" /></svg>
+);
+
+const Cpu: React.FC<IconProps> = (props) => (
+  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><rect x="4" y="4" width="16" height="16" rx="2" /><rect x="9" y="9" width="6" height="6" /><path d="M9 1v3M15 1v3M9 20v3M15 20v3M20 9h3M20 15h3M1 9h3M1 15h3" /></svg>
+);
+
 export const AFFILIATE_LINKS: AffiliateLink[] = [
   { id: 1, name: 'AI Security Pro', url: '#', description: 'Advanced threat modeling and adversarial testing tools.', icon: Shield },
   { id: 2, name: 'Data Privacy Vault', url: '#', description: 'Comprehensive data anonymization and access control services.', icon: Settings },
@@ -594,6 +679,20 @@ export const INSPECTOR_TEMPLATES: InspectorTemplate[] = [
         description: 'Audits kitchen equipment wiring, isolators, and wet prep area clearances.',
         scenario: 'SANS 10142 Electrical Safety Checklist:\n- Combi Oven: Rated 22kW, direct-wired to dedicated 3-phase isolator. Isolator located 1.8m high directly behind the steam exhaust vent\n- Prep Sink: Metal wet prep sink installed 0.4m from the countertop-mounted vegetable chopper plug point\nEvaluate this commercial kitchen installation against SANS 10142-1 wiring code.',
         systemPrompt: 'You are an Electrical Inspector specialized in SANS 10142-1 wiring codes. Check commercial kitchen configurations. Ensure isolators are readily accessible and not obstructed by steam/heat exhausts, and wet-zones have a safe clearance of at least 1.0m from plug sockets.'
+    },
+    {
+        id: 'sans-10108-explosion',
+        name: 'SANS 10108: Explosion Prevention',
+        description: 'Audits flameproof enclosures, intrinsically safe circuits, and electrostatic discharge paths.',
+        scenario: 'SANS 10108 Hazardous Location Audit Log:\n- Battery Room: Ventilation exhaust fan operates 24/7. Compliance tag is missing from the enclosure\n- Instrumentation: Non-certified pressure sensors and standard wiring routed into Zone 1 gas category IIC area\n- Grounding: Electrostatic discharge copper strap at main ore intake chute measures 14.2 Ohms resistance\nEvaluate this hazardous location installation against SANS 10108 wiring codes.',
+        systemPrompt: 'You are a certified SANS 10108 Hazardous Areas & Explosion Prevention Engineer. Review the equipment logs strictly. Highlight that Zone 1 requires certified flameproof (Ex-d) enclosures, intrinsically safe (Ex-i) wiring with blue-jacketed isolation, and grounding loop resistance must remain under 10 Ohms to mitigate electrostatic spark ignition risks.'
+    },
+    {
+        id: 'iso-42001-ai',
+        name: 'ISO/IEC 42001: AI Governance & Risk Management',
+        description: 'Audits systemic impact assessments, PII scrubbing loops, and drift override controls.',
+        scenario: 'ISO/IEC 42001 AI Systems Audit Summary:\n- Model: Customer-Facing Copilot v2.4 (Active deployment)\n- Impact Assessment: No formal systemic impact assessment performed prior to deployment\n- Data Pedigree: Training data sources include unscrubbed feedback logs containing PII\n- Alignment Controls: Drift-detection and override bounds not configured in telemetry\nEvaluate this AI deployment against ISO/IEC 42001 governance guidelines.',
+        systemPrompt: 'You are an ISO 42001 Lead Auditor specialized in AI Management Systems (AIMS). Review the system log strictly. Highlight that ISO/IEC 42001 mandates a documented Systemic Impact Assessment, complete PII scrubbing from training/feedback loops, and active, human-in-the-loop drift and override safety boundaries. Provide clear compliance steps.'
     },
     {
         id: 'jailbreak-dan',
@@ -3782,7 +3881,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ currentPage, setPage, setIsDe
 
     // CRO State variables for Interactive Sandbox
     const [operationName, setOperationName] = useState('');
-    const [selectedStandard, setSelectedStandard] = useState<'sans-10330' | 'sans-10142' | 'sans-10049'>('sans-10330');
+    const [selectedStandard, setSelectedStandard] = useState<'sans-10330' | 'sans-10142' | 'sans-10049' | 'sans-10108' | 'iso-42001'>('sans-10330');
     const [leadEmail, setLeadEmail] = useState('');
     
     // Generator state
@@ -3792,7 +3891,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ currentPage, setPage, setIsDe
     const [sandboxSuccessMsg, setSandboxSuccessMsg] = useState(false);
 
     // Active preset samples for instant zero-friction viewer
-    const [activeSampleStandard, setActiveSampleStandard] = useState<'sans-10330' | 'sans-10142' | 'sans-10049'>('sans-10330');
+    const [activeSampleStandard, setActiveSampleStandard] = useState<'sans-10330' | 'sans-10142' | 'sans-10049' | 'sans-10108' | 'iso-42001'>('sans-10330');
 
     const MOCK_SANDBOX_REPORTS = useMemo(() => ({
         'sans-10330': {
@@ -3866,6 +3965,54 @@ const LandingPage: React.FC<LandingPageProps> = ({ currentPage, setPage, setIsDe
                 { id: 'ppe2', task: 'Conduct daily shift compliance briefing', checked: false },
                 { id: 'ppe3', task: 'Update drying-room ventilation airflow draft', checked: false }
             ]
+        },
+        'sans-10108': {
+            standardName: 'SANS 10108: Hazardous Areas (Explosion Prevention)',
+            score: 59,
+            grade: 'Critical Action Required',
+            color: 'border-rose-600/40 text-rose-500 bg-rose-600/5',
+            badgeColor: 'bg-rose-600/10 text-rose-500 border border-rose-600/25',
+            scoreColor: 'text-rose-600 font-black',
+            description: 'Explosion-proof enclosures, zone classifications, and electrostatic earthing paths are severely compromised.',
+            highlights: [
+                'Zone 1 Enclosure Breaches: Battery-charging station exhaust fans do not carry active flameproof certification tags.',
+                'Intrinsically Safe Circuits: Standard non-certified instrumentation wiring routed through hazardous gas category IIC boundaries.',
+                'Electrostatic Discharge (ESD): Heavy metal chute grounding links show high-resistance oxidation exceeding 10 Ohms.'
+            ],
+            recommendations: [
+                'Upgrade all ventilation fixtures in Zone 1 enclosures to certified flameproof Ex-d configurations.',
+                'Segregate and re-route intrinsically safe (Ex-i) telemetry circuits into dedicated blue-shielded conduits.',
+                'Clean all grounding straps and test loop impedance values to enforce sub-10 Ohm conductivity standard.'
+            ],
+            checklist: [
+                { id: 'ex1', task: 'Replace non-Ex-d battery room ventilation fans', checked: false },
+                { id: 'ex2', task: 'Segregate telemetry wires into blue Ex-i conduits', checked: false },
+                { id: 'ex3', task: 'Perform ground loop impedance test on metal chutes', checked: false }
+            ]
+        },
+        'iso-42001': {
+            standardName: 'ISO/IEC 42001: AI Governance & Risk Management',
+            score: 52,
+            grade: 'Critical Action Required',
+            color: 'border-rose-600/40 text-rose-500 bg-rose-600/5',
+            badgeColor: 'bg-rose-600/10 text-rose-500 border border-rose-600/25',
+            scoreColor: 'text-rose-600 font-black',
+            description: 'Algorithmic alignment controls, model impact assessments, and data scrub loops are unconfigured.',
+            highlights: [
+                'Systemic Impact Assessment: Active Customer Copilot v2.4 was deployed with zero documented risk logging.',
+                'Data Pedigree Gaps: Continuous feedback telemetry contains raw unscrubbed PII leaks in learning loops.',
+                'Alignment Bounds: Real-time drift detection and human intervention overrides are completely disabled.'
+            ],
+            recommendations: [
+                'Suspend feedback loops immediately to sanitize and scrub existing customer PII.',
+                'Execute a formal ISO 42001 Clause 6 AIMS Systemic Impact Assessment.',
+                'Configure automatic model telemetry alerts and human override-lock safety triggers.'
+            ],
+            checklist: [
+                { id: 'ai1', task: 'Halt feedback loops and execute PII scrubs', checked: false },
+                { id: 'ai2', task: 'Log AIMS Systemic Impact Assessment', checked: false },
+                { id: 'ai3', task: 'Deploy drift-alert triggers & override bounds', checked: false }
+            ]
         }
     }), []);
 
@@ -3873,7 +4020,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ currentPage, setPage, setIsDe
     const steps = [
         '[INIT] Initializing SANS audit intelligence protocols...',
         '[SCAN] Analyzing site operational metrics & layout maps...',
-        '[SIM] Running SANS 10330 / 10142 / 10049 stress models...',
+        '[SIM] Running SANS 10330 / 10142 / 10049 / 10108 stress models...',
         '[CALC] Compiling compliance grading and safety index...',
         '[SUCCESS] S-Tier audit ledger verified!'
     ];
@@ -4258,8 +4405,8 @@ const LandingPage: React.FC<LandingPageProps> = ({ currentPage, setPage, setIsDe
 
                                         {/* Standard presets toggle bar if we are in "Browse samples" mode */}
                                         {!sandboxSuccessMsg && (
-                                            <div className="flex gap-2 p-1.5 bg-slate-950 border border-slate-800/80 rounded-xl">
-                                                {(['sans-10330', 'sans-10142', 'sans-10049'] as const).map((std) => (
+                                            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-1.5 p-1.5 bg-slate-950 border border-slate-800/80 rounded-xl text-center">
+                                                {(['sans-10330', 'sans-10142', 'sans-10049', 'sans-10108', 'iso-42001'] as const).map((std) => (
                                                     <button
                                                         key={std}
                                                         onClick={() => {
@@ -4279,7 +4426,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ currentPage, setPage, setIsDe
                                                                 : 'text-slate-400 hover:text-slate-300'
                                                         }`}
                                                     >
-                                                        {std === 'sans-10330' ? '10330 (Catering)' : std === 'sans-10142' ? '10142 (Wiring)' : '10049 (PPE)'}
+                                                        {std === 'sans-10330' ? '10330' : std === 'sans-10142' ? '10142' : std === 'sans-10049' ? '10049' : std === 'sans-10108' ? '10108' : 'ISO 42001'}
                                                     </button>
                                                 ))}
                                             </div>
@@ -4344,7 +4491,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ currentPage, setPage, setIsDe
                                     <form onSubmit={handleSandboxSubmit} className="space-y-4 text-left">
                                         <div>
                                             <span className="block text-[10px] font-black text-slate-400 uppercase tracking-wider mb-2">1. Select standard focus</span>
-                                            <div className="grid grid-cols-3 gap-2">
+                                            <div className="grid grid-cols-2 lg:grid-cols-5 gap-2">
                                                 <button
                                                     type="button"
                                                     onClick={() => {
@@ -4386,6 +4533,34 @@ const LandingPage: React.FC<LandingPageProps> = ({ currentPage, setPage, setIsDe
                                                     }`}
                                                 >
                                                     10049 (PPE)
+                                                </button>
+                                                <button
+                                                    type="button"
+                                                    onClick={() => {
+                                                        setSelectedStandard('sans-10108');
+                                                        trackGA4Event('sandbox_standard_selected', { standard: 'sans-10108' });
+                                                    }}
+                                                    className={`py-2 text-[10px] font-black uppercase rounded-lg border tracking-wide transition cursor-pointer ${
+                                                        selectedStandard === 'sans-10108' 
+                                                            ? 'bg-amber-500/10 border-amber-500 text-amber-500' 
+                                                            : 'bg-slate-950/40 border-slate-800 text-slate-400 hover:text-slate-300'
+                                                    }`}
+                                                >
+                                                    10108 (Explosion)
+                                                </button>
+                                                <button
+                                                    type="button"
+                                                    onClick={() => {
+                                                        setSelectedStandard('iso-42001');
+                                                        trackGA4Event('sandbox_standard_selected', { standard: 'iso-42001' });
+                                                    }}
+                                                    className={`py-2 text-[10px] font-black uppercase rounded-lg border tracking-wide transition cursor-pointer ${
+                                                        selectedStandard === 'iso-42001' 
+                                                            ? 'bg-amber-500/10 border-amber-500 text-amber-500' 
+                                                            : 'bg-slate-950/40 border-slate-800 text-slate-400 hover:text-slate-300'
+                                                    }`}
+                                                >
+                                                    ISO 42001 (AI)
                                                 </button>
                                             </div>
                                         </div>
@@ -4728,14 +4903,14 @@ const LandingPage: React.FC<LandingPageProps> = ({ currentPage, setPage, setIsDe
                     </p>
                 </div>
 
-                <div className="grid md:grid-cols-3 gap-8">
+                <div className="grid md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-6">
                     {/* Solution Card 1 */}
-                    <div className="bg-white border border-gray-100 rounded-3xl p-8 shadow-xl hover:shadow-2xl transition-all duration-300 flex flex-col justify-between">
+                    <div className="bg-white border border-gray-100 rounded-3xl p-6 shadow-xl hover:shadow-2xl transition-all duration-300 flex flex-col justify-between">
                         <div>
                             <div className="w-12 h-12 rounded-2xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center mb-6">
                                 <Shield className="w-6 h-6 text-amber-500" />
                             </div>
-                            <h3 className="text-lg font-bold text-gray-950 mb-2">SANS 10330: HACCP / Canteen</h3>
+                            <h3 className="text-base font-bold text-gray-950 mb-2">SANS 10330: HACCP / Canteen</h3>
                             <p className="text-xs text-gray-500 leading-relaxed">
                                 Automated audits of catering and portion management. Validates raw poultry storage temperatures, cooked core targets (72°C held for 15s), blast cooling intervals, and critical control points (CCPs).
                             </p>
@@ -4755,12 +4930,12 @@ const LandingPage: React.FC<LandingPageProps> = ({ currentPage, setPage, setIsDe
                     </div>
 
                     {/* Solution Card 2 */}
-                    <div className="bg-white border border-gray-100 rounded-3xl p-8 shadow-xl hover:shadow-2xl transition-all duration-300 flex flex-col justify-between">
+                    <div className="bg-white border border-gray-100 rounded-3xl p-6 shadow-xl hover:shadow-2xl transition-all duration-300 flex flex-col justify-between">
                         <div>
                             <div className="w-12 h-12 rounded-2xl bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center mb-6">
                                 <Settings className="w-6 h-6 text-indigo-500" />
                             </div>
-                            <h3 className="text-lg font-bold text-gray-950 mb-2">SANS 10142-1: Wiring & Isolators</h3>
+                            <h3 className="text-base font-bold text-gray-950 mb-2">SANS 10142-1: Wiring & Isolators</h3>
                             <p className="text-xs text-gray-500 leading-relaxed">
                                 Heavy-duty machinery electrical clearance audits. Inspects 3-phase commercial isolators, combi oven clearances from steam exhausts, and metal wet prep sink distances to plug sockets.
                             </p>
@@ -4780,12 +4955,12 @@ const LandingPage: React.FC<LandingPageProps> = ({ currentPage, setPage, setIsDe
                     </div>
 
                     {/* Solution Card 3 */}
-                    <div className="bg-white border border-gray-100 rounded-3xl p-8 shadow-xl hover:shadow-2xl transition-all duration-300 flex flex-col justify-between">
+                    <div className="bg-white border border-gray-100 rounded-3xl p-6 shadow-xl hover:shadow-2xl transition-all duration-300 flex flex-col justify-between">
                         <div>
                             <div className="w-12 h-12 rounded-2xl bg-teal-500/10 border border-teal-500/20 flex items-center justify-center mb-6">
                                 <Zap className="w-6 h-6 text-teal-600" />
                             </div>
-                            <h3 className="text-lg font-bold text-gray-950 mb-2">SANS 10049: Hygiene & PPE</h3>
+                            <h3 className="text-base font-bold text-gray-950 mb-2">SANS 10049: Hygiene & PPE</h3>
                             <p className="text-xs text-gray-500 leading-relaxed">
                                 Operational health and personnel pre-requisite audits. Inspects staff sanitation, open refuse handling, chemical concentration rates, and tracks PPE material degradation index trends.
                             </p>
@@ -4796,6 +4971,56 @@ const LandingPage: React.FC<LandingPageProps> = ({ currentPage, setPage, setIsDe
                                 onClick={() => {
                                     setPage('inspector');
                                     trackGA4Event('solutions_card_clicked', { standard: 'sans-10049' });
+                                }}
+                                className="text-xs font-bold text-indigo-600 hover:text-indigo-800 flex items-center gap-1 transition cursor-pointer"
+                            >
+                                Launch →
+                            </button>
+                        </div>
+                    </div>
+
+                    {/* Solution Card 4 */}
+                    <div className="bg-white border border-gray-100 rounded-3xl p-6 shadow-xl hover:shadow-2xl transition-all duration-300 flex flex-col justify-between">
+                        <div>
+                            <div className="w-12 h-12 rounded-2xl bg-rose-500/10 border border-rose-500/20 flex items-center justify-center mb-6">
+                                <Flame className="w-6 h-6 text-rose-500" />
+                            </div>
+                            <h3 className="text-base font-bold text-gray-950 mb-2">SANS 10108: Hazardous Areas</h3>
+                            <p className="text-xs text-gray-500 leading-relaxed">
+                                Heavy-duty explosion protection and zoning compliance audits. Inspects Ex-d flameproof enclosures, Ex-i blue intrinsically safe telemetry wiring, and loop resistance earthing paths.
+                            </p>
+                        </div>
+                        <div className="mt-8 pt-4 border-t border-gray-50 flex items-center justify-between">
+                            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Explosion Prevention</span>
+                            <button 
+                                onClick={() => {
+                                    setPage('inspector');
+                                    trackGA4Event('solutions_card_clicked', { standard: 'sans-10108' });
+                                }}
+                                className="text-xs font-bold text-indigo-600 hover:text-indigo-800 flex items-center gap-1 transition cursor-pointer"
+                            >
+                                Launch →
+                            </button>
+                        </div>
+                    </div>
+
+                    {/* Solution Card 5 */}
+                    <div className="bg-white border border-gray-100 rounded-3xl p-6 shadow-xl hover:shadow-2xl transition-all duration-300 flex flex-col justify-between">
+                        <div>
+                            <div className="w-12 h-12 rounded-2xl bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center mb-6">
+                                <Cpu className="w-6 h-6 text-indigo-600" />
+                            </div>
+                            <h3 className="text-base font-bold text-gray-950 mb-2">ISO/IEC 42001: AI Governance</h3>
+                            <p className="text-xs text-gray-500 leading-relaxed">
+                                Systemic AI management system (AIMS) audits. Evaluates impact assessments, automated data pedigree loops, PII scrubbing loops, and algorithmic drift override controls.
+                            </p>
+                        </div>
+                        <div className="mt-8 pt-4 border-t border-gray-50 flex items-center justify-between">
+                            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">AI & Algorithmic Risk</span>
+                            <button 
+                                onClick={() => {
+                                    setPage('inspector');
+                                    trackGA4Event('solutions_card_clicked', { standard: 'iso-42001' });
                                 }}
                                 className="text-xs font-bold text-indigo-600 hover:text-indigo-800 flex items-center gap-1 transition cursor-pointer"
                             >
