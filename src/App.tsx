@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { GoogleGenAI } from "@google/genai";
+import { jsPDF } from 'jspdf';
 
 // --- Inline Types ---
 export type Page = 'home' | 'solutions' | 'inspector';
@@ -273,10 +274,13 @@ const PROBABILITY_ORDER = ['UNKNOWN', 'NEGLIGIBLE', 'LOW', 'MEDIUM', 'HIGH'];
 const runSafetyInspector = async (
     scenario: string, 
     systemInstruction: string,
-    onStreamUpdate?: (text: string) => void
+    onStreamUpdate?: (text: string) => void,
+    customApiKey?: string
 ): Promise<SafetyInspectionResult> => {
-    // Strictly load the Gemini API Key from import.meta.env.VITE_GEMINI_API_KEY
+    // Strictly load the Gemini API Key from multiple potential sources
     let apiKey = 
+        customApiKey ||
+        (typeof localStorage !== 'undefined' && localStorage.getItem('melotwo_user_api_key')) ||
         (typeof import.meta !== 'undefined' && import.meta.env && import.meta.env.VITE_GEMINI_API_KEY) || 
         (typeof window !== 'undefined' && (window as any)?.__GEMINI_API_KEY__) || 
         '';
@@ -287,7 +291,7 @@ const runSafetyInspector = async (
     }
 
     if (!apiKey || apiKey === 'undefined' || apiKey === 'null' || apiKey.includes('YOUR_') || apiKey.includes('<your_')) {
-        throw new Error("Gemini API Key is not set. Please ensure VITE_GEMINI_API_KEY is configured in your hosting/environment settings.");
+        throw new Error("Gemini API Key is not set. Please ensure VITE_GEMINI_API_KEY is configured in your hosting/environment settings or enter a custom key in the settings panel.");
     }
 
     const ai = new GoogleGenAI({ apiKey });
@@ -859,8 +863,35 @@ const AuditHistoryChart: React.FC = () => {
   const [metric, setMetric] = useState<'compliance' | 'risk' | 'ppe'>('compliance');
   const [hoveredPoint, setHoveredPoint] = useState<number | null>(null);
   const [showComparator, setShowComparator] = useState<boolean>(true);
+  const [showThresholdConfig, setShowThresholdConfig] = useState<boolean>(false);
   const [compareA, setCompareA] = useState<number>(0);
   const [compareB, setCompareB] = useState<number>(1);
+
+  // Warning thresholds (with localStorage persistence)
+  const [complianceThreshold, setComplianceThreshold] = useState<number>(() => {
+    const saved = localStorage.getItem('melotwo_compliance_threshold');
+    return saved ? parseInt(saved, 10) : 80;
+  });
+  const [riskThreshold, setRiskThreshold] = useState<number>(() => {
+    const saved = localStorage.getItem('melotwo_risk_threshold');
+    return saved ? parseInt(saved, 10) : 5;
+  });
+  const [ppeThreshold, setPpeThreshold] = useState<number>(() => {
+    const saved = localStorage.getItem('melotwo_ppe_threshold');
+    return saved ? parseInt(saved, 10) : 40;
+  });
+
+  useEffect(() => {
+    localStorage.setItem('melotwo_compliance_threshold', complianceThreshold.toString());
+  }, [complianceThreshold]);
+
+  useEffect(() => {
+    localStorage.setItem('melotwo_risk_threshold', riskThreshold.toString());
+  }, [riskThreshold]);
+
+  useEffect(() => {
+    localStorage.setItem('melotwo_ppe_threshold', ppeThreshold.toString());
+  }, [ppeThreshold]);
 
   // Heatmap constants
   const heatmapDays = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
@@ -1046,6 +1077,20 @@ const AuditHistoryChart: React.FC = () => {
   const paddingX = 50;
   const paddingY = 30;
 
+  const currentThreshold = useMemo(() => {
+    if (metric === 'compliance') return complianceThreshold;
+    if (metric === 'risk') return riskThreshold;
+    return ppeThreshold;
+  }, [metric, complianceThreshold, riskThreshold, ppeThreshold]);
+
+  const maxValForCurrentMetric = useMemo(() => {
+    return metric === 'risk' ? 10 : 100;
+  }, [metric]);
+
+  const thresholdY = useMemo(() => {
+    return height - paddingY - ((currentThreshold / maxValForCurrentMetric) * (height - paddingY * 2));
+  }, [currentThreshold, maxValForCurrentMetric, height, paddingY]);
+
   const pointsCoordinates = useMemo(() => {
     if (activePoints.length === 0) return [];
     const stepX = (width - paddingX * 2) / Math.max(1, activePoints.length - 1);
@@ -1115,6 +1160,345 @@ const AuditHistoryChart: React.FC = () => {
     return parts.join(' ');
   };
 
+  const drawFooter = (docInstance: jsPDF, pageW: number, pageH: number, mX: number) => {
+    // Subtle separator line
+    docInstance.setDrawColor(51, 65, 85); // slate-700
+    docInstance.setLineWidth(0.3);
+    docInstance.line(mX, pageH - 15, pageW - mX, pageH - 15);
+
+    docInstance.setFont('Helvetica', 'normal');
+    docInstance.setFontSize(7.5);
+    docInstance.setTextColor(148, 163, 184); // slate-400
+    
+    // Left footer text
+    docInstance.text('MeloTwo Operational Safety & Audit Intelligence - SANS 10330 HACCP Compliant', mX, pageH - 10);
+    
+    // Right footer text
+    docInstance.text('CONFIDENTIAL - Operator: turoka15@gmail.com', pageW - mX, pageH - 10, { align: 'right' });
+  };
+
+  const handleDownloadPDF = () => {
+    // 1. Initialize jsPDF
+    const doc = new jsPDF({
+      orientation: 'portrait',
+      unit: 'mm',
+      format: 'a4'
+    });
+
+    // Page dimensions
+    const pageWidth = 210;
+    const pageHeight = 297;
+    const marginX = 20;
+    let yOffset = 20;
+
+    // Helper functions for easy styling
+    const setHeaderStyle = () => {
+      doc.setFont('Helvetica', 'bold');
+      doc.setFontSize(18);
+      doc.setTextColor(15, 23, 42); // slate-900
+    };
+
+    const setSubHeaderStyle = () => {
+      doc.setFont('Helvetica', 'bold');
+      doc.setFontSize(11);
+      doc.setTextColor(30, 41, 59); // slate-800
+    };
+
+    const setBodyStyle = () => {
+      doc.setFont('Helvetica', 'normal');
+      doc.setFontSize(9.5);
+      doc.setTextColor(51, 65, 85); // slate-700
+    };
+
+    const setLabelStyle = () => {
+      doc.setFont('Helvetica', 'bold');
+      doc.setFontSize(9.5);
+      doc.setTextColor(71, 85, 105); // slate-600
+    };
+
+    const setMutedStyle = () => {
+      doc.setFont('Helvetica', 'normal');
+      doc.setFontSize(8);
+      doc.setTextColor(100, 116, 139); // slate-500
+    };
+
+    // --- Header Section ---
+    // Top colored bar
+    doc.setFillColor(15, 23, 42); // slate-900
+    doc.rect(0, 0, pageWidth, 15, 'F');
+
+    // Accent line below top bar
+    doc.setFillColor(245, 158, 11); // amber-500
+    doc.rect(0, 15, pageWidth, 1.5, 'F');
+
+    yOffset = 26;
+
+    // Report Title
+    setHeaderStyle();
+    doc.text('MELO TWO SAFETY & COMPLIANCE', marginX, yOffset);
+    yOffset += 7;
+
+    // Report Subtitle
+    setSubHeaderStyle();
+    doc.text('RED TEAM ANALYTICS: DELTA PERFORMANCE REPORT', marginX, yOffset);
+    yOffset += 9;
+
+    // Metadata Block
+    setLabelStyle();
+    doc.text('Date Generated:', marginX, yOffset);
+    setBodyStyle();
+    doc.text(new Date().toLocaleDateString('en-ZA', { year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' }), marginX + 32, yOffset);
+
+    // Operator
+    setLabelStyle();
+    doc.text('Lead Assessor:', marginX + 105, yOffset);
+    setBodyStyle();
+    doc.text('turoka15@gmail.com', marginX + 132, yOffset);
+    yOffset += 5.5;
+
+    // Framework Standard SANS
+    setLabelStyle();
+    doc.text('Regulatory Std:', marginX, yOffset);
+    setBodyStyle();
+    doc.text('South African SANS 10330 (HACCP)', marginX + 32, yOffset);
+    yOffset += 9;
+
+    // Draw horizontal dividing line
+    doc.setDrawColor(226, 232, 240); // slate-200
+    doc.setLineWidth(0.5);
+    doc.line(marginX, yOffset, pageWidth - marginX, yOffset);
+    yOffset += 7;
+
+    // --- Comparative Scope ---
+    setSubHeaderStyle();
+    doc.text('1. COMPARATIVE AUDIT SCOPE', marginX, yOffset);
+    yOffset += 5.5;
+
+    setBodyStyle();
+    doc.text(`This report delivers a comparative performance evaluation comparing the operational safety baseline of `, marginX, yOffset);
+    yOffset += 4.5;
+    doc.setFont('Helvetica', 'bold');
+    doc.text(`${compAItem.label}`, marginX, yOffset);
+    doc.setFont('Helvetica', 'normal');
+    doc.text(` (Baseline) against `, marginX + doc.getTextWidth(`${compAItem.label} `), yOffset);
+    const offset2 = marginX + doc.getTextWidth(`${compAItem.label} (Baseline) against `);
+    doc.setFont('Helvetica', 'bold');
+    doc.text(`${compBItem.label}`, offset2, yOffset);
+    doc.setFont('Helvetica', 'normal');
+    doc.text(` (Target Analysis Zone).`, offset2 + doc.getTextWidth(`${compBItem.label} `), yOffset);
+    yOffset += 8;
+
+    // --- Section: Comparative Delta Grid ---
+    // Draw table background headers
+    doc.setFillColor(30, 41, 59); // slate-800
+    doc.rect(marginX, yOffset, pageWidth - marginX * 2, 8, 'F');
+    
+    doc.setFont('Helvetica', 'bold');
+    doc.setFontSize(8.5);
+    doc.setTextColor(255, 255, 255);
+    doc.text('KEY SAFETY METRIC', marginX + 4, yOffset + 5.5);
+    doc.text(`BASE (${compAItem.label})`, marginX + 58, yOffset + 5.5);
+    doc.text(`TARGET (${compBItem.label})`, marginX + 98, yOffset + 5.5);
+    doc.text('VARIANCE / DELTA', marginX + 138, yOffset + 5.5);
+    yOffset += 8;
+
+    // Draw Table Rows
+    const metricsRows = [
+      {
+        name: 'Compliance Score',
+        base: `${compAItem.complianceScore}%`,
+        target: `${compBItem.complianceScore}%`,
+        delta: complianceDelta > 0 ? `▲ +${complianceDelta}%` : complianceDelta < 0 ? `▼ ${complianceDelta}%` : 'No Change',
+        isPositive: complianceDelta >= 0,
+        type: 'compliance'
+      },
+      {
+        name: 'Operational Risk Level',
+        base: `${compAItem.riskLevel}/10`,
+        target: `${compBItem.riskLevel}/10`,
+        delta: riskDelta < 0 ? `▼ ${riskDelta} (Improved)` : riskDelta > 0 ? `▲ +${riskDelta} (Escalated)` : 'No Change',
+        isPositive: riskDelta <= 0,
+        type: 'risk'
+      },
+      {
+        name: 'PPE Wear & Degradation',
+        base: `${compAItem.ppeDegradation}%`,
+        target: `${compBItem.ppeDegradation}%`,
+        delta: ppeDelta < 0 ? `▼ ${ppeDelta}% (Extended)` : ppeDelta > 0 ? `▲ +${ppeDelta}% (Degraded)` : 'No Change',
+        isPositive: ppeDelta <= 0,
+        type: 'ppe'
+      }
+    ];
+
+    metricsRows.forEach((row, i) => {
+      // Shading for alternating rows
+      if (i % 2 === 1) {
+        doc.setFillColor(248, 250, 252); // slate-50
+        doc.rect(marginX, yOffset, pageWidth - marginX * 2, 9, 'F');
+      }
+      
+      // Bottom border for cells
+      doc.setDrawColor(241, 245, 249); // slate-100
+      doc.line(marginX, yOffset + 9, pageWidth - marginX, yOffset + 9);
+
+      doc.setFont('Helvetica', 'bold');
+      doc.setFontSize(8.5);
+      doc.setTextColor(15, 23, 42);
+      doc.text(row.name, marginX + 4, yOffset + 6);
+
+      doc.setFont('Helvetica', 'normal');
+      doc.setTextColor(71, 85, 105);
+      doc.text(row.base, marginX + 58, yOffset + 6);
+      doc.text(row.target, marginX + 98, yOffset + 6);
+
+      // Color delta column appropriately (green for positive improvements, red/orange for warning regressions)
+      doc.setFont('Helvetica', 'bold');
+      if (row.delta === 'No Change') {
+        doc.setTextColor(100, 116, 139);
+      } else if (row.isPositive) {
+        doc.setTextColor(16, 185, 129); // emerald-500 (good)
+      } else {
+        doc.setTextColor(239, 68, 68); // red-500 (bad/warning)
+      }
+      doc.text(row.delta, marginX + 138, yOffset + 6);
+
+      yOffset += 9;
+    });
+
+    yOffset += 7;
+
+    // --- Section 3: Red Team Regulatory Insights Callout ---
+    setSubHeaderStyle();
+    doc.text('2. RED TEAM REGULATORY ANALYSIS & INSIGHTS', marginX, yOffset);
+    yOffset += 5.5;
+
+    const insightTextStr = getInsightText(compAItem, compBItem, complianceDelta, riskDelta, ppeDelta);
+    doc.setFont('Helvetica', 'normal');
+    doc.setFontSize(9);
+    
+    // Split text to fit inside callout box
+    const maxTextWidth = pageWidth - marginX * 2 - 10; // margin around text inside box
+    const wrappedInsightLines = doc.splitTextToSize(insightTextStr, maxTextWidth);
+    const boxHeight = wrappedInsightLines.length * 4.5 + 8;
+
+    // Draw professional amber-bordered callout box
+    doc.setFillColor(254, 252, 243); // amber-50 (light yellow)
+    doc.rect(marginX, yOffset, pageWidth - marginX * 2, boxHeight, 'F');
+    
+    // Left border indicator in solid amber
+    doc.setFillColor(245, 158, 11); // amber-500
+    doc.rect(marginX, yOffset, 2, boxHeight, 'F');
+
+    // Draw text inside box
+    doc.setTextColor(30, 41, 59); // slate-800
+    doc.setFont('Helvetica', 'normal');
+    
+    wrappedInsightLines.forEach((line: string, lineIdx: number) => {
+      doc.text(line, marginX + 5, yOffset + 5.5 + (lineIdx * 4.5));
+    });
+
+    yOffset += boxHeight + 8;
+
+    // --- Section 4: Full Audit Trend Baseline Table ---
+    setSubHeaderStyle();
+    doc.text('3. COMPREHENSIVE HISTORICAL BASELINE TRENDS', marginX, yOffset);
+    yOffset += 5.5;
+
+    setMutedStyle();
+    doc.text('The baseline logs below track overall safety indicators across the entire audit logging cycle.', marginX, yOffset);
+    yOffset += 4.5;
+
+    // Draw historical table headers
+    doc.setFillColor(71, 85, 105); // slate-600
+    doc.rect(marginX, yOffset, pageWidth - marginX * 2, 7, 'F');
+    
+    doc.setFont('Helvetica', 'bold');
+    doc.setFontSize(8);
+    doc.setTextColor(255, 255, 255);
+    doc.text('AUDIT RECORD', marginX + 4, yOffset + 4.5);
+    doc.text('COMPLIANCE SCORE', marginX + 45, yOffset + 4.5);
+    doc.text('OPERATIONAL RISK INDEX', marginX + 90, yOffset + 4.5);
+    doc.text('PPE WEAR RATE & DEGRADATION', marginX + 135, yOffset + 4.5);
+    yOffset += 7;
+
+    doc.setFont('Helvetica', 'normal');
+    doc.setFontSize(8);
+    doc.setTextColor(15, 23, 42);
+
+    data.forEach((audit, aIdx) => {
+      // Page spill safety
+      if (yOffset > pageHeight - 25) {
+        // Draw footer on current page
+        drawFooter(doc, pageWidth, pageHeight, marginX);
+        doc.addPage();
+        yOffset = 25;
+        
+        // Re-draw headers on new page
+        doc.setFillColor(71, 85, 105);
+        doc.rect(marginX, yOffset, pageWidth - marginX * 2, 7, 'F');
+        doc.setFont('Helvetica', 'bold');
+        doc.setFontSize(8);
+        doc.setTextColor(255, 255, 255);
+        doc.text('AUDIT RECORD', marginX + 4, yOffset + 4.5);
+        doc.text('COMPLIANCE SCORE', marginX + 45, yOffset + 4.5);
+        doc.text('OPERATIONAL RISK INDEX', marginX + 90, yOffset + 4.5);
+        doc.text('PPE WEAR RATE & DEGRADATION', marginX + 135, yOffset + 4.5);
+        yOffset += 7;
+        
+        doc.setFont('Helvetica', 'normal');
+        doc.setFontSize(8);
+        doc.setTextColor(15, 23, 42);
+      }
+
+      if (aIdx % 2 === 1) {
+        doc.setFillColor(248, 250, 252);
+        doc.rect(marginX, yOffset, pageWidth - marginX * 2, 6.5, 'F');
+      }
+
+      // Border line
+      doc.setDrawColor(241, 245, 249);
+      doc.line(marginX, yOffset + 6.5, pageWidth - marginX, yOffset + 6.5);
+
+      // Highlight selected base or target audits in historical table
+      if (aIdx === safeCompareA) {
+        doc.setFont('Helvetica', 'bold');
+        doc.setTextColor(245, 158, 11); // Amber accent
+        doc.text(`${audit.label} [Baseline A]`, marginX + 4, yOffset + 4.5);
+        doc.setTextColor(15, 23, 42);
+      } else if (aIdx === safeCompareB) {
+        doc.setFont('Helvetica', 'bold');
+        doc.setTextColor(245, 158, 11); // Amber accent
+        doc.text(`${audit.label} [Target B]`, marginX + 4, yOffset + 4.5);
+        doc.setTextColor(15, 23, 42);
+      } else {
+        doc.setFont('Helvetica', 'normal');
+        doc.text(audit.label, marginX + 4, yOffset + 4.5);
+      }
+
+      doc.text(`${audit.complianceScore}%`, marginX + 45, yOffset + 4.5);
+      doc.text(`${audit.riskLevel} / 10`, marginX + 90, yOffset + 4.5);
+      doc.text(`${audit.ppeDegradation}%`, marginX + 135, yOffset + 4.5);
+
+      yOffset += 6.5;
+    });
+
+    // Draw footer on last page
+    drawFooter(doc, pageWidth, pageHeight, marginX);
+
+    // Save/Download report
+    const fileName = `MeloTwo_Safety_Comparative_Report_${compAItem.label}_vs_${compBItem.label}.pdf`;
+    doc.save(fileName);
+
+    trackGA4Event('pdf_report_downloaded', {
+      base_audit: compAItem.label,
+      target_audit: compBItem.label,
+      compliance_delta: complianceDelta,
+      risk_delta: riskDelta,
+      ppe_delta: ppeDelta,
+      timestamp: new Date().toISOString()
+    });
+  };
+
   return (
     <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl text-slate-100 flex flex-col gap-6 w-full relative overflow-hidden" id="compliance-history-widget">
       {/* Decorative safety glow stripe */}
@@ -1165,21 +1549,116 @@ const AuditHistoryChart: React.FC = () => {
           </button>
         </div>
 
-        {/* Comparison toggle */}
-        <button
-          onClick={() => setShowComparator(!showComparator)}
-          className={`px-3 py-1.5 text-xs font-bold rounded-lg border transition-all flex items-center gap-1.5 cursor-pointer ${
-            showComparator 
-              ? 'bg-amber-500/20 text-amber-400 border-amber-500/40 shadow-[0_0_12px_rgba(245,158,11,0.15)]' 
-              : 'text-slate-400 hover:text-white border-slate-800 hover:bg-slate-900'
-          }`}
-        >
-          <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
-            <path strokeLinecap="round" strokeLinejoin="round" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2m0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
-          </svg>
-          Compare Past Audits
-        </button>
+        <div className="flex gap-2 flex-wrap">
+          {/* Threshold config toggle */}
+          <button
+            onClick={() => {
+              setShowThresholdConfig(!showThresholdConfig);
+              trackGA4Event('threshold_menu_toggled', { open: !showThresholdConfig });
+            }}
+            className={`px-3 py-1.5 text-xs font-bold rounded-lg border transition-all flex items-center gap-1.5 cursor-pointer ${
+              showThresholdConfig 
+                ? 'bg-red-500/20 text-red-400 border-red-500/40 shadow-[0_0_12px_rgba(239,68,68,0.15)]' 
+                : 'text-slate-400 hover:text-white border-slate-800 hover:bg-slate-900'
+            }`}
+          >
+            <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+              <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+            </svg>
+            Threshold Warning Rules
+          </button>
+
+          {/* Comparison toggle */}
+          <button
+            onClick={() => setShowComparator(!showComparator)}
+            className={`px-3 py-1.5 text-xs font-bold rounded-lg border transition-all flex items-center gap-1.5 cursor-pointer ${
+              showComparator 
+                ? 'bg-amber-500/20 text-amber-400 border-amber-500/40 shadow-[0_0_12px_rgba(245,158,11,0.15)]' 
+                : 'text-slate-400 hover:text-white border-slate-800 hover:bg-slate-900'
+            }`}
+          >
+            <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2m0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+            </svg>
+            Compare Past Audits
+          </button>
+        </div>
       </div>
+
+      {/* Threshold Configuration Menu Drawer */}
+      {showThresholdConfig && (
+        <div className="bg-slate-950/80 border border-red-500/20 rounded-xl p-4 flex flex-col md:flex-row gap-5 items-center justify-between text-xs animate-fadeIn font-sans shadow-lg">
+          <div className="flex flex-col gap-1 text-left">
+            <span className="font-bold text-slate-100 flex items-center gap-1.5">
+              <span className="w-2 h-2 rounded-full bg-red-500"></span>
+              Warning Threshold Configuration
+            </span>
+            <span className="text-[10px] text-slate-400">Set visual alerts and markers for red team compliance violations.</span>
+          </div>
+          <div className="flex flex-wrap gap-4 items-center w-full md:w-auto">
+            {/* Compliance Slider */}
+            <div className="flex flex-col gap-1 flex-1 min-w-[130px] bg-slate-900 p-2 rounded-lg border border-slate-800">
+              <div className="flex justify-between font-mono text-[10px] text-slate-400">
+                <span>Min Compliance:</span>
+                <span className="text-red-400 font-bold">{complianceThreshold}%</span>
+              </div>
+              <input 
+                type="range" 
+                min="50" 
+                max="98" 
+                step="2"
+                value={complianceThreshold} 
+                onChange={(e) => {
+                  setComplianceThreshold(parseInt(e.target.value, 10));
+                  trackGA4Event('compliance_threshold_updated', { value: parseInt(e.target.value, 10) });
+                }}
+                className="w-full accent-red-500 bg-slate-950 rounded-lg appearance-none h-1 cursor-pointer"
+              />
+            </div>
+
+            {/* Risk Slider */}
+            <div className="flex flex-col gap-1 flex-1 min-w-[130px] bg-slate-900 p-2 rounded-lg border border-slate-800">
+              <div className="flex justify-between font-mono text-[10px] text-slate-400">
+                <span>Max Risk Level:</span>
+                <span className="text-red-400 font-bold">{riskThreshold} / 10</span>
+              </div>
+              <input 
+                type="range" 
+                min="2" 
+                max="9" 
+                step="1"
+                value={riskThreshold} 
+                onChange={(e) => {
+                  setRiskThreshold(parseInt(e.target.value, 10));
+                  trackGA4Event('risk_threshold_updated', { value: parseInt(e.target.value, 10) });
+                }}
+                className="w-full accent-red-500 bg-slate-950 rounded-lg appearance-none h-1 cursor-pointer"
+              />
+            </div>
+
+            {/* PPE Slider */}
+            <div className="flex flex-col gap-1 flex-1 min-w-[130px] bg-slate-900 p-2 rounded-lg border border-slate-800">
+              <div className="flex justify-between font-mono text-[10px] text-slate-400">
+                <span>Max PPE Wear:</span>
+                <span className="text-red-400 font-bold">{ppeThreshold}%</span>
+              </div>
+              <input 
+                type="range" 
+                min="15" 
+                max="85" 
+                step="5"
+                value={ppeThreshold} 
+                onChange={(e) => {
+                  setPpeThreshold(parseInt(e.target.value, 10));
+                  trackGA4Event('ppe_threshold_updated', { value: parseInt(e.target.value, 10) });
+                }}
+                className="w-full accent-red-500 bg-slate-950 rounded-lg appearance-none h-1 cursor-pointer"
+              />
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Responsive SVG Chart */}
       <div className="relative flex-1 w-full bg-slate-950/40 border border-slate-800/60 rounded-xl p-4 min-h-[250px] flex items-center justify-center">
@@ -1234,6 +1713,43 @@ const AuditHistoryChart: React.FC = () => {
             </text>
           ))}
 
+          {/* Visual Warning Threshold Reference Line */}
+          {thresholdY !== undefined && thresholdY >= paddingY && thresholdY <= height - paddingY && (
+            <g className="transition-all duration-300">
+              <line
+                x1={paddingX}
+                y1={thresholdY}
+                x2={width - paddingX}
+                y2={thresholdY}
+                stroke="#ef4444"
+                strokeWidth={1.5}
+                strokeDasharray="5 3"
+                className="opacity-70"
+              />
+              {/* Reference Label Badge */}
+              <rect
+                x={width - paddingX - 65}
+                y={thresholdY - 7}
+                width={65}
+                height={14}
+                rx={4}
+                fill="#b91c1c"
+                className="opacity-95 shadow-lg"
+              />
+              <text
+                x={width - paddingX - 32.5}
+                y={thresholdY + 3.5}
+                fill="#ffffff"
+                fontSize={8}
+                fontWeight="bold"
+                fontFamily="sans-serif"
+                textAnchor="middle"
+              >
+                {metric === 'compliance' ? `Min Limit: ${currentThreshold}%` : metric === 'risk' ? `Max Limit: ${currentThreshold}` : `Max Limit: ${currentThreshold}%`}
+              </text>
+            </g>
+          )}
+
           {/* Area under curve (Shaded Amber) */}
           <path
             d={areaPath}
@@ -1254,32 +1770,43 @@ const AuditHistoryChart: React.FC = () => {
           />
 
           {/* Circular Data Points */}
-          {pointsCoordinates.map((p, i) => (
-            <g 
-              key={i}
-              onMouseEnter={() => setHoveredPoint(p.index)}
-              onMouseLeave={() => setHoveredPoint(null)}
-              className="cursor-pointer group"
-            >
-              {/* Pulse effect on hover */}
-              <circle
-                cx={p.x}
-                cy={p.y}
-                r={hoveredPoint === p.index ? 10 : 0}
-                fill="#f59e0b"
-                className="fill-opacity-20 animate-ping transition-all duration-200"
-              />
-              <circle
-                cx={p.x}
-                cy={p.y}
-                r={hoveredPoint === p.index ? 6 : 4}
-                fill={hoveredPoint === p.index ? '#fbbf24' : '#f59e0b'}
-                stroke="#1e293b"
-                strokeWidth={2}
-                className="transition-all duration-200"
-              />
-            </g>
-          ))}
+          {pointsCoordinates.map((p, i) => {
+            const isWarning = (metric === 'compliance' && p.value < complianceThreshold) ||
+                              (metric === 'risk' && p.value > riskThreshold) ||
+                              (metric === 'ppe' && p.value > ppeThreshold);
+
+            // Red for warning/violations, emerald/green for safe, healthy range.
+            const markerColor = isWarning ? '#ef4444' : '#10b981';
+            const hoverColor = isWarning ? '#f87171' : '#34d399';
+
+            return (
+              <g 
+                key={i}
+                onMouseEnter={() => setHoveredPoint(p.index)}
+                onMouseLeave={() => setHoveredPoint(null)}
+                className="cursor-pointer group"
+                id={`audit-marker-${i}`}
+              >
+                {/* Visual pulse for warning points or hovered points */}
+                <circle
+                  cx={p.x}
+                  cy={p.y}
+                  r={hoveredPoint === p.index ? 12 : (isWarning ? 7 : 0)}
+                  fill={markerColor}
+                  className={`fill-opacity-20 transition-all duration-200 ${isWarning ? 'animate-pulse' : 'animate-ping'}`}
+                />
+                <circle
+                  cx={p.x}
+                  cy={p.y}
+                  r={hoveredPoint === p.index ? 6 : 4}
+                  fill={hoveredPoint === p.index ? hoverColor : markerColor}
+                  stroke="#1e293b"
+                  strokeWidth={2}
+                  className="transition-all duration-200"
+                />
+              </g>
+            );
+          })}
 
           {/* Gradients and Filters definition */}
           <defs>
@@ -1360,6 +1887,19 @@ const AuditHistoryChart: React.FC = () => {
                   ))}
                 </select>
               </div>
+
+              {/* Action Button: Download PDF Report */}
+              <button
+                onClick={handleDownloadPDF}
+                id="btn-download-pdf-report"
+                className="px-3 py-1.5 bg-amber-500 hover:bg-amber-600 active:scale-95 text-slate-950 font-bold text-xs rounded-lg transition-all flex items-center shadow-md cursor-pointer ml-auto lg:ml-2 hover:shadow-[0_0_15px_rgba(245,158,11,0.4)] font-sans"
+                title="Download comparative audit report as a professional PDF"
+              >
+                <svg className="w-3.5 h-3.5 mr-1.5 stroke-[2.5]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3" />
+                </svg>
+                Download PDF Report
+              </button>
             </div>
           </div>
 
@@ -2467,6 +3007,19 @@ const SafetyInspectorPage: React.FC<SafetyInspectorPageProps> = ({ setPage }) =>
     const [history, setHistory] = useState<InspectionHistoryItem[]>([]);
     const [historySearchTerm, setHistorySearchTerm] = useState('');
 
+    // API Key states & configuration
+    const [userApiKey, setUserApiKey] = useState(() => {
+        return typeof localStorage !== 'undefined' ? localStorage.getItem('melotwo_user_api_key') || '' : '';
+    });
+    const [showKeyConfig, setShowKeyConfig] = useState(false);
+
+    const hasDefaultKey = useMemo(() => {
+        return !!(
+            (typeof import.meta !== 'undefined' && import.meta.env && import.meta.env.VITE_GEMINI_API_KEY) || 
+            (typeof window !== 'undefined' && (window as any)?.__GEMINI_API_KEY__)
+        );
+    }, []);
+
     // Effects
     useEffect(() => { localStorage.setItem('melotwo_inspector_scenario_draft', scenario); }, [scenario]);
     useEffect(() => { localStorage.setItem('melotwo_inspector_system_prompt_draft', systemPrompt); }, [systemPrompt]);
@@ -2539,7 +3092,7 @@ const SafetyInspectorPage: React.FC<SafetyInspectorPageProps> = ({ setPage }) =>
                     label: 'Streaming...',
                     color: 'text-amber-500 bg-amber-50/50 border-amber-200 shadow-[0_4px_15px_rgba(245,158,11,0.1)]'
                 });
-            });
+            }, userApiKey);
             setResponse(finalResult);
             saveToHistory(finalResult, scenario, systemPrompt);
 
@@ -2599,11 +3152,73 @@ const SafetyInspectorPage: React.FC<SafetyInspectorPageProps> = ({ setPage }) =>
                     {/* Left Column: Input Form & Sidebar Widgets */}
                     <div className="lg:col-span-5 flex flex-col gap-6">
                         <div className="bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden">
-                            <div className="bg-gray-50 px-6 py-4 border-b border-gray-100">
+                            <div className="bg-gray-50 px-6 py-4 border-b border-gray-100 flex items-center justify-between">
                                 <h2 className="font-semibold text-gray-900 flex items-center">
                                     <Settings className="w-5 h-5 mr-2 text-indigo-500"/> Audit Configuration
                                 </h2>
+                                <button
+                                    type="button"
+                                    onClick={() => setShowKeyConfig(!showKeyConfig)}
+                                    className={`text-xs px-2.5 py-1 rounded-full border transition flex items-center gap-1 cursor-pointer ${
+                                        userApiKey || hasDefaultKey 
+                                            ? 'bg-green-50 text-green-700 border-green-200 hover:bg-green-100' 
+                                            : 'bg-amber-50 text-amber-700 border-amber-200 hover:bg-amber-100 animate-pulse'
+                                    }`}
+                                >
+                                    <span className={`w-1.5 h-1.5 rounded-full ${userApiKey || hasDefaultKey ? 'bg-green-500' : 'bg-amber-500'}`} />
+                                    {userApiKey ? 'Custom Key' : hasDefaultKey ? 'System Key' : 'Configure Key'}
+                                </button>
                             </div>
+
+                            {/* API Key Configuration Panel */}
+                            {(showKeyConfig || (!userApiKey && !hasDefaultKey)) && (
+                                <div className="bg-amber-50/50 border-b border-amber-100 p-6 space-y-3 animate-fade-in">
+                                    <div className="flex items-start gap-3">
+                                        <div className="p-1 bg-amber-100 text-amber-800 rounded-md mt-0.5">
+                                            <Zap className="w-4 h-4 text-amber-600" />
+                                        </div>
+                                        <div>
+                                            <h4 className="text-sm font-bold text-amber-900">Gemini API Key Required</h4>
+                                            <p className="text-xs text-amber-700 mt-1 leading-relaxed">
+                                                To run real-time compliance safety audits, a Google Gemini API key is required. 
+                                                The key is saved locally in your browser and used directly for Google Gen AI requests.
+                                            </p>
+                                        </div>
+                                    </div>
+                                    <div className="flex gap-2 mt-2">
+                                        <input
+                                            type="password"
+                                            value={userApiKey}
+                                            onChange={(e) => {
+                                                const val = e.target.value.trim();
+                                                setUserApiKey(val);
+                                                if (val) {
+                                                    localStorage.setItem('melotwo_user_api_key', val);
+                                                } else {
+                                                    localStorage.removeItem('melotwo_user_api_key');
+                                                }
+                                            }}
+                                            placeholder="Paste AIzaSy... Gemini API Key"
+                                            className="flex-1 px-3 py-2 bg-white border border-gray-200 rounded-lg text-xs font-mono focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none"
+                                        />
+                                        {userApiKey && (
+                                            <button
+                                                type="button"
+                                                onClick={() => {
+                                                    setUserApiKey('');
+                                                    localStorage.removeItem('melotwo_user_api_key');
+                                                }}
+                                                className="px-3 py-2 bg-red-50 text-red-600 hover:bg-red-100 border border-red-200 rounded-lg text-xs font-medium transition cursor-pointer"
+                                            >
+                                                Clear
+                                            </button>
+                                        )}
+                                    </div>
+                                    <p className="text-[10px] text-gray-400">
+                                        Get a free Gemini API key from <a href="https://aistudio.google.com/" target="_blank" rel="noopener noreferrer" className="text-indigo-600 underline">Google AI Studio</a>.
+                                    </p>
+                                </div>
+                            )}
                             <div className="p-6">
                                 <form onSubmit={(e) => { e.preventDefault(); runAudit(false); }} className="space-y-6">
                                     <div>
