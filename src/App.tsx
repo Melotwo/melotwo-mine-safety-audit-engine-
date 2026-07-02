@@ -3319,12 +3319,27 @@ const SafetyInspectorPage: React.FC<SafetyInspectorPageProps> = ({ setPage }) =>
             });
         } catch (err: any) {
             let errMsg = err.message || 'An unknown error occurred.';
-            // Gracefully normalize old API_KEY errors or similar env messages
-            if (errMsg.includes('API_KEY') || errMsg.includes('apiKey')) {
-                errMsg = "Gemini API Key is not set. Please ensure VITE_GEMINI_API_KEY is configured in your hosting/environment settings.";
+            // Only normalize to "not set" if it's a raw unhandled error that mentions API_KEY/apiKey and is NOT already a mapped friendly error
+            const isFriendlyError = errMsg.includes("Authentication Failed") || 
+                                    errMsg.includes("Gemini API Key is not set") || 
+                                    errMsg.includes("Usage Limit Exceeded") || 
+                                    errMsg.includes("Service Unavailable") || 
+                                    errMsg.includes("Connection Error");
+            if (!isFriendlyError && (errMsg.includes('API_KEY') || errMsg.includes('apiKey') || errMsg.includes('api_key'))) {
+                errMsg = "Gemini API Key is not set. Please ensure VITE_GEMINI_API_KEY is configured in your hosting/environment settings or enter a custom key in the settings panel.";
             }
             setError(errMsg);
             setResponse(null);
+
+            // Proactively show key configuration panel if it looks like an API key authentication/missing issue
+            const isKeyIssue = errMsg.toLowerCase().includes('api key') || 
+                               errMsg.toLowerCase().includes('authentication') || 
+                               errMsg.toLowerCase().includes('401') || 
+                               errMsg.toLowerCase().includes('403') ||
+                               errMsg.toLowerCase().includes('unauthorized');
+            if (isKeyIssue) {
+                setShowKeyConfig(true);
+            }
 
             // LOG GA4 EVENT: Failed
             trackGA4Event('ai_generation_failed', {
