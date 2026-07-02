@@ -574,6 +574,112 @@ const GA4MonitorConsole: React.FC = () => {
   );
 };
 
+// --- Helper: Get deterministic trend data for Sparklines ---
+const getTrendData = (currentVal: number, metricKey: string, profileId: string): number[] => {
+  let hash = 0;
+  const str = profileId + metricKey;
+  for (let i = 0; i < str.length; i++) {
+    hash = (hash << 5) - hash + str.charCodeAt(i);
+    hash |= 0;
+  }
+  const offset1 = ((Math.abs(hash) % 7) - 3); // -3 to +3
+  const offset2 = ((Math.abs(hash >> 3) % 7) - 3); // -3 to +3
+  const isNoise = metricKey === 'noiseLevel';
+  const limit = isNoise ? 120 : 100;
+  const minLimit = isNoise ? 40 : 50;
+
+  const m2 = Math.max(minLimit, Math.min(limit, currentVal + offset1));
+  const m1 = Math.max(minLimit, Math.min(limit, currentVal + offset2));
+  const m3 = currentVal;
+  return [m2, m1, m3];
+};
+
+// --- Component: Sparkline Trend Visualizer ---
+const Sparkline: React.FC<{
+  data: number[];
+  color: string;
+  isNoise?: boolean;
+}> = ({ data, color, isNoise = false }) => {
+  const width = 80;
+  const height = 18;
+  const padding = 2;
+  const minVal = isNoise ? 60 : 60;
+  const maxVal = isNoise ? 100 : 100;
+
+  const getX = (index: number) => {
+    return padding + (index * (width - padding * 2)) / (data.length - 1);
+  };
+
+  const getY = (val: number) => {
+    const range = maxVal - minVal || 1;
+    const normalized = (val - minVal) / range;
+    return height - padding - normalized * (height - padding * 2);
+  };
+
+  const points = data.map((val, idx) => ({
+    x: getX(idx),
+    y: getY(val),
+    val
+  }));
+
+  const linePath = points.reduce((acc, p, idx) => {
+    return idx === 0 ? `M ${p.x} ${p.y}` : `${acc} L ${p.x} ${p.y}`;
+  }, '');
+
+  const areaPath = points.length > 0 
+    ? `${linePath} L ${points[points.length - 1].x} ${height} L ${points[0].x} ${height} Z` 
+    : '';
+
+  const gradientId = useMemo(() => `spark-grad-${Math.floor(Math.random() * 1000000)}`, []);
+
+  return (
+    <div className="flex items-center gap-1.5 bg-white/50 border border-gray-100 px-2 py-1 rounded-xl shadow-[inset_0_1px_2px_rgba(0,0,0,0.02)]">
+      <span className="text-[9px] font-mono text-gray-400">
+        {data[0]}{isNoise ? '' : '%'}
+      </span>
+      <svg width={width} height={height} className="overflow-visible">
+        <defs>
+          <linearGradient id={gradientId} x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor={color} stopOpacity={0.2} />
+            <stop offset="100%" stopColor={color} stopOpacity={0.0} />
+          </linearGradient>
+        </defs>
+        {areaPath && (
+          <path
+            d={areaPath}
+            fill={`url(#${gradientId})`}
+            className="transition-all duration-300"
+          />
+        )}
+        <path
+          d={linePath}
+          fill="none"
+          stroke={color}
+          strokeWidth="1.25"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          className="transition-all duration-300"
+        />
+        {points.map((p, idx) => (
+          <circle
+            key={idx}
+            cx={p.x}
+            cy={p.y}
+            r="1.5"
+            fill={idx === points.length - 1 ? color : '#ffffff'}
+            stroke={color}
+            strokeWidth="0.75"
+            className="transition-all duration-300"
+          />
+        ))}
+      </svg>
+      <span className="text-[9px] font-bold font-mono text-gray-600">
+        {data[data.length - 1]}{isNoise ? '' : '%'}
+      </span>
+    </div>
+  );
+};
+
 // --- Component: MineCompliancePanel ---
 const MineCompliancePanel: React.FC = () => {
   const [profiles, setProfiles] = useState<MineProfile[]>(() => {
@@ -774,40 +880,84 @@ const MineCompliancePanel: React.FC = () => {
         <div className="md:col-span-8 space-y-6">
           <h4 className="text-xs font-bold text-gray-500 uppercase tracking-wider">SANS Operational Metrics</h4>
           <div className="grid sm:grid-cols-2 gap-4">
-            <div className="p-4 bg-gray-50 rounded-2xl border border-gray-100">
-              <div className="flex justify-between text-xs text-gray-500 mb-2 font-medium">
-                <span>Environmental Air Quality</span>
-                <span className="font-bold text-gray-900">{activeProfile.stats.airQuality}%</span>
+            {/* Air Quality Card */}
+            <div className="p-4 bg-gray-50 rounded-2xl border border-gray-100 flex flex-col justify-between min-h-[110px]">
+              <div>
+                <div className="flex justify-between text-xs text-gray-500 mb-2 font-medium">
+                  <span>Environmental Air Quality</span>
+                  <span className="font-bold text-gray-900">{activeProfile.stats.airQuality}%</span>
+                </div>
+                <div className="w-full bg-gray-200 h-1.5 rounded-full overflow-hidden">
+                  <div className="bg-teal-500 h-full rounded-full" style={{ width: `${activeProfile.stats.airQuality}%` }}></div>
+                </div>
               </div>
-              <div className="w-full bg-gray-200 h-1.5 rounded-full overflow-hidden">
-                <div className="bg-teal-500 h-full rounded-full" style={{ width: `${activeProfile.stats.airQuality}%` }}></div>
-              </div>
-            </div>
-            <div className="p-4 bg-gray-50 rounded-2xl border border-gray-100">
-              <div className="flex justify-between text-xs text-gray-500 mb-2 font-medium">
-                <span>PPE Adherence Rate</span>
-                <span className="font-bold text-gray-900">{activeProfile.stats.ppeAdherence}%</span>
-              </div>
-              <div className="w-full bg-gray-200 h-1.5 rounded-full overflow-hidden">
-                <div className="bg-indigo-500 h-full rounded-full" style={{ width: `${activeProfile.stats.ppeAdherence}%` }}></div>
-              </div>
-            </div>
-            <div className="p-4 bg-gray-50 rounded-2xl border border-gray-100">
-              <div className="flex justify-between text-xs text-gray-500 mb-2 font-medium">
-                <span>Water Recycling Index</span>
-                <span className="font-bold text-gray-900">{activeProfile.stats.waterRecycling}%</span>
-              </div>
-              <div className="w-full bg-gray-200 h-1.5 rounded-full overflow-hidden">
-                <div className="bg-blue-500 h-full rounded-full" style={{ width: `${activeProfile.stats.waterRecycling}%` }}></div>
+              <div className="mt-3 pt-2 border-t border-gray-200/40 flex items-center justify-between">
+                <span className="text-[10px] text-gray-400 font-mono font-medium">3M Trend</span>
+                <Sparkline 
+                  data={getTrendData(activeProfile.stats.airQuality, 'airQuality', activeProfile.id)} 
+                  color="#14b8a6" 
+                />
               </div>
             </div>
-            <div className="p-4 bg-gray-50 rounded-2xl border border-gray-100">
-              <div className="flex justify-between text-xs text-gray-500 mb-2 font-medium">
-                <span>Noise Level Regulation</span>
-                <span className="font-bold text-gray-900">{activeProfile.stats.noiseLevel} dBA</span>
+
+            {/* PPE Adherence Card */}
+            <div className="p-4 bg-gray-50 rounded-2xl border border-gray-100 flex flex-col justify-between min-h-[110px]">
+              <div>
+                <div className="flex justify-between text-xs text-gray-500 mb-2 font-medium">
+                  <span>PPE Adherence Rate</span>
+                  <span className="font-bold text-gray-900">{activeProfile.stats.ppeAdherence}%</span>
+                </div>
+                <div className="w-full bg-gray-200 h-1.5 rounded-full overflow-hidden">
+                  <div className="bg-indigo-500 h-full rounded-full" style={{ width: `${activeProfile.stats.ppeAdherence}%` }}></div>
+                </div>
               </div>
-              <div className="w-full bg-gray-200 h-1.5 rounded-full overflow-hidden">
-                <div className="bg-amber-500 h-full rounded-full" style={{ width: `${Math.min(100, (activeProfile.stats.noiseLevel / 90) * 100)}%` }}></div>
+              <div className="mt-3 pt-2 border-t border-gray-200/40 flex items-center justify-between">
+                <span className="text-[10px] text-gray-400 font-mono font-medium">3M Trend</span>
+                <Sparkline 
+                  data={getTrendData(activeProfile.stats.ppeAdherence, 'ppeAdherence', activeProfile.id)} 
+                  color="#6366f1" 
+                />
+              </div>
+            </div>
+
+            {/* Water Recycling Card */}
+            <div className="p-4 bg-gray-50 rounded-2xl border border-gray-100 flex flex-col justify-between min-h-[110px]">
+              <div>
+                <div className="flex justify-between text-xs text-gray-500 mb-2 font-medium">
+                  <span>Water Recycling Index</span>
+                  <span className="font-bold text-gray-900">{activeProfile.stats.waterRecycling}%</span>
+                </div>
+                <div className="w-full bg-gray-200 h-1.5 rounded-full overflow-hidden">
+                  <div className="bg-blue-500 h-full rounded-full" style={{ width: `${activeProfile.stats.waterRecycling}%` }}></div>
+                </div>
+              </div>
+              <div className="mt-3 pt-2 border-t border-gray-200/40 flex items-center justify-between">
+                <span className="text-[10px] text-gray-400 font-mono font-medium">3M Trend</span>
+                <Sparkline 
+                  data={getTrendData(activeProfile.stats.waterRecycling, 'waterRecycling', activeProfile.id)} 
+                  color="#3b82f6" 
+                />
+              </div>
+            </div>
+
+            {/* Noise Level Card */}
+            <div className="p-4 bg-gray-50 rounded-2xl border border-gray-100 flex flex-col justify-between min-h-[110px]">
+              <div>
+                <div className="flex justify-between text-xs text-gray-500 mb-2 font-medium">
+                  <span>Noise Level Regulation</span>
+                  <span className="font-bold text-gray-900">{activeProfile.stats.noiseLevel} dBA</span>
+                </div>
+                <div className="w-full bg-gray-200 h-1.5 rounded-full overflow-hidden">
+                  <div className="bg-amber-500 h-full rounded-full" style={{ width: `${Math.min(100, (activeProfile.stats.noiseLevel / 90) * 100)}%` }}></div>
+                </div>
+              </div>
+              <div className="mt-3 pt-2 border-t border-gray-200/40 flex items-center justify-between">
+                <span className="text-[10px] text-gray-400 font-mono font-medium">3M Trend</span>
+                <Sparkline 
+                  data={getTrendData(activeProfile.stats.noiseLevel, 'noiseLevel', activeProfile.id)} 
+                  color="#f59e0b" 
+                  isNoise={true}
+                />
               </div>
             </div>
           </div>
@@ -1791,19 +1941,68 @@ const AuditHistoryChart: React.FC = () => {
                 <circle
                   cx={p.x}
                   cy={p.y}
-                  r={hoveredPoint === p.index ? 12 : (isWarning ? 7 : 0)}
+                  r={hoveredPoint === p.index ? 14 : (isWarning ? 9 : 0)}
                   fill={markerColor}
                   className={`fill-opacity-20 transition-all duration-200 ${isWarning ? 'animate-pulse' : 'animate-ping'}`}
                 />
+                
+                {/* Red warning glowing halo */}
+                {isWarning && (
+                  <circle
+                    cx={p.x}
+                    cy={p.y}
+                    r={18}
+                    fill="url(#alert-halo)"
+                    className="animate-pulse origin-center"
+                    style={{ transformOrigin: `${p.x}px ${p.y}px` }}
+                  />
+                )}
+
                 <circle
                   cx={p.x}
                   cy={p.y}
-                  r={hoveredPoint === p.index ? 6 : 4}
+                  r={hoveredPoint === p.index ? 7 : 5}
                   fill={hoveredPoint === p.index ? hoverColor : markerColor}
                   stroke="#1e293b"
                   strokeWidth={2}
+                  filter={isWarning ? 'url(#alert-glow-filter)' : undefined}
                   className="transition-all duration-200"
                 />
+
+                {/* Floating Exclamation/Warning Notification Icon */}
+                {isWarning && (
+                  <g 
+                    transform={`translate(${p.x}, ${p.y - 14})`} 
+                    className="animate-bounce origin-center"
+                    style={{ transformOrigin: `${p.x}px ${p.y - 14}px` }}
+                  >
+                    {/* Visual alignment connector */}
+                    <line x1={0} y1={5} x2={0} y2={14} stroke="#ef4444" strokeWidth={1} strokeDasharray="1 1" className="opacity-60" />
+                    <g transform="translate(-7, -7)">
+                      {/* Crimson Alert Triangle */}
+                      <path
+                        d="M 7 1 L 13 11 A 0.5 0.5 0 0 1 12.5 12 L 1.5 12 A 0.5 0.5 0 0 1 1 11 Z"
+                        fill="#ef4444"
+                        stroke="#0f172a"
+                        strokeWidth="1"
+                        strokeLinejoin="round"
+                        className="shadow-md"
+                      />
+                      {/* Bold Exclamation Mark */}
+                      <text 
+                        x="7" 
+                        y="10.5" 
+                        fill="#ffffff" 
+                        fontSize="8.5" 
+                        fontWeight="black" 
+                        fontFamily="sans-serif" 
+                        textAnchor="middle"
+                      >
+                        !
+                      </text>
+                    </g>
+                  </g>
+                )}
               </g>
             );
           })}
@@ -1814,8 +2013,23 @@ const AuditHistoryChart: React.FC = () => {
               <stop offset="0%" stopColor="#f59e0b" stopOpacity="0.8"/>
               <stop offset="100%" stopColor="#f59e0b" stopOpacity="0.0"/>
             </linearGradient>
+            <radialGradient id="alert-halo" cx="50%" cy="50%" r="50%">
+              <stop offset="0%" stopColor="#ef4444" stopOpacity="0.45" />
+              <stop offset="50%" stopColor="#ef4444" stopOpacity="0.15" />
+              <stop offset="100%" stopColor="#ef4444" stopOpacity="0" />
+            </radialGradient>
             <filter id="glow-filter" x="-20%" y="-20%" width="140%" height="140%">
               <feGaussianBlur stdDeviation="4" result="blur" />
+              <feMerge>
+                <feMergeNode in="blur" />
+                <feMergeNode in="SourceGraphic" />
+              </feMerge>
+            </filter>
+            <filter id="alert-glow-filter" x="-50%" y="-50%" width="200%" height="200%">
+              <feGaussianBlur stdDeviation="3" result="blur" />
+              <feComponentTransfer>
+                <feFuncA type="linear" slope="1" />
+              </feComponentTransfer>
               <feMerge>
                 <feMergeNode in="blur" />
                 <feMergeNode in="SourceGraphic" />
