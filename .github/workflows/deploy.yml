@@ -2,8 +2,8 @@ name: Deploy to GitHub Pages
 
 on:
   push:
-    branches: [main]
-  workflow_dispatch:
+    branches:
+      - main
 
 permissions:
   contents: write
@@ -11,28 +11,28 @@ permissions:
 jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
-
     steps:
-      - name: Checkout
+      - name: Checkout Source Code
         uses: actions/checkout@v4
 
-      - name: Setup Node
+      - name: Set up Node.js Runtime
         uses: actions/setup-node@v4
         with:
-          node-version: "22"
+          node-version: 22
+          cache: npm
 
-      - name: Install dependencies
-        run: npm install
+      - name: Install Project Dependencies
+        run: npm ci
 
-      - name: Build
+      - name: Compile Production Build
         run: npm run build
         env:
           VITE_GEMINI_API_KEY: ${{ secrets.VITE_GEMINI_API_KEY }}
 
-      - name: Create .nojekyll
+      - name: Create .nojekyll Override
         run: touch dist/.nojekyll
 
-      - name: Deploy to gh-pages Branch
+      - name: Deploy to gh-pages Branch with Custom Domain
         uses: JamesIves/github-pages-deploy-action@v4
         with:
           folder: dist
