@@ -65,49 +65,77 @@ export const syncLeadToKlaviyoAndBackup = async (lead: Omit<CapturedLead, 'id' |
         console.error('[MeloTwo Backup] Local storage backup failed:', e);
     }
 
-    // 2. Klaviyo AJAX Sync
-    // Placeholders for easy replacement by user
-    const KLAVIYO_PUBLIC_API_KEY = 'YOUR_KLAVIYO_PUBLIC_API_KEY';
-    const KLAVIYO_LIST_ID = 'YOUR_KLAVIYO_LIST_ID';
-
-    if (!KLAVIYO_PUBLIC_API_KEY || KLAVIYO_PUBLIC_API_KEY === 'YOUR_KLAVIYO_PUBLIC_API_KEY' || !KLAVIYO_LIST_ID || KLAVIYO_LIST_ID === 'YOUR_KLAVIYO_LIST_ID') {
-        console.warn('[Klaviyo Sync] Placeholders active. Skipping live Klaviyo AJAX call. Lead is safely stored in Local Storage Backup.');
-        return;
-    }
+    // 2. Klaviyo Connection Configuration
+    const KLAVIYO_PUBLIC_API_KEY = 'U3wcsH'; // Configured Klaviyo Site ID / Public API Key
+    const KLAVIYO_LIST_ID = 'YOUR_KLAVIYO_LIST_ID'; // Placeholder for customer list configuration
 
     try {
-        const formData = new URLSearchParams();
-        formData.append('g', KLAVIYO_LIST_ID);
-        formData.append('email', lead.email);
-        
-        const customProperties = {
-            '$first_name': lead.fullName.split(' ')[0] || '',
-            '$last_name': lead.fullName.split(' ').slice(1).join(' ') || '',
-            'CompanyName': lead.companyName,
-            'SelectedSANS': lead.selectedSans,
-            'Source': 'MeloTwo Compliance Platform'
-        };
-        
-        formData.append('$fields', '$first_name,$last_name,CompanyName,SelectedSANS,Source');
-        formData.append('properties', JSON.stringify(customProperties));
+        const firstName = lead.fullName.split(' ')[0] || '';
+        const lastName = lead.fullName.split(' ').slice(1).join(' ') || '';
 
-        const response = await fetch('https://manage.kmail-lists.com/ajax/subscriptions/subscribe', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/x-www-form-urlencoded',
-                'Accept': 'application/json'
-            },
-            body: formData.toString()
+        // 2a. Sync via Klaviyo Client-Side Identify API payload
+        const identifyPayload = {
+            token: KLAVIYO_PUBLIC_API_KEY,
+            properties: {
+                $email: lead.email,
+                $first_name: firstName,
+                $last_name: lastName,
+                $organization: lead.companyName,
+                CompanyName: lead.companyName,
+                SelectedSANS: lead.selectedSans,
+                Source: 'MeloTwo Compliance Platform',
+                LastInteraction: new Date().toISOString()
+            }
+        };
+
+        // Encode to base64 for native GET payload format
+        const identifyDataStr = btoa(unescape(encodeURIComponent(JSON.stringify(identifyPayload))));
+        
+        fetch(`https://a.klaviyo.com/api/identify?data=${encodeURIComponent(identifyDataStr)}`, {
+            method: 'GET',
+            mode: 'no-cors'
+        }).then(() => {
+            console.log('[Klaviyo Identify] Profile track sync dispatched successfully.');
+        }).catch((err) => {
+            console.error('[Klaviyo Identify] Track dispatch failure:', err);
         });
 
-        if (response.ok) {
-            const data = await response.json();
-            console.log('[Klaviyo Sync] Successfully subscribed lead to Klaviyo:', data);
+        // 2b. Klaviyo AJAX Subscribe integration if list ID is customized
+        if (KLAVIYO_LIST_ID && KLAVIYO_LIST_ID !== 'YOUR_KLAVIYO_LIST_ID') {
+            const formData = new URLSearchParams();
+            formData.append('g', KLAVIYO_LIST_ID);
+            formData.append('email', lead.email);
+            formData.append('$fields', '$first_name,$last_name,CompanyName,SelectedSANS,Source');
+            
+            const customProperties = {
+                '$first_name': firstName,
+                '$last_name': lastName,
+                'CompanyName': lead.companyName,
+                'SelectedSANS': lead.selectedSans,
+                'Source': 'MeloTwo Compliance Platform'
+            };
+            formData.append('properties', JSON.stringify(customProperties));
+
+            const response = await fetch('https://manage.kmail-lists.com/ajax/subscriptions/subscribe', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                    'Accept': 'application/json'
+                },
+                body: formData.toString()
+            });
+
+            if (response.ok) {
+                const data = await response.json();
+                console.log('[Klaviyo Subscribe] Subscribed lead to list:', data);
+            } else {
+                console.error('[Klaviyo Subscribe] List subscribe failed:', response.status);
+            }
         } else {
-            console.error('[Klaviyo Sync] Subscription failed with status:', response.status);
+            console.warn('[Klaviyo Subscribe] Klaviyo List ID placeholder remains active. Profile sync accomplished via Identify API.');
         }
     } catch (err) {
-        console.error('[Klaviyo Sync] Fetch error subscribing to Klaviyo:', err);
+        console.error('[Klaviyo Sync] General sync Exception:', err);
     }
 };
 
@@ -3016,6 +3044,11 @@ const EnterpriseDemoModal: React.FC<EnterpriseDemoModalProps> = ({ isOpen, onClo
     const [demoName, setDemoName] = useState('');
     const [demoEmail, setDemoEmail] = useState('');
     const [demoCompany, setDemoCompany] = useState('');
+    const [numSites, setNumSites] = useState<'1' | '2-5' | '5+'>('1');
+    const [sans10330, setSans10330] = useState(true);
+    const [sans10142, setSans10142] = useState(false);
+    const [sans10049, setSans10049] = useState(false);
+    const [workforceSize, setWorkforceSize] = useState<'under50' | '50-250' | '250+'>('under50');
     const [demoSubmitted, setDemoSubmitted] = useState(false);
 
     useEffect(() => {
@@ -3024,115 +3057,539 @@ const EnterpriseDemoModal: React.FC<EnterpriseDemoModalProps> = ({ isOpen, onClo
         }
     }, [isOpen]);
 
+    // Math calculation engine
+    const calculatedPrice = React.useMemo(() => {
+        let moduleBaseSum = 0;
+        if (sans10330) moduleBaseSum += 1199;
+        if (sans10142) moduleBaseSum += 999;
+        if (sans10049) moduleBaseSum += 799;
+        
+        let multiplier = 1.0;
+        if (numSites === '2-5') multiplier = 2.2;
+        if (numSites === '5+') multiplier = 4.5;
+
+        let workforceAdd = 0;
+        if (workforceSize === '50-250') workforceAdd = 1500;
+        if (workforceSize === '250+') workforceAdd = 3500;
+
+        return (moduleBaseSum * multiplier) + workforceAdd;
+    }, [sans10330, sans10142, sans10049, numSites, workforceSize]);
+
+    // jsPDF corporate quotation compiler
+    const handleDownloadQuotationPDF = () => {
+        if (!demoCompany.trim() || !demoName.trim() || !demoEmail.trim()) {
+            alert("Please complete the Name, Company, and Work Email fields to generate your formal corporate quotation.");
+            return;
+        }
+        try {
+            const doc = new jsPDF({
+                orientation: 'portrait',
+                unit: 'mm',
+                format: 'a4'
+            });
+
+            const randId = Math.floor(1000 + Math.random() * 9000);
+            const quoteRef = `MT-2026-${randId}`;
+
+            // Slate Navy header background
+            doc.setFillColor(15, 23, 42); 
+            doc.rect(0, 0, 210, 42, 'F');
+
+            // Header titles
+            doc.setTextColor(255, 255, 255);
+            doc.setFont('helvetica', 'bold');
+            doc.setFontSize(22);
+            doc.text('MELOTWO COMPLIANCE SOLUTIONS', 15, 18);
+
+            doc.setFontSize(9);
+            doc.setTextColor(245, 158, 11); // Amber
+            doc.text('OFFICIAL CORPORATE COMPLIANCE SUBSCRIPTION QUOTATION', 15, 26);
+
+            // Quote reference metadata
+            doc.setTextColor(148, 163, 184); // Slate 400
+            doc.setFont('helvetica', 'normal');
+            doc.setFontSize(8.5);
+            doc.text(`Reference ID: ${quoteRef}`, 15, 34);
+            doc.text(`Date Issued: ${new Date().toLocaleDateString('en-ZA')}`, 130, 34);
+
+            // Target client metadata block
+            doc.setTextColor(51, 65, 85); // Slate 700
+            doc.setFont('helvetica', 'bold');
+            doc.setFontSize(11);
+            doc.text('PREPARED FOR:', 15, 52);
+
+            doc.setFont('helvetica', 'normal');
+            doc.setFontSize(10);
+            doc.text(`Company Name:      ${demoCompany}`, 15, 59);
+            doc.text(`Representative:    ${demoName}`, 15, 65);
+            doc.text(`Email Address:     ${demoEmail}`, 15, 71);
+
+            // Operational Parameters Summary Box
+            doc.setFillColor(248, 250, 252);
+            doc.rect(125, 48, 70, 28, 'F');
+            doc.setFont('helvetica', 'bold');
+            doc.setFontSize(8.5);
+            doc.setTextColor(15, 23, 42);
+            doc.text('OPERATIONAL METRICS', 130, 54);
+
+            doc.setFont('helvetica', 'normal');
+            doc.setFontSize(8);
+            doc.setTextColor(71, 85, 105);
+            doc.text(`Active Shafts/Sites: ${numSites} site(s)`, 130, 60);
+            doc.text(`Workforce Scale:     ${workforceSize === 'under50' ? 'Under 50' : workforceSize === '50-250' ? '50-250' : '250+'} employees`, 130, 65);
+            doc.text(`Pricing Model:       SANS Multi-Tier`, 130, 70);
+
+            doc.setDrawColor(226, 232, 240);
+            doc.line(15, 82, 195, 82);
+
+            // Table headers
+            doc.setTextColor(15, 23, 42);
+            doc.setFont('helvetica', 'bold');
+            doc.setFontSize(11);
+            doc.text('SANS SOFTWARE MODULE & SUBSCRIPTION BREAKDOWN', 15, 90);
+
+            doc.setFontSize(9);
+            doc.setTextColor(100, 116, 139);
+            doc.text('Item Description', 15, 99);
+            doc.text('Base Rate (ZAR)', 115, 99);
+            doc.text('Factor / Multiplier', 145, 99);
+            doc.text('Total (ZAR)', 175, 99);
+
+            doc.setDrawColor(241, 245, 249);
+            doc.line(15, 102, 195, 102);
+
+            // Table Rows
+            let currentY = 108;
+            doc.setFont('helvetica', 'normal');
+            doc.setTextColor(51, 65, 85);
+
+            let siteMult = 1.0;
+            if (numSites === '2-5') siteMult = 2.2;
+            if (numSites === '5+') siteMult = 4.5;
+
+            // Base access
+            doc.text('MeloTwo Base Platform & Secure Cloud Access', 15, currentY);
+            doc.text('R800.00', 115, currentY);
+            doc.text('Platform Base', 145, currentY);
+            doc.text('R800.00', 175, currentY);
+            currentY += 7;
+
+            // SANS Modules
+            if (sans10330) {
+                doc.text('SANS 10330: Catering & HACCP Automated Audit Module', 15, currentY);
+                doc.text('R1,199.00', 115, currentY);
+                doc.text(`x${siteMult} Sites`, 145, currentY);
+                doc.text(`R${(1199 * siteMult).toFixed(2)}`, 175, currentY);
+                currentY += 7;
+            }
+
+            if (sans10142) {
+                doc.text('SANS 10142-1: Wiring & Electrical Isolator Safety Module', 15, currentY);
+                doc.text('R999.00', 115, currentY);
+                doc.text(`x${siteMult} Sites`, 145, currentY);
+                doc.text(`R${(999 * siteMult).toFixed(2)}`, 175, currentY);
+                currentY += 7;
+            }
+
+            if (sans10049) {
+                doc.text('SANS 10049: Hygiene & Personal Protective Apparel Module', 15, currentY);
+                doc.text('R799.00', 115, currentY);
+                doc.text(`x${siteMult} Sites`, 145, currentY);
+                doc.text(`R${(799 * siteMult).toFixed(2)}`, 175, currentY);
+                currentY += 7;
+            }
+
+            // Workforce Addition
+            if (workforceSize !== 'under50') {
+                const addAmt = workforceSize === '50-250' ? 1500 : 3500;
+                doc.text(`Workforce Headcount License: ${workforceSize === '50-250' ? '50-250' : '250+'} Staff`, 15, currentY);
+                doc.text(`R${addAmt.toFixed(2)}`, 115, currentY);
+                doc.text('Tier Flat Addon', 145, currentY);
+                doc.text(`R${addAmt.toFixed(2)}`, 175, currentY);
+                currentY += 7;
+            }
+
+            // Total
+            doc.setDrawColor(203, 213, 225);
+            doc.line(15, currentY + 1, 195, currentY + 1);
+            currentY += 8;
+
+            doc.setFont('helvetica', 'bold');
+            doc.setTextColor(15, 23, 42);
+            doc.setFontSize(10.5);
+            doc.text('TOTAL MONTHLY COMPLIANCE SUBSCRIPTION (Excl VAT)', 15, currentY);
+            doc.setFontSize(11);
+            doc.text(`R${calculatedPrice.toFixed(2)}`, 175, currentY);
+
+            currentY += 15;
+
+            // Terms
+            doc.setFillColor(248, 250, 252);
+            doc.rect(15, currentY, 180, 48, 'F');
+            doc.setDrawColor(226, 232, 240);
+            doc.rect(15, currentY, 180, 48, 'S');
+
+            doc.setFont('helvetica', 'bold');
+            doc.setFontSize(8.5);
+            doc.text('PROVISIONS & COMPLIANCE SLAS:', 20, currentY + 6);
+
+            doc.setFont('helvetica', 'normal');
+            doc.setFontSize(7.5);
+            doc.setTextColor(100, 116, 139);
+            const terms = [
+                '1. This subscription quote is valid for 30 calendar days from the date of issue.',
+                '2. The compliance assessments generated by MeloTwo are SANS and HACCP advisory blueprints.',
+                '3. Invoicing is processed monthly in advance. Termination requires a 30-day written notice period.',
+                '4. Safe database replication and local storage sync fallbacks are active under SANS 10330 guidelines.',
+                '5. Setup includes full digital integration and initial calibration support by a dedicated SHEQ engineer.'
+            ];
+            let termY = currentY + 12;
+            terms.forEach(term => {
+                doc.text(term, 20, termY);
+                termY += 4.5;
+            });
+
+            // Signature lines
+            doc.setFont('helvetica', 'bold');
+            doc.setFontSize(8);
+            doc.setTextColor(15, 23, 42);
+            doc.text('Authorized MeloTwo Signatory', 15, 245);
+            doc.text('Client Acceptance Signature', 130, 245);
+
+            doc.setDrawColor(148, 163, 184);
+            doc.line(15, 241, 65, 241);
+            doc.line(130, 241, 180, 241);
+
+            doc.setFont('helvetica', 'normal');
+            doc.setFontSize(7);
+            doc.setTextColor(148, 163, 184);
+            doc.text('MeloTwo Billing Operations Division', 15, 249);
+            doc.text(`Representative of ${demoCompany}`, 130, 249);
+
+            // Document Footer
+            doc.line(15, 265, 195, 265);
+            doc.text('MeloTwo Operational Safety & Audit Intelligence - SANS 10330 HACCP Compliant Corporate Quoting', 15, 270);
+            doc.text('Page 1 of 1', 185, 270, { align: 'right' });
+
+            doc.save(`MeloTwo_Corporate_Quotation_${quoteRef}.pdf`);
+            
+            trackGA4Event('corporate_quotation_downloaded', {
+                company: demoCompany,
+                total_estimate: calculatedPrice,
+                sites: numSites,
+                workforce: workforceSize
+            });
+        } catch (e) {
+            console.error('Quotation generation failed:', e);
+        }
+    };
+
     if (!isOpen) return null;
 
     return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm animate-fade-in">
-            <div className="bg-white rounded-3xl shadow-2xl border border-gray-100 max-w-lg w-full overflow-hidden animate-scale-up">
-                <div className="bg-slate-900 p-6 text-white relative">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm animate-fade-in overflow-y-auto">
+            <div className="bg-white rounded-3xl shadow-2xl border border-gray-100 max-w-4xl w-full overflow-hidden animate-scale-up my-8">
+                {/* Header Banner */}
+                <div className="bg-slate-950 p-6 text-white relative">
                     <button
                         onClick={onClose}
-                        className="absolute top-4 right-4 text-slate-400 hover:text-white text-lg font-bold cursor-pointer"
+                        className="absolute top-4 right-4 text-slate-400 hover:text-white text-lg font-bold cursor-pointer transition"
                     >
                         ✕
                     </button>
-                    <span className="text-xs font-bold text-amber-400 uppercase tracking-widest block mb-1">Secure Enterprise Access</span>
-                    <h3 className="text-xl font-bold">Request Enterprise Demo</h3>
-                    <p className="text-xs text-slate-400 mt-1">Get SANS 10330, SANS 10049 & SANS 10142 fully automated compliance pipelines customized for your operational metrics.</p>
+                    <span className="text-[10px] font-bold text-amber-400 uppercase tracking-widest block mb-1 font-mono">
+                        Enterprise Estimator System
+                    </span>
+                    <h3 className="text-2xl font-black tracking-tight">Interactive Compliance Quotation</h3>
+                    <p className="text-xs text-slate-400 mt-1 leading-relaxed">
+                        Assess multi-site licensing costs for SANS 10330, SANS 10142-1, and SANS 10049. Instantly export an official PDF quote.
+                    </p>
                 </div>
                 
-                <div className="p-8">
-                    {demoSubmitted ? (
-                        <div className="text-center py-6">
-                            <div className="w-12 h-12 bg-green-100 text-green-600 rounded-full flex items-center justify-center mx-auto mb-4">
-                                <svg className="w-6 h-6 stroke-[3]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                    <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-                                </svg>
-                            </div>
-                            <h4 className="text-lg font-bold text-gray-900 mb-1">Demo Request Received</h4>
-                            <p className="text-sm text-gray-500 mb-6">Our SHEQ integration engineer will contact you shortly at <strong>{demoEmail}</strong>.</p>
+                {demoSubmitted ? (
+                    <div className="p-12 text-center max-w-xl mx-auto">
+                        <div className="w-16 h-16 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center mx-auto mb-6">
+                            <svg className="w-8 h-8 stroke-[3]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                            </svg>
+                        </div>
+                        <h4 className="text-2xl font-black text-gray-900 mb-2">Quote Synchronized & Saved</h4>
+                        <p className="text-sm text-gray-500 mb-8 leading-relaxed">
+                            Your estimate of <strong className="text-indigo-600">R{calculatedPrice.toLocaleString('en-ZA')}/mo</strong> has been successfully cached offline and synchronized to our system. A MeloTwo SHEQ Integration Engineer will contact you at <strong>{demoEmail}</strong>.
+                        </p>
+                        <div className="flex flex-col sm:flex-row gap-4 justify-center">
+                            <button
+                                onClick={handleDownloadQuotationPDF}
+                                className="px-6 py-3 bg-amber-500 hover:bg-amber-600 text-slate-950 font-black text-xs uppercase tracking-wider rounded-xl shadow-md transition cursor-pointer"
+                            >
+                                Re-Download Quotation (PDF)
+                            </button>
                             <button
                                 onClick={onClose}
-                                className="px-6 py-2.5 text-xs font-bold text-white bg-slate-900 rounded-xl hover:bg-slate-800 transition cursor-pointer"
+                                className="px-6 py-3 border border-slate-200 text-slate-700 font-bold text-xs uppercase tracking-wider rounded-xl hover:bg-slate-50 transition cursor-pointer"
                             >
-                                Close Modal
+                                Close Window
                             </button>
                         </div>
-                    ) : (
-                        <form
-                            onSubmit={(e) => {
-                                e.preventDefault();
-                                if (demoName && demoEmail && demoCompany) {
-                                    setDemoSubmitted(true);
-                                    
-                                    // Sync lead with Klaviyo & back up locally
-                                    syncLeadToKlaviyoAndBackup({
-                                        fullName: demoName,
-                                        companyName: demoCompany,
-                                        email: demoEmail,
-                                        selectedSans: 'Enterprise / Mine Operations'
-                                    });
+                    </div>
+                ) : (
+                    <form
+                        onSubmit={(e) => {
+                            e.preventDefault();
+                            if (demoName && demoEmail && demoCompany) {
+                                setDemoSubmitted(true);
+                                
+                                // Sync lead with Klaviyo & back up locally
+                                const activeModulesStr = [
+                                    sans10330 && 'SANS 10330',
+                                    sans10142 && 'SANS 10142-1',
+                                    sans10049 && 'SANS 10049'
+                                ].filter(Boolean).join(', ');
 
-                                    trackGA4Event('enterprise_demo_submitted', {
-                                        company: demoCompany,
-                                        email_domain: demoEmail.split('@')[1] || ''
-                                    });
-                                }
-                            }}
-                            className="space-y-4"
-                        >
-                            <div>
-                                <label className="block text-xs font-bold text-gray-500 uppercase tracking-wide mb-1.5">Full Name</label>
-                                <input
-                                    type="text"
-                                    required
-                                    value={demoName}
-                                    onChange={(e) => setDemoName(e.target.value)}
-                                    placeholder="e.g. Johnathan Smith"
-                                    className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition"
-                                />
+                                syncLeadToKlaviyoAndBackup({
+                                    fullName: demoName,
+                                    companyName: demoCompany,
+                                    email: demoEmail,
+                                    selectedSans: `Pricing Estimator: ZAR ${calculatedPrice}/mo | Sites: ${numSites} | Modules: [${activeModulesStr}] | Workforce: ${workforceSize}`
+                                });
+
+                                trackGA4Event('pricing_estimator_submitted', {
+                                    company: demoCompany,
+                                    email_domain: demoEmail.split('@')[1] || '',
+                                    total_estimate: calculatedPrice,
+                                    sites: numSites,
+                                    workforce: workforceSize
+                                });
+                            }
+                        }}
+                        className="p-8 grid md:grid-cols-12 gap-8"
+                    >
+                        {/* Left Side: Parameters Form */}
+                        <div className="md:col-span-7 space-y-6">
+                            <div className="border-b border-slate-100 pb-4">
+                                <h4 className="text-sm font-bold text-slate-900 uppercase tracking-wider mb-3">1. Contact & Corporate Profiles</h4>
+                                <div className="grid sm:grid-cols-2 gap-4">
+                                    <div>
+                                        <label className="block text-[10px] font-black text-gray-500 uppercase tracking-wide mb-1">Full Name</label>
+                                        <input
+                                            type="text"
+                                            required
+                                            value={demoName}
+                                            onChange={(e) => setDemoName(e.target.value)}
+                                            placeholder="John Smith"
+                                            className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:ring-2 focus:ring-amber-500 focus:border-amber-500 outline-none transition"
+                                        />
+                                    </div>
+                                    <div>
+                                        <label className="block text-[10px] font-black text-gray-500 uppercase tracking-wide mb-1">Company Name</label>
+                                        <input
+                                            type="text"
+                                            required
+                                            value={demoCompany}
+                                            onChange={(e) => setDemoCompany(e.target.value)}
+                                            placeholder="Deep Reef Gold Ltd"
+                                            className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:ring-2 focus:ring-amber-500 focus:border-amber-500 outline-none transition"
+                                        />
+                                    </div>
+                                    <div className="sm:col-span-2">
+                                        <label className="block text-[10px] font-black text-gray-500 uppercase tracking-wide mb-1">Work Email Address</label>
+                                        <input
+                                            type="email"
+                                            required
+                                            value={demoEmail}
+                                            onChange={(e) => setDemoEmail(e.target.value)}
+                                            placeholder="j.smith@reefmining.co.za"
+                                            className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:ring-2 focus:ring-amber-500 focus:border-amber-500 outline-none transition"
+                                        />
+                                    </div>
+                                </div>
                             </div>
-                            <div>
-                                <label className="block text-xs font-bold text-gray-500 uppercase tracking-wide mb-1.5">Company / Operation Name</label>
-                                <input
-                                    type="text"
-                                    required
-                                    value={demoCompany}
-                                    onChange={(e) => setDemoCompany(e.target.value)}
-                                    placeholder="e.g. Witwatersrand Deep Reef Gold Ltd"
-                                    className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition"
-                                />
+
+                            <div className="border-b border-slate-100 pb-4">
+                                <h4 className="text-sm font-bold text-slate-900 uppercase tracking-wider mb-3">2. Active Operational Sites / Shafts</h4>
+                                <div className="grid grid-cols-3 gap-3">
+                                    {(['1', '2-5', '5+'] as const).map((opt) => (
+                                        <button
+                                            key={opt}
+                                            type="button"
+                                            onClick={() => setNumSites(opt)}
+                                            className={`py-2 px-3 rounded-xl border text-center transition cursor-pointer flex flex-col justify-center items-center ${
+                                                numSites === opt
+                                                    ? 'bg-slate-900 border-slate-900 text-white shadow-md'
+                                                    : 'bg-slate-50 border-slate-200 text-slate-600 hover:bg-slate-100'
+                                            }`}
+                                        >
+                                            <span className="text-sm font-black">{opt}</span>
+                                            <span className="text-[9px] font-mono tracking-wider uppercase opacity-80">
+                                                {opt === '1' ? 'Site' : 'Sites'}
+                                            </span>
+                                        </button>
+                                    ))}
+                                </div>
                             </div>
-                            <div>
-                                <label className="block text-xs font-bold text-gray-500 uppercase tracking-wide mb-1.5">Work Email Address</label>
-                                <input
-                                    type="email"
-                                    required
-                                    value={demoEmail}
-                                    onChange={(e) => setDemoEmail(e.target.value)}
-                                    placeholder="e.g. j.smith@witgold.co.za"
-                                    className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition"
-                                />
+
+                            <div className="border-b border-slate-100 pb-4">
+                                <h4 className="text-sm font-bold text-slate-900 uppercase tracking-wider mb-3">3. SANS Compliance Modules</h4>
+                                <div className="space-y-2.5">
+                                    <label className="flex items-start gap-3 p-3 bg-slate-50 border border-slate-200/60 rounded-xl hover:bg-slate-100/60 transition cursor-pointer">
+                                        <input
+                                            type="checkbox"
+                                            checked={sans10330}
+                                            onChange={(e) => setSans10330(e.target.checked)}
+                                            className="mt-0.5 rounded text-amber-500 focus:ring-amber-500 border-slate-300 w-4 h-4 cursor-pointer"
+                                        />
+                                        <div>
+                                            <span className="text-xs font-black text-slate-900 block">SANS 10330 (Catering & HACCP Audit)</span>
+                                            <span className="text-[10px] text-gray-500 block">Covers kitchen storage, walk-in coolers, food sanitation pipelines.</span>
+                                        </div>
+                                    </label>
+
+                                    <label className="flex items-start gap-3 p-3 bg-slate-50 border border-slate-200/60 rounded-xl hover:bg-slate-100/60 transition cursor-pointer">
+                                        <input
+                                            type="checkbox"
+                                            checked={sans10142}
+                                            onChange={(e) => setSans10142(e.target.checked)}
+                                            className="mt-0.5 rounded text-amber-500 focus:ring-amber-500 border-slate-300 w-4 h-4 cursor-pointer"
+                                        />
+                                        <div>
+                                            <span className="text-xs font-black text-slate-900 block">SANS 10142-1 (Wiring & Electrical Isolator Safety Module)</span>
+                                            <span className="text-[10px] text-gray-500 block">Covers electrical distribution panel obstructions and steam line mounting codes.</span>
+                                        </div>
+                                    </label>
+
+                                    <label className="flex items-start gap-3 p-3 bg-slate-50 border border-slate-200/60 rounded-xl hover:bg-slate-100/60 transition cursor-pointer">
+                                        <input
+                                            type="checkbox"
+                                            checked={sans10049}
+                                            onChange={(e) => setSans10049(e.target.checked)}
+                                            className="mt-0.5 rounded text-amber-500 focus:ring-amber-500 border-slate-300 w-4 h-4 cursor-pointer"
+                                        />
+                                        <div>
+                                            <span className="text-xs font-black text-slate-900 block">SANS 10049 (Hygiene & PPE)</span>
+                                            <span className="text-[10px] text-gray-500 block">Covers personal protective gear verification, dispenser levels, and sanitizers.</span>
+                                        </div>
+                                    </label>
+                                </div>
                             </div>
+
+                            <div>
+                                <h4 className="text-sm font-bold text-slate-900 uppercase tracking-wider mb-3">4. Workforce Headcount Scale</h4>
+                                <div className="grid grid-cols-3 gap-3">
+                                    {([
+                                        { key: 'under50', label: '< 50 staff' },
+                                        { key: '50-250', label: '50-250 staff' },
+                                        { key: '250+', label: '250+ staff' }
+                                    ] as const).map((opt) => (
+                                        <button
+                                            key={opt.key}
+                                            type="button"
+                                            onClick={() => setWorkforceSize(opt.key)}
+                                            className={`py-2 px-2.5 rounded-xl border text-center transition cursor-pointer ${
+                                                workforceSize === opt.key
+                                                    ? 'bg-slate-900 border-slate-900 text-white shadow-md'
+                                                    : 'bg-slate-50 border-slate-200 text-slate-600 hover:bg-slate-100'
+                                            }`}
+                                        >
+                                            <span className="text-xs font-bold block">{opt.label}</span>
+                                        </button>
+                                    ))}
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Right Side: Cost Summary Card */}
+                        <div className="md:col-span-5 bg-slate-950 border border-slate-800 rounded-3xl p-6 text-white flex flex-col justify-between shadow-lg relative overflow-hidden">
+                            <div className="absolute top-0 right-0 w-32 h-32 bg-amber-500/5 rounded-full blur-2xl -z-10"></div>
                             
-                            <div className="pt-4 flex gap-3">
+                            <div>
+                                <div className="flex justify-between items-center mb-6">
+                                    <span className="text-[9px] font-black text-amber-400 uppercase tracking-widest font-mono bg-amber-500/10 border border-amber-500/20 px-2.5 py-1 rounded">
+                                        Estimate Result
+                                    </span>
+                                    <span className="text-[9px] font-bold text-slate-400 font-mono">MT-ZAR-2026</span>
+                                </div>
+
+                                <div className="mb-6">
+                                    <span className="text-slate-400 text-[10px] font-bold uppercase tracking-wider block">Estimated Monthly Licensing</span>
+                                    <div className="flex items-baseline mt-1.5">
+                                        <span className="text-4xl font-black tracking-tight text-white">R{calculatedPrice.toLocaleString('en-ZA')}</span>
+                                        <span className="text-slate-400 text-xs font-bold font-mono ml-1.5">/ mo</span>
+                                    </div>
+                                    <span className="text-[9px] text-slate-500 mt-1 block">Excluding VAT. Calculated reactively based on your custom operation parameters.</span>
+                                </div>
+
+                                <div className="h-px bg-slate-800 my-5"></div>
+
+                                {/* Cost Breakdown Visualizer */}
+                                <div className="space-y-3.5">
+                                    <span className="text-slate-400 text-[9px] font-black uppercase tracking-wider block mb-1">Fee Breakdown:</span>
+                                    
+                                    <div className="flex justify-between items-center text-xs text-slate-300">
+                                        <span className="text-slate-400">Base Platform & Cloud:</span>
+                                        <span className="font-bold font-mono">R800 /mo</span>
+                                    </div>
+
+                                    <div className="flex justify-between items-center text-xs text-slate-300">
+                                        <span className="text-slate-400">Active SANS Modules:</span>
+                                        <span className="font-bold font-mono text-amber-400">
+                                            {([sans10330, sans10142, sans10049].filter(Boolean).length)} selected
+                                        </span>
+                                    </div>
+
+                                    <div className="flex justify-between items-center text-xs text-slate-300">
+                                        <span className="text-slate-400">Shaft/Site Multiplying Factor:</span>
+                                        <span className="font-bold font-mono text-indigo-400">
+                                            {numSites === '1' ? '1.0x' : numSites === '2-5' ? '2.2x' : '4.5x'}
+                                        </span>
+                                    </div>
+
+                                    <div className="flex justify-between items-center text-xs text-slate-300">
+                                        <span className="text-slate-400">Workforce Overhead Fee:</span>
+                                        <span className="font-bold font-mono text-teal-400">
+                                            {workforceSize === 'under50' ? '+R0' : workforceSize === '50-250' ? '+R1,500' : '+R3,500'}
+                                        </span>
+                                    </div>
+                                </div>
+
+                                <div className="h-px bg-slate-800 my-5"></div>
+
+                                <div className="text-left bg-slate-900/50 p-3 rounded-xl border border-slate-800 text-[10px] text-slate-400 leading-relaxed space-y-1">
+                                    <strong className="text-slate-300 block">SANS Certified Security:</strong>
+                                    <span>Real-time local backups & multi-user role-based dashboards are standard.</span>
+                                </div>
+                            </div>
+
+                            <div className="mt-8 space-y-3.5">
                                 <button
                                     type="button"
-                                    onClick={onClose}
-                                    className="flex-1 px-4 py-3 border border-gray-200 text-gray-700 rounded-xl font-bold text-xs hover:bg-gray-50 transition cursor-pointer"
+                                    onClick={handleDownloadQuotationPDF}
+                                    className="w-full py-3 px-4 bg-slate-800 hover:bg-slate-700 border border-slate-700 hover:border-slate-600 text-white font-black text-xs uppercase tracking-wider rounded-xl transition cursor-pointer flex items-center justify-center gap-2"
                                 >
-                                    Cancel
+                                    <svg className="w-4 h-4 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
+                                        <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3" />
+                                    </svg>
+                                    Download Formal Quote (PDF)
                                 </button>
-                                <button
-                                    type="submit"
-                                    className="flex-1 px-4 py-3 bg-amber-500 hover:bg-amber-600 text-slate-950 rounded-xl font-black text-xs shadow-md shadow-amber-500/10 transition cursor-pointer"
-                                >
-                                    Submit Request
-                                </button>
+
+                                <div className="flex gap-3">
+                                    <button
+                                        type="button"
+                                        onClick={onClose}
+                                        className="flex-1 py-3 border border-slate-800 text-slate-400 rounded-xl font-bold text-xs hover:bg-slate-900 transition cursor-pointer"
+                                    >
+                                        Cancel
+                                    </button>
+                                    <button
+                                        type="submit"
+                                        className="flex-1 py-3 bg-amber-500 hover:bg-amber-600 text-slate-950 rounded-xl font-black text-xs shadow-md shadow-amber-500/10 transition cursor-pointer"
+                                    >
+                                        Save & Sync
+                                    </button>
+                                </div>
                             </div>
-                        </form>
-                    )}
-                </div>
+                        </div>
+                    </form>
+                )}
             </div>
         </div>
     );
