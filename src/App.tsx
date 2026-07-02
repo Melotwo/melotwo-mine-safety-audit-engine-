@@ -3129,7 +3129,7 @@ const SafetyInspectorPage: React.FC<SafetyInspectorPageProps> = ({ setPage }) =>
     );
 
     return (
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-10 pb-24">
+        <div className="max-w-7xl xl:max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8 xl:px-12 pt-10 pb-24">
             {/* Technical Terminal Layout */}
             <div>
                 {/* Authorized session back header */}
@@ -3353,8 +3353,6 @@ const SafetyInspectorPage: React.FC<SafetyInspectorPageProps> = ({ setPage }) =>
 
                     {/* Right Column: Results & Graphs Grid */}
                     <div className="lg:col-span-7 flex flex-col gap-6">
-                        {/* Mine Profiles Compliance Dashboard */}
-                        <MineCompliancePanel />
 
                         {/* Analysis Report Card */}
                         {error && (
@@ -3426,10 +3424,23 @@ const SafetyInspectorPage: React.FC<SafetyInspectorPageProps> = ({ setPage }) =>
                             )
                         )}
 
-                        {/* Highly Polished Amber Industrial Chart */}
-                        <AuditHistoryChart />
+                    </div>
+                </div>
 
-                        {/* Secure Intercepted Prompt Analytics Dashboard */}
+                {/* Full Width Dashboard Panels (Tablet & Desktop Optimized) */}
+                <div className="mt-10 flex flex-col gap-8 w-full" id="terminal-dashboard-panels">
+                    {/* Mine Profiles Compliance Dashboard */}
+                    <div className="w-full">
+                        <MineCompliancePanel />
+                    </div>
+
+                    {/* Highly Polished Amber Industrial Chart */}
+                    <div className="w-full">
+                        <AuditHistoryChart />
+                    </div>
+
+                    {/* Secure Intercepted Prompt Analytics Dashboard */}
+                    <div className="w-full">
                         <PromptMetricsDashboard />
                     </div>
                 </div>
