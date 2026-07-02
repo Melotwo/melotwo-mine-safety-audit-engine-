@@ -3035,15 +3035,99 @@ const AppFooter: React.FC = () => (
 );
 
 // --- Component: EnterpriseDemoModal ---
+interface PricingTierConfig {
+    id: 'professional' | 'enterprise' | 'audit';
+    name: string;
+    tagline: string;
+    basePrice: number;
+    billingType: 'monthly' | 'one-off';
+    insuranceOffsetRate: string; // Marketing justification
+    auditTrailDefensibility: string; // Security justification
+    features: string[];
+    calculatePrice: (params: {
+        activeModulesCount: number;
+        numSites: '1' | '2-5' | '5+';
+        workforceSize: 'under50' | '50-250' | '250+';
+    }) => number;
+}
+
+export const MELOTWO_PRICING_MATRIX: Record<'professional' | 'enterprise' | 'audit', PricingTierConfig> = {
+    professional: {
+        id: 'professional',
+        name: 'Site Professional Tier',
+        tagline: 'Ideal for single-operation SHEQ compliance managers requiring airtight, defensible reporting.',
+        basePrice: 4999,
+        billingType: 'monthly',
+        insuranceOffsetRate: 'Up to 15% reduction in liability premiums by demonstrating active daily risk-mitigation logs.',
+        auditTrailDefensibility: 'Cryptographically hashed inspector entries with permanent metadata, eliminating regulatory sign-off friction.',
+        features: [
+            'Standard SANS 10330/10142/10049 automated audit workflows',
+            'Immutable digital ledger for high-stakes forensic inspection defense',
+            'Full compliance telemetry with 1-click PDF export pipelines',
+            'Offline-first data caching with automatic Cloud synchronization'
+        ],
+        calculatePrice: ({ activeModulesCount }) => {
+            return 4999 + (activeModulesCount * 1500);
+        }
+    },
+    enterprise: {
+        id: 'enterprise',
+        name: 'Industrial Enterprise Tier',
+        tagline: 'Engineered for multi-shaft mine operations, high-risk industrial plants, and group SHEQ executives.',
+        basePrice: 25000,
+        billingType: 'monthly',
+        insuranceOffsetRate: 'Corporate insurance premium mitigation underwritten by continuous real-time SANS adherence data.',
+        auditTrailDefensibility: 'Full multi-site legal defensibility. Automated, chain-of-custody tracking of all safety infractions.',
+        features: [
+            'Continuous multi-shaft auditing & cross-site safety comparison dashboards',
+            'R25,000/mo minimum floor with dynamic scale factor integration',
+            'Dedicated SHEQ Integration Engineer support & custom API reporting webhooks',
+            'Legal-grade compliance SLAs with automated regulatory notification pings',
+            'Comprehensive material degradation & PPE oxidation simulation engines'
+        ],
+        calculatePrice: ({ numSites, activeModulesCount }) => {
+            const baseFloor = 25000;
+            let siteMultiplier = 1.0;
+            if (numSites === '2-5') siteMultiplier = 1.5;
+            if (numSites === '5+') siteMultiplier = 2.2;
+            
+            const calculated = (baseFloor + (activeModulesCount * 3000)) * siteMultiplier;
+            return Math.max(baseFloor, calculated);
+        }
+    },
+    audit: {
+        id: 'audit',
+        name: 'High-Stakes Audit Tier',
+        tagline: 'Single-event standalone project license for annual regulatory passes or independent audits.',
+        basePrice: 20000,
+        billingType: 'one-off',
+        insuranceOffsetRate: 'Protects directors from personal liability during official regulatory reviews by presenting certified reports.',
+        auditTrailDefensibility: 'Complete snapshot audit reports structured to meet the most rigorous government inspectorial standards.',
+        features: [
+            'Comprehensive single-event compliance pass (e.g. SANS 10330 annual audit)',
+            'Full access to specialized auditing tools for 30 consecutive calendar days',
+            'Instant PDF report compiles with high-fidelity digital inspector signatures',
+            'Post-audit compliance checklist & corrective-action roadmap output'
+        ],
+        calculatePrice: ({ activeModulesCount }) => {
+            const basePrice = 20000;
+            const additionalModules = Math.max(0, activeModulesCount - 1);
+            return basePrice + (additionalModules * 10000);
+        }
+    }
+};
+
 interface EnterpriseDemoModalProps {
     isOpen: boolean;
     onClose: () => void;
+    initialTier?: 'professional' | 'enterprise' | 'audit';
 }
 
-const EnterpriseDemoModal: React.FC<EnterpriseDemoModalProps> = ({ isOpen, onClose }) => {
+const EnterpriseDemoModal: React.FC<EnterpriseDemoModalProps> = ({ isOpen, onClose, initialTier }) => {
     const [demoName, setDemoName] = useState('');
     const [demoEmail, setDemoEmail] = useState('');
     const [demoCompany, setDemoCompany] = useState('');
+    const [selectedTier, setSelectedTier] = useState<'professional' | 'enterprise' | 'audit'>('professional');
     const [numSites, setNumSites] = useState<'1' | '2-5' | '5+'>('1');
     const [sans10330, setSans10330] = useState(true);
     const [sans10142, setSans10142] = useState(false);
@@ -3054,26 +3138,20 @@ const EnterpriseDemoModal: React.FC<EnterpriseDemoModalProps> = ({ isOpen, onClo
     useEffect(() => {
         if (!isOpen) {
             setDemoSubmitted(false);
+        } else if (initialTier) {
+            setSelectedTier(initialTier);
         }
-    }, [isOpen]);
+    }, [isOpen, initialTier]);
 
     // Math calculation engine
     const calculatedPrice = React.useMemo(() => {
-        let moduleBaseSum = 0;
-        if (sans10330) moduleBaseSum += 1199;
-        if (sans10142) moduleBaseSum += 999;
-        if (sans10049) moduleBaseSum += 799;
-        
-        let multiplier = 1.0;
-        if (numSites === '2-5') multiplier = 2.2;
-        if (numSites === '5+') multiplier = 4.5;
-
-        let workforceAdd = 0;
-        if (workforceSize === '50-250') workforceAdd = 1500;
-        if (workforceSize === '250+') workforceAdd = 3500;
-
-        return (moduleBaseSum * multiplier) + workforceAdd;
-    }, [sans10330, sans10142, sans10049, numSites, workforceSize]);
+        const activeModulesCount = [sans10330, sans10142, sans10049].filter(Boolean).length;
+        return MELOTWO_PRICING_MATRIX[selectedTier].calculatePrice({
+            activeModulesCount,
+            numSites,
+            workforceSize
+        });
+    }, [selectedTier, sans10330, sans10142, sans10049, numSites, workforceSize]);
 
     // jsPDF corporate quotation compiler
     const handleDownloadQuotationPDF = () => {
@@ -3163,50 +3241,65 @@ const EnterpriseDemoModal: React.FC<EnterpriseDemoModalProps> = ({ isOpen, onClo
             doc.setFont('helvetica', 'normal');
             doc.setTextColor(51, 65, 85);
 
-            let siteMult = 1.0;
-            if (numSites === '2-5') siteMult = 2.2;
-            if (numSites === '5+') siteMult = 4.5;
-
-            // Base access
-            doc.text('MeloTwo Base Platform & Secure Cloud Access', 15, currentY);
-            doc.text('R800.00', 115, currentY);
-            doc.text('Platform Base', 145, currentY);
-            doc.text('R800.00', 175, currentY);
-            currentY += 7;
-
-            // SANS Modules
-            if (sans10330) {
-                doc.text('SANS 10330: Catering & HACCP Automated Audit Module', 15, currentY);
-                doc.text('R1,199.00', 115, currentY);
-                doc.text(`x${siteMult} Sites`, 145, currentY);
-                doc.text(`R${(1199 * siteMult).toFixed(2)}`, 175, currentY);
+            if (selectedTier === 'professional') {
+                doc.text('MeloTwo Site Professional Base Platform Subscription', 15, currentY);
+                doc.text('R4,999.00', 115, currentY);
+                doc.text('Monthly Flat', 145, currentY);
+                doc.text('R4,999.00', 175, currentY);
                 currentY += 7;
-            }
 
-            if (sans10142) {
-                doc.text('SANS 10142-1: Wiring & Electrical Isolator Safety Module', 15, currentY);
-                doc.text('R999.00', 115, currentY);
-                doc.text(`x${siteMult} Sites`, 145, currentY);
-                doc.text(`R${(999 * siteMult).toFixed(2)}`, 175, currentY);
-                currentY += 7;
-            }
+                const activeModules = [
+                    sans10330 && 'SANS 10330 (HACCP Food Safety)',
+                    sans10142 && 'SANS 10142-1 (Wiring Codes)',
+                    sans10049 && 'SANS 10049 (Hygiene PPE)'
+                ].filter(Boolean);
 
-            if (sans10049) {
-                doc.text('SANS 10049: Hygiene & Personal Protective Apparel Module', 15, currentY);
-                doc.text('R799.00', 115, currentY);
-                doc.text(`x${siteMult} Sites`, 145, currentY);
-                doc.text(`R${(799 * siteMult).toFixed(2)}`, 175, currentY);
+                activeModules.forEach(modName => {
+                    doc.text(`${modName} Integration`, 15, currentY);
+                    doc.text('R1,500.00', 115, currentY);
+                    doc.text('Flat Module Add-on', 145, currentY);
+                    doc.text('R1,500.00', 175, currentY);
+                    currentY += 7;
+                });
+            } else if (selectedTier === 'enterprise') {
+                doc.text('MeloTwo Industrial Enterprise Base Platform Floor', 15, currentY);
+                doc.text('R25,000.00', 115, currentY);
+                doc.text('Enterprise Floor', 145, currentY);
+                doc.text('R25,000.00', 175, currentY);
                 currentY += 7;
-            }
 
-            // Workforce Addition
-            if (workforceSize !== 'under50') {
-                const addAmt = workforceSize === '50-250' ? 1500 : 3500;
-                doc.text(`Workforce Headcount License: ${workforceSize === '50-250' ? '50-250' : '250+'} Staff`, 15, currentY);
-                doc.text(`R${addAmt.toFixed(2)}`, 115, currentY);
-                doc.text('Tier Flat Addon', 145, currentY);
-                doc.text(`R${addAmt.toFixed(2)}`, 175, currentY);
+                const activeCount = [sans10330, sans10142, sans10049].filter(Boolean).length;
+                if (activeCount > 0) {
+                    doc.text(`Active SANS Modules (${activeCount} selected)`, 15, currentY);
+                    doc.text('R3,000.00 / mod', 115, currentY);
+                    doc.text('Enterprise Rate', 145, currentY);
+                    doc.text(`R${(activeCount * 3000).toFixed(2)}`, 175, currentY);
+                    currentY += 7;
+                }
+
+                if (numSites !== '1') {
+                    const scaleFactor = numSites === '2-5' ? 1.5 : 2.2;
+                    doc.text(`Multi-Site Scaling Factor (${numSites} sites)`, 15, currentY);
+                    doc.text('Site Multiplier', 115, currentY);
+                    doc.text(`${scaleFactor}x factor`, 145, currentY);
+                    doc.text(`Applied to sum`, 175, currentY);
+                    currentY += 7;
+                }
+            } else {
+                doc.text('MeloTwo High-Stakes Audit Project License', 15, currentY);
+                doc.text('R20,000.00', 115, currentY);
+                doc.text('One-off Pass', 145, currentY);
+                doc.text('R20,000.00', 175, currentY);
                 currentY += 7;
+
+                const activeCount = [sans10330, sans10142, sans10049].filter(Boolean).length;
+                if (activeCount > 1) {
+                    doc.text(`Additional SANS Module Auditing Pass`, 15, currentY);
+                    doc.text('R10,000.00', 115, currentY);
+                    doc.text(`x${activeCount - 1} Module(s)`, 145, currentY);
+                    doc.text(`R${((activeCount - 1) * 10000).toFixed(2)}`, 175, currentY);
+                    currentY += 7;
+                }
             }
 
             // Total
@@ -3217,7 +3310,7 @@ const EnterpriseDemoModal: React.FC<EnterpriseDemoModalProps> = ({ isOpen, onClo
             doc.setFont('helvetica', 'bold');
             doc.setTextColor(15, 23, 42);
             doc.setFontSize(10.5);
-            doc.text('TOTAL MONTHLY COMPLIANCE SUBSCRIPTION (Excl VAT)', 15, currentY);
+            doc.text('TOTAL EST. SUBSCRIPTION COST (Excl VAT)', 15, currentY);
             doc.setFontSize(11);
             doc.text(`R${calculatedPrice.toFixed(2)}`, 175, currentY);
 
@@ -3277,7 +3370,8 @@ const EnterpriseDemoModal: React.FC<EnterpriseDemoModalProps> = ({ isOpen, onClo
                 company: demoCompany,
                 total_estimate: calculatedPrice,
                 sites: numSites,
-                workforce: workforceSize
+                workforce: workforceSize,
+                tier: selectedTier
             });
         } catch (e) {
             console.error('Quotation generation failed:', e);
@@ -3288,7 +3382,7 @@ const EnterpriseDemoModal: React.FC<EnterpriseDemoModalProps> = ({ isOpen, onClo
 
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm animate-fade-in overflow-y-auto">
-            <div className="bg-white rounded-3xl shadow-2xl border border-gray-100 max-w-4xl w-full overflow-hidden animate-scale-up my-8">
+            <div className="bg-white rounded-3xl shadow-2xl border border-gray-100 max-w-5xl w-full overflow-hidden animate-scale-up my-8">
                 {/* Header Banner */}
                 <div className="bg-slate-950 p-6 text-white relative">
                     <button
@@ -3315,7 +3409,7 @@ const EnterpriseDemoModal: React.FC<EnterpriseDemoModalProps> = ({ isOpen, onClo
                         </div>
                         <h4 className="text-2xl font-black text-gray-900 mb-2">Quote Synchronized & Saved</h4>
                         <p className="text-sm text-gray-500 mb-8 leading-relaxed">
-                            Your estimate of <strong className="text-indigo-600">R{calculatedPrice.toLocaleString('en-ZA')}/mo</strong> has been successfully cached offline and synchronized to our system. A MeloTwo SHEQ Integration Engineer will contact you at <strong>{demoEmail}</strong>.
+                            Your estimate of <strong className="text-indigo-600">R{calculatedPrice.toLocaleString('en-ZA')}{MELOTWO_PRICING_MATRIX[selectedTier].billingType === 'monthly' ? '/mo' : ' (one-off)'}</strong> has been successfully cached offline and synchronized to our system. A MeloTwo SHEQ Integration Engineer will contact you at <strong>{demoEmail}</strong>.
                         </p>
                         <div className="flex flex-col sm:flex-row gap-4 justify-center">
                             <button
@@ -3350,7 +3444,7 @@ const EnterpriseDemoModal: React.FC<EnterpriseDemoModalProps> = ({ isOpen, onClo
                                     fullName: demoName,
                                     companyName: demoCompany,
                                     email: demoEmail,
-                                    selectedSans: `Pricing Estimator: ZAR ${calculatedPrice}/mo | Sites: ${numSites} | Modules: [${activeModulesStr}] | Workforce: ${workforceSize}`
+                                    selectedSans: `Pricing Estimator: ZAR ${calculatedPrice} | Tier: ${selectedTier} | Sites: ${numSites} | Modules: [${activeModulesStr}] | Workforce: ${workforceSize}`
                                 });
 
                                 trackGA4Event('pricing_estimator_submitted', {
@@ -3358,7 +3452,8 @@ const EnterpriseDemoModal: React.FC<EnterpriseDemoModalProps> = ({ isOpen, onClo
                                     email_domain: demoEmail.split('@')[1] || '',
                                     total_estimate: calculatedPrice,
                                     sites: numSites,
-                                    workforce: workforceSize
+                                    workforce: workforceSize,
+                                    tier: selectedTier
                                 });
                             }
                         }}
@@ -3366,8 +3461,41 @@ const EnterpriseDemoModal: React.FC<EnterpriseDemoModalProps> = ({ isOpen, onClo
                     >
                         {/* Left Side: Parameters Form */}
                         <div className="md:col-span-7 space-y-6">
+                            
+                            {/* NEW TIER SELECTION FIELD */}
+                            <div>
+                                <h4 className="text-sm font-bold text-slate-900 uppercase tracking-wider mb-3">1. Engagement & Pricing Tier</h4>
+                                <div className="grid grid-cols-3 gap-3">
+                                    {(['professional', 'enterprise', 'audit'] as const).map((t) => {
+                                        const config = MELOTWO_PRICING_MATRIX[t];
+                                        return (
+                                            <button
+                                                key={t}
+                                                type="button"
+                                                onClick={() => setSelectedTier(t)}
+                                                className={`p-3 rounded-xl border text-left transition cursor-pointer flex flex-col justify-between min-h-[120px] ${
+                                                    selectedTier === t
+                                                        ? 'bg-slate-900 border-slate-900 text-white shadow-md'
+                                                        : 'bg-slate-50 border-slate-200 text-slate-600 hover:bg-slate-100'
+                                                }`}
+                                            >
+                                                <div>
+                                                    <span className="text-xs font-black block leading-tight">{config.name}</span>
+                                                    <span className="text-[9px] opacity-70 font-medium block mt-1 leading-normal line-clamp-3">
+                                                        {config.tagline}
+                                                    </span>
+                                                </div>
+                                                <span className="text-[10px] font-black font-mono mt-2 block border-t border-current/20 pt-1 text-right">
+                                                    {t === 'enterprise' ? 'R25,000+' : t === 'professional' ? 'R4,999+' : 'R20,000'}
+                                                </span>
+                                            </button>
+                                        );
+                                    })}
+                                </div>
+                            </div>
+
                             <div className="border-b border-slate-100 pb-4">
-                                <h4 className="text-sm font-bold text-slate-900 uppercase tracking-wider mb-3">1. Contact & Corporate Profiles</h4>
+                                <h4 className="text-sm font-bold text-slate-900 uppercase tracking-wider mb-3">2. Contact & Corporate Profiles</h4>
                                 <div className="grid sm:grid-cols-2 gap-4">
                                     <div>
                                         <label className="block text-[10px] font-black text-gray-500 uppercase tracking-wide mb-1">Full Name</label>
@@ -3402,29 +3530,6 @@ const EnterpriseDemoModal: React.FC<EnterpriseDemoModalProps> = ({ isOpen, onClo
                                             className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:ring-2 focus:ring-amber-500 focus:border-amber-500 outline-none transition"
                                         />
                                     </div>
-                                </div>
-                            </div>
-
-                            <div className="border-b border-slate-100 pb-4">
-                                <h4 className="text-sm font-bold text-slate-900 uppercase tracking-wider mb-3">2. Active Operational Sites / Shafts</h4>
-                                <div className="grid grid-cols-3 gap-3">
-                                    {(['1', '2-5', '5+'] as const).map((opt) => (
-                                        <button
-                                            key={opt}
-                                            type="button"
-                                            onClick={() => setNumSites(opt)}
-                                            className={`py-2 px-3 rounded-xl border text-center transition cursor-pointer flex flex-col justify-center items-center ${
-                                                numSites === opt
-                                                    ? 'bg-slate-900 border-slate-900 text-white shadow-md'
-                                                    : 'bg-slate-50 border-slate-200 text-slate-600 hover:bg-slate-100'
-                                            }`}
-                                        >
-                                            <span className="text-sm font-black">{opt}</span>
-                                            <span className="text-[9px] font-mono tracking-wider uppercase opacity-80">
-                                                {opt === '1' ? 'Site' : 'Sites'}
-                                            </span>
-                                        </button>
-                                    ))}
                                 </div>
                             </div>
 
@@ -3472,29 +3577,56 @@ const EnterpriseDemoModal: React.FC<EnterpriseDemoModalProps> = ({ isOpen, onClo
                                 </div>
                             </div>
 
-                            <div>
-                                <h4 className="text-sm font-bold text-slate-900 uppercase tracking-wider mb-3">4. Workforce Headcount Scale</h4>
-                                <div className="grid grid-cols-3 gap-3">
-                                    {([
-                                        { key: 'under50', label: '< 50 staff' },
-                                        { key: '50-250', label: '50-250 staff' },
-                                        { key: '250+', label: '250+ staff' }
-                                    ] as const).map((opt) => (
-                                        <button
-                                            key={opt.key}
-                                            type="button"
-                                            onClick={() => setWorkforceSize(opt.key)}
-                                            className={`py-2 px-2.5 rounded-xl border text-center transition cursor-pointer ${
-                                                workforceSize === opt.key
-                                                    ? 'bg-slate-900 border-slate-900 text-white shadow-md'
-                                                    : 'bg-slate-50 border-slate-200 text-slate-600 hover:bg-slate-100'
-                                            }`}
-                                        >
-                                            <span className="text-xs font-bold block">{opt.label}</span>
-                                        </button>
-                                    ))}
+                            {selectedTier === 'enterprise' && (
+                                <div className="border-b border-slate-100 pb-4 animate-fade-in">
+                                    <h4 className="text-sm font-bold text-slate-900 uppercase tracking-wider mb-3">4. Active Operational Sites / Shafts</h4>
+                                    <div className="grid grid-cols-3 gap-3">
+                                        {(['1', '2-5', '5+'] as const).map((opt) => (
+                                            <button
+                                                key={opt}
+                                                type="button"
+                                                onClick={() => setNumSites(opt)}
+                                                className={`py-2 px-3 rounded-xl border text-center transition cursor-pointer flex flex-col justify-center items-center ${
+                                                    numSites === opt
+                                                        ? 'bg-slate-900 border-slate-900 text-white shadow-md'
+                                                        : 'bg-slate-50 border-slate-200 text-slate-600 hover:bg-slate-100'
+                                                }`}
+                                            >
+                                                <span className="text-sm font-black">{opt}</span>
+                                                <span className="text-[9px] font-mono tracking-wider uppercase opacity-80">
+                                                    {opt === '1' ? 'Site' : 'Sites'}
+                                                </span>
+                                            </button>
+                                        ))}
+                                    </div>
                                 </div>
-                            </div>
+                            )}
+
+                            {selectedTier === 'enterprise' && (
+                                <div className="animate-fade-in">
+                                    <h4 className="text-sm font-bold text-slate-900 uppercase tracking-wider mb-3">5. Workforce Headcount Scale</h4>
+                                    <div className="grid grid-cols-3 gap-3">
+                                        {([
+                                            { key: 'under50', label: '< 50 staff' },
+                                            { key: '50-250', label: '50-250 staff' },
+                                            { key: '250+', label: '250+ staff' }
+                                        ] as const).map((opt) => (
+                                            <button
+                                                key={opt.key}
+                                                type="button"
+                                                onClick={() => setWorkforceSize(opt.key)}
+                                                className={`py-2 px-2.5 rounded-xl border text-center transition cursor-pointer ${
+                                                    workforceSize === opt.key
+                                                        ? 'bg-slate-900 border-slate-900 text-white shadow-md'
+                                                        : 'bg-slate-50 border-slate-200 text-slate-600 hover:bg-slate-100'
+                                                }`}
+                                            >
+                                                <span className="text-xs font-bold block">{opt.label}</span>
+                                            </button>
+                                        ))}
+                                    </div>
+                                </div>
+                            )}
                         </div>
 
                         {/* Right Side: Cost Summary Card */}
@@ -3510,12 +3642,28 @@ const EnterpriseDemoModal: React.FC<EnterpriseDemoModalProps> = ({ isOpen, onClo
                                 </div>
 
                                 <div className="mb-6">
-                                    <span className="text-slate-400 text-[10px] font-bold uppercase tracking-wider block">Estimated Monthly Licensing</span>
+                                    <span className="text-slate-400 text-[10px] font-bold uppercase tracking-wider block">Estimated Fee</span>
                                     <div className="flex items-baseline mt-1.5">
                                         <span className="text-4xl font-black tracking-tight text-white">R{calculatedPrice.toLocaleString('en-ZA')}</span>
-                                        <span className="text-slate-400 text-xs font-bold font-mono ml-1.5">/ mo</span>
+                                        <span className="text-slate-400 text-xs font-bold font-mono ml-1.5">
+                                            {MELOTWO_PRICING_MATRIX[selectedTier].billingType === 'monthly' ? '/ mo' : ' once-off'}
+                                        </span>
                                     </div>
                                     <span className="text-[9px] text-slate-500 mt-1 block">Excluding VAT. Calculated reactively based on your custom operation parameters.</span>
+                                </div>
+
+                                <div className="h-px bg-slate-800 my-5"></div>
+
+                                {/* Dynamic high-stakes marketing justifications */}
+                                <div className="space-y-4 mb-5 text-xs text-slate-300">
+                                    <div>
+                                        <span className="text-[9px] font-bold text-indigo-400 uppercase tracking-wider block mb-1">Insurance Premium Offset:</span>
+                                        <p className="text-[11px] text-slate-400 leading-relaxed font-sans">{MELOTWO_PRICING_MATRIX[selectedTier].insuranceOffsetRate}</p>
+                                    </div>
+                                    <div>
+                                        <span className="text-[9px] font-bold text-teal-400 uppercase tracking-wider block mb-1">Audit-Trail Defensibility:</span>
+                                        <p className="text-[11px] text-slate-400 leading-relaxed font-sans">{MELOTWO_PRICING_MATRIX[selectedTier].auditTrailDefensibility}</p>
+                                    </div>
                                 </div>
 
                                 <div className="h-px bg-slate-800 my-5"></div>
@@ -3525,36 +3673,50 @@ const EnterpriseDemoModal: React.FC<EnterpriseDemoModalProps> = ({ isOpen, onClo
                                     <span className="text-slate-400 text-[9px] font-black uppercase tracking-wider block mb-1">Fee Breakdown:</span>
                                     
                                     <div className="flex justify-between items-center text-xs text-slate-300">
-                                        <span className="text-slate-400">Base Platform & Cloud:</span>
-                                        <span className="font-bold font-mono">R800 /mo</span>
+                                        <span className="text-slate-400">Base Cost:</span>
+                                        <span className="font-bold font-mono">R{MELOTWO_PRICING_MATRIX[selectedTier].basePrice.toLocaleString('en-ZA')}</span>
                                     </div>
 
-                                    <div className="flex justify-between items-center text-xs text-slate-300">
-                                        <span className="text-slate-400">Active SANS Modules:</span>
-                                        <span className="font-bold font-mono text-amber-400">
-                                            {([sans10330, sans10142, sans10049].filter(Boolean).length)} selected
-                                        </span>
-                                    </div>
+                                    {selectedTier === 'professional' && (
+                                        <div className="flex justify-between items-center text-xs text-slate-300">
+                                            <span className="text-slate-400">SANS Modules (R1,500/mod):</span>
+                                            <span className="font-bold font-mono text-amber-400">
+                                                +{([sans10330, sans10142, sans10049].filter(Boolean).length * 1500).toLocaleString('en-ZA')}
+                                            </span>
+                                        </div>
+                                    )}
 
-                                    <div className="flex justify-between items-center text-xs text-slate-300">
-                                        <span className="text-slate-400">Shaft/Site Multiplying Factor:</span>
-                                        <span className="font-bold font-mono text-indigo-400">
-                                            {numSites === '1' ? '1.0x' : numSites === '2-5' ? '2.2x' : '4.5x'}
-                                        </span>
-                                    </div>
+                                    {selectedTier === 'enterprise' && (
+                                        <>
+                                            <div className="flex justify-between items-center text-xs text-slate-300">
+                                                <span className="text-slate-400">Enterprise Modules (R3,000/mod):</span>
+                                                <span className="font-bold font-mono text-amber-400">
+                                                    +{([sans10330, sans10142, sans10049].filter(Boolean).length * 3000).toLocaleString('en-ZA')}
+                                                </span>
+                                            </div>
+                                            <div className="flex justify-between items-center text-xs text-slate-300">
+                                                <span className="text-slate-400">Shaft Multiplier Factor:</span>
+                                                <span className="font-bold font-mono text-indigo-400">
+                                                    {numSites === '1' ? '1.0x' : numSites === '2-5' ? '1.5x' : '2.2x'}
+                                                </span>
+                                            </div>
+                                        </>
+                                    )}
 
-                                    <div className="flex justify-between items-center text-xs text-slate-300">
-                                        <span className="text-slate-400">Workforce Overhead Fee:</span>
-                                        <span className="font-bold font-mono text-teal-400">
-                                            {workforceSize === 'under50' ? '+R0' : workforceSize === '50-250' ? '+R1,500' : '+R3,500'}
-                                        </span>
-                                    </div>
+                                    {selectedTier === 'audit' && (
+                                        <div className="flex justify-between items-center text-xs text-slate-300">
+                                            <span className="text-slate-400">Add-on Modules (R10,000/mod):</span>
+                                            <span className="font-bold font-mono text-teal-400">
+                                                +{(Math.max(0, [sans10330, sans10142, sans10049].filter(Boolean).length - 1) * 10000).toLocaleString('en-ZA')}
+                                            </span>
+                                        </div>
+                                    )}
                                 </div>
 
                                 <div className="h-px bg-slate-800 my-5"></div>
 
                                 <div className="text-left bg-slate-900/50 p-3 rounded-xl border border-slate-800 text-[10px] text-slate-400 leading-relaxed space-y-1">
-                                    <strong className="text-slate-300 block">SANS Certified Security:</strong>
+                                    <strong className="text-slate-300 block">SANS Enforced Certification:</strong>
                                     <span>Real-time local backups & multi-user role-based dashboards are standard.</span>
                                 </div>
                             </div>
@@ -3600,9 +3762,10 @@ interface LandingPageProps {
     currentPage: Page;
     setPage: (page: Page) => void;
     setIsDemoModalOpen: (open: boolean) => void;
+    setDemoModalTier?: (tier: 'professional' | 'enterprise' | 'audit') => void;
 }
 
-const LandingPage: React.FC<LandingPageProps> = ({ currentPage, setPage, setIsDemoModalOpen }) => {
+const LandingPage: React.FC<LandingPageProps> = ({ currentPage, setPage, setIsDemoModalOpen, setDemoModalTier }) => {
     useEffect(() => {
         if (currentPage === 'solutions') {
             const el = document.getElementById('solutions-section');
@@ -4275,77 +4438,89 @@ const LandingPage: React.FC<LandingPageProps> = ({ currentPage, setPage, setIsDe
             <div className="mb-24 scroll-mt-24 border-t border-slate-100 pt-20" id="pricing-section">
                 <div className="text-center max-w-3xl mx-auto mb-16">
                     <span className="text-[10px] font-black text-amber-600 tracking-widest uppercase bg-amber-500/10 border border-amber-500/20 px-3.5 py-1.5 rounded-full font-mono">
-                        Two-Tier Industrial Licensing
+                        Three-Tier Industrial Licensing
                     </span>
                     <h2 className="text-3xl font-black text-slate-900 tracking-tight mt-4">
                         Transparent, Premium Compliance Pricing
                     </h2>
                     <p className="text-gray-500 text-sm mt-3 leading-relaxed">
-                        Select the premium tier aligned with your mine scale or commercial catering operation. Locked for active production safety.
+                        Select the tier aligned with your operational footprint or inspection cycle. Calculate real-time costs and generate defensible regulatory proofs.
                     </p>
                 </div>
 
-                <div className="grid md:grid-cols-2 gap-8 max-w-5xl mx-auto items-stretch">
-                    {/* Tier 1: Professional Terminal Access */}
+                <div className="grid lg:grid-cols-3 gap-8 max-w-7xl mx-auto items-stretch">
+                    {/* Tier 1: Site Professional Tier */}
                     <div className="bg-white border-2 border-slate-100 rounded-3xl p-8 shadow-xl flex flex-col justify-between hover:border-indigo-500/40 hover:shadow-2xl transition-all duration-300 relative overflow-hidden group">
-                        {/* Subtle background decoration */}
                         <div className="absolute top-0 right-0 w-24 h-24 bg-indigo-50 rounded-bl-full -z-10 transition-transform group-hover:scale-110"></div>
                         
                         <div>
                             <div className="flex justify-between items-start mb-6">
                                 <div>
                                     <span className="text-[10px] font-bold text-indigo-600 uppercase tracking-widest font-mono bg-indigo-50 px-2.5 py-1 rounded-md">
-                                        Professional
+                                        Professional Subscription
                                     </span>
                                     <h3 className="text-xl font-black text-slate-900 mt-2">
-                                        Professional Terminal Access
+                                        Site Professional Tier
                                     </h3>
                                 </div>
                             </div>
                             
-                            <div className="mb-6 flex items-baseline">
-                                <span className="text-3xl font-black text-slate-900">R1,999</span>
+                            <div className="mb-4 flex items-baseline">
+                                <span className="text-3xl font-black text-slate-900">R4,999</span>
                                 <span className="text-xs font-bold text-gray-400 ml-2 font-mono">/ month</span>
                             </div>
+                            <span className="text-[10px] font-bold text-indigo-600 bg-indigo-50 border border-indigo-100 px-2 py-0.5 rounded block w-fit mb-6 font-mono">
+                                + R1,500 /mo per active SANS module
+                            </span>
 
                             <p className="text-xs text-gray-500 mb-6 leading-relaxed">
-                                Perfect for single-site compliance safety officers and food prep inspectors requiring instant validation.
+                                Engineered for single-operation SHEQ compliance managers who require airtight and defensible daily risk logging.
                             </p>
 
                             <div className="h-px bg-slate-100 mb-6"></div>
 
-                            <ul className="space-y-4 mb-8">
-                                <li className="flex items-start gap-3">
-                                    <div className="w-5 h-5 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
-                                        <svg className="w-3 h-3 stroke-[3]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            {/* Risk Adjustments & Corporate Protections */}
+                            <div className="space-y-4 mb-6">
+                                <div>
+                                    <span className="text-[9px] font-bold text-slate-400 uppercase tracking-wider block">Insurance Premium Offset</span>
+                                    <p className="text-xs text-slate-600 mt-0.5 leading-relaxed font-sans font-medium">
+                                        Up to 15% reduction in liability premiums by demonstrating active daily risk-mitigation logs.
+                                    </p>
+                                </div>
+                                <div>
+                                    <span className="text-[9px] font-bold text-slate-400 uppercase tracking-wider block">Audit-Trail Defensibility</span>
+                                    <p className="text-xs text-slate-600 mt-0.5 leading-relaxed font-sans font-medium">
+                                        Cryptographically hashed inspector entries with permanent metadata, eliminating regulatory sign-off friction.
+                                    </p>
+                                </div>
+                            </div>
+
+                            <div className="h-px bg-slate-100 mb-6"></div>
+
+                            <ul className="space-y-3.5 mb-8">
+                                <li className="flex items-start gap-2.5">
+                                    <div className="w-4 h-4 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
+                                        <svg className="w-2.5 h-2.5 stroke-[3]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                             <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
                                         </svg>
                                     </div>
-                                    <span className="text-xs text-slate-600 font-medium">Standard SANS 10330/10142/10049 automated audits</span>
+                                    <span className="text-xs text-slate-600">Standard SANS 10330/10142/10049 automated audits</span>
                                 </li>
-                                <li className="flex items-start gap-3">
-                                    <div className="w-5 h-5 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
-                                        <svg className="w-3 h-3 stroke-[3]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <li className="flex items-start gap-2.5">
+                                    <div className="w-4 h-4 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
+                                        <svg className="w-2.5 h-2.5 stroke-[3]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                             <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
                                         </svg>
                                     </div>
-                                    <span className="text-xs text-slate-600 font-medium">Localized high-fidelity reports</span>
+                                    <span className="text-xs text-slate-600">Localized high-fidelity reports</span>
                                 </li>
-                                <li className="flex items-start gap-3">
-                                    <div className="w-5 h-5 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
-                                        <svg className="w-3 h-3 stroke-[3]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <li className="flex items-start gap-2.5">
+                                    <div className="w-4 h-4 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
+                                        <svg className="w-2.5 h-2.5 stroke-[3]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                             <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
                                         </svg>
                                     </div>
-                                    <span className="text-xs text-slate-600 font-medium">1-click verified PDF downloads</span>
-                                </li>
-                                <li className="flex items-start gap-3">
-                                    <div className="w-5 h-5 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
-                                        <svg className="w-3 h-3 stroke-[3]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                            <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
-                                        </svg>
-                                    </div>
-                                    <span className="text-xs text-slate-600 font-medium">Custom analytics telemetry</span>
+                                    <span className="text-xs text-slate-600">1-click verified PDF downloads</span>
                                 </li>
                             </ul>
                         </div>
@@ -4353,18 +4528,18 @@ const LandingPage: React.FC<LandingPageProps> = ({ currentPage, setPage, setIsDe
                         <button
                             type="button"
                             onClick={() => {
-                                setPage('inspector');
+                                if (setDemoModalTier) setDemoModalTier('professional');
+                                setIsDemoModalOpen(true);
                                 trackGA4Event('pricing_tier_clicked', { tier: 'professional' });
                             }}
-                            className="w-full py-3.5 px-4 bg-slate-900 hover:bg-slate-800 text-white font-black text-xs uppercase tracking-wider rounded-xl transition cursor-pointer"
+                            className="w-full py-3.5 px-4 bg-slate-900 hover:bg-slate-800 text-white font-black text-xs uppercase tracking-wider rounded-xl transition cursor-pointer text-center"
                         >
-                            Get Started Now
+                            Calculate Professional Cost
                         </button>
                     </div>
 
-                    {/* Tier 2: Enterprise / Mine Operations */}
+                    {/* Tier 2: Industrial Enterprise Tier */}
                     <div className="bg-slate-950 border-2 border-slate-800 rounded-3xl p-8 shadow-xl flex flex-col justify-between hover:border-amber-500/50 hover:shadow-2xl transition-all duration-300 relative overflow-hidden group">
-                        {/* Neon top accent strip for Enterprise focus */}
                         <div className="absolute top-0 inset-x-0 h-1 bg-amber-500"></div>
                         <div className="absolute top-0 right-0 w-24 h-24 bg-amber-500/5 rounded-bl-full -z-10 transition-transform group-hover:scale-110"></div>
                         
@@ -4372,64 +4547,69 @@ const LandingPage: React.FC<LandingPageProps> = ({ currentPage, setPage, setIsDe
                             <div className="flex justify-between items-start mb-6">
                                 <div>
                                     <span className="text-[10px] font-bold text-amber-400 uppercase tracking-widest font-mono bg-amber-500/10 px-2.5 py-1 rounded-md">
-                                        Enterprise
+                                        Enterprise Subscription
                                     </span>
                                     <h3 className="text-xl font-black text-white mt-2">
-                                        Enterprise / Mine Operations
+                                        Industrial Enterprise Tier
                                     </h3>
                                 </div>
                             </div>
                             
-                            <div className="mb-6 flex items-baseline">
-                                <span className="text-2xl font-black text-amber-400">Contact for Custom Quote</span>
+                            <div className="mb-4 flex items-baseline">
+                                <span className="text-2xl font-black text-amber-400">Custom Multi-Shaft Quote</span>
                             </div>
+                            <span className="text-[10px] font-bold text-amber-400 bg-amber-500/10 border border-amber-500/20 px-2 py-0.5 rounded block w-fit mb-6 font-mono">
+                                Floor minimum: R25,000 / month
+                            </span>
 
                             <p className="text-xs text-slate-400 mb-6 leading-relaxed">
-                                Engineered for multi-shaft mine operations, procurement directors, and regional SHEQ administrators.
+                                Engineered specifically for multi-shaft mining operations, high-risk industrial plants, and regional SHEQ group executives.
                             </p>
 
                             <div className="h-px bg-slate-800 mb-6"></div>
 
-                            <ul className="space-y-4 mb-8">
-                                <li className="flex items-start gap-3">
-                                    <div className="w-5 h-5 bg-amber-500/10 text-amber-400 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
-                                        <svg className="w-3 h-3 stroke-[3]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            {/* Risk Adjustments & Corporate Protections */}
+                            <div className="space-y-4 mb-6">
+                                <div>
+                                    <span className="text-[9px] font-bold text-slate-500 uppercase tracking-wider block">Insurance Premium Offset</span>
+                                    <p className="text-xs text-slate-300 mt-0.5 leading-relaxed font-sans font-medium">
+                                        Corporate insurance premium mitigation underwritten by continuous real-time SANS adherence data logs.
+                                    </p>
+                                </div>
+                                <div>
+                                    <span className="text-[9px] font-bold text-slate-500 uppercase tracking-wider block">Audit-Trail Defensibility</span>
+                                    <p className="text-xs text-slate-300 mt-0.5 leading-relaxed font-sans font-medium">
+                                        Full multi-site legal defensibility. Automated, chain-of-custody tracking of all safety infractions.
+                                    </p>
+                                </div>
+                            </div>
+
+                            <div className="h-px bg-slate-800 mb-6"></div>
+
+                            <ul className="space-y-3.5 mb-8">
+                                <li className="flex items-start gap-2.5">
+                                    <div className="w-4 h-4 bg-amber-500/10 text-amber-400 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
+                                        <svg className="w-2.5 h-2.5 stroke-[3]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                             <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
                                         </svg>
                                     </div>
-                                    <span className="text-xs text-slate-300 font-medium">Full multi-site audit trails</span>
+                                    <span className="text-xs text-slate-300">Continuous multi-shaft auditing dashboards</span>
                                 </li>
-                                <li className="flex items-start gap-3">
-                                    <div className="w-5 h-5 bg-amber-500/10 text-amber-400 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
-                                        <svg className="w-3 h-3 stroke-[3]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <li className="flex items-start gap-2.5">
+                                    <div className="w-4 h-4 bg-amber-500/10 text-amber-400 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
+                                        <svg className="w-2.5 h-2.5 stroke-[3]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                             <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
                                         </svg>
                                     </div>
-                                    <span className="text-xs text-slate-300 font-medium">Multi-user procurement dashboards</span>
+                                    <span className="text-xs text-slate-300">Dedicated SHEQ Integration Engineer support</span>
                                 </li>
-                                <li className="flex items-start gap-3">
-                                    <div className="w-5 h-5 bg-amber-500/10 text-amber-400 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
-                                        <svg className="w-3 h-3 stroke-[3]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <li className="flex items-start gap-2.5">
+                                    <div className="w-4 h-4 bg-amber-500/10 text-amber-400 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
+                                        <svg className="w-2.5 h-2.5 stroke-[3]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                             <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
                                         </svg>
                                     </div>
-                                    <span className="text-xs text-slate-300 font-medium">Custom compliance SLAs</span>
-                                </li>
-                                <li className="flex items-start gap-3">
-                                    <div className="w-5 h-5 bg-amber-500/10 text-amber-400 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
-                                        <svg className="w-3 h-3 stroke-[3]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                            <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
-                                        </svg>
-                                    </div>
-                                    <span className="text-xs text-slate-300 font-medium">Dedicated account management</span>
-                                </li>
-                                <li className="flex items-start gap-3">
-                                    <div className="w-5 h-5 bg-amber-500/10 text-amber-400 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
-                                        <svg className="w-3 h-3 stroke-[3]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                            <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
-                                        </svg>
-                                    </div>
-                                    <span className="text-xs text-slate-300 font-medium">Offline local-database replication</span>
+                                    <span className="text-xs text-slate-300">Offline local-database replication & webhooks</span>
                                 </li>
                             </ul>
                         </div>
@@ -4437,12 +4617,102 @@ const LandingPage: React.FC<LandingPageProps> = ({ currentPage, setPage, setIsDe
                         <button
                             type="button"
                             onClick={() => {
+                                if (setDemoModalTier) setDemoModalTier('enterprise');
                                 setIsDemoModalOpen(true);
                                 trackGA4Event('pricing_tier_clicked', { tier: 'enterprise' });
                             }}
-                            className="w-full py-3.5 px-4 bg-amber-500 hover:bg-amber-600 text-slate-950 font-black text-xs uppercase tracking-wider rounded-xl transition cursor-pointer"
+                            className="w-full py-3.5 px-4 bg-amber-500 hover:bg-amber-600 text-slate-950 font-black text-xs uppercase tracking-wider rounded-xl transition cursor-pointer text-center"
                         >
-                            Request Enterprise Demo
+                            Estimate Custom Enterprise Cost
+                        </button>
+                    </div>
+
+                    {/* Tier 3: High-Stakes Audit Tier */}
+                    <div className="bg-white border-2 border-slate-100 rounded-3xl p-8 shadow-xl flex flex-col justify-between hover:border-teal-500/40 hover:shadow-2xl transition-all duration-300 relative overflow-hidden group">
+                        <div className="absolute top-0 right-0 w-24 h-24 bg-teal-50 rounded-bl-full -z-10 transition-transform group-hover:scale-110"></div>
+                        
+                        <div>
+                            <div className="flex justify-between items-start mb-6">
+                                <div>
+                                    <span className="text-[10px] font-bold text-teal-600 uppercase tracking-widest font-mono bg-teal-50 px-2.5 py-1 rounded-md">
+                                        Project License
+                                    </span>
+                                    <h3 className="text-xl font-black text-slate-900 mt-2">
+                                        High-Stakes Audit Tier
+                                    </h3>
+                                </div>
+                            </div>
+                            
+                            <div className="mb-4 flex items-baseline">
+                                <span className="text-3xl font-black text-slate-900">R20,000</span>
+                                <span className="text-xs font-bold text-gray-400 ml-2 font-mono">/ single-event pass</span>
+                            </div>
+                            <span className="text-[10px] font-bold text-teal-600 bg-teal-50 border border-teal-100 px-2 py-0.5 rounded block w-fit mb-6 font-mono">
+                                R10,000 per additional SANS module pass
+                            </span>
+
+                            <p className="text-xs text-gray-500 mb-6 leading-relaxed">
+                                A standalone, single-event project license for annual regulatory compliance passes or independent audits.
+                            </p>
+
+                            <div className="h-px bg-slate-100 mb-6"></div>
+
+                            {/* Risk Adjustments & Corporate Protections */}
+                            <div className="space-y-4 mb-6">
+                                <div>
+                                    <span className="text-[9px] font-bold text-slate-400 uppercase tracking-wider block">Insurance Premium Offset</span>
+                                    <p className="text-xs text-slate-600 mt-0.5 leading-relaxed font-sans font-medium">
+                                        Protects directors from personal liability during official regulatory reviews by presenting certified reports.
+                                    </p>
+                                </div>
+                                <div>
+                                    <span className="text-[9px] font-bold text-slate-400 uppercase tracking-wider block">Audit-Trail Defensibility</span>
+                                    <p className="text-xs text-slate-600 mt-0.5 leading-relaxed font-sans font-medium">
+                                        Complete snapshot audit reports structured to meet the most rigorous government inspectorial standards.
+                                    </p>
+                                </div>
+                            </div>
+
+                            <div className="h-px bg-slate-100 mb-6"></div>
+
+                            <ul className="space-y-3.5 mb-8">
+                                <li className="flex items-start gap-2.5">
+                                    <div className="w-4 h-4 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
+                                        <svg className="w-2.5 h-2.5 stroke-[3]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                            <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
+                                        </svg>
+                                    </div>
+                                    <span className="text-xs text-slate-600">Comprehensive single-event compliance pass</span>
+                                </li>
+                                <li className="flex items-start gap-2.5">
+                                    <div className="w-4 h-4 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
+                                        <svg className="w-2.5 h-2.5 stroke-[3]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                            <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
+                                        </svg>
+                                    </div>
+                                    <span className="text-xs text-slate-600">Full platform auditing tool access for 30 days</span>
+                                </li>
+                                <li className="flex items-start gap-2.5">
+                                    <div className="w-4 h-4 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
+                                        <svg className="w-2.5 h-2.5 stroke-[3]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                            <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
+                                        </svg>
+                                    </div>
+                                    <span className="text-xs text-slate-600">High-fidelity digital inspector signatures</span>
+                                </li>
+                            </ul>
+                        </div>
+
+                        <button
+                            type="button"
+                            onClick={() => {
+                                if (setDemoModalTier) setDemoModalTier('audit');
+                                setIsDemoModalOpen(true);
+                                trackGA4Event('pricing_tier_clicked', { tier: 'audit' });
+                            }}
+                            className="w-full py-3.5 px-4 bg-slate-900 hover:bg-slate-800 text-white font-black text-xs uppercase tracking-wider rounded-xl transition cursor-pointer text-center"
+                        >
+                            Configure Standalone Audit
                         </button>
                     </div>
                 </div>
@@ -5130,6 +5400,7 @@ const App: React.FC = () => {
     const [userId, setUserId] = useState<string | null>(null);
     const [isAuthReady, setIsAuthReady] = useState(false);
     const [isDemoModalOpen, setIsDemoModalOpen] = useState(false);
+    const [demoModalTier, setDemoModalTier] = useState<'professional' | 'enterprise' | 'audit'>('professional');
 
     useEffect(() => {
         // Run with standard local session ID
@@ -5144,6 +5415,7 @@ const App: React.FC = () => {
                     currentPage={currentPage}
                     setPage={setCurrentPage} 
                     setIsDemoModalOpen={setIsDemoModalOpen}
+                    setDemoModalTier={setDemoModalTier}
                 />
             );
         } else if (currentPage === 'inspector') {
@@ -5163,7 +5435,10 @@ const App: React.FC = () => {
                 setPage={setCurrentPage} 
                 userId={userId} 
                 isAuthReady={isAuthReady} 
-                onGetStarted={() => setIsDemoModalOpen(true)}
+                onGetStarted={() => {
+                    setDemoModalTier('professional');
+                    setIsDemoModalOpen(true);
+                }}
             />
             <main className="flex-grow pt-4">
                 {renderPage}
@@ -5174,6 +5449,7 @@ const App: React.FC = () => {
             <EnterpriseDemoModal 
                 isOpen={isDemoModalOpen} 
                 onClose={() => setIsDemoModalOpen(false)} 
+                initialTier={demoModalTier}
             />
         </div>
     );
