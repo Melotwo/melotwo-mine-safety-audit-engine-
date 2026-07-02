@@ -2,8 +2,8 @@ name: Deploy to GitHub Pages
 
 on:
   push:
-    branches:
-      - main
+    branches: [main]
+  workflow_dispatch:
 
 permissions:
   contents: write
@@ -11,18 +11,18 @@ permissions:
 jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
+
     steps:
       - name: Checkout Source Code
         uses: actions/checkout@v4
 
-      - name: Set up Node.js Runtime
+      - name: Setup Node.js Runtime
         uses: actions/setup-node@v4
         with:
-          node-version: 22
-          cache: npm
+          node-version: "22"
 
       - name: Install Project Dependencies
-        run: npm ci
+        run: npm install
 
       - name: Compile Production Build
         run: npm run build
@@ -32,7 +32,7 @@ jobs:
       - name: Create .nojekyll Override
         run: touch dist/.nojekyll
 
-      - name: Deploy to gh-pages Branch with Custom Domain
+      - name: Deploy to gh-pages Branch
         uses: JamesIves/github-pages-deploy-action@v4
         with:
           folder: dist
