@@ -31,8 +31,8 @@ export const SA_PHONE_REGEX = /\b(?:\+27\s?\(?0?\)?\s?|0)[1-8]\d(?:[\s.-]?\d){7}
  * - Capitalized words following titles: Mr, Ms, Mrs, Dr, Prof, Eng, Inspector, Auditor
  */
 export const NAME_PATTERNS = [
-  // 1. Phrases with name: "Operator John Doe" or "Reported by Jane"
-  /\b(Operator|Reported\s+by|Auditor|Inspector|Officer|Manager|Supervisor|Consultant)\s+([A-Z][a-z]+(?:\s+[A-Z][a-z]+)*)\b/g,
+  // 1. Phrases with name: "Operator John Doe" or "Reported by Jane" or "Attended by Dave"
+  /\b(Operator|Reported\s+by|Attended\s+by|Auditor|Inspector|Officer|Manager|Supervisor|Consultant)\s+([A-Z][a-z]+(?:\s+[A-Z][a-z]+)*)\b/g,
   
   // 2. Capitalized words following formal titles: "Mr. Smith", "Dr Jane Doe"
   /\b(Mr\.?|Ms\.?|Mrs\.?|Dr\.?|Prof\.?|Eng\.?)\s+([A-Z][a-z]+(?:\s+[A-Z][a-z]+)*)\b/g
