@@ -19,9 +19,12 @@ NAME_PATTERNS = [
 def replace_name(match):
     prefix = match.group(1)
     full_match = match.group(0)
-    if ":" in full_match:
-        return f"{prefix}: [WORKER_NAME]"
-    return f"{prefix} [WORKER_NAME]"
+    g1_end = match.end(1) - match.start(0)
+    g2_start = match.start(2) - match.start(0)
+    separator = full_match[g1_end:g2_start]
+    if not separator:
+        separator = " "
+    return f"{prefix}{separator}[WORKER_NAME]"
 
 def sanitize_user_input(text: str) -> str:
     """
