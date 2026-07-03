@@ -5351,6 +5351,30 @@ const SafetyInspectorPage: React.FC<SafetyInspectorPageProps> = ({ setPage }) =>
         item.result.label.toLowerCase().includes(historySearchTerm.toLowerCase())
     );
 
+    const complianceHistoryChartData = useMemo<DailyComplianceData[]>(() => {
+        // Sort history by timestamp ascending to make it chronological
+        const sortedHistory = [...history].sort((a, b) => a.timestamp - b.timestamp);
+        return sortedHistory.map(item => {
+            let scoreVal = parseFloat(item.result.score);
+            if (isNaN(scoreVal)) {
+                scoreVal = 70.0;
+            }
+            // Format timestamp as YYYY-MM-DD
+            const dateStr = new Date(item.timestamp).toISOString().split('T')[0];
+            let flaggedIncidents = 0;
+            if (item.result.label.toLowerCase().includes('critical') || scoreVal < 60) {
+                flaggedIncidents = 3;
+            } else if (item.result.label.toLowerCase().includes('warning') || scoreVal < 80) {
+                flaggedIncidents = 1;
+            }
+            return {
+                date: dateStr,
+                complianceScore: scoreVal,
+                flaggedIncidents
+            };
+        });
+    }, [history]);
+
     return (
         <div className="max-w-7xl xl:max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8 xl:px-12 pt-10 pb-24">
             {/* Technical Terminal Layout */}
@@ -5664,6 +5688,28 @@ const SafetyInspectorPage: React.FC<SafetyInspectorPageProps> = ({ setPage }) =>
                                 </div>
                             )
                         )}
+
+                        {/* Compliance Score Trend Chart over time */}
+                        <div className="bg-white rounded-3xl shadow-xl border border-gray-100 p-6 flex flex-col gap-4">
+                            <h3 className="text-sm font-bold text-gray-900 uppercase tracking-wide flex items-center justify-between">
+                                <span className="flex items-center">
+                                    <span className="w-1.5 h-1.5 rounded-full bg-indigo-500 mr-2.5"></span>
+                                    SANS Audit Compliance Progression
+                                </span>
+                                <span className="text-[10px] text-gray-400 normal-case font-mono">
+                                    Source: Local Storage History ({history.length} runs)
+                                </span>
+                            </h3>
+                            {history.length === 0 ? (
+                                <div className="h-[200px] flex flex-col items-center justify-center text-gray-400 border border-dashed border-gray-200 rounded-2xl bg-gray-50/30">
+                                    <p className="text-xs">No progression data available. Run some safety audits first.</p>
+                                </div>
+                            ) : (
+                                <ComplianceTrendChart
+                                    data={complianceHistoryChartData}
+                                />
+                            )}
+                        </div>
 
                     </div>
                 </div>
