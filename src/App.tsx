@@ -2,6 +2,7 @@ import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { GoogleGenAI } from "@google/genai";
 import { jsPDF } from 'jspdf';
 import { ComplianceTrendChart, DailyComplianceData } from './components/ComplianceTrendChart';
+import { sanitizeInputText } from './utils/sanitizer';
 
 // --- Inline Types ---
 export type Page = 'home' | 'solutions' | 'inspector';
@@ -316,17 +317,22 @@ export function interceptCompliancePrompt(prompt: string): void {
   const ssnRegex = /\b\d{3}-\d{2}-\d{4}\b/g;
   
   let piiDetected = false;
-  let scrubbedText = prompt;
   
-  if (emailRegex.test(prompt)) {
+  // Apply POPIA South African ID, phone and names/entities sanitizer first
+  let scrubbedText = sanitizeInputText(prompt);
+  if (scrubbedText !== prompt) {
+    piiDetected = true;
+  }
+  
+  if (emailRegex.test(scrubbedText)) {
     piiDetected = true;
     scrubbedText = scrubbedText.replace(emailRegex, '[REDACTED_EMAIL]');
   }
-  if (phoneRegex.test(prompt)) {
+  if (phoneRegex.test(scrubbedText)) {
     piiDetected = true;
     scrubbedText = scrubbedText.replace(phoneRegex, '[REDACTED_PHONE]');
   }
-  if (ssnRegex.test(prompt)) {
+  if (ssnRegex.test(scrubbedText)) {
     piiDetected = true;
     scrubbedText = scrubbedText.replace(ssnRegex, '[REDACTED_SSN]');
   }
@@ -5274,18 +5280,20 @@ const SafetyInspectorPage: React.FC<SafetyInspectorPageProps> = ({ setPage }) =>
         // SECURELY AND ANONYMOUSLY INTERCEPT AND STRUCTURE USER INPUT
         interceptCompliancePrompt(scenario);
 
+        const sanitizedScenario = sanitizeInputText(scenario);
+
         // LOG GA4 EVENT: Requested
         trackGA4Event('ai_generation_requested', {
             action_type: isOperationalAudit ? 'secure_operational_audit' : 'red_team_inspector_run',
-            prompt_length: scenario.length,
+            prompt_length: sanitizedScenario.length,
             system_instruction_length: systemPrompt.length,
-            standard_detected: scenario.toLowerCase().includes('sans') ? 'SANS Standard' : 'General'
+            standard_detected: sanitizedScenario.toLowerCase().includes('sans') ? 'SANS Standard' : 'General'
         });
         
         setResponse({ text: '', score: '...', label: 'Analyzing...', color: 'text-gray-500 bg-gray-100 border-gray-500' });
 
         try {
-            const finalResult = await runSafetyInspector(scenario, systemPrompt, (streamedText) => {
+            const finalResult = await runSafetyInspector(sanitizedScenario, systemPrompt, (streamedText) => {
                 setResponse({
                     text: streamedText,
                     score: '...',
@@ -5294,14 +5302,14 @@ const SafetyInspectorPage: React.FC<SafetyInspectorPageProps> = ({ setPage }) =>
                 });
             }, userApiKey);
             setResponse(finalResult);
-            saveToHistory(finalResult, scenario, systemPrompt);
+            saveToHistory(finalResult, sanitizedScenario, systemPrompt);
 
             // LOG GA4 EVENT: Success
             trackGA4Event('ai_generation_success', {
                 action_type: isOperationalAudit ? 'secure_operational_audit' : 'red_team_inspector_run',
                 risk_score: finalResult.score,
                 assessment: finalResult.label,
-                prompt_length: scenario.length
+                prompt_length: sanitizedScenario.length
             });
         } catch (err: any) {
             let errMsg = err.message || 'An unknown error occurred.';
@@ -5331,7 +5339,7 @@ const SafetyInspectorPage: React.FC<SafetyInspectorPageProps> = ({ setPage }) =>
             trackGA4Event('ai_generation_failed', {
                 action_type: isOperationalAudit ? 'secure_operational_audit' : 'red_team_inspector_run',
                 error_message: errMsg,
-                prompt_length: scenario.length
+                prompt_length: sanitizedScenario.length
             });
         } finally {
             setLoading(false);
