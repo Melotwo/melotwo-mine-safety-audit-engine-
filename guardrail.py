@@ -8,7 +8,7 @@ try:
     HAS_NUMPY_SCIPY = True
 except ImportError:
     HAS_NUMPY_SCIPY = False
-    # Fallback/mock implementations if numpy or scipy are not installed in the environment
+    # Mock fallback implementations if numpy/scipy are not present in this workspace
     class MockNumpy:
         def array(self, val): return val
     np = MockNumpy()
@@ -119,7 +119,7 @@ class ComplianceGuardrail:
         
         # Category 2 (Data Sensitivity): employee training, health/medical logs, worker PII
         if any(kw in lower_text for kw in ["training history", "medical log", "health history", "chronic condition", "respiratory test"]):
-            # Hard-block the request and trip breaker
+            # Hard-block the request
             self.system_state = "MANUAL_OVERRIDE_REQUIRED"
             return {
                 "sanitized_log": "[SENSITIVE DATA SHIELDED]",
@@ -131,7 +131,7 @@ class ComplianceGuardrail:
 
         # Category 3 (Operational Deviation): bypass SANS, change shift-change patterns, modify lockout/tagout (LOTO) structures
         if any(kw in lower_text for kw in ["bypass", "hotwire", "force-open", "lockout", "tagout", "loto", "deviate"]):
-            # Immediately suppress the recommendation, hard-block, and trip breaker
+            # Immediately suppress the recommendation / hard-block the prompt
             self.system_state = "MANUAL_OVERRIDE_REQUIRED"
             return {
                 "sanitized_log": "[UNAUTHORIZED OPERATION SUPPRESSED]",
@@ -148,7 +148,7 @@ class ComplianceGuardrail:
                 "sanitized_log": sanitized_log,
                 "status": "PROCESSED",
                 "action_required": "NONE",
-                "system_state": self.system_state, # Retain state (will be MANUAL_OVERRIDE_REQUIRED if previously blocked)
+                "system_state": self.system_state, # Will be OPERATIONAL if not previously tripped
                 "safety_assessment": "High-Priority Flag: Requires Dual-Authorization by Chief Engineer. Proceeding with caution; physical operations must not be automated without chief sign-off."
             }
 
