@@ -16,6 +16,13 @@ NAME_PATTERNS = [
     re.compile(r'\b(Mr\.?|Ms\.?|Mrs\.?|Dr\.?|Prof\.?|Eng\.?)\s+([A-Z][a-z]+(?:\s+[A-Z][a-z]+)*)\b')
 ]
 
+def replace_name(match):
+    prefix = match.group(1)
+    full_match = match.group(0)
+    if ":" in full_match:
+        return f"{prefix}: [NAME_MASKED]"
+    return f"{prefix} [NAME_MASKED]"
+
 def sanitize_user_input(text: str) -> str:
     """
     Sanitizes the input text by matching and masking South African specific PII (IDs and Phone Numbers)
@@ -37,13 +44,6 @@ def sanitize_user_input(text: str) -> str:
     sanitized = SA_PHONE_REGEX.sub('[PHONE_MASKED]', sanitized)
 
     # 3. Mask Names based on organizational prefix patterns
-    def replace_name(match):
-        prefix = match.group(1)
-        full_match = match.group(0)
-        if ":" in full_match:
-            return f"{prefix}: [NAME_MASKED]"
-        return f"{prefix} [NAME_MASKED]"
-
     for pattern in NAME_PATTERNS:
         sanitized = pattern.sub(replace_name, sanitized)
 
