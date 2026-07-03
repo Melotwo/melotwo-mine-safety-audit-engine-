@@ -17,14 +17,15 @@ NAME_PATTERNS = [
 ]
 
 def replace_name(match):
+    """
+    Callback for name redacting. Explicitly preserves colons if found in the text match
+    and formats with a trailing space, otherwise defaults to a single space.
+    """
     prefix = match.group(1)
     full_match = match.group(0)
-    g1_end = match.end(1) - match.start(0)
-    g2_start = match.start(2) - match.start(0)
-    separator = full_match[g1_end:g2_start]
-    if not separator:
-        separator = " "
-    return f"{prefix}{separator}[WORKER_NAME]"
+    if ":" in full_match:
+        return f"{prefix}: [WORKER_NAME]"
+    return f"{prefix} [WORKER_NAME]"
 
 def sanitize_user_input(text: str) -> str:
     """
@@ -33,7 +34,7 @@ def sanitize_user_input(text: str) -> str:
     
     - South African IDs: Replaced with '[ID_MASKED]'
     - Phone Numbers: Replaced with '[PHONE_MASKED]'
-    - Named Entities: Replaced with prefix + ' [WORKER_NAME]'
+    - Named Entities: Replaced with prefix + ' [WORKER_NAME]' or prefix + ': [WORKER_NAME]'
     """
     if not isinstance(text, str) or not text:
         return ""
@@ -51,7 +52,6 @@ def sanitize_user_input(text: str) -> str:
         sanitized = pattern.sub(replace_name, sanitized)
 
     return sanitized
-
 
 def gatekeeper_wrapper(text: str) -> str:
     """
