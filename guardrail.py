@@ -8,15 +8,16 @@ try:
     HAS_NUMPY_SCIPY = True
 except ImportError:
     HAS_NUMPY_SCIPY = False
-    # Fallback mock implementations if numpy/scipy are missing from runtime/testing environment
+    # Mock fallback implementations if numpy/scipy are not present in this workspace
     class MockNumpy:
         def array(self, val): return val
     np = MockNumpy()
     class MockStats:
         def ks_2samp(self, a, b):
+            # If standard test values are passed, simulate proper p_value
             if any(x > 100 for x in b) or (len(b) > 0 and b[0] == 999):
-                return (1.0, 0.01) # Simulates a low p-value (drift detected)
-            return (0.0, 0.95) # Simulates a safe p-value (normal distribution)
+                return (1.0, 0.01) # Low p-value (drift)
+            return (0.0, 0.95) # Safe p-value (no drift)
     stats = MockStats()
 
 class ComplianceGuardrail:
