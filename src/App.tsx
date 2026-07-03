@@ -3,6 +3,7 @@ import { GoogleGenAI } from "@google/genai";
 import { jsPDF } from 'jspdf';
 import { ComplianceTrendChart, DailyComplianceData } from './components/ComplianceTrendChart';
 import { sanitizeInputText } from './utils/sanitizer';
+import { CountUp } from './components/CountUp';
 
 // --- Inline Types ---
 export type Page = 'home' | 'solutions' | 'inspector';
@@ -917,6 +918,187 @@ const Sparkline: React.FC<{
   );
 };
 
+// --- Component: ProfileAuditTrendChart ---
+interface ProfileAuditTrendChartProps {
+  audits: {
+    id: string;
+    date: string;
+    category: string;
+    score: number;
+    status: string;
+  }[];
+}
+
+const ProfileAuditTrendChart: React.FC<ProfileAuditTrendChartProps> = ({ audits }) => {
+  const [hoveredIdx, setHoveredIdx] = useState<number | null>(null);
+
+  const sortedAudits = useMemo(() => {
+    return [...audits].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+  }, [audits]);
+
+  const width = 500;
+  const height = 150;
+  const paddingLeft = 40;
+  const paddingRight = 20;
+  const paddingTop = 20;
+  const paddingBottom = 30;
+
+  const points = useMemo(() => {
+    if (sortedAudits.length === 0) return [];
+    
+    const scores = sortedAudits.map(a => a.score);
+    const minScore = Math.max(0, Math.min(...scores) - 10);
+    const maxScore = 100;
+    const scoreRange = maxScore - minScore || 1;
+
+    const stepX = (width - paddingLeft - paddingRight) / Math.max(1, sortedAudits.length - 1);
+
+    return sortedAudits.map((audit, i) => {
+      const x = paddingLeft + i * stepX;
+      const y = height - paddingBottom - ((audit.score - minScore) / scoreRange) * (height - paddingTop - paddingBottom);
+      return {
+        x,
+        y,
+        score: audit.score,
+        date: audit.date,
+        id: audit.id,
+        category: audit.category
+      };
+    });
+  }, [sortedAudits]);
+
+  const linePath = useMemo(() => {
+    if (points.length === 0) return '';
+    return points.reduce((path, p, i) => {
+      return i === 0 ? `M ${p.x} ${p.y}` : `${path} L ${p.x} ${p.y}`;
+    }, '');
+  }, [points]);
+
+  const areaPath = useMemo(() => {
+    if (points.length === 0) return '';
+    const first = points[0];
+    const last = points[points.length - 1];
+    const basePath = points.reduce((path, p) => `${path} L ${p.x} ${p.y}`, `M ${first.x} ${height - paddingBottom}`);
+    return `${basePath} L ${last.x} ${height - paddingBottom} Z`;
+  }, [points]);
+
+  const gradientId = useMemo(() => `profile-grad-${Math.floor(Math.random() * 1000000)}`, []);
+
+  return (
+    <div className="bg-slate-50 border border-gray-100 rounded-2xl p-4 flex flex-col gap-2 relative">
+      <div className="flex justify-between items-center mb-1">
+        <span className="text-[10px] font-bold text-gray-500 uppercase tracking-wider font-mono">SANS Compliance Progression Trend</span>
+        {hoveredIdx !== null && points[hoveredIdx] && (
+          <span className="text-[10px] font-mono font-bold text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded">
+            {points[hoveredIdx].id}: {points[hoveredIdx].score}%
+          </span>
+        )}
+      </div>
+      <div className="w-full h-[120px]">
+        {sortedAudits.length === 0 ? (
+          <div className="w-full h-full flex items-center justify-center text-xs text-gray-400">
+            No audit history available
+          </div>
+        ) : (
+          <svg viewBox={`0 0 ${width} ${height}`} className="w-full h-full overflow-visible">
+            <defs>
+              <linearGradient id={gradientId} x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stopColor="#4f46e5" stopOpacity={0.25} />
+                <stop offset="100%" stopColor="#4f46e5" stopOpacity={0.0} />
+              </linearGradient>
+            </defs>
+
+            {/* Y axis horizontal guides */}
+            {[0, 0.5, 1].map((ratio, i) => {
+              const y = paddingTop + ratio * (height - paddingTop - paddingBottom);
+              const scores = sortedAudits.map(a => a.score);
+              const minScore = Math.max(0, Math.min(...scores) - 10);
+              const maxScore = 100;
+              const scoreVal = Math.round(maxScore - ratio * (maxScore - minScore));
+              return (
+                <g key={i} className="opacity-20">
+                  <line 
+                    x1={paddingLeft} 
+                    y1={y} 
+                    x2={width - paddingRight} 
+                    y2={y} 
+                    stroke="#475569" 
+                    strokeWidth={1} 
+                    strokeDasharray="3 3" 
+                  />
+                  <text 
+                    x={paddingLeft - 8} 
+                    y={y + 3} 
+                    fill="#475569" 
+                    fontSize={9} 
+                    fontFamily="monospace"
+                    textAnchor="end"
+                  >
+                    {scoreVal}%
+                  </text>
+                </g>
+              );
+            })}
+
+            {/* X axis lines and labels */}
+            {points.map((p, i) => (
+              <g key={i}>
+                <line
+                  x1={p.x}
+                  y1={paddingTop}
+                  x2={p.x}
+                  y2={height - paddingBottom}
+                  stroke="#475569"
+                  strokeWidth={0.5}
+                  strokeDasharray="2 2"
+                  className="opacity-10"
+                />
+                <text
+                  x={p.x}
+                  y={height - 10}
+                  fill="#64748b"
+                  fontSize={8}
+                  fontFamily="monospace"
+                  textAnchor="middle"
+                  className="opacity-85"
+                >
+                  {p.date.substring(5)}
+                </text>
+              </g>
+            ))}
+
+            {/* Area under path */}
+            <path d={areaPath} fill={`url(#${gradientId})`} className="transition-all duration-300" />
+
+            {/* Line Path */}
+            <path d={linePath} fill="none" stroke="#4f46e5" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" />
+
+            {/* Data point circles */}
+            {points.map((p, i) => (
+              <g
+                key={i}
+                onMouseEnter={() => setHoveredIdx(i)}
+                onMouseLeave={() => setHoveredIdx(null)}
+                className="cursor-pointer"
+              >
+                <circle
+                  cx={p.x}
+                  cy={p.y}
+                  r={hoveredIdx === i ? 6 : 4}
+                  fill={p.score >= 80 ? '#10b981' : '#ef4444'}
+                  stroke="#ffffff"
+                  strokeWidth={1.5}
+                  className="transition-all duration-150"
+                />
+              </g>
+            ))}
+          </svg>
+        )}
+      </div>
+    </div>
+  );
+};
+
 // --- Component: MineCompliancePanel ---
 const MineCompliancePanel: React.FC = () => {
   const [profiles, setProfiles] = useState<MineProfile[]>(() => {
@@ -1105,7 +1287,7 @@ const MineCompliancePanel: React.FC = () => {
           <div className="bg-gradient-to-tr from-slate-900 to-indigo-950 p-6 rounded-2xl text-white shadow-lg">
             <span className="text-[10px] font-bold tracking-widest text-indigo-300 uppercase block mb-1">Overall Compliance</span>
             <div className="flex items-baseline gap-2">
-              <span className="text-4xl font-black">{activeProfile.complianceScore}%</span>
+              <span className="text-4xl font-black"><CountUp value={activeProfile.complianceScore} />%</span>
               <span className="text-xs text-green-400 font-medium">↑ Verified</span>
             </div>
             <div className="w-full bg-slate-800/80 h-2 rounded-full mt-4 overflow-hidden">
@@ -1200,36 +1382,46 @@ const MineCompliancePanel: React.FC = () => {
           </div>
 
           <div className="mt-4 pt-4 border-t border-gray-100">
-            <h4 className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-3">Active SANS Audits</h4>
-            <div className="overflow-x-auto">
-              <table className="w-full text-left border-collapse text-xs">
-                <thead>
-                  <tr className="border-b border-gray-100 text-gray-400 font-bold uppercase tracking-wider">
-                    <th className="pb-2">Audit ID</th>
-                    <th className="pb-2">Standard Category</th>
-                    <th className="pb-2">Audit Date</th>
-                    <th className="pb-2 text-right">Score</th>
-                    <th className="pb-2 text-right">Status</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-gray-50 text-gray-600">
-                  {activeProfile.audits.map((audit) => (
-                    <tr key={audit.id} className="hover:bg-gray-50/50">
-                      <td className="py-2.5 font-mono font-semibold text-gray-900">{audit.id}</td>
-                      <td className="py-2.5">{audit.category}</td>
-                      <td className="py-2.5 text-gray-500">{audit.date}</td>
-                      <td className="py-2.5 text-right font-bold text-gray-900">{audit.score}%</td>
-                      <td className="py-2.5 text-right">
-                        <span className={`px-2 py-0.5 rounded-full font-bold text-[10px] ${
-                          audit.status === 'Passed' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'
-                        }`}>
-                          {audit.status}
-                        </span>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+            <div className="grid lg:grid-cols-12 gap-6 items-start">
+              {/* Table section */}
+              <div className="lg:col-span-7">
+                <h4 className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-3">Active SANS Audits</h4>
+                <div className="overflow-x-auto">
+                  <table className="w-full text-left border-collapse text-xs">
+                    <thead>
+                      <tr className="border-b border-gray-100 text-gray-400 font-bold uppercase tracking-wider">
+                        <th className="pb-2">Audit ID</th>
+                        <th className="pb-2">Standard Category</th>
+                        <th className="pb-2">Audit Date</th>
+                        <th className="pb-2 text-right">Score</th>
+                        <th className="pb-2 text-right">Status</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-gray-50 text-gray-600">
+                      {activeProfile.audits.map((audit) => (
+                        <tr key={audit.id} className="hover:bg-gray-50/50">
+                          <td className="py-2.5 font-mono font-semibold text-gray-900">{audit.id}</td>
+                          <td className="py-2.5">{audit.category}</td>
+                          <td className="py-2.5 text-gray-500">{audit.date}</td>
+                          <td className="py-2.5 text-right font-bold text-gray-900">{audit.score}%</td>
+                          <td className="py-2.5 text-right">
+                            <span className={`px-2 py-0.5 rounded-full font-bold text-[10px] ${
+                              audit.status === 'Passed' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'
+                            }`}>
+                              {audit.status}
+                            </span>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+
+              {/* Chart section */}
+              <div className="lg:col-span-5">
+                <ProfileAuditTrendChart audits={activeProfile.audits} />
+              </div>
             </div>
           </div>
         </div>
