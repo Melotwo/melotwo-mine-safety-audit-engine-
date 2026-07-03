@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { GoogleGenAI } from "@google/genai";
 import { jsPDF } from 'jspdf';
+import { ComplianceTrendChart, DailyComplianceData } from './components/ComplianceTrendChart';
 
 // --- Inline Types ---
 export type Page = 'home' | 'solutions' | 'inspector';
@@ -1237,6 +1238,8 @@ interface DataPoint {
   complianceScore: number; // 0 - 100
   riskLevel: number; // 1 - 10
   ppeDegradation: number; // 0 - 100
+  date?: string;          // YYYY-MM-DD
+  flaggedIncidents?: number;
 }
 
 const AuditHistoryChart: React.FC = () => {
@@ -1372,12 +1375,15 @@ const AuditHistoryChart: React.FC = () => {
       try { return JSON.parse(saved); } catch (e) { /* fallback */ }
     }
     return [
-      { label: 'Audit #01', complianceScore: 78, riskLevel: 4, ppeDegradation: 12 },
-      { label: 'Audit #02', complianceScore: 82, riskLevel: 3, ppeDegradation: 18 },
-      { label: 'Audit #03', complianceScore: 65, riskLevel: 6, ppeDegradation: 25 },
-      { label: 'Audit #04', complianceScore: 89, riskLevel: 2, ppeDegradation: 31 },
-      { label: 'Audit #05', complianceScore: 94, riskLevel: 1, ppeDegradation: 42 },
-      { label: 'Audit #06', complianceScore: 91, riskLevel: 2, ppeDegradation: 48 },
+      { label: 'Audit #01', complianceScore: 78, riskLevel: 4, ppeDegradation: 12, date: '2026-06-25', flaggedIncidents: 5 },
+      { label: 'Audit #02', complianceScore: 82, riskLevel: 3, ppeDegradation: 18, date: '2026-06-26', flaggedIncidents: 3 },
+      { label: 'Audit #03', complianceScore: 65, riskLevel: 6, ppeDegradation: 25, date: '2026-06-27', flaggedIncidents: 8 },
+      { label: 'Audit #04', complianceScore: 89, riskLevel: 2, ppeDegradation: 31, date: '2026-06-28', flaggedIncidents: 2 },
+      { label: 'Audit #05', complianceScore: 94, riskLevel: 1, ppeDegradation: 42, date: '2026-06-29', flaggedIncidents: 1 },
+      { label: 'Audit #06', complianceScore: 91, riskLevel: 2, ppeDegradation: 48, date: '2026-06-30', flaggedIncidents: 2 },
+      { label: 'Audit #07', complianceScore: 94, riskLevel: 1, ppeDegradation: 40, date: '2026-07-01', flaggedIncidents: 2 },
+      { label: 'Audit #08', complianceScore: 91, riskLevel: 2, ppeDegradation: 45, date: '2026-07-02', flaggedIncidents: 4 },
+      { label: 'Audit #09', complianceScore: 96, riskLevel: 1, ppeDegradation: 38, date: '2026-07-03', flaggedIncidents: 1 },
     ];
   });
 
@@ -1393,19 +1399,32 @@ const AuditHistoryChart: React.FC = () => {
     });
 
     const newAuditNum = data.length + 1;
-    const previousPoint = data[data.length - 1] || { complianceScore: 80, riskLevel: 3, ppeDegradation: 30 };
+    const previousPoint = data[data.length - 1] || { complianceScore: 80, riskLevel: 3, ppeDegradation: 30, date: '2026-07-03', flaggedIncidents: 1 };
     
     // Create organic trending values with slight randomness
     const variance = Math.floor(Math.random() * 15) - 7; // -7% to +7%
     const newComplianceScore = Math.max(40, Math.min(100, previousPoint.complianceScore + variance));
     const newRiskLevel = Math.max(1, Math.min(10, Math.round(10 - (newComplianceScore / 10))));
-    const newPpeDegradation = Math.min(100, previousPoint.ppeDegradation + Math.floor(Math.random() * 10) + 2);
+    const newPpeDegradation = Math.min(100, (previousPoint.ppeDegradation || 30) + Math.floor(Math.random() * 10) + 2);
+
+    const lastDateStr = previousPoint.date || '2026-07-03';
+    const lastD = new Date(lastDateStr);
+    lastD.setDate(lastD.getDate() + 1);
+    const nextDateStr = lastD.toISOString().split('T')[0];
+
+    const flaggedIncidents = newComplianceScore < 80 
+      ? Math.floor(Math.random() * 5) + 3 
+      : newComplianceScore < 90 
+        ? Math.floor(Math.random() * 3) + 1 
+        : 0;
 
     const newPoint: DataPoint = {
       label: `Audit #${newAuditNum.toString().padStart(2, '0')}`,
       complianceScore: newComplianceScore,
       riskLevel: newRiskLevel,
-      ppeDegradation: newPpeDegradation
+      ppeDegradation: newPpeDegradation,
+      date: nextDateStr,
+      flaggedIncidents
     };
 
     setTimeout(() => {
@@ -1429,6 +1448,21 @@ const AuditHistoryChart: React.FC = () => {
       });
     }, 400); // simulate brief operational computation
   };
+
+  const d3ComplianceData: DailyComplianceData[] = useMemo(() => {
+    return data.map((d, index) => {
+      const dateOffset = index;
+      const date = d.date || `2026-06-${(25 + dateOffset).toString().padStart(2, '0')}`;
+      const flaggedIncidents = d.flaggedIncidents !== undefined
+        ? d.flaggedIncidents
+        : (d.complianceScore < 80 ? 4 : d.complianceScore < 90 ? 2 : 0);
+      return {
+        date,
+        complianceScore: d.complianceScore,
+        flaggedIncidents
+      };
+    });
+  }, [data]);
 
   const activePoints = useMemo(() => {
     return data.map((d, index) => {
@@ -2041,249 +2075,279 @@ const AuditHistoryChart: React.FC = () => {
       )}
 
       {/* Responsive SVG Chart */}
-      <div className="relative flex-1 w-full bg-slate-950/40 border border-slate-800/60 rounded-xl p-4 min-h-[250px] flex items-center justify-center">
-        <svg 
-          viewBox={`0 0 ${width} ${height}`} 
-          className="w-full h-full max-h-[240px]"
-        >
-          {/* Y-axis gridlines & labels */}
-          {[0, 0.25, 0.5, 0.75, 1].map((ratio, i) => {
-            const y = paddingY + ratio * (height - paddingY * 2);
-            const val = metric === 'risk' 
-              ? Math.round(10 - ratio * 10) 
-              : Math.round(100 - ratio * 100);
-            return (
-              <g key={i} className="opacity-40">
-                <line 
-                  x1={paddingX} 
-                  y1={y} 
-                  x2={width - paddingX} 
-                  y2={y} 
-                  stroke="#334155" 
-                  strokeWidth={1} 
-                  strokeDasharray="4 4" 
+      {metric === 'compliance' ? (
+        <ComplianceTrendChart
+          data={d3ComplianceData}
+          onDataAdd={(newPoint) => {
+            const newAuditNum = data.length + 1;
+            setData(prev => [...prev, {
+              label: `Audit #${newAuditNum.toString().padStart(2, '0')}`,
+              complianceScore: newPoint.complianceScore,
+              riskLevel: Math.max(1, Math.min(10, Math.round(10 - (newPoint.complianceScore / 10)))),
+              ppeDegradation: Math.min(100, Math.max(10, Math.round(100 - newPoint.complianceScore * 0.8))),
+              date: newPoint.date,
+              flaggedIncidents: newPoint.flaggedIncidents
+            }]);
+          }}
+          onClearData={() => {
+            setData([
+              { label: 'Audit #01', complianceScore: 78, riskLevel: 4, ppeDegradation: 12, date: '2026-06-25', flaggedIncidents: 5 },
+              { label: 'Audit #02', complianceScore: 82, riskLevel: 3, ppeDegradation: 18, date: '2026-06-26', flaggedIncidents: 3 },
+              { label: 'Audit #03', complianceScore: 65, riskLevel: 6, ppeDegradation: 25, date: '2026-06-27', flaggedIncidents: 8 },
+              { label: 'Audit #04', complianceScore: 89, riskLevel: 2, ppeDegradation: 31, date: '2026-06-28', flaggedIncidents: 2 },
+              { label: 'Audit #05', complianceScore: 94, riskLevel: 1, ppeDegradation: 42, date: '2026-06-29', flaggedIncidents: 1 },
+              { label: 'Audit #06', complianceScore: 91, riskLevel: 2, ppeDegradation: 48, date: '2026-06-30', flaggedIncidents: 2 },
+              { label: 'Audit #07', complianceScore: 94, riskLevel: 1, ppeDegradation: 40, date: '2026-07-01', flaggedIncidents: 2 },
+              { label: 'Audit #08', complianceScore: 91, riskLevel: 2, ppeDegradation: 45, date: '2026-07-02', flaggedIncidents: 4 },
+              { label: 'Audit #09', complianceScore: 96, riskLevel: 1, ppeDegradation: 38, date: '2026-07-03', flaggedIncidents: 1 },
+            ]);
+          }}
+        />
+      ) : (
+        <div className="relative flex-1 w-full bg-slate-950/40 border border-slate-800/60 rounded-xl p-4 min-h-[250px] flex items-center justify-center">
+          <svg 
+            viewBox={`0 0 ${width} ${height}`} 
+            className="w-full h-full max-h-[240px]"
+          >
+            {/* Y-axis gridlines & labels */}
+            {[0, 0.25, 0.5, 0.75, 1].map((ratio, i) => {
+              const y = paddingY + ratio * (height - paddingY * 2);
+              const val = metric === 'risk' 
+                ? Math.round(10 - ratio * 10) 
+                : Math.round(100 - ratio * 100);
+              return (
+                <g key={i} className="opacity-40">
+                  <line 
+                    x1={paddingX} 
+                    y1={y} 
+                    x2={width - paddingX} 
+                    y2={y} 
+                    stroke="#334155" 
+                    strokeWidth={1} 
+                    strokeDasharray="4 4" 
+                  />
+                  <text 
+                    x={paddingX - 10} 
+                    y={y + 4} 
+                    fill="#94a3b8" 
+                    fontSize={10} 
+                    fontFamily="monospace"
+                    textAnchor="end"
+                  >
+                    {val}
+                  </text>
+                </g>
+              );
+            })}
+
+            {/* X-axis labels */}
+            {pointsCoordinates.map((p, i) => (
+              <text
+                key={i}
+                x={p.x}
+                y={height - 8}
+                fill="#94a3b8"
+                fontSize={10}
+                fontFamily="monospace"
+                textAnchor="middle"
+                className="opacity-70"
+              >
+                {p.label}
+              </text>
+            ))}
+
+            {/* Visual Warning Threshold Reference Line */}
+            {thresholdY !== undefined && thresholdY >= paddingY && thresholdY <= height - paddingY && (
+              <g className="transition-all duration-300">
+                <line
+                  x1={paddingX}
+                  y1={thresholdY}
+                  x2={width - paddingX}
+                  y2={thresholdY}
+                  stroke="#ef4444"
+                  strokeWidth={1.5}
+                  strokeDasharray="5 3"
+                  className="opacity-70"
                 />
-                <text 
-                  x={paddingX - 10} 
-                  y={y + 4} 
-                  fill="#94a3b8" 
-                  fontSize={10} 
-                  fontFamily="monospace"
-                  textAnchor="end"
+                {/* Reference Label Badge */}
+                <rect
+                  x={width - paddingX - 65}
+                  y={thresholdY - 7}
+                  width={65}
+                  height={14}
+                  rx={4}
+                  fill="#b91c1c"
+                  className="opacity-95 shadow-lg"
+                />
+                <text
+                  x={width - paddingX - 32.5}
+                  y={thresholdY + 3.5}
+                  fill="#ffffff"
+                  fontSize={8}
+                  fontWeight="bold"
+                  fontFamily="sans-serif"
+                  textAnchor="middle"
                 >
-                  {val}
+                  {metric === 'compliance' ? `Min Limit: ${currentThreshold}%` : metric === 'risk' ? `Max Limit: ${currentThreshold}` : `Max Limit: ${currentThreshold}%`}
                 </text>
               </g>
-            );
-          })}
+            )}
 
-          {/* X-axis labels */}
-          {pointsCoordinates.map((p, i) => (
-            <text
-              key={i}
-              x={p.x}
-              y={height - 8}
-              fill="#94a3b8"
-              fontSize={10}
-              fontFamily="monospace"
-              textAnchor="middle"
-              className="opacity-70"
-            >
-              {p.label}
-            </text>
-          ))}
+            {/* Area under curve (Shaded Amber) */}
+            <path
+              d={areaPath}
+              fill="url(#amber-gradient)"
+              className="opacity-10 transition-all duration-500"
+            />
 
-          {/* Visual Warning Threshold Reference Line */}
-          {thresholdY !== undefined && thresholdY >= paddingY && thresholdY <= height - paddingY && (
-            <g className="transition-all duration-300">
-              <line
-                x1={paddingX}
-                y1={thresholdY}
-                x2={width - paddingX}
-                y2={thresholdY}
-                stroke="#ef4444"
-                strokeWidth={1.5}
-                strokeDasharray="5 3"
-                className="opacity-70"
-              />
-              {/* Reference Label Badge */}
-              <rect
-                x={width - paddingX - 65}
-                y={thresholdY - 7}
-                width={65}
-                height={14}
-                rx={4}
-                fill="#b91c1c"
-                className="opacity-95 shadow-lg"
-              />
-              <text
-                x={width - paddingX - 32.5}
-                y={thresholdY + 3.5}
-                fill="#ffffff"
-                fontSize={8}
-                fontWeight="bold"
-                fontFamily="sans-serif"
-                textAnchor="middle"
-              >
-                {metric === 'compliance' ? `Min Limit: ${currentThreshold}%` : metric === 'risk' ? `Max Limit: ${currentThreshold}` : `Max Limit: ${currentThreshold}%`}
-              </text>
-            </g>
-          )}
+            {/* Main Line Plot (Amber/Orange Glow) */}
+            <path
+              d={linePath}
+              fill="none"
+              stroke="#f59e0b"
+              strokeWidth={3}
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              filter="url(#glow-filter)"
+              className="transition-all duration-500"
+            />
 
-          {/* Area under curve (Shaded Amber) */}
-          <path
-            d={areaPath}
-            fill="url(#amber-gradient)"
-            className="opacity-10 transition-all duration-500"
-          />
+            {/* Circular Data Points */}
+            {pointsCoordinates.map((p, i) => {
+              const isWarning = (metric === 'compliance' && p.value < complianceThreshold) ||
+                                (metric === 'risk' && p.value > riskThreshold) ||
+                                (metric === 'ppe' && p.value > ppeThreshold);
 
-          {/* Main Line Plot (Amber/Orange Glow) */}
-          <path
-            d={linePath}
-            fill="none"
-            stroke="#f59e0b"
-            strokeWidth={3}
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            filter="url(#glow-filter)"
-            className="transition-all duration-500"
-          />
+              // Red for warning/violations, emerald/green for safe, healthy range.
+              const markerColor = isWarning ? '#ef4444' : '#10b981';
+              const hoverColor = isWarning ? '#f87171' : '#34d399';
 
-          {/* Circular Data Points */}
-          {pointsCoordinates.map((p, i) => {
-            const isWarning = (metric === 'compliance' && p.value < complianceThreshold) ||
-                              (metric === 'risk' && p.value > riskThreshold) ||
-                              (metric === 'ppe' && p.value > ppeThreshold);
-
-            // Red for warning/violations, emerald/green for safe, healthy range.
-            const markerColor = isWarning ? '#ef4444' : '#10b981';
-            const hoverColor = isWarning ? '#f87171' : '#34d399';
-
-            return (
-              <g 
-                key={i}
-                onMouseEnter={() => setHoveredPoint(p.index)}
-                onMouseLeave={() => setHoveredPoint(null)}
-                className="cursor-pointer group"
-                id={`audit-marker-${i}`}
-              >
-                {/* Visual pulse for warning points or hovered points */}
-                <circle
-                  cx={p.x}
-                  cy={p.y}
-                  r={hoveredPoint === p.index ? 14 : (isWarning ? 9 : 0)}
-                  fill={markerColor}
-                  className={`fill-opacity-20 transition-all duration-200 ${isWarning ? 'animate-pulse' : 'animate-ping'}`}
-                />
-                
-                {/* Red warning glowing halo */}
-                {isWarning && (
+              return (
+                <g 
+                  key={i}
+                  onMouseEnter={() => setHoveredPoint(p.index)}
+                  onMouseLeave={() => setHoveredPoint(null)}
+                  className="cursor-pointer group"
+                  id={`audit-marker-${i}`}
+                >
+                  {/* Visual pulse for warning points or hovered points */}
                   <circle
                     cx={p.x}
                     cy={p.y}
-                    r={18}
-                    fill="url(#alert-halo)"
-                    className="animate-pulse origin-center"
-                    style={{ transformOrigin: `${p.x}px ${p.y}px` }}
+                    r={hoveredPoint === p.index ? 14 : (isWarning ? 9 : 0)}
+                    fill={markerColor}
+                    className={`fill-opacity-20 transition-all duration-200 ${isWarning ? 'animate-pulse' : 'animate-ping'}`}
                   />
-                )}
+                  
+                  {/* Red warning glowing halo */}
+                  {isWarning && (
+                    <circle
+                      cx={p.x}
+                      cy={p.y}
+                      r={18}
+                      fill="url(#alert-halo)"
+                      className="animate-pulse origin-center"
+                      style={{ transformOrigin: `${p.x}px ${p.y}px` }}
+                    />
+                  )}
 
-                <circle
-                  cx={p.x}
-                  cy={p.y}
-                  r={hoveredPoint === p.index ? 7 : 5}
-                  fill={hoveredPoint === p.index ? hoverColor : markerColor}
-                  stroke="#1e293b"
-                  strokeWidth={2}
-                  filter={isWarning ? 'url(#alert-glow-filter)' : undefined}
-                  className="transition-all duration-200"
-                />
+                  <circle
+                    cx={p.x}
+                    cy={p.y}
+                    r={hoveredPoint === p.index ? 7 : 5}
+                    fill={hoveredPoint === p.index ? hoverColor : markerColor}
+                    stroke="#1e293b"
+                    strokeWidth={2}
+                    filter={isWarning ? 'url(#alert-glow-filter)' : undefined}
+                    className="transition-all duration-200"
+                  />
 
-                {/* Floating Exclamation/Warning Notification Icon */}
-                {isWarning && (
-                  <g 
-                    transform={`translate(${p.x}, ${p.y - 14})`} 
-                    className="animate-bounce origin-center"
-                    style={{ transformOrigin: `${p.x}px ${p.y - 14}px` }}
-                  >
-                    {/* Visual alignment connector */}
-                    <line x1={0} y1={5} x2={0} y2={14} stroke="#ef4444" strokeWidth={1} strokeDasharray="1 1" className="opacity-60" />
-                    <g transform="translate(-7, -7)">
-                      {/* Crimson Alert Triangle */}
-                      <path
-                        d="M 7 1 L 13 11 A 0.5 0.5 0 0 1 12.5 12 L 1.5 12 A 0.5 0.5 0 0 1 1 11 Z"
-                        fill="#ef4444"
-                        stroke="#0f172a"
-                        strokeWidth="1"
-                        strokeLinejoin="round"
-                        className="shadow-md"
-                      />
-                      {/* Bold Exclamation Mark */}
-                      <text 
-                        x="7" 
-                        y="10.5" 
-                        fill="#ffffff" 
-                        fontSize="8.5" 
-                        fontWeight="black" 
-                        fontFamily="sans-serif" 
-                        textAnchor="middle"
-                      >
-                        !
-                      </text>
+                  {/* Floating Exclamation/Warning Notification Icon */}
+                  {isWarning && (
+                    <g 
+                      transform={`translate(${p.x}, ${p.y - 14})`} 
+                      className="animate-bounce origin-center"
+                      style={{ transformOrigin: `${p.x}px ${p.y - 14}px` }}
+                    >
+                      {/* Visual alignment connector */}
+                      <line x1={0} y1={5} x2={0} y2={14} stroke="#ef4444" strokeWidth={1} strokeDasharray="1 1" className="opacity-60" />
+                      <g transform="translate(-7, -7)">
+                        {/* Crimson Alert Triangle */}
+                        <path
+                          d="M 7 1 L 13 11 A 0.5 0.5 0 0 1 12.5 12 L 1.5 12 A 0.5 0.5 0 0 1 1 11 Z"
+                          fill="#ef4444"
+                          stroke="#0f172a"
+                          strokeWidth="1"
+                          strokeLinejoin="round"
+                          className="shadow-md"
+                        />
+                        {/* Bold Exclamation Mark */}
+                        <text 
+                          x="7" 
+                          y="10.5" 
+                          fill="#ffffff" 
+                          fontSize="8.5" 
+                          fontWeight="black" 
+                          fontFamily="sans-serif" 
+                          textAnchor="middle"
+                        >
+                          !
+                        </text>
+                      </g>
                     </g>
-                  </g>
-                )}
-              </g>
-            );
-          })}
+                  )}
+                </g>
+              );
+            })}
 
-          {/* Gradients and Filters definition */}
-          <defs>
-            <linearGradient id="amber-gradient" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stopColor="#f59e0b" stopOpacity="0.8"/>
-              <stop offset="100%" stopColor="#f59e0b" stopOpacity="0.0"/>
-            </linearGradient>
-            <radialGradient id="alert-halo" cx="50%" cy="50%" r="50%">
-              <stop offset="0%" stopColor="#ef4444" stopOpacity="0.45" />
-              <stop offset="50%" stopColor="#ef4444" stopOpacity="0.15" />
-              <stop offset="100%" stopColor="#ef4444" stopOpacity="0" />
-            </radialGradient>
-            <filter id="glow-filter" x="-20%" y="-20%" width="140%" height="140%">
-              <feGaussianBlur stdDeviation="4" result="blur" />
-              <feMerge>
-                <feMergeNode in="blur" />
-                <feMergeNode in="SourceGraphic" />
-              </feMerge>
-            </filter>
-            <filter id="alert-glow-filter" x="-50%" y="-50%" width="200%" height="200%">
-              <feGaussianBlur stdDeviation="3" result="blur" />
-              <feComponentTransfer>
-                <feFuncA type="linear" slope="1" />
-              </feComponentTransfer>
-              <feMerge>
-                <feMergeNode in="blur" />
-                <feMergeNode in="SourceGraphic" />
-              </feMerge>
-            </filter>
-          </defs>
-        </svg>
+            {/* Gradients and Filters definition */}
+            <defs>
+              <linearGradient id="amber-gradient" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stopColor="#f59e0b" stopOpacity="0.8"/>
+                <stop offset="100%" stopColor="#f59e0b" stopOpacity="0.0"/>
+              </linearGradient>
+              <radialGradient id="alert-halo" cx="50%" cy="50%" r="50%">
+                <stop offset="0%" stopColor="#ef4444" stopOpacity="0.45" />
+                <stop offset="50%" stopColor="#ef4444" stopOpacity="0.15" />
+                <stop offset="100%" stopColor="#ef4444" stopOpacity="0" />
+              </radialGradient>
+              <filter id="glow-filter" x="-20%" y="-20%" width="140%" height="140%">
+                <feGaussianBlur stdDeviation="4" result="blur" />
+                <feMerge>
+                  <feMergeNode in="blur" />
+                  <feMergeNode in="SourceGraphic" />
+                </feMerge>
+              </filter>
+              <filter id="alert-glow-filter" x="-50%" y="-50%" width="200%" height="200%">
+                <feGaussianBlur stdDeviation="3" result="blur" />
+                <feComponentTransfer>
+                  <feFuncA type="linear" slope="1" />
+                </feComponentTransfer>
+                <feMerge>
+                  <feMergeNode in="blur" />
+                  <feMergeNode in="SourceGraphic" />
+                </feMerge>
+              </filter>
+            </defs>
+          </svg>
 
-        {/* Hover Tooltip Overlay */}
-        {hoveredPoint !== null && pointsCoordinates[hoveredPoint] && (
-          <div 
-            className="absolute bg-slate-950 border border-amber-500/50 p-3 rounded-lg shadow-2xl z-20 pointer-events-none text-xs font-mono"
-            style={{
-              left: `${Math.min(75, Math.max(10, (pointsCoordinates[hoveredPoint].x / width) * 100))}%`,
-              top: `${Math.min(65, Math.max(10, (pointsCoordinates[hoveredPoint].y / height) * 100 - 25))}%`
-            }}
-          >
-            <p className="text-amber-500 font-bold">{data[hoveredPoint].label}</p>
-            <p className="text-slate-300 mt-1">Compliance: <span className="text-white font-bold">{data[hoveredPoint].complianceScore}%</span></p>
-            <p className="text-slate-300">Risk Factor: <span className="text-white font-bold">{data[hoveredPoint].riskLevel}/10</span></p>
-            <p className="text-slate-300">PPE Degradation: <span className="text-white font-bold">{data[hoveredPoint].ppeDegradation}%</span></p>
-          </div>
-        )}
-      </div>
+          {/* Hover Tooltip Overlay */}
+          {hoveredPoint !== null && pointsCoordinates[hoveredPoint] && (
+            <div 
+              className="absolute bg-slate-950 border border-amber-500/50 p-3 rounded-lg shadow-2xl z-20 pointer-events-none text-xs font-mono"
+              style={{
+                left: `${Math.min(75, Math.max(10, (pointsCoordinates[hoveredPoint].x / width) * 100))}%`,
+                top: `${Math.min(65, Math.max(10, (pointsCoordinates[hoveredPoint].y / height) * 100 - 25))}%`
+              }}
+            >
+              <p className="text-amber-500 font-bold">{data[hoveredPoint].label}</p>
+              <p className="text-slate-300 mt-1">Compliance: <span className="text-white font-bold">{data[hoveredPoint].complianceScore}%</span></p>
+              <p className="text-slate-300">Risk Factor: <span className="text-white font-bold">{data[hoveredPoint].riskLevel}/10</span></p>
+              <p className="text-slate-300">PPE Degradation: <span className="text-white font-bold">{data[hoveredPoint].ppeDegradation}%</span></p>
+            </div>
+          )}
+        </div>
+      )}
 
       {showComparator && (
         <div className="bg-slate-950/80 border border-slate-800 rounded-xl p-5 mt-2 flex flex-col gap-5">
