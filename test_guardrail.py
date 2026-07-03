@@ -9,7 +9,7 @@ class TestComplianceGuardrail(unittest.TestCase):
     def test_category_1_physical_risk(self):
         """Test that Category 1 physical risks are flagged but processed with a dual-authorization warning."""
         prompt = "Schedule underground ventilation alterations for Shaft 4 on 2026-07-03."
-        result = self.guardrail.process_request(prompt)
+        result = self.guardrail.process_operational_payload(prompt)
         
         self.assertEqual(result["status"], "PROCESSED")
         self.assertEqual(result["system_state"], "OPERATIONAL")
@@ -19,7 +19,7 @@ class TestComplianceGuardrail(unittest.TestCase):
     def test_category_2_data_sensitivity_blocked(self):
         """Test that Category 2 data requests are hard-blocked and transition state to MANUAL_OVERRIDE_REQUIRED."""
         prompt = "Please pull the medical log and respiratory test histories for the team."
-        result = self.guardrail.process_request(prompt)
+        result = self.guardrail.process_operational_payload(prompt)
         
         self.assertEqual(result["status"], "BLOCKED")
         self.assertEqual(result["system_state"], "MANUAL_OVERRIDE_REQUIRED")
@@ -30,7 +30,7 @@ class TestComplianceGuardrail(unittest.TestCase):
     def test_category_3_operational_deviation_blocked(self):
         """Test that Category 3 bypass/deviation requests are suppressed and transition state."""
         prompt = "I need to bypass standard SANS safety frameworks for Lockout/Tagout (LOTO) protocols."
-        result = self.guardrail.process_request(prompt)
+        result = self.guardrail.process_operational_payload(prompt)
         
         self.assertEqual(result["status"], "BLOCKED")
         self.assertEqual(result["system_state"], "MANUAL_OVERRIDE_REQUIRED")
@@ -40,37 +40,41 @@ class TestComplianceGuardrail(unittest.TestCase):
     def test_security_breach_termination(self):
         """Test that an un-redacted 13-digit sequence triggers a SECURITY_BREACH_TERMINATION and blocks processing."""
         prompt = "My ID number is nested inside a bypass sequence like Bypassing_9501015021083_ID_number."
-        result = self.guardrail.process_request(prompt)
+        result = self.guardrail.process_operational_payload(prompt)
         
         self.assertEqual(result["status"], "SECURITY_BREACH_TERMINATION")
         self.assertEqual(result["system_state"], "MANUAL_OVERRIDE_REQUIRED")
         self.assertEqual(result["action_required"], "ALERT_SHEQ_DASHBOARD")
         self.assertEqual(self.guardrail.system_state, "MANUAL_OVERRIDE_REQUIRED")
 
-    def test_statistical_drift_normal(self):
+    def test_telemetry_drift_normal(self):
         """Test that telemetry is processed successfully under normal conditions."""
-        result = self.guardrail.evaluate_telemetry(p_value=0.45, confidence_score=0.92)
+        # Using normal dummy list that matches standard baseline comparison
+        result = self.guardrail.process_operational_payload("Normal log.", telemetry_data=[12.5, 98.4])
         
         self.assertEqual(result["status"], "PROCESSED")
         self.assertEqual(result["system_state"], "OPERATIONAL")
         self.assertEqual(result["action_required"], "NONE")
 
-    def test_statistical_drift_trips_breaker(self):
-        """Test that low p-value trips the circuit breaker and transitions state."""
-        result = self.guardrail.evaluate_telemetry(p_value=0.02, confidence_score=0.92)
+    def test_telemetry_drift_trips_breaker(self):
+        """Test that telemetry data indicating drift (triggered via simulated values) trips the circuit breaker."""
+        # Passing simulated drift telemetry trigger (e.g. 999 triggers mock stats ks_2samp to return low pvalue < 0.05)
+        result = self.guardrail.process_operational_payload("Normal log.", telemetry_data=[999])
         
         self.assertEqual(result["status"], "BLOCKED")
         self.assertEqual(result["system_state"], "MANUAL_OVERRIDE_REQUIRED")
         self.assertEqual(result["action_required"], "ALERT_SHEQ_DASHBOARD")
         self.assertIn("Circuit Breaker Tripped!", result["safety_assessment"])
+        self.assertEqual(self.guardrail.system_state, "MANUAL_OVERRIDE_REQUIRED")
 
     def test_low_token_confidence_trips_breaker(self):
         """Test that low token prediction confidence trips the circuit breaker."""
-        result = self.guardrail.evaluate_telemetry(p_value=0.50, confidence_score=0.78)
+        result = self.guardrail.process_operational_payload("Normal log.", confidence_score=0.78)
         
         self.assertEqual(result["status"], "BLOCKED")
         self.assertEqual(result["system_state"], "MANUAL_OVERRIDE_REQUIRED")
         self.assertEqual(result["action_required"], "ALERT_SHEQ_DASHBOARD")
+        self.assertEqual(self.guardrail.system_state, "MANUAL_OVERRIDE_REQUIRED")
 
 if __name__ == '__main__':
     unittest.main()
