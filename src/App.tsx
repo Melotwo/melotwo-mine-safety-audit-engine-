@@ -2188,7 +2188,7 @@ const AuditHistoryChart: React.FC = () => {
                   fontFamily="sans-serif"
                   textAnchor="middle"
                 >
-                  {metric === 'compliance' ? `Min Limit: ${currentThreshold}%` : metric === 'risk' ? `Max Limit: ${currentThreshold}` : `Max Limit: ${currentThreshold}%`}
+                  {metric === 'risk' ? `Max Limit: ${currentThreshold}` : `Max Limit: ${currentThreshold}%`}
                 </text>
               </g>
             )}
@@ -2214,8 +2214,7 @@ const AuditHistoryChart: React.FC = () => {
 
             {/* Circular Data Points */}
             {pointsCoordinates.map((p, i) => {
-              const isWarning = (metric === 'compliance' && p.value < complianceThreshold) ||
-                                (metric === 'risk' && p.value > riskThreshold) ||
+              const isWarning = (metric === 'risk' && p.value > riskThreshold) ||
                                 (metric === 'ppe' && p.value > ppeThreshold);
 
               // Red for warning/violations, emerald/green for safe, healthy range.
@@ -5120,7 +5119,7 @@ const SafetyInspectorPage: React.FC<SafetyInspectorPageProps> = ({ setPage }) =>
 
     const hasDefaultKey = useMemo(() => {
         return !!(
-            (typeof import.meta !== 'undefined' && import.meta.env && import.meta.env.VITE_GEMINI_API_KEY) || 
+            (typeof import.meta !== 'undefined' && (import.meta as any).env && (import.meta as any).env.VITE_GEMINI_API_KEY) || 
             (typeof window !== 'undefined' && (window as any)?.__GEMINI_API_KEY__)
         );
     }, []);
