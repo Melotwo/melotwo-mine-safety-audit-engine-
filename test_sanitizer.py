@@ -33,19 +33,23 @@ class TestPIISanitizer(unittest.TestCase):
         """Test that names with specific organizational prefixes are properly masked."""
         self.assertEqual(
             sanitize_user_input("The incident was logged by Operator: John Doe."),
-            "The incident was logged by Operator: [NAME_MASKED]."
+            "The incident was logged by Operator: [WORKER_NAME]."
         )
         self.assertEqual(
             sanitize_user_input("The daily ventilation log is Reported by Jane Smith."),
-            "The daily ventilation log is Reported by [NAME_MASKED]."
+            "The daily ventilation log is Reported by [WORKER_NAME]."
         )
         self.assertEqual(
             sanitize_user_input("The site walkthrough was Attended by Dave."),
-            "The site walkthrough was Attended by [NAME_MASKED]."
+            "The site walkthrough was Attended by [WORKER_NAME]."
         )
         self.assertEqual(
             sanitize_user_input("Audit conducted by Auditor Sarah Jenkins."),
-            "Audit conducted by Auditor [NAME_MASKED]."
+            "Audit conducted by Auditor [WORKER_NAME]."
+        )
+        self.assertEqual(
+            sanitize_user_input("Assigned task to Worker: Jack Black."),
+            "Assigned task to Worker: [WORKER_NAME]."
         )
 
 
@@ -83,7 +87,7 @@ class TestPIISanitizer(unittest.TestCase):
 
     def test_already_sanitized(self):
         """Ensure text that is already sanitized or clean is not altered."""
-        clean_text = "This text is clean. Logged by Operator: [NAME_MASKED]. ID is [ID_MASKED]."
+        clean_text = "This text is clean. Logged by Operator: [WORKER_NAME]. ID is [ID_MASKED]."
         self.assertEqual(sanitize_user_input(clean_text), clean_text)
 
 
@@ -93,7 +97,7 @@ class TestPIISanitizer(unittest.TestCase):
     def test_gatekeeper_normal_execution(self):
         """Verify that safe inputs return successfully via the gatekeeper wrapper."""
         raw_text = "Operator: John Doe reported a LHD Loader serial SN-58392019 status on 2026-07-03."
-        expected = "Operator: [NAME_MASKED] reported a LHD Loader serial SN-58392019 status on 2026-07-03."
+        expected = "Operator: [WORKER_NAME] reported a LHD Loader serial SN-58392019 status on 2026-07-03."
         self.assertEqual(gatekeeper_wrapper(raw_text), expected)
 
     def test_gatekeeper_raises_security_exception(self):
