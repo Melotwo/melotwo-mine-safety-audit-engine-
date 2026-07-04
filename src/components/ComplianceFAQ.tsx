@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import { Search, ChevronDown, FileText, ShieldCheck, HelpCircle, Activity } from 'lucide-react';
+import { Search, ChevronDown, ShieldCheck, HelpCircle, Activity, FileText } from 'lucide-react';
 
 export interface FAQItem {
   id: string;
@@ -43,7 +43,7 @@ const FAQ_DATA: FAQItem[] = [
 export const ComplianceFAQ: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<string>('All');
-  const [expandedId, setExpandedId] = useState<string | null>('sans-fr-fabrics'); // default-expand the first item for rich initial layout
+  const [expandedId, setExpandedId] = useState<string | null>('sans-fr-fabrics');
 
   // Get unique categories for tab filter
   const categories = useMemo(() => {
@@ -110,7 +110,7 @@ export const ComplianceFAQ: React.FC = () => {
           />
         </div>
 
-        {/* Category Tabs */}
+        {/* Category Tabs with wrapping flex and enhanced contrast badges */}
         <div className="md:col-span-5 flex flex-wrap items-center gap-2">
           {categories.map((cat) => (
             <button
@@ -158,7 +158,7 @@ export const ComplianceFAQ: React.FC = () => {
                         </span>
                       )}
                     </div>
-                    {/* long-tail search question formatted as an H3 block */}
+                    {/* H3 Search Engine Friendly Header */}
                     <h3 className="text-slate-200 group-hover:text-white font-medium text-sm md:text-base leading-relaxed tracking-tight">
                       {faq.question}
                     </h3>
@@ -203,7 +203,7 @@ export const ComplianceFAQ: React.FC = () => {
         )}
       </div>
 
-      {/* Decorative Footer info */}
+      {/* High-Contrast Bottom Footer Layer */}
       <div className="mt-8 pt-6 border-t border-slate-800/80 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-slate-300 font-medium">
         <div>
           <span>Integrated with </span>
