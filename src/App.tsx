@@ -5312,6 +5312,17 @@ const SafetyInspectorPage: React.FC<SafetyInspectorPageProps> = ({ setPage }) =>
     const [history, setHistory] = useState<InspectionHistoryItem[]>([]);
     const [historySearchTerm, setHistorySearchTerm] = useState('');
 
+    // Usage Tracking States
+    const [generationCount, setGenerationCount] = useState<number>(() => {
+        try {
+            const saved = localStorage.getItem('melotwo_free_inspection_count');
+            return saved ? parseInt(saved, 10) : 0;
+        } catch (e) {
+            return 0;
+        }
+    });
+    const [showUpgradeModal, setShowUpgradeModal] = useState(false);
+
     // API Key states & configuration
     const [userApiKey, setUserApiKey] = useState(() => {
         return typeof localStorage !== 'undefined' ? localStorage.getItem('melotwo_user_api_key') || '' : '';
@@ -5469,6 +5480,18 @@ const SafetyInspectorPage: React.FC<SafetyInspectorPageProps> = ({ setPage }) =>
             setError('Please enter a scenario.'); 
             return; 
         }
+
+        // Check if user has exceeded the 3 free inspection generations limit
+        if (generationCount >= 3) {
+            setShowUpgradeModal(true);
+            return;
+        }
+
+        // Increment free inspection usage count
+        const nextCount = generationCount + 1;
+        setGenerationCount(nextCount);
+        localStorage.setItem('melotwo_free_inspection_count', nextCount.toString());
+
         setLoading(true); 
         setError(null);
 
@@ -5697,6 +5720,16 @@ const SafetyInspectorPage: React.FC<SafetyInspectorPageProps> = ({ setPage }) =>
                                     </div>
 
                                     <div className="flex flex-col gap-3 pt-2">
+                                        <div className="flex items-center justify-between px-3.5 py-2.5 bg-slate-50 rounded-xl border border-gray-100 text-xs">
+                                            <div className="flex items-center gap-2">
+                                                <span className="w-2 h-2 rounded-full bg-indigo-500 animate-pulse" />
+                                                <span className="text-gray-600 font-medium font-sans">MeloTwo Compliance Credits</span>
+                                            </div>
+                                            <span className="font-mono font-bold text-indigo-600">
+                                                {generationCount >= 3 ? '0 remaining' : `${3 - generationCount} of 3 free left`}
+                                            </span>
+                                        </div>
+
                                         <div className="flex gap-3">
                                             <button 
                                                 type="button" 
@@ -5927,6 +5960,60 @@ const SafetyInspectorPage: React.FC<SafetyInspectorPageProps> = ({ setPage }) =>
                     </div>
                 </div>
             </div>
+
+            {/* Premium Upgrade Modal */}
+            {showUpgradeModal && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md animate-fade-in">
+                    <div className="bg-slate-900 border border-slate-800 rounded-3xl p-6 md:p-8 max-w-md w-full shadow-2xl relative text-center">
+                        <button 
+                            type="button"
+                            onClick={() => setShowUpgradeModal(false)}
+                            className="absolute top-4 right-4 text-slate-400 hover:text-white transition-colors p-2 cursor-pointer"
+                        >
+                            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                            </svg>
+                        </button>
+
+                        <div className="mx-auto w-16 h-16 bg-amber-500/10 border border-amber-500/20 rounded-2xl flex items-center justify-center mb-6">
+                            <svg className="w-8 h-8 text-amber-500 animate-pulse" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                            </svg>
+                        </div>
+
+                        <h3 className="text-xl font-bold text-white tracking-tight">Free Audit Limit Reached</h3>
+                        <p className="text-sm text-slate-400 mt-2 mb-6 leading-relaxed">
+                            You have consumed all <strong className="text-amber-500">3 free compliance credits</strong> allocated to your trial session. Upgrade to a premium plan for unlimited real-time SANS and POPIA audit ledger generations.
+                        </p>
+
+                        <div className="space-y-3">
+                            <button
+                                type="button"
+                                onClick={() => {
+                                    alert('Thank you for your interest! This placeholder action represents initiating a checkout session for MeloTwo Pro.');
+                                }}
+                                className="w-full inline-flex items-center justify-center px-6 py-3 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-slate-950 font-black text-sm uppercase tracking-wider rounded-xl shadow-lg shadow-amber-500/10 transition-all cursor-pointer"
+                            >
+                                Upgrade to Premium
+                            </button>
+                            <button
+                                type="button"
+                                onClick={() => setShowUpgradeModal(false)}
+                                className="w-full inline-flex items-center justify-center px-6 py-3 bg-slate-800 hover:bg-slate-700 text-slate-300 font-semibold text-xs uppercase tracking-wider rounded-xl transition-all cursor-pointer"
+                            >
+                                Continue with Limited View
+                            </button>
+                        </div>
+
+                        <div className="mt-6 pt-4 border-t border-slate-800/60 flex items-center justify-center gap-2 text-[10px] text-slate-500 font-mono">
+                            <svg className="w-4 h-4 text-emerald-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+                            </svg>
+                            <span>Secure Checkout Powered by Stripe</span>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 };
