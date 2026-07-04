@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import { Search, ChevronDown, ChevronUp, FileText, ShieldCheck, HelpCircle, Activity } from 'lucide-react';
+import { Search, ChevronDown, FileText, ShieldCheck, HelpCircle, Activity } from 'lucide-react';
 
 export interface FAQItem {
   id: string;
