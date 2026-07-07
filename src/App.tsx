@@ -4473,10 +4473,10 @@ const LandingPage: React.FC<LandingPageProps> = ({ currentPage, setPage, setIsDe
     };
 
     return (
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-6 pb-24">
+        <div className="w-full px-4 md:px-0 max-w-7xl mx-auto pt-6 pb-24">
             
             {/* Highly Optimized Two-Column B2B CRO Hero Section */}
-            <div className="bg-slate-950 rounded-3xl border border-slate-800/80 relative overflow-hidden mb-16 shadow-[0_20px_50px_rgba(0,0,0,0.4)]">
+            <div className="bg-slate-950 rounded-3xl border border-slate-800/80 relative overflow-hidden mb-16 shadow-[0_20px_50px_rgba(0,0,0,0.4)] w-full">
                 
                 {/* Neon safety line at the very top of the bento-hero */}
                 <div className="absolute top-0 inset-x-0 h-1 bg-gradient-to-r from-amber-500 via-indigo-500 to-amber-500"></div>
@@ -4484,18 +4484,19 @@ const LandingPage: React.FC<LandingPageProps> = ({ currentPage, setPage, setIsDe
                 {/* Subdued blueprint technical mesh overlay */}
                 <div className="absolute inset-0 bg-[linear-gradient(to_right,#1e293b_1px,transparent_1px),linear-gradient(to_bottom,#1e293b_1px,transparent_1px)] bg-[size:3rem_3rem] [mask-image:radial-gradient(ellipse_60%_50%_at_50%_40%,#000_70%,transparent_100%)] opacity-20 pointer-events-none"></div>
 
-                <div className="grid lg:grid-cols-12 gap-12 p-8 md:p-12 lg:p-16 relative z-10 items-center">
+                <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 p-5 sm:p-8 md:p-12 lg:p-16 relative z-10 items-center">
                     
                     {/* Left Column: Core Value Proposition & CRO Trust Indicators */}
-                    <div className="lg:col-span-6 space-y-8 text-left">
+                    <div className="lg:col-span-6 space-y-6 md:space-y-8 text-left">
                         
                         <div className="inline-flex items-center gap-2 px-3 py-1 text-[10px] font-black bg-amber-500/10 border border-amber-500/30 text-amber-500 rounded-full tracking-wider uppercase shadow-sm">
                             <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse"></span>
                             SANS 10330, SANS 10142 & SANS 10049 COMPLIANT
                         </div>
 
-                        <h1 className="text-4xl md:text-5xl font-black text-white tracking-tight leading-none">
-                            S-Tier Mine Compliance <span className="text-transparent bg-clip-text bg-gradient-to-r from-amber-400 to-amber-200 block mt-2">&amp; PPE Material Auditing</span>
+                        <h1 className="text-3xl sm:text-4xl md:text-5xl font-black text-white tracking-tight leading-tight sm:leading-none">
+                            <span className="block text-transparent bg-clip-text bg-gradient-to-r from-amber-400 via-amber-300 to-amber-200">S-Tier Mine Compliance</span>
+                            <span className="block mt-1 sm:mt-2 text-white">&amp; PPE Material Auditing</span>
                         </h1>
 
                         <p className="text-slate-300 text-sm md:text-base leading-relaxed max-w-xl font-medium">
@@ -4849,12 +4850,15 @@ const LandingPage: React.FC<LandingPageProps> = ({ currentPage, setPage, setIsDe
                                             />
                                         </div>
 
-                                        <button
-                                            type="submit"
-                                            className="w-full inline-flex items-center justify-center px-4 py-3.5 bg-amber-500 hover:bg-amber-600 text-slate-950 font-black text-xs uppercase tracking-widest rounded-xl shadow-lg shadow-amber-500/10 transition-all cursor-pointer"
-                                        >
-                                            Generate Compliance Assessment Draft
-                                        </button>
+                                        <div className="flex flex-col items-center justify-center pt-2">
+                                            <button
+                                                type="submit"
+                                                className="w-full inline-flex items-center justify-center px-6 py-4 bg-gradient-to-r from-amber-500 to-amber-400 hover:from-amber-600 hover:to-amber-500 text-slate-950 font-black text-xs sm:text-sm uppercase tracking-widest rounded-xl shadow-[0_4px_20px_rgba(245,158,11,0.3)] hover:shadow-[0_4px_25px_rgba(245,158,11,0.4)] active:scale-[0.98] transition-all cursor-pointer border border-amber-300/20"
+                                            >
+                                                <Zap className="w-4 h-4 mr-2 text-slate-950 animate-pulse" />
+                                                Generate Compliance Assessment Draft
+                                            </button>
+                                        </div>
                                         
                                         <p className="text-[10px] text-slate-500 leading-normal text-center">
                                             Instantly compiles custom compliance summaries without active staging setups.
