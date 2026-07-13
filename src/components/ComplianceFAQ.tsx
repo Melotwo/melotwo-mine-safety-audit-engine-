@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import { Search, ChevronDown, ShieldCheck, HelpCircle, Activity, FileText } from 'lucide-react';
+import { Search, ChevronDown, ChevronUp, FileText, ShieldCheck, HelpCircle, Activity } from 'lucide-react';
 
 export interface FAQItem {
   id: string;
@@ -43,7 +43,7 @@ const FAQ_DATA: FAQItem[] = [
 export const ComplianceFAQ: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<string>('All');
-  const [expandedId, setExpandedId] = useState<string | null>('sans-fr-fabrics');
+  const [expandedId, setExpandedId] = useState<string | null>('sans-fr-fabrics'); // default-expand the first item for rich initial layout
 
   // Get unique categories for tab filter
   const categories = useMemo(() => {
@@ -110,16 +110,16 @@ export const ComplianceFAQ: React.FC = () => {
           />
         </div>
 
-        {/* Category Tabs with wrapping flex and enhanced contrast badges */}
-        <div className="md:col-span-5 flex flex-wrap items-center gap-2">
+        {/* Category Tabs */}
+        <div className="md:col-span-5 flex flex-wrap items-center gap-2 md:justify-end">
           {categories.map((cat) => (
             <button
               key={cat}
               onClick={() => setSelectedCategory(cat)}
-              className={`px-3 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap transition-all duration-200 cursor-pointer border ${
+              className={`px-3 py-1.5 rounded-lg text-xs font-bold whitespace-nowrap transition-all duration-200 cursor-pointer border ${
                 selectedCategory === cat
-                  ? 'bg-blue-600/20 text-blue-300 border-blue-500/40 font-bold shadow-[0_0_15px_rgba(59,130,246,0.15)]'
-                  : 'bg-slate-950/60 text-slate-300 border-slate-800 hover:text-white hover:bg-slate-900'
+                  ? 'bg-blue-600 text-white border-blue-400 shadow-[0_0_15px_rgba(59,130,246,0.35)]'
+                  : 'bg-slate-950/80 text-slate-200 border-slate-800 hover:text-white hover:bg-slate-900'
               }`}
             >
               {cat}
@@ -158,7 +158,7 @@ export const ComplianceFAQ: React.FC = () => {
                         </span>
                       )}
                     </div>
-                    {/* H3 Search Engine Friendly Header */}
+                    {/* long-tail search question formatted as an H3 block */}
                     <h3 className="text-slate-200 group-hover:text-white font-medium text-sm md:text-base leading-relaxed tracking-tight">
                       {faq.question}
                     </h3>
@@ -203,15 +203,15 @@ export const ComplianceFAQ: React.FC = () => {
         )}
       </div>
 
-      {/* High-Contrast Bottom Footer Layer */}
-      <div className="mt-8 pt-6 border-t border-slate-800/80 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-slate-300 font-medium">
-        <div>
-          <span>Integrated with </span>
-          <span className="font-mono text-white bg-slate-950 px-2 py-0.5 rounded border border-slate-800">MeloTwo Audit Core v1.0.4</span>
+      {/* Decorative Footer info */}
+      <div className="mt-8 pt-6 border-t border-slate-700/60 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-white font-bold">
+        <div className="flex items-center gap-1.5">
+          <span className="text-slate-200">Integrated with </span>
+          <span className="font-mono text-white bg-slate-950 px-2.5 py-1 rounded-xl border border-slate-700 shadow-[0_0_10px_rgba(255,255,255,0.05)]">MeloTwo Audit Core v1.0.4</span>
         </div>
-        <div className="flex items-center gap-1.5 text-slate-200">
-          <span className="h-2.5 w-2.5 rounded-full bg-emerald-400 shadow-[0_0_10px_rgba(52,211,153,0.5)] animate-pulse"></span>
-          <span className="font-semibold text-white">SANS Regulatory Indexes Current</span>
+        <div className="flex items-center gap-2 bg-slate-950/80 px-3 py-1.5 border border-slate-700/80 rounded-2xl shadow-[0_0_15px_rgba(16,185,129,0.1)]">
+          <span className="h-2.5 w-2.5 rounded-full bg-emerald-400 shadow-[0_0_12px_#34d399] animate-pulse"></span>
+          <span className="font-black text-emerald-400 font-mono tracking-wide">SANS REGULATORY INDEXES ACTIVE</span>
         </div>
       </div>
     </div>
