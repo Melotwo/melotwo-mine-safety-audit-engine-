@@ -16,28 +16,16 @@ import {
     ComplianceLedgerRow 
 } from './lib/sheetsIntegration';
 import { 
-    Shield, 
-    FileText, 
-    Loader2, 
-    Zap, 
-    Settings, 
-    Clock, 
-    Trash2, 
-    Search, 
-    AlertTriangle, 
     Database, 
     RefreshCw, 
     Upload, 
-    User, 
     LogOut, 
     Sparkles, 
     CheckCircle2, 
-    Flame, 
     AlertOctagon, 
     Download, 
     ChevronRight, 
-    Lock, 
-    Cpu 
+    Lock 
 } from 'lucide-react';
 // --- Inline Types ---
 export type Page = 'home' | 'solutions' | 'inspector';
