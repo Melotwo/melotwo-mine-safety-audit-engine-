@@ -3,8 +3,18 @@ import { getAuth, signInWithPopup, GoogleAuthProvider, onAuthStateChanged, User 
 import { getFirestore, doc, setDoc, getDoc } from 'firebase/firestore';
 import firebaseConfig from '../../firebase-applet-config.json';
 
-// Initialize Firebase
-const app = initializeApp(firebaseConfig);
+// Initialize Firebase with fallback for environments where config is missing/empty during compilation
+const hasValidConfig = firebaseConfig && (firebaseConfig as any).apiKey && (firebaseConfig as any).projectId;
+const finalConfig = hasValidConfig ? firebaseConfig : {
+  apiKey: "mock-api-key-for-build-safety",
+  authDomain: "mock-auth-domain",
+  projectId: "mock-project-id",
+  storageBucket: "mock-storage-bucket",
+  messagingSenderId: "mock-sender-id",
+  appId: "mock-app-id"
+};
+
+const app = initializeApp(finalConfig);
 export const auth = getAuth(app);
 export const db = getFirestore(app);
 
