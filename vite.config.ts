@@ -28,8 +28,10 @@ export default defineConfig(({ mode }) => {
     'src/Components/SafetyInspectorPage',
   ];
 
+  const baseDir = process.cwd() || (typeof __dirname !== 'undefined' ? __dirname : '.');
+
   for (const p of possiblePaths) {
-    const absoluteP = path.resolve(__dirname, p);
+    const absoluteP = path.resolve(baseDir, p);
     if (fs.existsSync(absoluteP)) {
       safetyInspectorPath = absoluteP;
       break;
@@ -38,7 +40,7 @@ export default defineConfig(({ mode }) => {
 
   // Fallback to auto-generated stub if not found (to prevent compile / CI-CD pipeline failure on GitHub Actions)
   if (!safetyInspectorPath) {
-    const stubDir = path.resolve(__dirname, 'node_modules/.tmp-safety');
+    const stubDir = path.resolve(baseDir, 'node_modules/.tmp-safety');
     if (!fs.existsSync(stubDir)) {
       fs.mkdirSync(stubDir, { recursive: true });
     }
