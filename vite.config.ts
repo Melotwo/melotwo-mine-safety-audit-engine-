@@ -1,32 +1,91 @@
-1s
-1s
-0s
-1m 33s
-1s
-Run npm run build
+import { defineConfig, loadEnv } from 'vite';
+import react from '@vitejs/plugin-react';
+import tailwindcss from '@tailwindcss/vite';
+import fs from 'fs';
+import path from 'path';
 
-> melotwo-safety@1.0.0 prebuild
-> node -e "const fs = require('fs'); if (!fs.existsSync('firebase-applet-config.json')) fs.writeFileSync('firebase-applet-config.json', '{}');"
+// Helper to find a file path case-insensitively by walking the directory tree from the workspace root
+function resolvePathCaseInsensitive(targetPath: string): string | null {
+  try {
+    const baseDir = process.cwd();
+    // Get relative path from workspace root
+    const relative = path.relative(baseDir, targetPath);
+    if (relative.startsWith('..') || path.isAbsolute(relative)) {
+      // If it's outside the workspace, don't attempt case-insensitive resolution
+      return fs.existsSync(targetPath) ? targetPath : null;
+    }
 
+    const segments = relative.split(/[\\/]/);
+    let current = baseDir;
 
-> melotwo-safety@1.0.0 build
-> vite build && esbuild server.ts --bundle --platform=node --format=cjs --packages=external --sourcemap --outfile=dist/server.cjs
+    for (const segment of segments) {
+      if (!segment || segment === '.') continue;
+      if (!fs.existsSync(current)) return null;
+      
+      const stat = fs.statSync(current);
+      if (!stat.isDirectory()) return null;
 
-vite v5.4.21 building for production...
-transforming...
-✓ 22 modules transformed.
-x Build failed in 598ms
-error during build:
-Could not resolve "./pages/SafetyInspectorPage" from "src/App.tsx"
-file: /home/runner/work/melotwo-mine-safety-audit-engine-/melotwo-mine-safety-audit-engine-/src/App.tsx
-    at getRollupError (file:///home/runner/work/melotwo-mine-safety-audit-engine-/melotwo-mine-safety-audit-engine-/node_modules/rollup/dist/es/shared/parseAst.js:317:41)
-    at error (file:///home/runner/work/melotwo-mine-safety-audit-engine-/melotwo-mine-safety-audit-engine-/node_modules/rollup/dist/es/shared/parseAst.js:313:42)
-    at ModuleLoader.handleInvalidResolvedId (file:///home/runner/work/melotwo-mine-safety-audit-engine-/melotwo-mine-safety-audit-engine-/node_modules/rollup/dist/es/shared/node-entry.js:22167:24)
-    at file:///home/runner/work/melotwo-mine-safety-audit-engine-/melotwo-mine-safety-audit-engine-/node_modules/rollup/dist/es/shared/node-entry.js:22127:26
-Error: Process completed with exit code 1.
-0s
-0s
-0s
-0s
-0s
-0s
+      const files = fs.readdirSync(current);
+      const matched = files.find(f => f.toLowerCase() === segment.toLowerCase());
+      if (!matched) return null;
+      current = path.join(current, matched);
+    }
+    return current;
+  } catch (err) {
+    return fs.existsSync(targetPath) ? targetPath : null;
+  }
+}
+
+// Custom plugin to resolve imports case-insensitively
+const caseInsensitiveResolver = () => {
+  return {
+    name: 'case-insensitive-resolver',
+    resolveId(source: string, importer: string) {
+      if (!importer) return null;
+
+      // We only care about resolving local/relative file imports
+      if (source.startsWith('.') || source.startsWith('/')) {
+        // Resolve target candidate path relative to importer
+        const importerDir = path.dirname(importer);
+        const targetPath = path.resolve(importerDir, source);
+
+        // Try standard React/TypeScript extensions
+        const extensions = ['.tsx', '.ts', '.jsx', '.js', ''];
+        for (const ext of extensions) {
+          const candidate = targetPath + ext;
+          const resolved = resolvePathCaseInsensitive(candidate);
+          if (resolved && fs.existsSync(resolved) && fs.statSync(resolved).isFile()) {
+            return resolved;
+          }
+        }
+      }
+      return null;
+    }
+  };
+};
+
+// https://vitejs.dev/config/
+export default defineConfig(({ mode }) => {
+  // Load environment variables. The 3rd parameter '' loads all env variables regardless of the prefix.
+  const env = loadEnv(mode, process.cwd(), '');
+  
+  // Resolve key from environment sources
+  const geminiApiKey = env.VITE_GEMINI_API_KEY || env.GEMINI_API_KEY || env.API_KEY || process.env.VITE_GEMINI_API_KEY || process.env.GEMINI_API_KEY || process.env.API_KEY || '';
+  const gaMeasurementId = env.VITE_GA_MEASUREMENT_ID || env.GA_MEASUREMENT_ID || process.env.VITE_GA_MEASUREMENT_ID || process.env.GA_MEASUREMENT_ID || 'G-MELOSAFE77';
+
+  return {
+    plugins: [
+      react(),
+      tailwindcss(),
+      caseInsensitiveResolver()
+    ],
+    build: {
+      outDir: 'dist',
+      assetsDir: 'assets',
+    },
+    define: {
+      'import.meta.env.VITE_GEMINI_API_KEY': JSON.stringify(geminiApiKey),
+      'import.meta.env.VITE_GA_MEASUREMENT_ID': JSON.stringify(gaMeasurementId)
+    }
+  };
+});
