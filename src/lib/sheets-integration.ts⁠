@@ -14,9 +14,37 @@ const finalConfig = hasValidConfig ? firebaseConfig : {
   appId: "mock-app-id"
 };
 
-const app = initializeApp(finalConfig);
-export const auth = getAuth(app);
-export const db = getFirestore(app);
+let appInstance: any = null;
+let authInstance: any = null;
+let dbInstance: any = null;
+
+export const getApp = () => {
+  if (!appInstance) {
+    appInstance = initializeApp(finalConfig);
+  }
+  return appInstance;
+};
+
+export const getAuthInstance = () => {
+  if (!authInstance) {
+    authInstance = getAuth(getApp());
+  }
+  return authInstance;
+};
+
+export const getDbInstance = () => {
+  if (!dbInstance) {
+    dbInstance = getFirestore(getApp());
+  }
+  return dbInstance;
+};
+
+// Export properties as getters for full backwards compatibility
+export const auth = {
+  get signOut() {
+    return getAuthInstance().signOut.bind(getAuthInstance());
+  }
+};
 
 // Google OAuth Provider with Workspace Scopes
 export const googleProvider = new GoogleAuthProvider();
@@ -45,7 +73,7 @@ export const initAuthState = (
   onAuthSuccess: (user: User, token: string) => void,
   onAuthFailure: () => void
 ) => {
-  return onAuthStateChanged(auth, async (user) => {
+  return onAuthStateChanged(getAuthInstance(), async (user) => {
     if (user) {
       if (cachedAccessToken) {
         onAuthSuccess(user, cachedAccessToken);
@@ -68,6 +96,8 @@ export const loginWithGoogle = async (): Promise<{ user: User; accessToken: stri
   if (isSigningIn) return null;
   try {
     isSigningIn = true;
+    const auth = getAuthInstance();
+    const db = getDbInstance();
     const result = await signInWithPopup(auth, googleProvider);
     const credential = GoogleAuthProvider.credentialFromResult(result);
     if (!credential?.accessToken) {
@@ -106,7 +136,7 @@ export const loginWithGoogle = async (): Promise<{ user: User; accessToken: stri
  * Log Out and Clear Session Cache
  */
 export const logoutUser = async () => {
-  await auth.signOut();
+  await getAuthInstance().signOut();
   cachedAccessToken = null;
 };
 
