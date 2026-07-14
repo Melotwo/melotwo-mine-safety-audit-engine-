@@ -38,6 +38,8 @@ export default defineConfig(({ mode }) => {
     }
   }
 
+  console.log('--- SAFETY INSPECTOR RESOLVED PATH:', safetyInspectorPath);
+
   // Fallback to auto-generated stub if not found (to prevent compile / CI-CD pipeline failure on GitHub Actions)
   if (!safetyInspectorPath) {
     const stubDir = path.resolve(baseDir, 'node_modules/.tmp-safety');
@@ -62,20 +64,25 @@ export const SafetyInspectorPage: React.FC<any> = () => {
     safetyInspectorPath = stubPath;
   }
 
+  // Setup alias conditionally - only if the real file is not found (meaning we are using the stub)
+  const alias: Record<string, string> = {};
+  const realFileExists = fs.existsSync(path.resolve(baseDir, 'src/pages/SafetyInspectorPage.tsx'));
+  if (!realFileExists && safetyInspectorPath) {
+    alias['/src/pages/SafetyInspectorPage'] = safetyInspectorPath;
+    alias['/src/Pages/SafetyInspectorPage'] = safetyInspectorPath;
+    alias['./pages/SafetyInspectorPage'] = safetyInspectorPath;
+    alias['./Pages/SafetyInspectorPage'] = safetyInspectorPath;
+    alias['pages/SafetyInspectorPage'] = safetyInspectorPath;
+    alias['Pages/SafetyInspectorPage'] = safetyInspectorPath;
+  }
+
   return {
     plugins: [
       react(),
       tailwindcss(),
     ],
     resolve: {
-      alias: {
-        '/src/pages/SafetyInspectorPage': safetyInspectorPath,
-        '/src/Pages/SafetyInspectorPage': safetyInspectorPath,
-        './pages/SafetyInspectorPage': safetyInspectorPath,
-        './Pages/SafetyInspectorPage': safetyInspectorPath,
-        'pages/SafetyInspectorPage': safetyInspectorPath,
-        'Pages/SafetyInspectorPage': safetyInspectorPath,
-      }
+      alias
     },
     build: {
       outDir: 'dist',
