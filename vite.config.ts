@@ -1,67 +1,35 @@
-import { defineConfig, loadEnv } from 'vite';
-import react from '@vitejs/plugin-react';
-import tailwindcss from '@tailwindcss/vite';
-import fs from 'fs';
-import path from 'path';
+build-and-deploy
+failed now in 1m 45s
 
-// Helper to find a file path case-insensitively to prevent Git casing mismatch issues on case-sensitive filesystems
-function findFileCaseInsensitive(baseDir: string, relativePath: string): string | null {
-  const parts = relativePath.split(/[\\/]/);
-  let currentDir = baseDir;
+2s
+1s
+4s
+1m 34s
+1s
+Run npm run build
 
-  for (let i = 0; i < parts.length; i++) {
-    const part = parts[i].toLowerCase();
-    if (!fs.existsSync(currentDir)) return null;
-    const files = fs.readdirSync(currentDir);
-    const found = files.find(f => f.toLowerCase() === part);
-    if (!found) return null;
-    currentDir = path.join(currentDir, found);
-  }
-  return currentDir;
-}
+> melotwo-safety@1.0.0 prebuild
+> node -e "const fs = require('fs'); if (!fs.existsSync('firebase-applet-config.json')) fs.writeFileSync('firebase-applet-config.json', '{}');"
 
-// https://vitejs.dev/config/
-export default defineConfig(({ mode }) => {
-  // Load environment variables. The 3rd parameter '' loads all env variables regardless of the prefix.
-  const env = loadEnv(mode, process.cwd(), '');
-  
-  // Resolve key from environment sources
-  const geminiApiKey = env.VITE_GEMINI_API_KEY || env.GEMINI_API_KEY || env.API_KEY || process.env.VITE_GEMINI_API_KEY || process.env.GEMINI_API_KEY || process.env.API_KEY || '';
-  const gaMeasurementId = env.VITE_GA_MEASUREMENT_ID || env.GA_MEASUREMENT_ID || process.env.VITE_GA_MEASUREMENT_ID || process.env.GA_MEASUREMENT_ID || 'G-MELOSAFE77';
 
-  const baseDir = process.cwd();
-  const resolvedPath = 
-    findFileCaseInsensitive(baseDir, 'src/pages/safetyinspectorpage.tsx') ||
-    findFileCaseInsensitive(baseDir, 'src/components/safetyinspectorpage.tsx');
+> melotwo-safety@1.0.0 build
+> vite build && esbuild server.ts --bundle --platform=node --format=cjs --packages=external --sourcemap --outfile=dist/server.cjs
 
-  const alias: Record<string, string> = {};
-  if (resolvedPath) {
-    alias['/src/pages/SafetyInspectorPage'] = resolvedPath;
-    alias['/src/Pages/SafetyInspectorPage'] = resolvedPath;
-    alias['./pages/SafetyInspectorPage'] = resolvedPath;
-    alias['./Pages/SafetyInspectorPage'] = resolvedPath;
-    alias['pages/SafetyInspectorPage'] = resolvedPath;
-    alias['Pages/SafetyInspectorPage'] = resolvedPath;
-    alias['./pages/safetyInspectorPage'] = resolvedPath;
-    alias['/src/pages/safetyInspectorPage'] = resolvedPath;
-  }
-
-  return {
-    plugins: [
-      react(),
-      tailwindcss(),
-    ],
-    resolve: {
-      alias
-    },
-    build: {
-      outDir: 'dist',
-      assetsDir: 'assets',
-    },
-    define: {
-      'import.meta.env.VITE_GEMINI_API_KEY': JSON.stringify(geminiApiKey),
-      'import.meta.env.VITE_GA_MEASUREMENT_ID': JSON.stringify(gaMeasurementId)
-    }
-  };
-});
-
+vite v5.4.21 building for production...
+transforming...
+✓ 31 modules transformed.
+x Build failed in 572ms
+error during build:
+Could not resolve "./pages/SafetyInspectorPage" from "src/App.tsx"
+file: /home/runner/work/melotwo-mine-safety-audit-engine-/melotwo-mine-safety-audit-engine-/src/App.tsx
+    at getRollupError (file:///home/runner/work/melotwo-mine-safety-audit-engine-/melotwo-mine-safety-audit-engine-/node_modules/rollup/dist/es/shared/parseAst.js:317:41)
+    at error (file:///home/runner/work/melotwo-mine-safety-audit-engine-/melotwo-mine-safety-audit-engine-/node_modules/rollup/dist/es/shared/parseAst.js:313:42)
+    at ModuleLoader.handleInvalidResolvedId (file:///home/runner/work/melotwo-mine-safety-audit-engine-/melotwo-mine-safety-audit-engine-/node_modules/rollup/dist/es/shared/node-entry.js:22167:24)
+    at file:///home/runner/work/melotwo-mine-safety-audit-engine-/melotwo-mine-safety-audit-engine-/node_modules/rollup/dist/es/shared/node-entry.js:22127:26
+Error: Process completed with exit code 1.
+0s
+0s
+0s
+0s
+0s
+0s
