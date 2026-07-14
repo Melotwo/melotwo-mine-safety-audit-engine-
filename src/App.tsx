@@ -4418,6 +4418,16 @@ const LandingPage: React.FC<LandingPageProps> = ({ currentPage, setPage, setIsDe
             company: operationName || 'Anonymous Mine'
         });
 
+        // Explicit event tracking for 'Generate Compliance Assessment Draft' to measure form conversion rates
+        trackGA4Event('generate_compliance_draft', {
+            standard: selectedStandard,
+            email_domain: leadEmail.split('@')[1] || '',
+            company: operationName || 'Anonymous Mine',
+            conversion_type: 'draft_generation',
+            value: 1.0,
+            currency: 'ZAR'
+        });
+
         // Step-by-step loading simulation to maximize time-on-page and engagement
         const interval = setInterval(() => {
             setSandboxStep((prev) => {
@@ -5446,7 +5456,15 @@ const App: React.FC = () => {
         const pingTimes = [10, 30, 60]; // seconds
         const timers = pingTimes.map(seconds => {
             return setTimeout(() => {
-                trackGA4Event('user_dwell_time', {
+                // Ping unique custom event at 10s, 30s, and 60s using the GA4EventBus
+                GA4EventBus.dispatch(`user_dwell_${seconds}s`, {
+                    seconds_elapsed: seconds,
+                    label: `${seconds}s continuous engagement`,
+                    engagement_level: seconds >= 60 ? 'high' : seconds >= 30 ? 'medium' : 'low'
+                });
+
+                // Also ping general user_dwell_time event for backward-compatibility
+                GA4EventBus.dispatch('user_dwell_time', {
                     seconds_elapsed: seconds,
                     label: `${seconds}s continuous engagement`
                 });
