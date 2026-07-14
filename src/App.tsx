@@ -16,7 +16,7 @@ import {
     fetchLedgerRecords, 
     appendLedgerRecord, 
     ComplianceLedgerRow 
-} from './lib/sheetsIntegration';
+} from './lib/sheets-integration';
 import { 
     Database, 
     RefreshCw, 
