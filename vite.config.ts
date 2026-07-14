@@ -64,10 +64,9 @@ export const SafetyInspectorPage: React.FC<any> = () => {
     safetyInspectorPath = stubPath;
   }
 
-  // Setup alias conditionally - only if the real file is not found (meaning we are using the stub)
+  // Setup alias unconditionally to ensure robust import resolution across all environments
   const alias: Record<string, string> = {};
-  const realFileExists = fs.existsSync(path.resolve(baseDir, 'src/pages/SafetyInspectorPage.tsx'));
-  if (!realFileExists && safetyInspectorPath) {
+  if (safetyInspectorPath) {
     alias['/src/pages/SafetyInspectorPage'] = safetyInspectorPath;
     alias['/src/Pages/SafetyInspectorPage'] = safetyInspectorPath;
     alias['./pages/SafetyInspectorPage'] = safetyInspectorPath;
