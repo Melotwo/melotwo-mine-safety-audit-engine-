@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react';
-import { animate, useMotionValue, useTransform, motion } from 'motion/react';
+import { animate, useMotionValue, useTransform, motion } from 'framer-motion';
 
 interface CountUpProps {
   value: number;
