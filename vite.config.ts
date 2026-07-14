@@ -4,24 +4,26 @@ import tailwindcss from '@tailwindcss/vite';
 import fs from 'fs';
 import path from 'path';
 
-// Helper to find a file path case-insensitively by walking the directory tree from the workspace root
-function resolvePathCaseInsensitive(targetPath: string): string | null {
+// Helper to find a file path case-insensitively starting from the absolute root
+function resolveAbsoluteCaseInsensitive(absolutePath: string): string | null {
   try {
-    const baseDir = process.cwd();
-    // Get relative path from workspace root
-    const relative = path.relative(baseDir, targetPath);
-    if (relative.startsWith('..') || path.isAbsolute(relative)) {
-      // If it's outside the workspace, don't attempt case-insensitive resolution
-      return fs.existsSync(targetPath) ? targetPath : null;
+    const segments = absolutePath.split(/[\\/]/);
+    let current = '';
+    
+    if (path.isAbsolute(absolutePath)) {
+      if (process.platform === 'win32') {
+        current = segments[0] + '\\';
+      } else {
+        current = '/';
+      }
+    } else {
+      current = process.cwd();
     }
 
-    const segments = relative.split(/[\\/]/);
-    let current = baseDir;
-
     for (const segment of segments) {
-      if (!segment || segment === '.') continue;
+      if (!segment || segment.endsWith(':')) continue;
       if (!fs.existsSync(current)) return null;
-      
+
       const stat = fs.statSync(current);
       if (!stat.isDirectory()) return null;
 
@@ -32,7 +34,7 @@ function resolvePathCaseInsensitive(targetPath: string): string | null {
     }
     return current;
   } catch (err) {
-    return fs.existsSync(targetPath) ? targetPath : null;
+    return fs.existsSync(absolutePath) ? absolutePath : null;
   }
 }
 
@@ -40,7 +42,8 @@ function resolvePathCaseInsensitive(targetPath: string): string | null {
 const caseInsensitiveResolver = () => {
   return {
     name: 'case-insensitive-resolver',
-    resolveId(source: string, importer: string) {
+    enforce: 'pre' as const,
+    resolveId(source: string, importer: string | undefined) {
       if (!importer) return null;
 
       // We only care about resolving local/relative file imports
@@ -53,7 +56,7 @@ const caseInsensitiveResolver = () => {
         const extensions = ['.tsx', '.ts', '.jsx', '.js', ''];
         for (const ext of extensions) {
           const candidate = targetPath + ext;
-          const resolved = resolvePathCaseInsensitive(candidate);
+          const resolved = resolveAbsoluteCaseInsensitive(candidate);
           if (resolved && fs.existsSync(resolved) && fs.statSync(resolved).isFile()) {
             return resolved;
           }
@@ -89,3 +92,4 @@ export default defineConfig(({ mode }) => {
     }
   };
 });
+
