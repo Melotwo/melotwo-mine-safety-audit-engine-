@@ -1,6 +1,34 @@
 import { defineConfig, loadEnv } from 'vite';
 import react from '@vitejs/plugin-react';
 import tailwindcss from '@tailwindcss/vite';
+import fs from 'fs';
+import path from 'path';
+
+// Custom plugin to resolve SafetyInspectorPage case-insensitively
+const caseInsensitiveResolver = () => {
+  return {
+    name: 'case-insensitive-resolver',
+    resolveId(source: string, importer: string) {
+      if (source.includes('SafetyInspectorPage') || source.toLowerCase().includes('safetyinspectorpage')) {
+        const baseDir = process.cwd();
+        const possiblePaths = [
+          'src/pages/SafetyInspectorPage.tsx',
+          'src/pages/safetyinspectorpage.tsx',
+          'src/pages/safetyInspectorPage.tsx',
+          'src/components/SafetyInspectorPage.tsx',
+          'src/components/safetyinspectorpage.tsx'
+        ];
+        for (const relPath of possiblePaths) {
+          const absPath = path.resolve(baseDir, relPath);
+          if (fs.existsSync(absPath)) {
+            return absPath;
+          }
+        }
+      }
+      return null;
+    }
+  };
+};
 
 // https://vitejs.dev/config/
 export default defineConfig(({ mode }) => {
@@ -15,6 +43,7 @@ export default defineConfig(({ mode }) => {
     plugins: [
       react(),
       tailwindcss(),
+      caseInsensitiveResolver()
     ],
     build: {
       outDir: 'dist',
