@@ -260,6 +260,32 @@ export interface GA4Event {
 
 const analyticsListeners = new Set<(event: GA4Event) => void>();
 
+// Dynamically initialize Google Tag (gtag.js)
+export const GA_MEASUREMENT_ID = (import.meta.env && import.meta.env.VITE_GA_MEASUREMENT_ID) || 'G-MELOSAFE77';
+
+if (typeof window !== 'undefined') {
+  (window as any).dataLayer = (window as any).dataLayer || [];
+  (window as any).gtag = function () {
+    (window as any).dataLayer.push(arguments);
+  };
+
+  // Only load script if not already present
+  if (!document.getElementById('google-tag-manager-gtag')) {
+    const script = document.createElement('script');
+    script.id = 'google-tag-manager-gtag';
+    script.async = true;
+    script.src = `https://www.googletagmanager.com/gtag/js?id=${GA_MEASUREMENT_ID}`;
+    document.head.appendChild(script);
+
+    (window as any).gtag('js', new Date());
+    (window as any).gtag('config', GA_MEASUREMENT_ID, {
+      send_page_view: false, // Page views are tracked manually on route/tab transitions
+      cookie_flags: 'SameSite=None;Secure' // Required for preview environment iframe safety
+    });
+    console.log(`[GA4 Engine] Successfully loaded gtag.js script for ${GA_MEASUREMENT_ID}`);
+  }
+}
+
 export function trackGA4Event(eventName: string, params?: Record<string, any>) {
   const newEvent: GA4Event = {
     id: `ev-${Date.now()}-${Math.random().toString(36).substr(2, 4)}`,
@@ -267,6 +293,17 @@ export function trackGA4Event(eventName: string, params?: Record<string, any>) {
     params,
     timestamp: new Date().toISOString()
   };
+
+  // Live dispatch to global Google Analytics (gtag.js)
+  if (typeof window !== 'undefined' && (window as any).gtag) {
+    try {
+      (window as any).gtag('event', eventName, params);
+    } catch (err) {
+      console.error('[GA4 Engine] Error calling gtag event:', err);
+    }
+  }
+
+  // Notify local telemetry console
   analyticsListeners.forEach(listener => {
     try {
       listener(newEvent);
@@ -5341,6 +5378,36 @@ const App: React.FC = () => {
         // Run with standard local session ID
         setUserId(crypto.randomUUID());
         setIsAuthReady(true);
+    }, []);
+
+    useEffect(() => {
+        // Track GA4 Page View on route/tab change
+        const pageTitle = currentPage.charAt(0).toUpperCase() + currentPage.slice(1) + ' | Melotwo AI Safety Inspector';
+        if (typeof document !== 'undefined') {
+            document.title = pageTitle;
+        }
+        trackGA4Event('page_view', {
+            page_title: pageTitle,
+            page_location: typeof window !== 'undefined' ? window.location.href : '',
+            page_path: `/${currentPage}`
+        });
+    }, [currentPage]);
+
+    // Dwell time tracking for Nav Boost engagement laws
+    useEffect(() => {
+        const pingTimes = [10, 30, 60]; // seconds
+        const timers = pingTimes.map(seconds => {
+            return setTimeout(() => {
+                trackGA4Event('user_dwell_time', {
+                    seconds_elapsed: seconds,
+                    label: `${seconds}s continuous engagement`
+                });
+            }, seconds * 1000);
+        });
+
+        return () => {
+            timers.forEach(timerId => clearTimeout(timerId));
+        };
     }, []);
 
     const renderPage = useMemo(() => {
