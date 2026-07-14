@@ -258,8 +258,6 @@ export interface GA4Event {
   timestamp: string;
 }
 
-const analyticsListeners = new Set<(event: GA4Event) => void>();
-
 // Dynamically initialize Google Tag (gtag.js)
 export const GA_MEASUREMENT_ID = (import.meta.env && import.meta.env.VITE_GA_MEASUREMENT_ID) || 'G-MELOSAFE77';
 
@@ -286,38 +284,81 @@ if (typeof window !== 'undefined') {
   }
 }
 
-export function trackGA4Event(eventName: string, params?: Record<string, any>) {
-  const newEvent: GA4Event = {
-    id: `ev-${Date.now()}-${Math.random().toString(36).substr(2, 4)}`,
-    eventName,
-    params,
-    timestamp: new Date().toISOString()
-  };
+// Single Event Bus Class for GA4 Telemetry and Dispatching
+class GA4EventBusClass {
+  private listeners = new Set<(event: GA4Event) => void>();
+  private eventHistory: GA4Event[] = [];
 
-  // Live dispatch to global Google Analytics (gtag.js)
-  if (typeof window !== 'undefined' && (window as any).gtag) {
-    try {
-      (window as any).gtag('event', eventName, params);
-    } catch (err) {
-      console.error('[GA4 Engine] Error calling gtag event:', err);
+  dispatch(eventName: string, params?: Record<string, any>) {
+    const newEvent: GA4Event = {
+      id: `ev-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
+      eventName,
+      params,
+      timestamp: new Date().toISOString()
+    };
+
+    // Store in historical record to prevent 0-events display on late-subscribing components
+    this.eventHistory.push(newEvent);
+    if (this.eventHistory.length > 50) {
+      this.eventHistory.shift();
     }
+
+    // Dispatch to official gtag if available
+    if (typeof window !== 'undefined' && (window as any).gtag) {
+      try {
+        (window as any).gtag('event', eventName, params);
+      } catch (err) {
+        console.error('[GA4 Engine] Error calling gtag event:', err);
+      }
+    }
+
+    // Broadcast to all active subscribers
+    this.listeners.forEach(listener => {
+      try {
+        listener(newEvent);
+      } catch (e) {
+        console.error("Error in GA4 event bus listener:", e);
+      }
+    });
   }
 
-  // Notify local telemetry console
-  analyticsListeners.forEach(listener => {
-    try {
-      listener(newEvent);
-    } catch (e) {
-      console.error("Error in GA4 listener:", e);
+  subscribe(callback: (event: GA4Event) => void, replayHistory: boolean = true): () => void {
+    this.listeners.add(callback);
+
+    if (replayHistory) {
+      this.eventHistory.forEach(event => {
+        try {
+          callback(event);
+        } catch (e) {
+          console.error("Error replaying GA4 history event:", e);
+        }
+      });
     }
-  });
+
+    return () => {
+      this.listeners.delete(callback);
+    };
+  }
+
+  getHistory(): GA4Event[] {
+    return [...this.eventHistory];
+  }
+
+  clearHistory() {
+    this.eventHistory = [];
+  }
 }
 
-export function subscribeToAnalytics(callback: (event: GA4Event) => void) {
-  analyticsListeners.add(callback);
-  return () => {
-    analyticsListeners.delete(callback);
-  };
+// Singleton Event Bus Instance
+export const GA4EventBus = new GA4EventBusClass();
+
+// Export original helper functions to maintain full backward-compatibility
+export function trackGA4Event(eventName: string, params?: Record<string, any>) {
+  GA4EventBus.dispatch(eventName, params);
+}
+
+export function subscribeToAnalytics(callback: (event: GA4Event) => void, replayHistory: boolean = true) {
+  return GA4EventBus.subscribe(callback, replayHistory);
 }
 
 // --- Compliance Prompt & Redaction Inline Integration ---
@@ -782,14 +823,18 @@ export const INSPECTOR_TEMPLATES: InspectorTemplate[] = [
 // --- Component: GA4MonitorConsole ---
 const GA4MonitorConsole: React.FC = () => {
   const [isOpen, setIsOpen] = useState(false);
-  const [events, setEvents] = useState<GA4Event[]>([]);
+  const [events, setEvents] = useState<GA4Event[]>(() => GA4EventBus.getHistory());
   const consoleEndRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    const unsubscribe = subscribeToAnalytics((newEvent) => {
-      setEvents(prev => [...prev, newEvent].slice(-30)); // Keep last 30 logs
+    // Explicitly subscribe to future events from the single event bus
+    const unsubscribe = GA4EventBus.subscribe((newEvent) => {
+      setEvents(prev => {
+        if (prev.some(e => e.id === newEvent.id)) return prev;
+        return [...prev, newEvent].slice(-30);
+      });
       setIsOpen(true); // Auto-expand when a new event fires to showcase telemetry activity
-    });
+    }, false); // we initialize state directly with getHistory(), so we do not replay history inside the callback to avoid React state batching race conditions
     return () => unsubscribe();
   }, []);
 
@@ -831,7 +876,10 @@ const GA4MonitorConsole: React.FC = () => {
           <div className="bg-slate-900 px-4 py-2 border-b border-slate-800 flex justify-between items-center text-[10px] font-bold text-slate-400 tracking-wider uppercase">
             <span>Live GA4 Event Logger</span>
             <button 
-              onClick={() => setEvents([])} 
+              onClick={() => {
+                setEvents([]);
+                GA4EventBus.clearHistory();
+              }} 
               className="text-slate-500 hover:text-white transition-colors text-[9px]"
             >
               Clear Logs
