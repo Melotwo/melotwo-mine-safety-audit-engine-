@@ -11,7 +11,6 @@ import {
     appendLedgerRecord, 
     ComplianceLedgerRow 
 } from '../lib/sheets-integration';
-
 import { 
     Shield, 
     FileText, 
