@@ -5,7 +5,7 @@ import { ComplianceTrendChart, DailyComplianceData } from './components/Complian
 import { sanitizeInputText } from './utils/sanitizer';
 import { CountUp } from './components/CountUp';
 import { ComplianceFAQ } from './components/ComplianceFAQ';
-import { SafetyInspectorPage } from './pages/SafetyInspectorPage';
+import { SafetyInspectorPage } from './pages/safety-inspector';
 
 
 import { 
@@ -5422,7 +5422,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ currentPage, setPage, setIsDe
 };
 
 // --- Component: SafetyInspectorPage ---
-// Moved to src/pages/SafetyInspectorPage.tsx
+// Moved to src/pages/safety-inspector.tsx
 
 // --- Component: Main App ---
 const App: React.FC = () => {
@@ -5433,8 +5433,11 @@ const App: React.FC = () => {
     const [demoModalTier, setDemoModalTier] = useState<'professional' | 'enterprise' | 'audit'>('professional');
 
     useEffect(() => {
-        // Run with standard local session ID
-        setUserId(crypto.randomUUID());
+        // Run with standard local session ID with fallback for non-secure contexts
+        const generatedId = (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function')
+            ? crypto.randomUUID()
+            : 'session_' + Math.random().toString(36).substring(2, 15) + '_' + Date.now();
+        setUserId(generatedId);
         setIsAuthReady(true);
     }, []);
 
