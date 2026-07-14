@@ -4,24 +4,52 @@ import tailwindcss from '@tailwindcss/vite';
 import fs from 'fs';
 import path from 'path';
 
-// Custom plugin to resolve SafetyInspectorPage case-insensitively
+// Helper to find a file path case-insensitively by walking the directory tree
+function resolvePathCaseInsensitive(targetPath: string): string | null {
+  const segments = targetPath.split(/[\\/]/);
+  let current = '';
+
+  if (path.isAbsolute(targetPath)) {
+    current = '/';
+  } else {
+    current = process.cwd();
+  }
+
+  for (const segment of segments) {
+    if (!segment) continue;
+    if (!fs.existsSync(current)) return null;
+    
+    const stat = fs.statSync(current);
+    if (!stat.isDirectory()) return null;
+
+    const files = fs.readdirSync(current);
+    const matched = files.find(f => f.toLowerCase() === segment.toLowerCase());
+    if (!matched) return null;
+    current = path.join(current, matched);
+  }
+  return current;
+}
+
+// Custom plugin to resolve imports case-insensitively
 const caseInsensitiveResolver = () => {
   return {
     name: 'case-insensitive-resolver',
     resolveId(source: string, importer: string) {
-      if (source.includes('SafetyInspectorPage') || source.toLowerCase().includes('safetyinspectorpage')) {
-        const baseDir = process.cwd();
-        const possiblePaths = [
-          'src/pages/SafetyInspectorPage.tsx',
-          'src/pages/safetyinspectorpage.tsx',
-          'src/pages/safetyInspectorPage.tsx',
-          'src/components/SafetyInspectorPage.tsx',
-          'src/components/safetyinspectorpage.tsx'
-        ];
-        for (const relPath of possiblePaths) {
-          const absPath = path.resolve(baseDir, relPath);
-          if (fs.existsSync(absPath)) {
-            return absPath;
+      if (!importer) return null;
+
+      // We only care about resolving local/relative file imports
+      if (source.startsWith('.') || source.startsWith('/')) {
+        // Resolve target candidate path relative to importer
+        const importerDir = path.dirname(importer);
+        const targetPath = path.resolve(importerDir, source);
+
+        // Try standard React/TypeScript extensions
+        const extensions = ['.tsx', '.ts', '.jsx', '.js', ''];
+        for (const ext of extensions) {
+          const candidate = targetPath + ext;
+          const resolved = resolvePathCaseInsensitive(candidate);
+          if (resolved && fs.existsSync(resolved) && fs.statSync(resolved).isFile()) {
+            return resolved;
           }
         }
       }
