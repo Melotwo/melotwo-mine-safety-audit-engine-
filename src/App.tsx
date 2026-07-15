@@ -16,7 +16,7 @@ import {
     fetchLedgerRecords, 
     appendLedgerRecord, 
     ComplianceLedgerRow 
-} from './lib/sheetsIntegration';
+} from './lib/sheets-api';
 import { 
     Database, 
     RefreshCw, 
@@ -5283,7 +5283,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ currentPage, setPage, setIsDe
                     <span className="text-xs font-bold text-indigo-600 tracking-wider uppercase bg-indigo-50 px-3 py-1 rounded-full">Suite of Services</span>
                     <h2 className="text-3xl font-extrabold text-gray-900 tracking-tight mt-2">MeloTwo SANS Compliance Solutions</h2>
                     <p className="text-gray-500 text-sm mt-3 leading-relaxed">
-                        Fully aligned with South African National Standards to automate verification, identify operational hazards, and simulate PPE safety boundaries.
+                        MeloTwo is the premier <strong>sheq software south africa</strong>, fully aligned with South African National Standards to automate verification, identify operational hazards, and simulate PPE safety boundaries. Our platform provides high-performance <strong>sans compliance software</strong> and streamlined <strong>ohs compliance audit south africa</strong> tools to protect high-risk personnel.
                     </p>
                 </div>
 
@@ -5296,7 +5296,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ currentPage, setPage, setIsDe
                             </div>
                             <h3 className="text-base font-bold text-gray-950 mb-2">SANS 10330: HACCP / Canteen</h3>
                             <p className="text-xs text-gray-500 leading-relaxed">
-                                Automated audits of catering and portion management. Validates raw poultry storage temperatures, cooked core targets (72°C held for 15s), blast cooling intervals, and critical control points (CCPs).
+                                Powered by robust <strong>haccp compliance software south africa</strong> features. Automates audits of catering and portion management. Validates raw poultry storage temperatures, cooked core targets (72°C held for 15s), blast cooling intervals, and critical control points (CCPs).
                             </p>
                         </div>
                         <div className="mt-8 pt-4 border-t border-gray-50 flex items-center justify-between">
@@ -5371,7 +5371,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ currentPage, setPage, setIsDe
                             </div>
                             <h3 className="text-base font-bold text-gray-950 mb-2">SANS 10108: Hazardous Areas</h3>
                             <p className="text-xs text-gray-500 leading-relaxed">
-                                Heavy-duty explosion protection and zoning compliance audits. Inspects Ex-d flameproof enclosures, Ex-i blue intrinsically safe telemetry wiring, and loop resistance earthing paths.
+                                Heavy-duty explosion protection, zoning compliance, and integrated <strong>mine safety audit software</strong>. Inspects Ex-d flameproof enclosures, Ex-i blue intrinsically safe telemetry wiring, and loop resistance earthing paths.
                             </p>
                         </div>
                         <div className="mt-8 pt-4 border-t border-gray-50 flex items-center justify-between">
