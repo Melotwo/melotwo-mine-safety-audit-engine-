@@ -8,27 +8,6 @@ import { ComplianceFAQ } from './components/ComplianceFAQ';
 import { SafetyInspectorPage } from './pages/safety-inspector';
 
 
-import { 
-    initAuthState, 
-    loginWithGoogle, 
-    logoutUser, 
-    findOrCreateSpreadsheet, 
-    fetchLedgerRecords, 
-    appendLedgerRecord, 
-    ComplianceLedgerRow 
-} from './lib/sheets-api';
-import { 
-    Database, 
-    RefreshCw, 
-    Upload, 
-    LogOut, 
-    Sparkles, 
-    CheckCircle2, 
-    AlertOctagon, 
-    Download, 
-    ChevronRight, 
-    Lock 
-} from 'lucide-react';
 // --- Inline Types ---
 export type Page = 'home' | 'solutions' | 'inspector';
 
