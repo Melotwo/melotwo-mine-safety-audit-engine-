@@ -79,7 +79,8 @@ export default defineConfig(({ mode }) => {
   return {
     plugins: [
       react(),
-      tailwindcss()
+      tailwindcss(),
+      caseInsensitiveResolver()
     ],
     build: {
       outDir: 'dist',
@@ -91,3 +92,4 @@ export default defineConfig(({ mode }) => {
     }
   };
 });
+
