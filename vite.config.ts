@@ -38,17 +38,16 @@ function resolveAbsoluteCaseInsensitive(absolutePath: string): string | null {
   }
 }
 
-// Custom plugin to resolve imports case-insensitively
+// Custom plugin to resolve imports case-insensitively without breaking native resolution
 const caseInsensitiveResolver = () => {
   return {
     name: 'case-insensitive-resolver',
     enforce: 'pre' as const,
     resolveId(source: string, importer: string | undefined) {
-      if (!importer) return null;
+      if (!importer || importer.includes('node_modules')) return null;
 
       // We only care about resolving local/relative file imports
       if (source.startsWith('.') || source.startsWith('/')) {
-        // Resolve target candidate path relative to importer
         const importerDir = path.dirname(importer);
         const targetPath = path.resolve(importerDir, source);
 
@@ -58,7 +57,18 @@ const caseInsensitiveResolver = () => {
           const candidate = targetPath + ext;
           const resolved = resolveAbsoluteCaseInsensitive(candidate);
           if (resolved && fs.existsSync(resolved) && fs.statSync(resolved).isFile()) {
-            return resolved;
+            // Check if exact casing matches disk
+            const candidateResolved = path.resolve(importerDir, source + ext);
+            if (candidateResolved === resolved) {
+              return null; // Let standard Vite resolver handle it
+            }
+
+            // If mismatch, return relative path with correct casing
+            let relativePath = path.relative(importerDir, resolved);
+            if (!relativePath.startsWith('.') && !relativePath.startsWith('/')) {
+              relativePath = './' + relativePath;
+            }
+            return relativePath;
           }
         }
       }
