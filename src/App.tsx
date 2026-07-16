@@ -7,7 +7,6 @@ import { CountUp } from './components/CountUp';
 import { ComplianceFAQ } from './components/ComplianceFAQ';
 import { SafetyInspectorPage } from './pages/safety-inspector';
 
-
 // --- Inline Types ---
 export type Page = 'home' | 'solutions' | 'inspector';
 
