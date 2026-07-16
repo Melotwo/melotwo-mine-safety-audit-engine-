@@ -5,7 +5,7 @@ import { ComplianceTrendChart, DailyComplianceData } from './components/Complian
 import { sanitizeInputText } from './utils/sanitizer';
 import { CountUp } from './components/CountUp';
 import { ComplianceFAQ } from './components/ComplianceFAQ';
-import { SafetyInspectorPage } from './pages/safety-inspector';
+import { SafetyInspectorPage } from './Pages/Safety-Inspector';
 
 // --- Inline Types ---
 export type Page = 'home' | 'solutions' | 'inspector';
@@ -5400,7 +5400,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ currentPage, setPage, setIsDe
 };
 
 // --- Component: SafetyInspectorPage ---
-// Moved to src/pages/safety-inspector.tsx
+// Moved to src/Pages/Safety-Inspector.tsx
 
 // --- Component: Main App ---
 const App: React.FC = () => {
