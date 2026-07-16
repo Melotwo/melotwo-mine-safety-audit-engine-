@@ -5,7 +5,7 @@ import { ComplianceTrendChart, DailyComplianceData } from './components/Complian
 import { sanitizeInputText } from './utils/sanitizer';
 import { CountUp } from './components/CountUp';
 import { ComplianceFAQ } from './components/ComplianceFAQ';
-import { SafetyInspectorPage } from './components/safety-inspector-page';
+import { SafetyInspectorPage } from './components/SafetyInspectorView';
 
 // --- Inline Types ---
 export type Page = 'home' | 'solutions' | 'inspector';
