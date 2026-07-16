@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { jsPDF } from 'jspdf';
-import { ComplianceTrendChart, DailyComplianceData } from './ComplianceTrendChart';
-import { CountUp } from './CountUp';
+import { ComplianceTrendChart, DailyComplianceData } from '../components/ComplianceTrendChart';
+import { CountUp } from '../components/CountUp';
 import { 
     initAuthState, 
     loginWithGoogle, 
