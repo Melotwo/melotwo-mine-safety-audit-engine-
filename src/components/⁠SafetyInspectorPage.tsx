@@ -1,7 +1,8 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { jsPDF } from 'jspdf';
-import { ComplianceTrendChart, DailyComplianceData } from '../components/ComplianceTrendChart';
-import { CountUp } from '../components/CountUp';
+import { ComplianceTrendChart, DailyComplianceData } from './ComplianceTrendChart';
+import { AuditHistoryChart } from './AuditHistoryChart';
+import { CountUp } from './CountUp';
 import { 
     initAuthState, 
     loginWithGoogle, 
@@ -999,22 +1000,8 @@ export const SafetyInspectorPage: React.FC<SafetyInspectorPageProps> = ({ setPag
                     {/* Right Operations: Charts, Red-Team Assessments (5 Cols) */}
                     <div className="lg:col-span-5 flex flex-col gap-6">
 
-                        {/* SANS Audit Compliance Progression Chart */}
-                        <div className="bg-slate-900 border border-slate-800 rounded-3xl p-6 backdrop-blur-xl flex flex-col gap-4">
-                            <div className="flex items-center justify-between border-b border-slate-800/80 pb-3">
-                                <h3 className="text-sm font-bold text-white uppercase tracking-wider flex items-center gap-2">
-                                    <Shield className="w-4 h-4 text-indigo-400" />
-                                    Safety Progression Chart
-                                </h3>
-                                <span className="text-[10px] text-slate-500 font-mono">D3.js Line Coordinates</span>
-                            </div>
-
-                            <div className="h-[240px]">
-                                <ComplianceTrendChart
-                                    data={chartData}
-                                />
-                            </div>
-                        </div>
+                        {/* Red Team Operational Analytics Widget */}
+                        <AuditHistoryChart />
 
                         {/* Direct Compliance Assessment Drafter (Red-Team Suite) */}
                         <div className="bg-slate-900 border border-slate-800 rounded-3xl p-6 backdrop-blur-xl flex flex-col gap-4">
