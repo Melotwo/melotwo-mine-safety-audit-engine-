@@ -243,13 +243,13 @@ export const SafetyInspectorPage: React.FC<SafetyInspectorPageProps> = ({ setPag
         e.stopPropagation();
         setDragActive(false);
         if (e.dataTransfer.files && e.dataTransfer.files[0]) {
-            handleFileUpload(e.dataTransfer.files[0]);
+            processUploadedFile(e.dataTransfer.files[0]);
         }
     };
 
     const handleFileInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         if (e.target.files && e.target.files[0]) {
-            handleFileUpload(e.target.files[0]);
+            processUploadedFile(e.target.files[0]);
         }
     };
 
@@ -320,7 +320,10 @@ export const SafetyInspectorPage: React.FC<SafetyInspectorPageProps> = ({ setPag
         }
     };
 
-    const handleFileUpload = (file: File) => {
+    // Parse files safely
+    const processUploadedFile = (file: File) => {
+        setScanLoading(true);
+        setScanError(null);
         const reader = new FileReader();
         reader.onload = async (e) => {
             const text = e.target?.result as string;
@@ -334,6 +337,10 @@ export const SafetyInspectorPage: React.FC<SafetyInspectorPageProps> = ({ setPag
             setScanError('Failed to read file.');
         };
         reader.readAsText(file);
+    };
+
+    const handleFileUpload = (file: File) => {
+        processUploadedFile(file);
     };
 
     // Direct sample log tester loader
