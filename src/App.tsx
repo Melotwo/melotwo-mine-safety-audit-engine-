@@ -5,7 +5,7 @@ import { ComplianceTrendChart, DailyComplianceData } from './components/Complian
 import { sanitizeInputText } from './utils/sanitizer';
 import { CountUp } from './components/CountUp';
 import { ComplianceFAQ } from './components/ComplianceFAQ';
-import { SafetyInspectorPage } from './pages/safety-inspector';
+import SafetyInspectorPage from './components/SafetyInspectorPage';
 
 // --- Inline Types ---
 export type Page = 'home' | 'solutions' | 'inspector';
@@ -5457,25 +5457,25 @@ const App: React.FC = () => {
         };
     }, []);
 
-    const renderPage = useMemo(() => {
-        if (currentPage === 'home' || currentPage === 'solutions') {
-            return (
-                <LandingPage 
-                    currentPage={currentPage}
-                    setPage={setCurrentPage} 
-                    setIsDemoModalOpen={setIsDemoModalOpen}
-                    setDemoModalTier={setDemoModalTier}
-                />
-            );
-        } else if (currentPage === 'inspector') {
-            return (
-                <SafetyInspectorPage 
-                    setPage={setCurrentPage} 
-                />
-            );
-        }
-        return null;
-    }, [currentPage]);
+   const renderPage = useMemo(() => {
+  if (currentPage === 'home' || currentPage === 'solutions') {
+    return (
+      <LandingPage
+        currentPage={currentPage}
+        setPage={setCurrentPage}
+        setIsDemoModalOpen={setIsDemoModalOpen}
+        setDemoModalTier={setDemoModalTier}
+      />
+    );
+  } else if (currentPage === 'inspector') {
+    return (
+      <SafetyInspectorPage
+        setPage={setCurrentPage}
+      />
+    );
+  }
+}, [currentPage, setCurrentPage, setIsDemoModalOpen, setDemoModalTier]);
+
 
     return (
         <div className="flex flex-col min-h-screen bg-gray-50 font-sans relative">
