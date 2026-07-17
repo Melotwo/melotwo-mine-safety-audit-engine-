@@ -1,5 +1,4 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
-import { GoogleGenAI } from "@google/genai";
 import { jsPDF } from 'jspdf';
 import { ComplianceTrendChart, DailyComplianceData } from './components/ComplianceTrendChart';
 import { sanitizeInputText } from './utils/sanitizer';
