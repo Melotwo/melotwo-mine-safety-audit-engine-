@@ -5476,7 +5476,6 @@ const App: React.FC = () => {
         }
         return null;
     }, [currentPage]);
-
     return (
         <div className="flex flex-col min-h-screen bg-gray-50 font-sans relative">
             <AppNavbar 
