@@ -36,6 +36,12 @@ app.use((req, res, next) => {
   next();
 });
 
+// Incoming request log diagnostic helper
+app.use((req, res, next) => {
+  console.log(`[Express API Server] ${req.method} ${req.url}`);
+  next();
+});
+
 // API health and configuration check endpoints
 app.get(['/api/health', '/api/health/'], (req, res) => {
   res.json({

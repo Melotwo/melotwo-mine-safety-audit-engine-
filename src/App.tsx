@@ -1104,12 +1104,7 @@ const GA4MonitorConsole: React.FC = () => {
         if (prev.some(e => e.id === newEvent.id)) return prev;
         return [...prev, newEvent].slice(-30);
       });
-      
-      if (autoExpandRef.current) {
-        setIsMaximized(true);
-      } else {
-        setUnreadCount(prev => prev + 1);
-      }
+      setIsMaximized(true); // Auto-expand when a new event fires to showcase telemetry activity
     }, false); // we initialize state directly with getHistory(), so we do not replay history inside the callback to avoid React state batching race conditions
     return () => unsubscribe();
   }, []);
