@@ -5,8 +5,7 @@ import { AuditHistoryChart } from './components/AuditHistoryChart';
 import { sanitizeInputText } from './utils/sanitizer';
 import { CountUp } from './components/CountUp';
 import { ComplianceFAQ } from './components/ComplianceFAQ';
-import { SafetyInspectorPage } from './components/SafetyInspectorPage';
-
+import { SafetyInspectorPage } from './components/safety-inspector';
 
 // --- Inline Types ---
 export type Page = 'home' | 'solutions' | 'inspector';
