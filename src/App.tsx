@@ -4,7 +4,7 @@ import { ComplianceTrendChart, DailyComplianceData } from './components/Complian
 import { sanitizeInputText } from './utils/sanitizer';
 import { CountUp } from './components/CountUp';
 import { ComplianceFAQ } from './components/ComplianceFAQ';
-import { Database, RefreshCw, Upload, LogOut, Sparkles, CheckCircle2, AlertOctagon, Download, ChevronRight, Lock, Terminal, Minimize2, Maximize2, Trash2, Activity } from 'lucide-react';
+import { Database, RefreshCw, Upload, LogOut, Sparkles, CheckCircle2, AlertOctagon, Download, ChevronRight, Lock, Terminal, Minimize2, Maximize2, Activity } from 'lucide-react';
 
 import { initializeApp } from 'firebase/app';
 import { getAuth, signInWithPopup, GoogleAuthProvider, onAuthStateChanged, User as FirebaseUser } from 'firebase/auth';
@@ -523,7 +523,7 @@ export interface GA4Event {
 }
 
 // Dynamically initialize Google Tag (gtag.js)
-export const GA_MEASUREMENT_ID = (import.meta.env && import.meta.env.VITE_GA_MEASUREMENT_ID) || 'G-MELOSAFE77';
+export const GA_MEASUREMENT_ID = (import.meta.env && import.meta.env.VITE_GA_MEASUREMENT_ID) || 'G-K7P1HPKS7R';
 
 if (typeof window !== 'undefined') {
   (window as any).dataLayer = (window as any).dataLayer || [];
