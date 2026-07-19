@@ -4,7 +4,7 @@ import { ComplianceTrendChart, DailyComplianceData } from './components/Complian
 import { sanitizeInputText } from './utils/sanitizer';
 import { CountUp } from './components/CountUp';
 import { ComplianceFAQ } from './components/ComplianceFAQ';
-import { Database, RefreshCw, Upload, LogOut, Sparkles, CheckCircle2, AlertOctagon, Download, ChevronRight, Lock } from 'lucide-react';
+import { Database, RefreshCw, Upload, LogOut, Sparkles, CheckCircle2, AlertOctagon, Download, ChevronRight, Lock, Terminal, Minimize2, Maximize2, Activity } from 'lucide-react';
 
 import { initializeApp } from 'firebase/app';
 import { getAuth, signInWithPopup, GoogleAuthProvider, onAuthStateChanged, User as FirebaseUser } from 'firebase/auth';
@@ -523,7 +523,7 @@ export interface GA4Event {
 }
 
 // Dynamically initialize Google Tag (gtag.js)
-export const GA_MEASUREMENT_ID = (import.meta.env && import.meta.env.VITE_GA_MEASUREMENT_ID) || 'G-MELOSAFE77';
+export const GA_MEASUREMENT_ID = (import.meta.env && import.meta.env.VITE_GA_MEASUREMENT_ID) || 'G-K7P1HPKS7R';
 
 if (typeof window !== 'undefined') {
   (window as any).dataLayer = (window as any).dataLayer || [];
@@ -1086,9 +1086,16 @@ export const INSPECTOR_TEMPLATES: InspectorTemplate[] = [
 
 // --- Component: GA4MonitorConsole ---
 const GA4MonitorConsole: React.FC = () => {
-  const [isOpen, setIsOpen] = useState(false);
+  const [isMaximized, setIsMaximized] = useState(false);
   const [events, setEvents] = useState<GA4Event[]>(() => GA4EventBus.getHistory());
+  const [unreadCount, setUnreadCount] = useState(0);
+  const [autoExpand, setAutoExpand] = useState(false);
   const consoleEndRef = useRef<HTMLDivElement>(null);
+
+  const autoExpandRef = useRef(autoExpand);
+  useEffect(() => {
+    autoExpandRef.current = autoExpand;
+  }, [autoExpand]);
 
   useEffect(() => {
     // Explicitly subscribe to future events from the single event bus
@@ -1097,57 +1104,97 @@ const GA4MonitorConsole: React.FC = () => {
         if (prev.some(e => e.id === newEvent.id)) return prev;
         return [...prev, newEvent].slice(-30);
       });
-      setIsOpen(true); // Auto-expand when a new event fires to showcase telemetry activity
+      
+      if (autoExpandRef.current) {
+        setIsMaximized(true);
+      } else {
+        setUnreadCount(prev => prev + 1);
+      }
     }, false); // we initialize state directly with getHistory(), so we do not replay history inside the callback to avoid React state batching race conditions
     return () => unsubscribe();
   }, []);
 
   useEffect(() => {
-    if (consoleEndRef.current) {
+    if (consoleEndRef.current && isMaximized) {
       consoleEndRef.current.scrollIntoView({ behavior: 'smooth' });
     }
-  }, [events, isOpen]);
+    if (isMaximized) {
+      setUnreadCount(0);
+    }
+  }, [events, isMaximized]);
 
   return (
-    <div 
-      className="fixed bottom-4 right-4 z-50 flex flex-col font-mono"
-      id="ga4-telemetry-console"
-    >
-      {/* Trigger Button with pulsing dot */}
-      <button
-        onClick={() => setIsOpen(!isOpen)}
-        className="flex items-center gap-2 px-3 py-2 bg-slate-900 border border-slate-800 rounded-xl text-xs text-slate-300 hover:text-white shadow-2xl transition-all hover:border-blue-500/50 cursor-pointer self-end"
-      >
-        <span className="flex h-2 w-2 relative">
-          <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-75"></span>
-          <span className="relative inline-flex rounded-full h-2 w-2 bg-blue-500"></span>
-        </span>
-        <span>GA4 Telemetry Console ({events.length})</span>
-        <svg 
-          className={`w-3 h-3 transform transition-transform ${isOpen ? 'rotate-180' : ''}`} 
-          fill="none" 
-          viewBox="0 0 24 24" 
-          stroke="currentColor"
+    <>
+      {/* Minimized View: Floating action pill with telemetry activity indicator */}
+      {!isMaximized && (
+        <button
+          onClick={() => setIsMaximized(true)}
+          className="fixed bottom-4 right-4 z-50 flex items-center gap-2.5 px-4 py-2.5 bg-slate-900/95 border border-slate-800 rounded-xl text-xs font-semibold text-slate-200 hover:text-white shadow-2xl transition-all hover:border-blue-500/50 hover:scale-105 active:scale-95 duration-200 cursor-pointer backdrop-blur-md"
+          id="ga4-telemetry-console-minimized"
         >
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M19 9l-7 7-7-7" />
-        </svg>
-      </button>
+          <span className="flex h-2 w-2 relative">
+            <span className={`animate-ping absolute inline-flex h-full w-full rounded-full ${unreadCount > 0 ? 'bg-amber-400' : 'bg-blue-400'} opacity-75`}></span>
+            <span className={`relative inline-flex rounded-full h-2 w-2 ${unreadCount > 0 ? 'bg-amber-500' : 'bg-blue-500'}`}></span>
+          </span>
+          <Terminal className="w-3.5 h-3.5 text-blue-400" />
+          <span>Show Console ({events.length})</span>
+          {unreadCount > 0 && (
+            <span className="bg-amber-500 text-[10px] text-slate-950 px-1.5 py-0.5 rounded-full font-bold ml-1 animate-pulse">
+              +{unreadCount}
+            </span>
+          )}
+        </button>
+      )}
 
-      {/* Console Drawer */}
-      {isOpen && (
-        <div className="mt-2 w-80 md:w-96 bg-slate-950 border border-slate-800 rounded-2xl shadow-2xl overflow-hidden flex flex-col h-64 ring-1 ring-blue-500/20 animate-fade-in-up">
+      {/* Maximized View: Dedicated Event Logger Console */}
+      {isMaximized && (
+        <div 
+          className="fixed bottom-4 right-4 z-50 w-80 md:w-96 bg-slate-950/95 border border-slate-800/80 rounded-2xl shadow-2xl overflow-hidden flex flex-col h-80 ring-1 ring-blue-500/20 backdrop-blur-md animate-fade-in-up font-mono"
+          id="ga4-telemetry-console-maximized"
+        >
           {/* Header */}
-          <div className="bg-slate-900 px-4 py-2 border-b border-slate-800 flex justify-between items-center text-[10px] font-bold text-slate-400 tracking-wider uppercase">
-            <span>Live GA4 Event Logger</span>
-            <button 
-              onClick={() => {
-                setEvents([]);
-                GA4EventBus.clearHistory();
-              }} 
-              className="text-slate-500 hover:text-white transition-colors text-[9px]"
-            >
-              Clear Logs
-            </button>
+          <div className="bg-slate-900 px-4 py-2.5 border-b border-slate-800 flex justify-between items-center text-[10px] font-bold text-slate-400 tracking-wider uppercase">
+            <div className="flex items-center gap-2">
+              <span className="flex h-2 w-2 relative">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+              </span>
+              <span>GA4 Event Logger ({events.length})</span>
+            </div>
+            <div className="flex items-center gap-3">
+              {/* Auto-Expand Switch */}
+              <label className="flex items-center gap-1.5 text-[9px] text-slate-500 cursor-pointer select-none">
+                <input 
+                  type="checkbox"
+                  checked={autoExpand}
+                  onChange={(e) => setAutoExpand(e.target.checked)}
+                  className="w-3 h-3 accent-blue-500 rounded cursor-pointer border-slate-700 bg-slate-950"
+                />
+                <span className={autoExpand ? 'text-blue-400 font-semibold' : 'text-slate-500'}>Auto-Open</span>
+              </label>
+
+              <button 
+                type="button"
+                onClick={() => {
+                  setEvents([]);
+                  GA4EventBus.clearHistory();
+                }} 
+                className="text-slate-500 hover:text-white transition-colors text-[9px] flex items-center gap-1.5 cursor-pointer"
+                title="Clear Logs"
+              >
+                <Trash2 className="w-3 h-3 text-slate-500 hover:text-rose-400" />
+                <span>Clear</span>
+              </button>
+              <button 
+                type="button"
+                onClick={() => setIsMaximized(false)} 
+                className="text-slate-500 hover:text-white transition-colors text-[9px] flex items-center gap-1.5 cursor-pointer"
+                title="Minimize Console"
+              >
+                <Minimize2 className="w-3.5 h-3.5 text-slate-400" />
+                <span>Minimize</span>
+              </button>
+            </div>
           </div>
 
           {/* Log Stream */}
@@ -1176,12 +1223,15 @@ const GA4MonitorConsole: React.FC = () => {
           
           {/* Footer */}
           <div className="bg-slate-900/50 px-4 py-1.5 border-t border-slate-800/80 text-[8px] text-slate-500 flex justify-between">
-            <span>Status: Listening...</span>
+            <span className="flex items-center gap-1">
+              <Activity className="w-2.5 h-2.5 text-emerald-500 animate-pulse" />
+              Status: Listening...
+            </span>
             <span>Unmasked Compliance Agent</span>
           </div>
         </div>
       )}
-    </div>
+    </>
   );
 };
 
