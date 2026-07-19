@@ -1088,7 +1088,14 @@ export const INSPECTOR_TEMPLATES: InspectorTemplate[] = [
 const GA4MonitorConsole: React.FC = () => {
   const [isMaximized, setIsMaximized] = useState(false);
   const [events, setEvents] = useState<GA4Event[]>(() => GA4EventBus.getHistory());
+  const [unreadCount, setUnreadCount] = useState(0);
+  const [autoExpand, setAutoExpand] = useState(false);
   const consoleEndRef = useRef<HTMLDivElement>(null);
+
+  const autoExpandRef = useRef(autoExpand);
+  useEffect(() => {
+    autoExpandRef.current = autoExpand;
+  }, [autoExpand]);
 
   useEffect(() => {
     // Explicitly subscribe to future events from the single event bus
@@ -1103,8 +1110,11 @@ const GA4MonitorConsole: React.FC = () => {
   }, []);
 
   useEffect(() => {
-    if (consoleEndRef.current) {
+    if (consoleEndRef.current && isMaximized) {
       consoleEndRef.current.scrollIntoView({ behavior: 'smooth' });
+    }
+    if (isMaximized) {
+      setUnreadCount(0);
     }
   }, [events, isMaximized]);
 
@@ -1118,11 +1128,16 @@ const GA4MonitorConsole: React.FC = () => {
           id="ga4-telemetry-console-minimized"
         >
           <span className="flex h-2 w-2 relative">
-            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-75"></span>
-            <span className="relative inline-flex rounded-full h-2 w-2 bg-blue-500"></span>
+            <span className={`animate-ping absolute inline-flex h-full w-full rounded-full ${unreadCount > 0 ? 'bg-amber-400' : 'bg-blue-400'} opacity-75`}></span>
+            <span className={`relative inline-flex rounded-full h-2 w-2 ${unreadCount > 0 ? 'bg-amber-500' : 'bg-blue-500'}`}></span>
           </span>
           <Terminal className="w-3.5 h-3.5 text-blue-400" />
           <span>Show Console ({events.length})</span>
+          {unreadCount > 0 && (
+            <span className="bg-amber-500 text-[10px] text-slate-950 px-1.5 py-0.5 rounded-full font-bold ml-1 animate-pulse">
+              +{unreadCount}
+            </span>
+          )}
         </button>
       )}
 
@@ -1142,6 +1157,17 @@ const GA4MonitorConsole: React.FC = () => {
               <span>GA4 Event Logger ({events.length})</span>
             </div>
             <div className="flex items-center gap-3">
+              {/* Auto-Expand Switch */}
+              <label className="flex items-center gap-1.5 text-[9px] text-slate-500 cursor-pointer select-none">
+                <input 
+                  type="checkbox"
+                  checked={autoExpand}
+                  onChange={(e) => setAutoExpand(e.target.checked)}
+                  className="w-3 h-3 accent-blue-500 rounded cursor-pointer border-slate-700 bg-slate-950"
+                />
+                <span className={autoExpand ? 'text-blue-400 font-semibold' : 'text-slate-500'}>Auto-Open</span>
+              </label>
+
               <button 
                 type="button"
                 onClick={() => {
