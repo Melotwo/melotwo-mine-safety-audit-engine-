@@ -7,7 +7,7 @@ import { ComplianceFAQ } from './components/ComplianceFAQ';
 import { Database, RefreshCw, Upload, LogOut, Sparkles, CheckCircle2, AlertOctagon, Download, ChevronRight, Lock } from 'lucide-react';
 
 import { initializeApp } from 'firebase/app';
-import { getAuth, signInWithPopup, GoogleAuthProvider, onAuthStateChanged, User } from 'firebase/auth';
+import { getAuth, signInWithPopup, GoogleAuthProvider, onAuthStateChanged, User as FirebaseUser } from 'firebase/auth';
 import { getFirestore, doc, setDoc } from 'firebase/firestore';
 import firebaseConfig from '../firebase-applet-config.json';
 
@@ -65,7 +65,7 @@ export interface ComplianceLedgerRow {
  * Initialize Auth State Listener
  */
 export const initAuthState = (
-  onAuthSuccess: (user: User, token: string) => void,
+  onAuthSuccess: (user: FirebaseUser, token: string) => void,
   onAuthFailure: () => void
 ) => {
   return onAuthStateChanged(getAuthInstance(), async (user) => {
@@ -87,7 +87,7 @@ export const initAuthState = (
 /**
  * Trigger Google Sign-In with Drive & Sheets Scopes
  */
-export const loginWithGoogle = async (): Promise<{ user: User; accessToken: string } | null> => {
+export const loginWithGoogle = async (): Promise<{ user: FirebaseUser; accessToken: string } | null> => {
   if (isSigningIn) return null;
   try {
     isSigningIn = true;
@@ -4856,7 +4856,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ currentPage, setPage, setIsDe
     };
 
     return (
-        <div className="w-full px-4 md:px-0 max-w-7xl mx-auto pt-6 pb-24">
+        <div className="w-full px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto pt-6 pb-24">
             
             {/* Highly Optimized Two-Column B2B CRO Hero Section */}
             <div className="bg-slate-950 rounded-3xl border border-slate-800/80 relative overflow-hidden mb-16 shadow-[0_20px_50px_rgba(0,0,0,0.4)] w-full">
@@ -6253,9 +6253,10 @@ export const SafetyInspectorPage: React.FC<SafetyInspectorPageProps> = ({ setPag
     };
 
     return (
-        <div className="min-h-screen bg-slate-950 text-slate-100 font-sans p-4 md:p-8">
-            {/* Header / Admin Banner */}
-            <div className="max-w-7xl mx-auto flex flex-col gap-6 mb-8">
+        <div className="min-h-screen bg-slate-950 text-slate-100 font-sans px-4 sm:px-6 lg:px-8 py-6 md:py-8">
+            <div className="max-w-7xl mx-auto flex flex-col gap-6">
+                {/* Header / Admin Banner */}
+                <div className="flex flex-col gap-6">
                 <div className="flex justify-between items-center">
                     <button 
                         onClick={() => setPage('home')} 
@@ -6496,8 +6497,75 @@ export const SafetyInspectorPage: React.FC<SafetyInspectorPageProps> = ({ setPag
                             )}
                         </div>
 
+                        {/* Cognitive Extraction Confirmation Banner */}
+                        {scanSuccess && (
+                            <div className="bg-slate-900 border border-emerald-500/30 rounded-3xl p-6 backdrop-blur-xl flex flex-col gap-4 animate-fade-in shadow-[0_0_20px_rgba(16,185,129,0.05)]">
+                                <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+                                    <div className="flex items-center gap-2 text-emerald-400">
+                                        <CheckCircle2 className="w-5 h-5 animate-pulse" />
+                                        <div>
+                                            <h3 className="text-xs font-black uppercase tracking-wider text-emerald-400">SANS AUDIT PARAMETERS EXTRACTED</h3>
+                                            <p className="text-[10px] text-slate-400 font-mono mt-0.5">Gemini cognitive engine parsed and prepared 8 parameters for your validation.</p>
+                                        </div>
+                                    </div>
+                                    <span className="bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-[9px] font-mono px-2 py-0.5 rounded uppercase tracking-wider">
+                                        Pending Approval
+                                    </span>
+                                </div>
+                                <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 bg-slate-950/60 p-4 rounded-2xl border border-slate-800/80">
+                                    <div>
+                                        <span className="text-[8px] text-slate-500 font-bold uppercase block">Date</span>
+                                        <span className="text-xs text-white font-mono">{parsedDate}</span>
+                                    </div>
+                                    <div>
+                                        <span className="text-[8px] text-slate-500 font-bold uppercase block">Operator</span>
+                                        <span className="text-xs text-white truncate block">{parsedOperator}</span>
+                                    </div>
+                                    <div>
+                                        <span className="text-[8px] text-slate-500 font-bold uppercase block">Terminal ID</span>
+                                        <span className="text-xs text-white font-mono truncate block">{parsedTerminalId}</span>
+                                    </div>
+                                    <div>
+                                        <span className="text-[8px] text-slate-500 font-bold uppercase block">Category</span>
+                                        <span className="text-xs text-white truncate block">{parsedCategory}</span>
+                                    </div>
+                                    <div>
+                                        <span className="text-[8px] text-slate-500 font-bold uppercase block">Violation Vector</span>
+                                        <span className="text-xs text-white font-mono truncate block">{parsedViolationVector || 'N/A'}</span>
+                                    </div>
+                                    <div>
+                                        <span className="text-[8px] text-slate-500 font-bold uppercase block">Severity / Status</span>
+                                        <span className="text-xs text-white font-semibold flex items-center gap-1.5">
+                                            <span className={`w-1.5 h-1.5 rounded-full ${parsedStatus === 'Passed' ? 'bg-emerald-500' : parsedStatus === 'Critical Warning' ? 'bg-rose-500' : 'bg-amber-500'}`} />
+                                            {parsedSeverity} ({parsedStatus})
+                                        </span>
+                                    </div>
+                                </div>
+                                <div className="flex justify-end gap-2.5">
+                                    <button
+                                        type="button"
+                                        onClick={() => {
+                                            document.getElementById('review-form-section')?.scrollIntoView({ behavior: 'smooth' });
+                                        }}
+                                        className="px-4 py-2 bg-slate-950 hover:bg-slate-800 border border-slate-800 text-slate-300 rounded-xl text-[10px] font-bold uppercase tracking-wider transition-all cursor-pointer"
+                                    >
+                                        Edit Parameters Below
+                                    </button>
+                                    <button
+                                        type="button"
+                                        onClick={handleCommitToLedger}
+                                        disabled={commitLoading}
+                                        className="inline-flex items-center gap-1.5 px-4.5 py-2 bg-emerald-500 hover:bg-emerald-600 text-slate-950 font-black text-[10px] uppercase tracking-wider rounded-xl transition-all cursor-pointer shadow-lg shadow-emerald-500/10"
+                                    >
+                                        {commitLoading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Database className="w-3.5 h-3.5" />}
+                                        Approve &amp; Commit to Ledger
+                                    </button>
+                                </div>
+                            </div>
+                        )}
+
                         {/* Editable Reviewed Parameters Panel */}
-                        <div className="bg-slate-900 border border-slate-800 rounded-3xl p-6 backdrop-blur-xl flex flex-col gap-4">
+                        <div id="review-form-section" className="bg-slate-900 border border-slate-800 rounded-3xl p-6 backdrop-blur-xl flex flex-col gap-4">
                             <div className="flex items-center justify-between border-b border-slate-800/80 pb-3">
                                 <h3 className="text-sm font-bold text-white uppercase tracking-wider flex items-center gap-2">
                                     <FileText className="w-4 h-4 text-amber-500" />
@@ -6729,8 +6797,30 @@ export const SafetyInspectorPage: React.FC<SafetyInspectorPageProps> = ({ setPag
                                     <div className="max-h-[160px] overflow-y-auto custom-scrollbar">
                                         <p className="text-xs text-slate-300 font-mono whitespace-pre-wrap leading-relaxed">{response.text}</p>
                                     </div>
-                                    <div className="flex justify-end pt-2 border-t border-slate-800">
+                                    <div className="flex justify-end gap-2 pt-2 border-t border-slate-800">
                                         <button
+                                            type="button"
+                                            onClick={() => {
+                                                setParsedDate(new Date().toISOString().split('T')[0]);
+                                                setParsedOperator(user?.displayName || 'Cognitive Auditor');
+                                                setParsedTerminalId('TERM-09');
+                                                setParsedCategory('General Compliance');
+                                                setParsedViolationVector('General');
+                                                setParsedSeverity(response.label === 'Critical Warning' ? 'High' : response.label === 'Action Required' ? 'Medium' : 'Low');
+                                                setParsedStatus(response.label === 'Critical Warning' ? 'Critical Warning' : response.label === 'Action Required' ? 'Action Required' : 'Passed');
+                                                setParsedNotes(response.text);
+                                                setScanSuccess(true);
+                                                
+                                                setTimeout(() => {
+                                                    document.getElementById('review-form-section')?.scrollIntoView({ behavior: 'smooth' });
+                                                }, 100);
+                                            }}
+                                            className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-[10px] uppercase tracking-wider rounded-lg transition-colors cursor-pointer animate-pulse"
+                                        >
+                                            <FileText className="w-3.5 h-3.5" /> Use in Review Form
+                                        </button>
+                                        <button
+                                            type="button"
                                             onClick={handleDownloadTerminalPDF}
                                             className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-amber-500 hover:bg-amber-600 text-slate-950 font-black text-[10px] uppercase tracking-wider rounded-lg transition-colors cursor-pointer"
                                         >
@@ -6820,6 +6910,7 @@ export const SafetyInspectorPage: React.FC<SafetyInspectorPageProps> = ({ setPag
                     </div>
                 </div>
 
+            </div>
             </div>
 
             {/* Premium Upgrade paywall Modal */}
