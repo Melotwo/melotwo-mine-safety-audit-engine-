@@ -4867,10 +4867,10 @@ const LandingPage: React.FC<LandingPageProps> = ({ currentPage, setPage, setIsDe
                 {/* Subdued blueprint technical mesh overlay */}
                 <div className="absolute inset-0 bg-[linear-gradient(to_right,#1e293b_1px,transparent_1px),linear-gradient(to_bottom,#1e293b_1px,transparent_1px)] bg-[size:3rem_3rem] [mask-image:radial-gradient(ellipse_60%_50%_at_50%_40%,#000_70%,transparent_100%)] opacity-20 pointer-events-none"></div>
 
-                <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 p-5 sm:p-8 md:p-12 lg:p-16 relative z-10 items-center">
+                <div className="grid grid-cols-1 md:grid-cols-12 gap-6 md:gap-8 lg:gap-12 p-5 sm:p-8 md:p-10 lg:p-16 relative z-10 items-center">
                     
                     {/* Left Column: Core Value Proposition & CRO Trust Indicators */}
-                    <div className="lg:col-span-6 space-y-6 md:space-y-8 text-left">
+                    <div className="md:col-span-6 space-y-6 md:space-y-8 text-left">
                         
                         <div className="inline-flex items-center gap-2 px-3 py-1 text-[10px] font-black bg-amber-500/10 border border-amber-500/30 text-amber-500 rounded-full tracking-wider uppercase shadow-sm">
                             <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse"></span>
@@ -4941,7 +4941,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ currentPage, setPage, setIsDe
                     </div>
 
                     {/* Right Column: Dynamic Interactive Compliance Sandbox */}
-                    <div className="lg:col-span-6">
+                    <div className="md:col-span-6">
                         
                         <div className="bg-slate-900 border border-slate-800 rounded-3xl overflow-hidden shadow-2xl relative">
                             
@@ -5271,7 +5271,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ currentPage, setPage, setIsDe
                     </p>
                 </div>
 
-                <div className="grid lg:grid-cols-3 gap-8 max-w-7xl mx-auto items-stretch">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6 lg:gap-8 max-w-7xl mx-auto items-stretch">
                     {/* Tier 1: Site Professional Tier */}
                     <div className="bg-white border-2 border-slate-100 rounded-3xl p-8 shadow-xl flex flex-col justify-between hover:border-indigo-500/40 hover:shadow-2xl transition-all duration-300 relative overflow-hidden group">
                         <div className="absolute top-0 right-0 w-24 h-24 bg-indigo-50 rounded-bl-full -z-10 transition-transform group-hover:scale-110"></div>
@@ -6253,7 +6253,7 @@ export const SafetyInspectorPage: React.FC<SafetyInspectorPageProps> = ({ setPag
     };
 
     return (
-        <div className="min-h-screen bg-slate-950 text-slate-100 font-sans px-4 sm:px-6 lg:px-8 py-6 md:py-8">
+        <div className="min-h-screen bg-slate-950 text-slate-100 font-sans px-4 sm:px-6 lg:px-8 py-6 md:py-8 w-full">
             <div className="max-w-7xl mx-auto flex flex-col gap-6">
                 {/* Header / Admin Banner */}
                 <div className="flex flex-col gap-6">
@@ -6358,7 +6358,7 @@ export const SafetyInspectorPage: React.FC<SafetyInspectorPageProps> = ({ setPag
                 </div>
 
                 {/* Metric Cards Bento Grid */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
                     {/* Card 1: Total Audits */}
                     <div className="bg-slate-900 border border-slate-800/80 rounded-2xl p-5 hover:border-slate-700 transition-all flex items-center justify-between">
                         <div>
@@ -6413,10 +6413,10 @@ export const SafetyInspectorPage: React.FC<SafetyInspectorPageProps> = ({ setPag
                 </div>
 
                 {/* Main Operations Bento Grid */}
-                <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+                <div className="grid grid-cols-1 md:grid-cols-12 gap-6 items-start">
                     
                     {/* Left Operations: Document Parser & Parameters reviewer (7 Cols) */}
-                    <div className="lg:col-span-7 flex flex-col gap-6">
+                    <div className="md:col-span-7 flex flex-col gap-6">
                         
                         {/* Terminal Document Scanner */}
                         <div className="bg-slate-900 border border-slate-800 rounded-3xl p-6 backdrop-blur-xl flex flex-col gap-5">
@@ -6715,7 +6715,7 @@ export const SafetyInspectorPage: React.FC<SafetyInspectorPageProps> = ({ setPag
                     </div>
 
                     {/* Right Operations: Charts, Red-Team Assessments (5 Cols) */}
-                    <div className="lg:col-span-5 flex flex-col gap-6">
+                    <div className="md:col-span-5 flex flex-col gap-6">
 
                         {/* Red Team Operational Analytics Widget */}
                         <AuditHistoryChart />
@@ -6797,7 +6797,7 @@ export const SafetyInspectorPage: React.FC<SafetyInspectorPageProps> = ({ setPag
                                     <div className="max-h-[160px] overflow-y-auto custom-scrollbar">
                                         <p className="text-xs text-slate-300 font-mono whitespace-pre-wrap leading-relaxed">{response.text}</p>
                                     </div>
-                                    <div className="flex justify-end gap-2 pt-2 border-t border-slate-800">
+                                    <div className="flex flex-wrap justify-end gap-2 pt-2 border-t border-slate-800">
                                         <button
                                             type="button"
                                             onClick={() => {
@@ -6805,7 +6805,7 @@ export const SafetyInspectorPage: React.FC<SafetyInspectorPageProps> = ({ setPag
                                                 setParsedOperator(user?.displayName || 'Cognitive Auditor');
                                                 setParsedTerminalId('TERM-09');
                                                 setParsedCategory('General Compliance');
-                                                setParsedViolationVector('General');
+                                                setParsedViolationVector('General SANS');
                                                 setParsedSeverity(response.label === 'Critical Warning' ? 'High' : response.label === 'Action Required' ? 'Medium' : 'Low');
                                                 setParsedStatus(response.label === 'Critical Warning' ? 'Critical Warning' : response.label === 'Action Required' ? 'Action Required' : 'Passed');
                                                 setParsedNotes(response.text);
@@ -6818,6 +6818,45 @@ export const SafetyInspectorPage: React.FC<SafetyInspectorPageProps> = ({ setPag
                                             className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-[10px] uppercase tracking-wider rounded-lg transition-colors cursor-pointer animate-pulse"
                                         >
                                             <FileText className="w-3.5 h-3.5" /> Use in Review Form
+                                        </button>
+                                        <button
+                                            type="button"
+                                            onClick={async () => {
+                                                const newRecord = {
+                                                    id: `AUD-${Math.floor(Math.random() * 900) + 100}`,
+                                                    date: new Date().toISOString().split('T')[0],
+                                                    operator: user?.displayName || 'Cognitive Auditor',
+                                                    terminalId: 'TERM-09',
+                                                    riskCategory: response.label === 'Critical Warning' ? 'Explosion Prevention' : 'General Compliance',
+                                                    violationVector: 'General SANS',
+                                                    severityLevel: response.label === 'Critical Warning' ? 'High' : response.label === 'Action Required' ? 'Medium' : 'Low',
+                                                    auditStatus: response.label === 'Critical Warning' ? 'Critical Warning' : response.label === 'Action Required' ? 'Action Required' : 'Passed',
+                                                    detailedNotes: response.text
+                                                };
+
+                                                try {
+                                                    if (token && ledgerId) {
+                                                        await appendLedgerRecord(token, ledgerId, newRecord);
+                                                        const records = await fetchLedgerRecords(token, ledgerId);
+                                                        setLedgerLogs(records);
+                                                    } else {
+                                                        const updated = [newRecord, ...ledgerLogs];
+                                                        setLedgerLogs(updated);
+                                                        localStorage.setItem('melotwo_sandbox_logs', JSON.stringify(updated));
+                                                    }
+                                                    setCommitSuccess(true);
+                                                    setTimeout(() => setCommitSuccess(false), 3000);
+                                                } catch (err) {
+                                                    console.error(err);
+                                                }
+
+                                                setTimeout(() => {
+                                                    document.getElementById('synchronized-ledger-section')?.scrollIntoView({ behavior: 'smooth' });
+                                                }, 100);
+                                            }}
+                                            className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-emerald-500 hover:bg-emerald-600 text-slate-950 font-bold text-[10px] uppercase tracking-wider rounded-lg transition-colors cursor-pointer"
+                                        >
+                                            <Database className="w-3.5 h-3.5" /> Approve &amp; Send to Ledger
                                         </button>
                                         <button
                                             type="button"
@@ -6835,7 +6874,7 @@ export const SafetyInspectorPage: React.FC<SafetyInspectorPageProps> = ({ setPag
                 </div>
 
                 {/* SANS & POPIA Compliance Log Table (Full Width Panel) */}
-                <div className="bg-slate-900 border border-slate-800 rounded-3xl p-6 backdrop-blur-xl">
+                <div id="synchronized-ledger-section" className="bg-slate-900 border border-slate-800 rounded-3xl p-6 backdrop-blur-xl">
                     <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-4 border-b border-slate-800 pb-4 mb-5">
                         <div>
                             <h3 className="text-sm font-bold text-white uppercase tracking-wider flex items-center gap-2">
@@ -7053,7 +7092,7 @@ const App: React.FC = () => {
                     setIsDemoModalOpen(true);
                 }}
             />
-            <main className="flex-grow pt-4">
+            <main className={`flex-grow ${currentPage === 'inspector' ? 'pt-0' : 'pt-4'}`}>
                 {renderPage}
             </main>
             <AppFooter />
