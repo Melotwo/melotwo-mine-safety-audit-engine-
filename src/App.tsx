@@ -1,7 +1,6 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { jsPDF } from 'jspdf';
 import { ComplianceTrendChart, DailyComplianceData } from './components/ComplianceTrendChart';
-import { AuditHistoryChart } from './components/AuditHistoryChart';
 import { sanitizeInputText } from './utils/sanitizer';
 import { CountUp } from './components/CountUp';
 import { ComplianceFAQ } from './components/ComplianceFAQ';
@@ -1536,7 +1535,7 @@ interface DataPoint {
   flaggedIncidents?: number;
 }
 
-const _UnusedInlineAuditHistoryChart: React.FC = () => {
+const AuditHistoryChart: React.FC = () => {
   const [metric, setMetric] = useState<'compliance' | 'risk' | 'ppe'>('compliance');
   const [hoveredPoint, setHoveredPoint] = useState<number | null>(null);
   const [showComparator, setShowComparator] = useState<boolean>(true);
