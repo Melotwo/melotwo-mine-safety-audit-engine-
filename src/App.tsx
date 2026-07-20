@@ -6477,10 +6477,10 @@ export const SafetyInspectorPage: React.FC<SafetyInspectorPageProps> = ({ setPag
                 </div>
 
                 {/* Main Operations Bento Grid */}
-                <div className="grid grid-cols-1 md:grid-cols-12 gap-6 items-start">
+                <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start w-full">
                     
                     {/* Left Operations: Document Parser & Parameters reviewer (7 Cols) */}
-                    <div className="md:col-span-7 flex flex-col gap-6">
+                    <div className="lg:col-span-7 flex flex-col gap-6 w-full">
                         
                         {/* Terminal Document Scanner */}
                         <div className="bg-slate-900 border border-slate-800 rounded-3xl p-6 backdrop-blur-xl flex flex-col gap-5">
@@ -6779,13 +6779,13 @@ export const SafetyInspectorPage: React.FC<SafetyInspectorPageProps> = ({ setPag
                     </div>
 
                     {/* Right Operations: Charts, Red-Team Assessments (5 Cols) */}
-                    <div className="md:col-span-5 flex flex-col gap-6">
+                    <div className="lg:col-span-5 flex flex-col gap-6 w-full">
 
                         {/* Red Team Operational Analytics Widget */}
                         <AuditHistoryChart />
 
                         {/* Direct Compliance Assessment Drafter (Red-Team Suite) */}
-                        <div className="bg-slate-900 border border-slate-800 rounded-3xl p-6 backdrop-blur-xl flex flex-col gap-4">
+                        <div className="bg-slate-900 border border-slate-800 rounded-3xl p-6 backdrop-blur-xl flex flex-col gap-4 w-full">
                             <div className="flex items-center justify-between border-b border-slate-800/80 pb-3">
                                 <h3 className="text-sm font-bold text-white uppercase tracking-wider flex items-center gap-2">
                                     <Sparkles className="w-4 h-4 text-amber-500" />
