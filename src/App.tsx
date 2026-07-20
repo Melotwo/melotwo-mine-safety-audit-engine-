@@ -5948,6 +5948,12 @@ export const SafetyInspectorPage: React.FC<SafetyInspectorPageProps> = ({ setPag
         };
     });
 
+    // Derive active profile & checklist early for dependent hooks, functions, and memos
+    const activeProfile = SECTOR_PROFILES[selectedSector] || SECTOR_PROFILES.mining;
+    const activeChecklist = sectorChecklists[selectedSector] || [];
+    const checkedCount = activeChecklist.filter(item => item.checked).length;
+    const uncheckedCount = activeChecklist.filter(item => !item.checked).length;
+
     const applySectorDefaults = (sectorId: string) => {
         const profile = SECTOR_PROFILES[sectorId];
         if (!profile) return;
@@ -6451,12 +6457,6 @@ export const SafetyInspectorPage: React.FC<SafetyInspectorPageProps> = ({ setPag
     };
 
     // Derive metrics dynamically based on the active sector, compliance checklist, and historical ledger logs
-    const activeProfile = SECTOR_PROFILES[selectedSector] || SECTOR_PROFILES.mining;
-    const activeChecklist = sectorChecklists[selectedSector] || [];
-
-    // Calculate checked vs unchecked items for the active sector's compliance standard
-    const checkedCount = activeChecklist.filter(item => item.checked).length;
-    const uncheckedCount = activeChecklist.filter(item => !item.checked).length;
 
     const totalAudits = useMemo(() => {
         // Base audits for this sector plus logs in ledger
