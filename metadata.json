@@ -1,6 +1,6 @@
 {
   "name": "Melotwo AI Safety Inspector",
-  "description": "An application to analyze, test, and ensure Large Language Models (LLMs) operate within ethical and regulatory guardrails. Features a Safety Inspector to simulate and test prompts against AI safety policies.",
+  "description": "An industrial mine safety audit and SANS compliance console featuring dynamic business profiles, sector-specific checklists, cognitive audits, and synchronized Google Sheets ledgering.",
   "requestFramePermissions": [],
   "majorCapabilities": [
     "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
