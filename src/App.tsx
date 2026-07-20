@@ -3226,7 +3226,7 @@ const AuditHistoryChart: React.FC = () => {
 
         {/* Heatmap Grid container */}
         <div className="overflow-x-auto">
-          <div className="min-w-[600px] select-none">
+          <div className="w-full select-none">
             {/* Days Column Headers */}
             <div className="grid grid-cols-12 gap-1 mb-2">
               <div className="col-span-3"></div> {/* spacer for Row headers */}
@@ -6658,7 +6658,7 @@ export const SafetyInspectorPage: React.FC<SafetyInspectorPageProps> = ({ setPag
 
     return (
         <div className="min-h-screen bg-slate-950 text-slate-100 font-sans px-4 sm:px-6 lg:px-8 py-6 md:py-8 w-full">
-            <div className="max-w-7xl mx-auto flex flex-col gap-6">
+            <div className="max-w-[1360px] mx-auto flex flex-col gap-6">
                 {/* Header / Admin Banner */}
                 <div className="flex flex-col gap-6">
                 <div className="flex justify-between items-center">
@@ -6901,8 +6901,8 @@ export const SafetyInspectorPage: React.FC<SafetyInspectorPageProps> = ({ setPag
                 {/* Main Operations Bento Grid */}
                 <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start w-full">
                     
-                    {/* Left Operations: Document Parser & Parameters reviewer (7 Cols) */}
-                    <div className="lg:col-span-7 flex flex-col gap-6 w-full">
+                    {/* Left Operations: Document Parser & Parameters reviewer (6 Cols) */}
+                    <div className="lg:col-span-6 flex flex-col gap-6 w-full">
                         
                         {/* Terminal Document Scanner */}
                         <div className="bg-slate-900 border border-slate-800 rounded-3xl p-6 backdrop-blur-xl flex flex-col gap-5">
@@ -7282,8 +7282,8 @@ export const SafetyInspectorPage: React.FC<SafetyInspectorPageProps> = ({ setPag
 
                     </div>
 
-                    {/* Right Operations: Charts, Red-Team Assessments (5 Cols) */}
-                    <div className="lg:col-span-5 flex flex-col gap-6 w-full">
+                    {/* Right Operations: Charts, Red-Team Assessments (6 Cols) */}
+                    <div className="lg:col-span-6 flex flex-col gap-6 w-full">
 
                         {/* Red Team Operational Analytics Widget */}
                         <AuditHistoryChart />
