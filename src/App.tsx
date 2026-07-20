@@ -3,6 +3,7 @@ import { jsPDF } from 'jspdf';
 import { ComplianceTrendChart, DailyComplianceData } from './components/ComplianceTrendChart';
 import { sanitizeInputText } from './utils/sanitizer';
 import { CountUp } from './components/CountUp';
+import { Sparkline as HistoricalSparkline } from './components/Sparkline';
 import { ComplianceFAQ } from './components/ComplianceFAQ';
 import { Database, RefreshCw, Upload, LogOut, Sparkles, CheckCircle2, AlertOctagon, Download, ChevronRight, Lock, Terminal, Minimize2, Maximize2, Activity } from 'lucide-react';
 
@@ -2030,6 +2031,22 @@ const AuditHistoryChart: React.FC = () => {
     return Math.round((sum / data.length) * 10) / 10;
   }, [data]);
 
+  const lastSevenComplianceScores = useMemo(() => {
+    return data.slice(-7).map(d => d.complianceScore);
+  }, [data]);
+
+  const lastSevenRiskScores = useMemo(() => {
+    return data.slice(-7).map(d => d.riskLevel);
+  }, [data]);
+
+  const lastSevenPpeScores = useMemo(() => {
+    return data.slice(-7).map(d => d.ppeDegradation);
+  }, [data]);
+
+  const lastSevenFlaggedIncidents = useMemo(() => {
+    return data.slice(-7).map(d => d.flaggedIncidents || 0);
+  }, [data]);
+
   // Method to handle user manually adding an audit record to the history chart
   const handleAddAuditData = () => {
     trackGA4Event('ai_generation_requested', {
@@ -2586,12 +2603,16 @@ const AuditHistoryChart: React.FC = () => {
           <div className="absolute top-0 right-0 w-24 h-24 bg-amber-500/5 rounded-full blur-2xl group-hover:bg-amber-500/10 transition-all pointer-events-none" />
           <span className="text-[10px] uppercase font-bold text-slate-400 tracking-wider font-mono">Average Compliance</span>
           <div className="flex items-baseline justify-between mt-2">
-            <span className="text-2xl font-extrabold text-white font-mono tracking-tight" id="avg-compliance-score-val">{avgCompliance}%</span>
+            <span className="text-2xl font-extrabold text-white font-mono tracking-tight" id="avg-compliance-score-val"><CountUp end={avgCompliance} />%</span>
             <span className={`text-[9px] font-bold font-mono px-1.5 py-0.5 rounded-full ${avgCompliance >= complianceThreshold ? 'bg-emerald-500/10 text-emerald-400' : 'bg-rose-500/10 text-rose-400'}`}>
               {avgCompliance >= complianceThreshold ? 'TARGET OK' : 'CRITICAL'}
             </span>
           </div>
           <p className="text-[10px] text-slate-500 mt-1">SANS compliance benchmark</p>
+          <div className="mt-3 pt-2.5 border-t border-slate-800/50 flex items-center justify-between gap-2">
+            <span className="text-[9px] font-bold text-slate-500 uppercase tracking-wider font-mono">7-Audit Trend</span>
+            <HistoricalSparkline scores={lastSevenComplianceScores} width={80} height={20} strokeColor={avgCompliance >= complianceThreshold ? '#10b981' : '#f43f5e'} />
+          </div>
         </div>
 
         {/* Metric 2: Average Operational Risk */}
@@ -2599,12 +2620,16 @@ const AuditHistoryChart: React.FC = () => {
           <div className="absolute top-0 right-0 w-24 h-24 bg-amber-500/5 rounded-full blur-2xl group-hover:bg-amber-500/10 transition-all pointer-events-none" />
           <span className="text-[10px] uppercase font-bold text-slate-400 tracking-wider font-mono">Average Risk Level</span>
           <div className="flex items-baseline justify-between mt-2">
-            <span className="text-2xl font-extrabold text-white font-mono tracking-tight">{avgRisk} <span className="text-xs text-slate-500 font-normal">/10</span></span>
+            <span className="text-2xl font-extrabold text-white font-mono tracking-tight"><CountUp end={avgRisk} /> <span className="text-xs text-slate-500 font-normal">/10</span></span>
             <span className={`text-[9px] font-bold font-mono px-1.5 py-0.5 rounded-full ${avgRisk <= riskThreshold ? 'bg-emerald-500/10 text-emerald-400' : 'bg-rose-500/10 text-rose-400'}`}>
               {avgRisk <= riskThreshold ? 'STABLE' : 'ELEVATED'}
             </span>
           </div>
           <p className="text-[10px] text-slate-500 mt-1">Regulatory risk quotient</p>
+          <div className="mt-3 pt-2.5 border-t border-slate-800/50 flex items-center justify-between gap-2">
+            <span className="text-[9px] font-bold text-slate-500 uppercase tracking-wider font-mono">7-Audit Trend</span>
+            <HistoricalSparkline scores={lastSevenRiskScores} width={80} height={20} strokeColor={avgRisk <= riskThreshold ? '#10b981' : '#f43f5e'} />
+          </div>
         </div>
 
         {/* Metric 3: Average PPE Degradation */}
@@ -2612,12 +2637,16 @@ const AuditHistoryChart: React.FC = () => {
           <div className="absolute top-0 right-0 w-24 h-24 bg-amber-500/5 rounded-full blur-2xl group-hover:bg-amber-500/10 transition-all pointer-events-none" />
           <span className="text-[10px] uppercase font-bold text-slate-400 tracking-wider font-mono">Average PPE Wear</span>
           <div className="flex items-baseline justify-between mt-2">
-            <span className="text-2xl font-extrabold text-white font-mono tracking-tight">{avgPpe}%</span>
+            <span className="text-2xl font-extrabold text-white font-mono tracking-tight"><CountUp end={avgPpe} />%</span>
             <span className={`text-[9px] font-bold font-mono px-1.5 py-0.5 rounded-full ${avgPpe <= ppeThreshold ? 'bg-emerald-500/10 text-emerald-400' : 'bg-amber-500/10 text-amber-400'}`}>
               {avgPpe <= ppeThreshold ? 'EXCELLENT' : 'WARN'}
             </span>
           </div>
           <p className="text-[10px] text-slate-500 mt-1">Equipment wear rate</p>
+          <div className="mt-3 pt-2.5 border-t border-slate-800/50 flex items-center justify-between gap-2">
+            <span className="text-[9px] font-bold text-slate-500 uppercase tracking-wider font-mono">7-Audit Trend</span>
+            <HistoricalSparkline scores={lastSevenPpeScores} width={80} height={20} strokeColor={avgPpe <= ppeThreshold ? '#10b981' : '#f59e0b'} />
+          </div>
         </div>
 
         {/* Metric 4: Total Audits */}
@@ -2625,12 +2654,16 @@ const AuditHistoryChart: React.FC = () => {
           <div className="absolute top-0 right-0 w-24 h-24 bg-amber-500/5 rounded-full blur-2xl group-hover:bg-amber-500/10 transition-all pointer-events-none" />
           <span className="text-[10px] uppercase font-bold text-slate-400 tracking-wider font-mono">Total Audits</span>
           <div className="flex items-baseline justify-between mt-2">
-            <span className="text-2xl font-extrabold text-amber-500 font-mono tracking-tight">{data.length} <span className="text-xs text-slate-500 font-normal">Records</span></span>
+            <span className="text-2xl font-extrabold text-amber-500 font-mono tracking-tight"><CountUp end={data.length} /> <span className="text-xs text-slate-500 font-normal">Records</span></span>
             <span className="text-[9px] font-bold font-mono px-1.5 py-0.5 rounded-full bg-amber-500/10 text-amber-400">
               ACTIVE
             </span>
           </div>
           <p className="text-[10px] text-slate-500 mt-1">Logged session baseline</p>
+          <div className="mt-3 pt-2.5 border-t border-slate-800/50 flex items-center justify-between gap-2">
+            <span className="text-[9px] font-bold text-slate-500 uppercase tracking-wider font-mono">Incidents Spark</span>
+            <HistoricalSparkline scores={lastSevenFlaggedIncidents} width={80} height={20} strokeColor="#3b82f6" />
+          </div>
         </div>
       </div>
 
