@@ -1104,7 +1104,12 @@ const GA4MonitorConsole: React.FC = () => {
         if (prev.some(e => e.id === newEvent.id)) return prev;
         return [...prev, newEvent].slice(-30);
       });
-      setIsMaximized(true); // Auto-expand when a new event fires to showcase telemetry activity
+      
+      if (autoExpandRef.current) {
+        setIsMaximized(true);
+      } else {
+        setUnreadCount(prev => prev + 1);
+      }
     }, false); // we initialize state directly with getHistory(), so we do not replay history inside the callback to avoid React state batching race conditions
     return () => unsubscribe();
   }, []);
@@ -5834,6 +5839,20 @@ export const SafetyInspectorPage: React.FC<SafetyInspectorPageProps> = ({ setPag
         }
     });
 
+    // Ledger Search & Filtering State
+    const [ledgerSearchQuery, setLedgerSearchQuery] = useState('');
+
+    const filteredLedgerLogs = useMemo(() => {
+        if (!ledgerSearchQuery.trim()) return ledgerLogs;
+        const query = ledgerSearchQuery.toLowerCase();
+        return ledgerLogs.filter(log => {
+            const op = (log.operator || '').toLowerCase();
+            const term = (log.terminalId || '').toLowerCase();
+            const cat = (log.riskCategory || '').toLowerCase();
+            return op.includes(query) || term.includes(query) || cat.includes(query);
+        });
+    }, [ledgerLogs, ledgerSearchQuery]);
+
     // Auth & Google Drive Sheets Handlers
     const handleGoogleLogin = async () => {
         setAuthLoading(true);
@@ -6938,6 +6957,32 @@ export const SafetyInspectorPage: React.FC<SafetyInspectorPageProps> = ({ setPag
                         </div>
                     </div>
 
+                    {/* Filter & Search Bar */}
+                    <div className="flex flex-col md:flex-row items-stretch md:items-center gap-4 mb-5 bg-slate-950/40 p-4 rounded-2xl border border-slate-800/60">
+                        <div className="relative flex-1">
+                            <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                            <input
+                                id="ledger-search-input"
+                                type="text"
+                                value={ledgerSearchQuery}
+                                onChange={(e) => setLedgerSearchQuery(e.target.value)}
+                                placeholder="Filter ledger logs by operator name, terminal ID, or risk category..."
+                                className="w-full bg-slate-950/80 border border-slate-800 focus:border-amber-500/50 focus:ring-1 focus:ring-amber-500/30 text-white rounded-xl py-2 pl-10 pr-4 text-xs font-sans placeholder-slate-500 outline-none transition-all"
+                            />
+                            {ledgerSearchQuery && (
+                                <button
+                                    onClick={() => setLedgerSearchQuery('')}
+                                    className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-white text-xs font-bold px-1.5 py-0.5 hover:bg-slate-800 rounded transition-colors"
+                                >
+                                    Clear
+                                </button>
+                            )}
+                        </div>
+                        <div className="flex items-center gap-2 text-xs text-slate-400 whitespace-nowrap self-end md:self-auto font-mono text-[11px]">
+                            <span>Found: <strong className="text-amber-500">{filteredLedgerLogs.length}</strong> of {ledgerLogs.length} logs</span>
+                        </div>
+                    </div>
+
                     <div className="overflow-x-auto">
                         <table className="w-full text-left text-xs border-collapse">
                             <thead>
@@ -6959,8 +7004,14 @@ export const SafetyInspectorPage: React.FC<SafetyInspectorPageProps> = ({ setPag
                                             No ledger logs synchronized yet. Enter sandbox parameters above or connect your Google Spreadsheet.
                                         </td>
                                     </tr>
+                                ) : filteredLedgerLogs.length === 0 ? (
+                                    <tr>
+                                        <td colSpan={8} className="py-8 text-center text-slate-500 font-sans">
+                                            No compliance logs match the criteria &quot;{ledgerSearchQuery}&quot;. Please try another search query.
+                                        </td>
+                                    </tr>
                                 ) : (
-                                    ledgerLogs.map((log, idx) => (
+                                    filteredLedgerLogs.map((log, idx) => (
                                         <tr key={idx} className="hover:bg-slate-950/40 transition-colors">
                                             <td className="py-3.5 px-4 text-white whitespace-nowrap">{log.date}</td>
                                             <td className="py-3.5 px-4 font-sans font-medium text-slate-200">{log.operator || 'Unknown'}</td>
