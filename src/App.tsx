@@ -5913,39 +5913,51 @@ export const SafetyInspectorPage: React.FC<SafetyInspectorPageProps> = ({ setPag
         return localStorage.getItem('melotwo_inspector_active_sector') || 'mining';
     });
 
+    const DEFAULT_CHECKLISTS = {
+        mining: [
+            { id: 'min1', text: 'Enforce methane concentration measurements under 1.0% v/v', checked: true },
+            { id: 'min2', text: 'Ensure Ex-d motor enclosures have all locking bolts secure', checked: false },
+            { id: 'min3', text: 'Verify active shaft-level emergency ventilation flows', checked: false },
+            { id: 'min4', text: 'Audit respiratory mask storage and wear logs', checked: true }
+        ],
+        electrical: [
+            { id: 'elec1', text: 'Verify minimum 1.0m unobstructed emergency egress boundary', checked: false },
+            { id: 'elec2', text: 'Verify all distribution panel hinges and locking systems', checked: false },
+            { id: 'elec3', text: 'Assess isolator waterproofing and seal integrity', checked: true },
+            { id: 'elec4', text: 'Audit earth leakage loop trip-time logs (under 0.3s)', checked: true }
+        ],
+        catering: [
+            { id: 'cat1', text: 'Ensure walk-in refrigeration units hold temperature below 4.0°C', checked: false },
+            { id: 'cat2', text: 'Verify sanitization stations fluid levels and mechanical pumps', checked: false },
+            { id: 'cat3', text: 'Audit prepared-food core preparation temperature checklists', checked: true },
+            { id: 'cat4', text: 'Separate raw-prep and ready-to-eat zone barrier partitions', checked: true }
+        ],
+        sheq: [
+            { id: 'sheq1', text: 'Verify active particulate concentration under 10mg/m3', checked: false },
+            { id: 'sheq2', text: 'Check protective goggle frames and anti-fog replacement stocks', checked: false },
+            { id: 'sheq3', text: 'Audit Section 16(2) appointee training records', checked: true },
+            { id: 'sheq4', text: 'Verify low-level fluid alarm alerts on hand washing blocks', checked: true }
+        ]
+    };
+
     const [sectorChecklists, setSectorChecklists] = useState<Record<string, { id: string; text: string; checked: boolean }[]>>(() => {
         const saved = localStorage.getItem('melotwo_sector_checklists');
         if (saved) {
             try {
-                return JSON.parse(saved);
+                const parsed = JSON.parse(saved);
+                if (parsed && typeof parsed === 'object') {
+                    const merged = { ...DEFAULT_CHECKLISTS };
+                    Object.keys(DEFAULT_CHECKLISTS).forEach(key => {
+                        const parsedList = (parsed as any)[key];
+                        if (Array.isArray(parsedList)) {
+                            merged[key as keyof typeof DEFAULT_CHECKLISTS] = parsedList;
+                        }
+                    });
+                    return merged;
+                }
             } catch (e) {}
         }
-        return {
-            mining: [
-                { id: 'min1', text: 'Enforce methane concentration measurements under 1.0% v/v', checked: true },
-                { id: 'min2', text: 'Ensure Ex-d motor enclosures have all locking bolts secure', checked: false },
-                { id: 'min3', text: 'Verify active shaft-level emergency ventilation flows', checked: false },
-                { id: 'min4', text: 'Audit respiratory mask storage and wear logs', checked: true }
-            ],
-            electrical: [
-                { id: 'elec1', text: 'Verify minimum 1.0m unobstructed emergency egress boundary', checked: false },
-                { id: 'elec2', text: 'Verify all distribution panel hinges and locking systems', checked: false },
-                { id: 'elec3', text: 'Assess isolator waterproofing and seal integrity', checked: true },
-                { id: 'elec4', text: 'Audit earth leakage loop trip-time logs (under 0.3s)', checked: true }
-            ],
-            catering: [
-                { id: 'cat1', text: 'Ensure walk-in refrigeration units hold temperature below 4.0°C', checked: false },
-                { id: 'cat2', text: 'Verify sanitization stations fluid levels and mechanical pumps', checked: false },
-                { id: 'cat3', text: 'Audit prepared-food core preparation temperature checklists', checked: true },
-                { id: 'cat4', text: 'Separate raw-prep and ready-to-eat zone barrier partitions', checked: true }
-            ],
-            sheq: [
-                { id: 'sheq1', text: 'Verify active particulate concentration under 10mg/m3', checked: false },
-                { id: 'sheq2', text: 'Check protective goggle frames and anti-fog replacement stocks', checked: false },
-                { id: 'sheq3', text: 'Audit Section 16(2) appointee training records', checked: true },
-                { id: 'sheq4', text: 'Verify low-level fluid alarm alerts on hand washing blocks', checked: true }
-            ]
-        };
+        return DEFAULT_CHECKLISTS;
     });
 
     // Derive active profile & checklist early for dependent hooks, functions, and memos
@@ -5967,7 +5979,7 @@ export const SafetyInspectorPage: React.FC<SafetyInspectorPageProps> = ({ setPag
         setParsedOperator(profile.defaultOperator);
         setParsedTerminalId(profile.defaultTerminal);
         setParsedCategory(profile.defaultCategory);
-        setParsedViolationVector(profile.defaultStandardCode);
+        setParsedViolationVector(profile.standardCode);
         setParsedSeverity(profile.defaultSeverity);
         setParsedStatus('Action Required');
         setParsedNotes(`Initial automated sector baseline loaded under ${profile.standard}. System configured for active inspection dispatch.`);
@@ -6028,7 +6040,13 @@ export const SafetyInspectorPage: React.FC<SafetyInspectorPageProps> = ({ setPag
     const [ledgerLogs, setLedgerLogs] = useState<ComplianceLedgerRow[]>(() => {
         try {
             const saved = localStorage.getItem('melotwo_sandbox_logs');
-            return saved ? JSON.parse(saved) : DEFAULT_LOGS;
+            if (saved) {
+                const parsed = JSON.parse(saved);
+                if (Array.isArray(parsed)) {
+                    return parsed;
+                }
+            }
+            return DEFAULT_LOGS;
         } catch (e) {
             return DEFAULT_LOGS;
         }
@@ -6053,7 +6071,7 @@ export const SafetyInspectorPage: React.FC<SafetyInspectorPageProps> = ({ setPag
             });
         } else {
             // Sort so that logs with the active sector's default standard code or category appear first!
-            const activeStandardLower = activeProfile.defaultStandardCode.toLowerCase();
+            const activeStandardLower = activeProfile.standardCode.toLowerCase();
             const activeCategoryLower = activeProfile.defaultCategory.toLowerCase();
             list = [...ledgerLogs].sort((a, b) => {
                 const aMatch = a.violationVector.toLowerCase().includes(activeStandardLower) || a.riskCategory.toLowerCase().includes(activeCategoryLower);
@@ -6094,7 +6112,14 @@ export const SafetyInspectorPage: React.FC<SafetyInspectorPageProps> = ({ setPag
         // Reset to sandbox logs
         try {
             const saved = localStorage.getItem('melotwo_sandbox_logs');
-            setLedgerLogs(saved ? JSON.parse(saved) : DEFAULT_LOGS);
+            if (saved) {
+                const parsed = JSON.parse(saved);
+                if (Array.isArray(parsed)) {
+                    setLedgerLogs(parsed);
+                    return;
+                }
+            }
+            setLedgerLogs(DEFAULT_LOGS);
         } catch (e) {
             setLedgerLogs(DEFAULT_LOGS);
         }
@@ -6465,7 +6490,7 @@ export const SafetyInspectorPage: React.FC<SafetyInspectorPageProps> = ({ setPag
             const cat = log.riskCategory.toLowerCase();
             const vec = log.violationVector.toLowerCase();
             const notes = (log.detailedNotes || '').toLowerCase();
-            return cat.includes(selectedSector) || vec.includes(activeProfile.defaultStandardCode.toLowerCase()) || notes.includes(selectedSector);
+            return cat.includes(selectedSector) || vec.includes(activeProfile.standardCode.toLowerCase()) || notes.includes(selectedSector);
         });
         return baseAuditsCount + currentSectorLogs.length;
     }, [ledgerLogs, selectedSector, activeProfile]);
