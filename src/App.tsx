@@ -5779,6 +5779,95 @@ const DEFAULT_LOGS: ComplianceLedgerRow[] = [
   }
 ];
 
+interface TypewriterTextProps {
+    text: string;
+    speed?: number;
+    onComplete?: () => void;
+}
+
+const TypewriterText: React.FC<TypewriterTextProps> = ({ text, speed = 8, onComplete }) => {
+    const [displayedText, setDisplayedText] = useState('');
+    const [isComplete, setIsComplete] = useState(false);
+    const containerRef = useRef<HTMLDivElement>(null);
+
+    useEffect(() => {
+        setDisplayedText('');
+        setIsComplete(false);
+        if (!text) return;
+
+        let index = 0;
+        let timer: NodeJS.Timeout;
+
+        const tick = () => {
+            if (index < text.length) {
+                // Adaptive speed: step by more characters if the text is exceptionally long
+                const increment = text.length > 500 ? 4 : text.length > 200 ? 2 : 1;
+                index += increment;
+                if (index > text.length) index = text.length;
+                
+                setDisplayedText(text.slice(0, index));
+                timer = setTimeout(tick, speed);
+            } else {
+                setDisplayedText(text);
+                setIsComplete(true);
+                if (onComplete) onComplete();
+            }
+        };
+
+        timer = setTimeout(tick, speed);
+
+        return () => {
+            clearTimeout(timer);
+        };
+    }, [text, speed]);
+
+    // Keep scrolled to bottom during typing
+    useEffect(() => {
+        if (containerRef.current) {
+            containerRef.current.scrollTop = containerRef.current.scrollHeight;
+        }
+    }, [displayedText]);
+
+    const handleSkip = () => {
+        setDisplayedText(text);
+        setIsComplete(true);
+        if (onComplete) onComplete();
+    };
+
+    return (
+        <div className="flex flex-col gap-2 w-full">
+            {!isComplete && (
+                <div className="flex items-center gap-2 text-[10px] text-amber-500/80 font-mono animate-pulse mb-1">
+                    <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-ping" />
+                    <span>SECURE SANS AUDIT STREAMS DECODING... {Math.round((displayedText.length / text.length) * 100)}%</span>
+                </div>
+            )}
+            
+            <div 
+                ref={containerRef}
+                className="max-h-[160px] overflow-y-auto custom-scrollbar relative pr-8 group/typewriter"
+            >
+                <p className="text-xs text-slate-300 font-mono whitespace-pre-wrap leading-relaxed">
+                    {displayedText}
+                    {!isComplete && (
+                        <span className="inline-block w-2 h-3.5 bg-amber-500 ml-1 animate-pulse align-middle" />
+                    )}
+                </p>
+                
+                {!isComplete && (
+                    <button
+                        type="button"
+                        onClick={handleSkip}
+                        className="absolute right-0 top-0 px-2 py-1 bg-slate-900/90 hover:bg-slate-800 border border-slate-800/80 hover:border-slate-700 text-[9px] font-mono font-black text-amber-500 hover:text-amber-400 rounded-lg transition-all cursor-pointer opacity-70 hover:opacity-100 uppercase tracking-wider"
+                    >
+                        Skip
+                    </button>
+                )}
+            </div>
+        </div>
+    );
+};
+
 const SAMPLE_REPORTS = [
   {
     name: "SANS 10142 Mech Log",
@@ -7305,8 +7394,8 @@ export const SafetyInspectorPage: React.FC<SafetyInspectorPageProps> = ({ setPag
                                             {response.label}
                                         </span>
                                     </div>
-                                    <div className="max-h-[160px] overflow-y-auto custom-scrollbar">
-                                        <p className="text-xs text-slate-300 font-mono whitespace-pre-wrap leading-relaxed">{response.text}</p>
+                                    <div className="w-full">
+                                        <TypewriterText text={response.text} />
                                     </div>
                                     <div className="flex flex-wrap justify-end gap-2 pt-2 border-t border-slate-800">
                                         <button
