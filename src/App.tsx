@@ -2012,6 +2012,24 @@ const AuditHistoryChart: React.FC = () => {
     localStorage.setItem('melotwo_audit_chart_data', JSON.stringify(data));
   }, [data]);
 
+  const avgCompliance = useMemo(() => {
+    if (data.length === 0) return 0;
+    const sum = data.reduce((acc, curr) => acc + curr.complianceScore, 0);
+    return Math.round((sum / data.length) * 10) / 10;
+  }, [data]);
+
+  const avgRisk = useMemo(() => {
+    if (data.length === 0) return 0;
+    const sum = data.reduce((acc, curr) => acc + curr.riskLevel, 0);
+    return Math.round((sum / data.length) * 10) / 10;
+  }, [data]);
+
+  const avgPpe = useMemo(() => {
+    if (data.length === 0) return 0;
+    const sum = data.reduce((acc, curr) => acc + curr.ppeDegradation, 0);
+    return Math.round((sum / data.length) * 10) / 10;
+  }, [data]);
+
   // Method to handle user manually adding an audit record to the history chart
   const handleAddAuditData = () => {
     trackGA4Event('ai_generation_requested', {
@@ -2559,6 +2577,61 @@ const AuditHistoryChart: React.FC = () => {
           </svg>
           Add Audit History Chart
         </button>
+      </div>
+
+      {/* Historical Telemetry Overview Grid */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 bg-slate-950/25 p-4 rounded-2xl border border-slate-800/40">
+        {/* Metric 1: Average Compliance */}
+        <div className="bg-slate-900/40 border border-slate-800/80 rounded-xl p-3.5 flex flex-col justify-between shadow-inner relative overflow-hidden group hover:border-amber-500/30 transition-all">
+          <div className="absolute top-0 right-0 w-24 h-24 bg-amber-500/5 rounded-full blur-2xl group-hover:bg-amber-500/10 transition-all pointer-events-none" />
+          <span className="text-[10px] uppercase font-bold text-slate-400 tracking-wider font-mono">Average Compliance</span>
+          <div className="flex items-baseline justify-between mt-2">
+            <span className="text-2xl font-extrabold text-white font-mono tracking-tight" id="avg-compliance-score-val">{avgCompliance}%</span>
+            <span className={`text-[9px] font-bold font-mono px-1.5 py-0.5 rounded-full ${avgCompliance >= complianceThreshold ? 'bg-emerald-500/10 text-emerald-400' : 'bg-rose-500/10 text-rose-400'}`}>
+              {avgCompliance >= complianceThreshold ? 'TARGET OK' : 'CRITICAL'}
+            </span>
+          </div>
+          <p className="text-[10px] text-slate-500 mt-1">SANS compliance benchmark</p>
+        </div>
+
+        {/* Metric 2: Average Operational Risk */}
+        <div className="bg-slate-900/40 border border-slate-800/80 rounded-xl p-3.5 flex flex-col justify-between shadow-inner relative overflow-hidden group hover:border-amber-500/30 transition-all">
+          <div className="absolute top-0 right-0 w-24 h-24 bg-amber-500/5 rounded-full blur-2xl group-hover:bg-amber-500/10 transition-all pointer-events-none" />
+          <span className="text-[10px] uppercase font-bold text-slate-400 tracking-wider font-mono">Average Risk Level</span>
+          <div className="flex items-baseline justify-between mt-2">
+            <span className="text-2xl font-extrabold text-white font-mono tracking-tight">{avgRisk} <span className="text-xs text-slate-500 font-normal">/10</span></span>
+            <span className={`text-[9px] font-bold font-mono px-1.5 py-0.5 rounded-full ${avgRisk <= riskThreshold ? 'bg-emerald-500/10 text-emerald-400' : 'bg-rose-500/10 text-rose-400'}`}>
+              {avgRisk <= riskThreshold ? 'STABLE' : 'ELEVATED'}
+            </span>
+          </div>
+          <p className="text-[10px] text-slate-500 mt-1">Regulatory risk quotient</p>
+        </div>
+
+        {/* Metric 3: Average PPE Degradation */}
+        <div className="bg-slate-900/40 border border-slate-800/80 rounded-xl p-3.5 flex flex-col justify-between shadow-inner relative overflow-hidden group hover:border-amber-500/30 transition-all">
+          <div className="absolute top-0 right-0 w-24 h-24 bg-amber-500/5 rounded-full blur-2xl group-hover:bg-amber-500/10 transition-all pointer-events-none" />
+          <span className="text-[10px] uppercase font-bold text-slate-400 tracking-wider font-mono">Average PPE Wear</span>
+          <div className="flex items-baseline justify-between mt-2">
+            <span className="text-2xl font-extrabold text-white font-mono tracking-tight">{avgPpe}%</span>
+            <span className={`text-[9px] font-bold font-mono px-1.5 py-0.5 rounded-full ${avgPpe <= ppeThreshold ? 'bg-emerald-500/10 text-emerald-400' : 'bg-amber-500/10 text-amber-400'}`}>
+              {avgPpe <= ppeThreshold ? 'EXCELLENT' : 'WARN'}
+            </span>
+          </div>
+          <p className="text-[10px] text-slate-500 mt-1">Equipment wear rate</p>
+        </div>
+
+        {/* Metric 4: Total Audits */}
+        <div className="bg-slate-900/40 border border-slate-800/80 rounded-xl p-3.5 flex flex-col justify-between shadow-inner relative overflow-hidden group hover:border-amber-500/30 transition-all">
+          <div className="absolute top-0 right-0 w-24 h-24 bg-amber-500/5 rounded-full blur-2xl group-hover:bg-amber-500/10 transition-all pointer-events-none" />
+          <span className="text-[10px] uppercase font-bold text-slate-400 tracking-wider font-mono">Total Audits</span>
+          <div className="flex items-baseline justify-between mt-2">
+            <span className="text-2xl font-extrabold text-amber-500 font-mono tracking-tight">{data.length} <span className="text-xs text-slate-500 font-normal">Records</span></span>
+            <span className="text-[9px] font-bold font-mono px-1.5 py-0.5 rounded-full bg-amber-500/10 text-amber-400">
+              ACTIVE
+            </span>
+          </div>
+          <p className="text-[10px] text-slate-500 mt-1">Logged session baseline</p>
+        </div>
       </div>
 
       {/* Tabs to select metric */}
@@ -6143,26 +6216,159 @@ export const SafetyInspectorPage: React.FC<SafetyInspectorPageProps> = ({ setPag
 
     // Ledger Search & Filtering State
     const [ledgerSearchQuery, setLedgerSearchQuery] = useState('');
+    const [searchMode, setSearchMode] = useState<'keyword' | 'semantic' | 'hybrid'>('hybrid');
+    const [semanticScores, setSemanticScores] = useState<Record<number, {score: number, reason: string}>>({});
+    const [semanticLoading, setSemanticLoading] = useState(false);
+
+    // SQL-like Metadata Filters
+    const [selectedCategory, setSelectedCategory] = useState<string>('ALL');
+    const [selectedSeverity, setSelectedSeverity] = useState<string>('ALL');
+    const [selectedStatus, setSelectedStatus] = useState<string>('ALL');
+    const [selectedTerminalId, setSelectedTerminalId] = useState<string>('ALL');
+    const [minSemanticScore, setMinSemanticScore] = useState<number>(0.15);
+
+    // Fetch unique lists for SQL-like metadata filtering dropdowns
+    const uniqueTerminals = useMemo(() => {
+        const set = new Set(ledgerLogs.map(l => l.terminalId).filter(Boolean));
+        return Array.from(set);
+    }, [ledgerLogs]);
+
+    const uniqueCategories = useMemo(() => {
+        const set = new Set(ledgerLogs.map(l => l.riskCategory).filter(Boolean));
+        return Array.from(set);
+    }, [ledgerLogs]);
+
+    const uniqueSeverities = useMemo(() => {
+        const set = new Set(ledgerLogs.map(l => l.severityLevel).filter(Boolean));
+        return Array.from(set);
+    }, [ledgerLogs]);
+
+    const uniqueStatuses = useMemo(() => {
+        const set = new Set(ledgerLogs.map(l => l.auditStatus).filter(Boolean));
+        return Array.from(set);
+    }, [ledgerLogs]);
+
+    // Async debounced effect for fetching semantic score matrices from the server
+    useEffect(() => {
+        if (!ledgerSearchQuery.trim() || searchMode === 'keyword') {
+            setSemanticScores({});
+            return;
+        }
+
+        const delayDebounceFn = setTimeout(async () => {
+            setSemanticLoading(true);
+            try {
+                const response = await fetch('/api/semantic-search', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        query: ledgerSearchQuery,
+                        logs: ledgerLogs
+                    })
+                });
+                if (response.ok) {
+                    const data = await response.json();
+                    const scoresMap: Record<number, {score: number, reason: string}> = {};
+                    if (data.results && Array.isArray(data.results)) {
+                        data.results.forEach((item: any) => {
+                            scoresMap[item.index] = {
+                                score: item.score,
+                                reason: item.reason
+                            };
+                        });
+                    }
+                    setSemanticScores(scoresMap);
+                }
+            } catch (error) {
+                console.error("Error fetching semantic search scores:", error);
+            } finally {
+                setSemanticLoading(false);
+            }
+        }, 400);
+
+        return () => clearTimeout(delayDebounceFn);
+    }, [ledgerSearchQuery, searchMode, ledgerLogs]);
 
     const filteredLedgerLogs = useMemo(() => {
-        // Filter by search query
-        let list = ledgerLogs;
-        
-        // If there is a search query, apply manual filter
-        if (ledgerSearchQuery.trim()) {
-            const query = ledgerSearchQuery.toLowerCase();
-            list = ledgerLogs.filter(log => {
+        let list = ledgerLogs.map((log, idx) => {
+            // Standard keyword matching
+            let keywordScore = 0;
+            const query = ledgerSearchQuery.toLowerCase().trim();
+            if (query) {
                 const op = (log.operator || '').toLowerCase();
                 const term = (log.terminalId || '').toLowerCase();
                 const cat = (log.riskCategory || '').toLowerCase();
                 const vec = (log.violationVector || '').toLowerCase();
-                return op.includes(query) || term.includes(query) || cat.includes(query) || vec.includes(query);
-            });
+                const notes = (log.detailedNotes || '').toLowerCase();
+                
+                if (op.includes(query) || term.includes(query) || cat.includes(query) || vec.includes(query) || notes.includes(query)) {
+                    keywordScore = 1.0;
+                }
+            } else {
+                keywordScore = 1.0; // Default match when no query is present
+            }
+
+            const semData = semanticScores[idx];
+            const semScore = semData ? semData.score : 0.0;
+            const semReason = semData ? semData.reason : '';
+
+            // Combine score based on Search Mode
+            let combinedScore = 0;
+            if (!query) {
+                combinedScore = 1.0;
+            } else if (searchMode === 'keyword') {
+                combinedScore = keywordScore;
+            } else if (searchMode === 'semantic') {
+                combinedScore = semScore;
+            } else { // hybrid
+                combinedScore = (keywordScore * 0.4) + (semScore * 0.6);
+            }
+
+            return {
+                ...log,
+                originalIndex: idx,
+                keywordScore,
+                semanticScore: semScore,
+                semanticReason: semReason,
+                combinedScore
+            };
+        });
+
+        // 1. Filter by SQL-like metadata filters
+        if (selectedCategory !== 'ALL') {
+            list = list.filter(log => log.riskCategory === selectedCategory);
+        }
+        if (selectedSeverity !== 'ALL') {
+            list = list.filter(log => log.severityLevel === selectedSeverity);
+        }
+        if (selectedStatus !== 'ALL') {
+            list = list.filter(log => log.auditStatus === selectedStatus);
+        }
+        if (selectedTerminalId !== 'ALL') {
+            list = list.filter(log => log.terminalId === selectedTerminalId);
+        }
+
+        // 2. If search query exists, apply search filtering and scoring
+        if (ledgerSearchQuery.trim()) {
+            if (searchMode === 'keyword') {
+                // Only include logs with exact match
+                list = list.filter(log => log.keywordScore > 0);
+            } else if (searchMode === 'semantic') {
+                // Include logs meeting min semantic score threshold
+                list = list.filter(log => log.semanticScore >= minSemanticScore);
+                // Sort descending by semantic score
+                list.sort((a, b) => b.semanticScore - a.semanticScore);
+            } else { // hybrid
+                // Include if either matches keyword or matches semantic threshold
+                list = list.filter(log => log.keywordScore > 0 || log.semanticScore >= minSemanticScore);
+                // Sort descending by combined score
+                list.sort((a, b) => b.combinedScore - a.combinedScore);
+            }
         } else {
             // Sort so that logs with the active sector's default standard code or category appear first!
             const activeStandardLower = activeProfile.standardCode.toLowerCase();
             const activeCategoryLower = activeProfile.defaultCategory.toLowerCase();
-            list = [...ledgerLogs].sort((a, b) => {
+            list = [...list].sort((a, b) => {
                 const aMatch = a.violationVector.toLowerCase().includes(activeStandardLower) || a.riskCategory.toLowerCase().includes(activeCategoryLower);
                 const bMatch = b.violationVector.toLowerCase().includes(activeStandardLower) || b.riskCategory.toLowerCase().includes(activeCategoryLower);
                 if (aMatch && !bMatch) return -1;
@@ -6171,7 +6377,7 @@ export const SafetyInspectorPage: React.FC<SafetyInspectorPageProps> = ({ setPag
             });
         }
         return list;
-    }, [ledgerLogs, ledgerSearchQuery, selectedSector, activeProfile]);
+    }, [ledgerLogs, ledgerSearchQuery, searchMode, semanticScores, selectedCategory, selectedSeverity, selectedStatus, selectedTerminalId, minSemanticScore, activeProfile]);
 
     // Auth & Google Drive Sheets Handlers
     const handleGoogleLogin = async () => {
@@ -7494,28 +7700,166 @@ export const SafetyInspectorPage: React.FC<SafetyInspectorPageProps> = ({ setPag
                     </div>
 
                     {/* Filter & Search Bar */}
-                    <div className="flex flex-col md:flex-row items-stretch md:items-center gap-4 mb-5 bg-slate-950/40 p-4 rounded-2xl border border-slate-800/60">
-                        <div className="relative flex-1">
-                            <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-                            <input
-                                id="ledger-search-input"
-                                type="text"
-                                value={ledgerSearchQuery}
-                                onChange={(e) => setLedgerSearchQuery(e.target.value)}
-                                placeholder="Filter ledger logs by operator name, terminal ID, or risk category..."
-                                className="w-full bg-slate-950/80 border border-slate-800 focus:border-amber-500/50 focus:ring-1 focus:ring-amber-500/30 text-white rounded-xl py-2 pl-10 pr-4 text-xs font-sans placeholder-slate-500 outline-none transition-all"
-                            />
-                            {ledgerSearchQuery && (
-                                <button
-                                    onClick={() => setLedgerSearchQuery('')}
-                                    className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-white text-xs font-bold px-1.5 py-0.5 hover:bg-slate-800 rounded transition-colors"
-                                >
-                                    Clear
-                                </button>
-                            )}
+                    <div className="flex flex-col gap-4 mb-5 bg-slate-950/40 p-5 rounded-2xl border border-slate-800/80">
+                        {/* Mode selection + Main Search Input */}
+                        <div className="flex flex-col xl:flex-row gap-4 items-stretch">
+                            <div className="relative flex-1">
+                                <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                                <input
+                                    id="ledger-search-input"
+                                    type="text"
+                                    value={ledgerSearchQuery}
+                                    onChange={(e) => setLedgerSearchQuery(e.target.value)}
+                                    placeholder="Perform high-fidelity hybrid vector query or standard text search..."
+                                    className="w-full bg-slate-950/80 border border-slate-800 focus:border-amber-500/50 focus:ring-1 focus:ring-amber-500/30 text-white rounded-xl py-2.5 pl-10 pr-12 text-xs font-sans placeholder-slate-500 outline-none transition-all"
+                                />
+                                <div className="absolute right-3.5 top-1/2 -translate-y-1/2 flex items-center gap-1.5">
+                                    {semanticLoading && (
+                                        <div className="w-4 h-4 border-2 border-amber-500 border-t-transparent rounded-full animate-spin" />
+                                    )}
+                                    {ledgerSearchQuery && (
+                                        <button
+                                            onClick={() => setLedgerSearchQuery('')}
+                                            className="text-slate-400 hover:text-white text-xs font-bold px-1.5 py-0.5 hover:bg-slate-800 rounded transition-colors"
+                                        >
+                                            Clear
+                                        </button>
+                                    )}
+                                </div>
+                            </div>
+
+                            {/* Search Mode Toggles */}
+                            <div className="flex bg-slate-950 p-1 rounded-xl border border-slate-800/60 self-start xl:self-auto">
+                                {(['keyword', 'semantic', 'hybrid'] as const).map((mode) => (
+                                    <button
+                                        key={mode}
+                                        type="button"
+                                        onClick={() => setSearchMode(mode)}
+                                        className={`px-3 py-1.5 rounded-lg text-[10px] font-bold tracking-wider uppercase transition-all duration-200 cursor-pointer ${
+                                            searchMode === mode
+                                                ? 'bg-amber-500 text-slate-950 shadow font-black'
+                                                : 'text-slate-400 hover:text-white hover:bg-slate-900/55'
+                                        }`}
+                                    >
+                                        {mode === 'keyword' ? 'Keyword Match' : mode === 'semantic' ? 'Semantic Vector' : 'Hybrid Ranker'}
+                                    </button>
+                                ))}
+                            </div>
                         </div>
-                        <div className="flex items-center gap-2 text-xs text-slate-400 whitespace-nowrap self-end md:self-auto font-mono text-[11px]">
-                            <span>Found: <strong className="text-amber-500">{filteredLedgerLogs.length}</strong> of {ledgerLogs.length} logs</span>
+
+                        {/* Metadata SQL-like Filters row */}
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-5 gap-3 pt-3 border-t border-slate-800/40">
+                            {/* Category selector */}
+                            <div className="flex flex-col gap-1">
+                                <label className="text-[9px] font-bold text-slate-500 uppercase tracking-wider font-mono">Category Metadata</label>
+                                <select
+                                    value={selectedCategory}
+                                    onChange={(e) => setSelectedCategory(e.target.value)}
+                                    className="bg-slate-950 border border-slate-800/80 rounded-lg px-2.5 py-1.5 text-xs text-slate-300 focus:border-amber-500/50 outline-none"
+                                >
+                                    <option value="ALL">All Categories</option>
+                                    {uniqueCategories.map(cat => <option key={cat} value={cat}>{cat}</option>)}
+                                </select>
+                            </div>
+
+                            {/* Severity level */}
+                            <div className="flex flex-col gap-1">
+                                <label className="text-[9px] font-bold text-slate-500 uppercase tracking-wider font-mono">Severity Level</label>
+                                <select
+                                    value={selectedSeverity}
+                                    onChange={(e) => setSelectedSeverity(e.target.value)}
+                                    className="bg-slate-950 border border-slate-800/80 rounded-lg px-2.5 py-1.5 text-xs text-slate-300 focus:border-amber-500/50 outline-none"
+                                >
+                                    <option value="ALL">All Severities</option>
+                                    {uniqueSeverities.map(sev => <option key={sev} value={sev}>{sev}</option>)}
+                                </select>
+                            </div>
+
+                            {/* Status filter */}
+                            <div className="flex flex-col gap-1">
+                                <label className="text-[9px] font-bold text-slate-500 uppercase tracking-wider font-mono">Audit Status</label>
+                                <select
+                                    value={selectedStatus}
+                                    onChange={(e) => setSelectedStatus(e.target.value)}
+                                    className="bg-slate-950 border border-slate-800/80 rounded-lg px-2.5 py-1.5 text-xs text-slate-300 focus:border-amber-500/50 outline-none"
+                                >
+                                    <option value="ALL">All Statuses</option>
+                                    {uniqueStatuses.map(st => <option key={st} value={st}>{st}</option>)}
+                                </select>
+                            </div>
+
+                            {/* Terminal ID filter */}
+                            <div className="flex flex-col gap-1">
+                                <label className="text-[9px] font-bold text-slate-500 uppercase tracking-wider font-mono">Terminal ID</label>
+                                <select
+                                    value={selectedTerminalId}
+                                    onChange={(e) => setSelectedTerminalId(e.target.value)}
+                                    className="bg-slate-950 border border-slate-800/80 rounded-lg px-2.5 py-1.5 text-xs text-slate-300 focus:border-amber-500/50 outline-none"
+                                >
+                                    <option value="ALL">All Terminals</option>
+                                    {uniqueTerminals.map(term => <option key={term} value={term}>{term}</option>)}
+                                </select>
+                            </div>
+
+                            {/* Semantic similarity minimum score slider */}
+                            <div className="flex flex-col gap-1 sm:col-span-2 lg:col-span-4 xl:col-span-1 justify-end">
+                                {searchMode !== 'keyword' && ledgerSearchQuery.trim() ? (
+                                    <div className="flex flex-col gap-1">
+                                        <div className="flex justify-between items-center text-[9px] font-mono">
+                                            <span className="font-bold text-slate-500 uppercase tracking-wider">Similarity Cutoff</span>
+                                            <span className="text-amber-500 font-bold">{Math.round(minSemanticScore * 100)}% Match</span>
+                                        </div>
+                                        <input
+                                            type="range"
+                                            min="0.0"
+                                            max="0.8"
+                                            step="0.05"
+                                            value={minSemanticScore}
+                                            onChange={(e) => setMinSemanticScore(parseFloat(e.target.value))}
+                                            className="w-full accent-amber-500 h-1 bg-slate-950 rounded-lg appearance-none cursor-pointer"
+                                        />
+                                    </div>
+                                ) : (
+                                    <div className="h-full flex items-center justify-end text-[10px] text-slate-500 font-mono italic pr-1">
+                                        Metadata Filter Active
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+
+                        {/* Status feedback & Results count */}
+                        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 pt-2 text-[10px] text-slate-400 font-mono">
+                            <div className="flex items-center gap-1.5">
+                                <span className="relative flex h-2 w-2">
+                                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                                    <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+                                </span>
+                                <span>
+                                    Search Engine: <strong className="text-emerald-400 uppercase">Hybrid Vector 2.0 (Active)</strong>
+                                    {searchMode !== 'keyword' && (
+                                        <span className="text-slate-500 ml-1">
+                                            ({semanticLoading ? 'running semantic matrix calculation...' : 'neural cache matching'})
+                                        </span>
+                                    )}
+                                </span>
+                            </div>
+                            <div className="flex items-center gap-3">
+                                <span>Found: <strong className="text-amber-500">{filteredLedgerLogs.length}</strong> of {ledgerLogs.length} logs</span>
+                                {(selectedCategory !== 'ALL' || selectedSeverity !== 'ALL' || selectedStatus !== 'ALL' || selectedTerminalId !== 'ALL' || ledgerSearchQuery.trim()) && (
+                                    <button
+                                        onClick={() => {
+                                            setLedgerSearchQuery('');
+                                            setSelectedCategory('ALL');
+                                            setSelectedSeverity('ALL');
+                                            setSelectedStatus('ALL');
+                                            setSelectedTerminalId('ALL');
+                                        }}
+                                        className="text-amber-500 hover:text-amber-400 font-bold cursor-pointer underline underline-offset-2"
+                                    >
+                                        Reset All Filters
+                                    </button>
+                                )}
+                            </div>
                         </div>
                     </div>
 
@@ -7530,19 +7874,22 @@ export const SafetyInspectorPage: React.FC<SafetyInspectorPageProps> = ({ setPag
                                     <th className="py-3 px-4">SANS / Violation Vector</th>
                                     <th className="py-3 px-4">Severity</th>
                                     <th className="py-3 px-4">Status</th>
+                                    {ledgerSearchQuery.trim() && searchMode !== 'keyword' && (
+                                        <th className="py-3 px-4 text-amber-500">Semantic Alignment</th>
+                                    )}
                                     <th className="py-3 px-4 max-w-[200px]">Notes</th>
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-slate-800/60 font-mono text-slate-300">
                                 {ledgerLogs.length === 0 ? (
                                     <tr>
-                                        <td colSpan={8} className="py-8 text-center text-slate-500 font-sans">
+                                        <td colSpan={ledgerSearchQuery.trim() && searchMode !== 'keyword' ? 9 : 8} className="py-8 text-center text-slate-500 font-sans">
                                             No ledger logs synchronized yet. Enter sandbox parameters above or connect your Google Spreadsheet.
                                         </td>
                                     </tr>
                                 ) : filteredLedgerLogs.length === 0 ? (
                                     <tr>
-                                        <td colSpan={8} className="py-8 text-center text-slate-500 font-sans">
+                                        <td colSpan={ledgerSearchQuery.trim() && searchMode !== 'keyword' ? 9 : 8} className="py-8 text-center text-slate-500 font-sans">
                                             No compliance logs match the criteria &quot;{ledgerSearchQuery}&quot;. Please try another search query.
                                         </td>
                                     </tr>
@@ -7570,6 +7917,23 @@ export const SafetyInspectorPage: React.FC<SafetyInspectorPageProps> = ({ setPag
                                                     {log.auditStatus}
                                                 </span>
                                             </td>
+                                            {ledgerSearchQuery.trim() && searchMode !== 'keyword' && (
+                                                <td className="py-3.5 px-4 font-mono">
+                                                    <div className="flex flex-col gap-1">
+                                                        <div className="flex items-center gap-1.5">
+                                                            <span className={`px-1.5 py-0.5 rounded text-[9px] font-black tracking-wider ${
+                                                                (log.semanticScore || 0) >= 0.7 ? 'text-emerald-400 bg-emerald-500/15 border border-emerald-500/20' :
+                                                                (log.semanticScore || 0) >= 0.35 ? 'text-amber-400 bg-amber-500/15 border border-amber-500/20' : 'text-slate-400 bg-slate-500/15 border border-slate-500/20'
+                                                            }`}>
+                                                                {Math.round((log.semanticScore || 0) * 100)}% Match
+                                                            </span>
+                                                        </div>
+                                                        <span className="text-[10px] text-slate-400 leading-normal block font-sans font-medium whitespace-normal max-w-[200px]" title={log.semanticReason}>
+                                                            {log.semanticReason || (semanticLoading ? 'scoring compliance vectors...' : 'no data')}
+                                                        </span>
+                                                    </div>
+                                                </td>
+                                            )}
                                             <td className="py-3.5 px-4 font-sans text-xs text-slate-400 max-w-[240px] truncate" title={log.detailedNotes}>
                                                 {log.detailedNotes || 'No notes added.'}
                                             </td>
