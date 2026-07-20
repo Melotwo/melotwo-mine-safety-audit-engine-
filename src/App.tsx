@@ -5794,7 +5794,196 @@ interface SafetyInspectorPageProps {
     setPage: (page: any) => void;
 }
 
+export const SECTOR_PROFILES: Record<string, {
+    id: string;
+    name: string;
+    company: string;
+    region: string;
+    authority: string;
+    standard: string;
+    standardCode: string;
+    defaultOperator: string;
+    defaultTerminal: string;
+    defaultCategory: string;
+    defaultSeverity: string;
+    defaultScenario: string;
+    systemPrompt: string;
+    baseSafetyIndex: number;
+    quickTemplates: { name: string; text: string }[];
+}> = {
+    mining: {
+        id: 'mining',
+        name: 'Deep Mining & Extraction',
+        company: 'Mponeng Deep Gold Minerals Ltd',
+        region: 'Gauteng (GP)',
+        authority: 'Department of Mineral Resources (DMR)',
+        standard: 'SANS 10108 & MHSA Code',
+        standardCode: 'SANS 10108',
+        defaultOperator: 'Elena Rostova',
+        defaultTerminal: 'SHAFT-4-VENT',
+        defaultCategory: 'Explosion Prevention',
+        defaultSeverity: 'High',
+        defaultScenario: 'RECONNAISSANCE SURVEY: Shaft 4 deep-level ventilation motor. During active shift 2 audit, the Ex-d flameproof enclosure seals were found with 2 sheared locking bolts. A transient gas probe measured methane content at 0.15% v/v near the open motor casing. Recommended immediate crew dispatch under the Mine Health and Safety Act (MHSA).',
+        systemPrompt: 'You are an expert Mine Safety Inspector registered under SANAS. Evaluate this mine ventilation and explosive gas containment scenario under SANS 10108 standards. Draft a formal statutory compliance hazard directive.',
+        baseSafetyIndex: 78.4,
+        quickTemplates: [
+            { name: 'Ex-d Bolt Shear', text: 'RECONNAISSANCE SURVEY: Shaft 4 deep-level ventilation motor. During active shift 2 audit, the Ex-d flameproof enclosure seals were found with 2 sheared locking bolts. A transient gas probe measured methane content at 0.15% v/v near the open motor casing.' },
+            { name: 'Methane Ingress Alarm', text: 'ALARM ACTIVE: Shaft 3 ventilation intake block. Methane sensors hit 1.2% v/v (exceeding standard 1.0% threshold). Active safety bypass key engaged temporarily by shift boss. General personnel muster warning issued.' },
+            { name: 'Pristine Drill Shaft Audit', text: 'COMPLIANCE AUDIT: Shaft 2 extraction zone. All gas containment systems intact, ventilation fans drawing normal load. Gas logs indicate 0.0% v/v combustible gas. PPE checks indicate 100% adherence.' }
+        ]
+    },
+    electrical: {
+        id: 'electrical',
+        name: 'Electrical & Infrastructure',
+        company: 'Eskom Distribution Grid Systems',
+        region: 'Mpumalanga (MP)',
+        authority: 'National Energy Regulator of SA (NERSA)',
+        standard: 'SANS 10142-1 & OHS Act',
+        standardCode: 'SANS 10142-1',
+        defaultOperator: 'Marcus Vance',
+        defaultTerminal: 'SUB-STATION-03',
+        defaultCategory: 'Electrical Safety',
+        defaultSeverity: 'High',
+        defaultScenario: 'ELECTRICAL SURVEY: Main distribution kiosk #3 for the processing plant. Heavy machinery secondary sub-panel door has broken hinge locks and is held shut by plastic cable ties. Three-phase heavy busbars are partially exposed to damp air from adjacent steam vents. Physical frontage clearance measured at 0.35m.',
+        systemPrompt: 'You are an expert Heavy Electrical Inspector. Evaluate this power distribution and wiring safety scenario under SANS 10142-1 standards. Draft a formal electrical hazard remediation order.',
+        baseSafetyIndex: 91.2,
+        quickTemplates: [
+            { name: 'Exposed Busbars', text: 'ELECTRICAL SURVEY: Main distribution kiosk #3 for the processing plant. Heavy machinery secondary sub-panel door has broken hinge locks and is held shut by plastic cable ties. Three-phase heavy busbars are partially exposed to damp air.' },
+            { name: 'Obstruction Hazard', text: 'SAFETY AUDIT: Substation panel room A. Three large wooden packing crates placed directly in front of main 400V circuit breakers. Front clearance measures 0.4m against SANS mandated 1.0m boundary.' },
+            { name: 'Insulated Cable Status', text: 'INFRASTRUCTURE PASS: Conveyor feed cabling room. Thermal imaging indicates all joints under 35°C. Earth trip relays tested and function perfectly at 22ms. Log completed.' }
+        ]
+    },
+    catering: {
+        id: 'catering',
+        name: 'Commercial HACCP & Catering',
+        company: 'Fedics Mine Hospitality Group',
+        region: 'Western Cape (WC)',
+        authority: 'National Department of Health (NDoH)',
+        standard: 'SANS 10330 & SANS 10049',
+        standardCode: 'SANS 10330',
+        defaultOperator: 'Dr. Aaron Chen',
+        defaultTerminal: 'CANTEEN-COOL-02',
+        defaultCategory: 'Hygiene & PPE',
+        defaultSeverity: 'Medium',
+        defaultScenario: 'HACCP FOOD HYGIENE AUDIT: Canteen refrigeration system zone 2. Bulk storage refrigeration unit for fresh beef portions recorded temperature holding at 7.2°C for 4 continuous hours. Sanitizer dispenser at kitchen entrance has broken mechanical pump lever and is inoperable.',
+        systemPrompt: 'You are a certified SANS 10330 HACCP Food Safety Auditor. Evaluate this food production cold chain and hygiene scenario. Draft an official corrective action requirement report.',
+        baseSafetyIndex: 95.0,
+        quickTemplates: [
+            { name: 'Refrigeration Failure', text: 'HACCP FOOD HYGIENE AUDIT: Canteen refrigeration system zone 2. Bulk storage refrigeration unit for fresh beef portions recorded temperature holding at 7.2°C for 4 continuous hours.' },
+            { name: 'Sanitizer Breakdown', text: 'HYGIENE PATROL: Main kitchen sanitation block. Automatic hand wash dispenser found completely dry. Secondary mechanical pump lever has snapped off and is unrepairable.' },
+            { name: 'Cold Chain Validation', text: 'SANS 10330 COMPLIANCE CHECK: Main cold storage room 1. High-risk raw chicken held at 2.8°C continuously. Temperature logs verified and stamped. All staff wearing designated hairnets.' }
+        ]
+    },
+    sheq: {
+        id: 'sheq',
+        name: 'General SHEQ & PPE',
+        company: 'Anglo American Processing Surface Div',
+        region: 'North West (NW)',
+        authority: 'Department of Employment and Labour (DoEL)',
+        standard: 'SANS 10049 & OHS Act',
+        standardCode: 'SANS 10049',
+        defaultOperator: 'Patricia Ndlovu',
+        defaultTerminal: 'BELT-SURFACE-01',
+        defaultCategory: 'General Compliance',
+        defaultSeverity: 'Medium',
+        defaultScenario: 'GENERAL SHEQ RUN: Surface sorting belt. Active personnel observed handling chemical separation reagents without double-filtered respiratory cartridges. Goggle replacement station locked due to missing warehouse key logs. Particulate dust monitors alarm indicating 15mg/m3 concentration.',
+        systemPrompt: 'You are an expert Occupational Health and Safety (SHEQ) Officer. Evaluate this personal protective equipment (PPE) compliance and dust safety scenario. Draft a formal Section 16(2) compliance instruction.',
+        baseSafetyIndex: 89.1,
+        quickTemplates: [
+            { name: 'Reagent Inhalation Risk', text: 'GENERAL SHEQ RUN: Surface sorting belt. Active personnel observed handling chemical separation reagents without double-filtered respiratory cartridges. Particulate dust monitors alarm indicating 15mg/m3 concentration.' },
+            { name: 'PPE Station Locked', text: 'SITE INSPECTION: Area B safety stores. Mandatory protective safety goggle cabinets are locked. Storekeeper reports key log is missing. Sorting team operating with standard commercial sunglasses.' },
+            { name: 'Surface Safety Audit', text: 'ANNUAL REVIEW: Sorting facility surface belt. Dust ventilation hoods functioning normally at 12 m/s. All employees equipped with certified SANS 10049 respiratory cartridges.' }
+        ]
+    }
+};
+
 export const SafetyInspectorPage: React.FC<SafetyInspectorPageProps> = ({ setPage }) => {
+    // Editable review fields (Declared at the top for use in applySectorDefaults)
+    const [parsedDate, setParsedDate] = useState(() => new Date().toISOString().split('T')[0]);
+    const [parsedOperator, setParsedOperator] = useState('');
+    const [parsedTerminalId, setParsedTerminalId] = useState('');
+    const [parsedCategory, setParsedCategory] = useState('General Compliance');
+    const [parsedViolationVector, setParsedViolationVector] = useState('');
+    const [parsedSeverity, setParsedSeverity] = useState('Medium');
+    const [parsedStatus, setParsedStatus] = useState('Action Required');
+    const [parsedNotes, setParsedNotes] = useState('');
+
+    // Sector-specific profile states
+    const [selectedSector, setSelectedSector] = useState<string>(() => {
+        return localStorage.getItem('melotwo_inspector_active_sector') || 'mining';
+    });
+
+    const [sectorChecklists, setSectorChecklists] = useState<Record<string, { id: string; text: string; checked: boolean }[]>>(() => {
+        const saved = localStorage.getItem('melotwo_sector_checklists');
+        if (saved) {
+            try {
+                return JSON.parse(saved);
+            } catch (e) {}
+        }
+        return {
+            mining: [
+                { id: 'min1', text: 'Enforce methane concentration measurements under 1.0% v/v', checked: true },
+                { id: 'min2', text: 'Ensure Ex-d motor enclosures have all locking bolts secure', checked: false },
+                { id: 'min3', text: 'Verify active shaft-level emergency ventilation flows', checked: false },
+                { id: 'min4', text: 'Audit respiratory mask storage and wear logs', checked: true }
+            ],
+            electrical: [
+                { id: 'elec1', text: 'Verify minimum 1.0m unobstructed emergency egress boundary', checked: false },
+                { id: 'elec2', text: 'Verify all distribution panel hinges and locking systems', checked: false },
+                { id: 'elec3', text: 'Assess isolator waterproofing and seal integrity', checked: true },
+                { id: 'elec4', text: 'Audit earth leakage loop trip-time logs (under 0.3s)', checked: true }
+            ],
+            catering: [
+                { id: 'cat1', text: 'Ensure walk-in refrigeration units hold temperature below 4.0°C', checked: false },
+                { id: 'cat2', text: 'Verify sanitization stations fluid levels and mechanical pumps', checked: false },
+                { id: 'cat3', text: 'Audit prepared-food core preparation temperature checklists', checked: true },
+                { id: 'cat4', text: 'Separate raw-prep and ready-to-eat zone barrier partitions', checked: true }
+            ],
+            sheq: [
+                { id: 'sheq1', text: 'Verify active particulate concentration under 10mg/m3', checked: false },
+                { id: 'sheq2', text: 'Check protective goggle frames and anti-fog replacement stocks', checked: false },
+                { id: 'sheq3', text: 'Audit Section 16(2) appointee training records', checked: true },
+                { id: 'sheq4', text: 'Verify low-level fluid alarm alerts on hand washing blocks', checked: true }
+            ]
+        };
+    });
+
+    const applySectorDefaults = (sectorId: string) => {
+        const profile = SECTOR_PROFILES[sectorId];
+        if (!profile) return;
+        
+        setScenario(profile.defaultScenario);
+        localStorage.setItem('melotwo_inspector_scenario_draft', profile.defaultScenario);
+        
+        setSystemPrompt(profile.systemPrompt);
+        localStorage.setItem('melotwo_inspector_system_prompt_draft', profile.systemPrompt);
+        
+        setParsedOperator(profile.defaultOperator);
+        setParsedTerminalId(profile.defaultTerminal);
+        setParsedCategory(profile.defaultCategory);
+        setParsedViolationVector(profile.defaultStandardCode);
+        setParsedSeverity(profile.defaultSeverity);
+        setParsedStatus('Action Required');
+        setParsedNotes(`Initial automated sector baseline loaded under ${profile.standard}. System configured for active inspection dispatch.`);
+    };
+
+    // Save lists to local storage
+    useEffect(() => {
+        localStorage.setItem('melotwo_inspector_active_sector', selectedSector);
+    }, [selectedSector]);
+
+    useEffect(() => {
+        localStorage.setItem('melotwo_sector_checklists', JSON.stringify(sectorChecklists));
+    }, [sectorChecklists]);
+
+    // Apply smart defaults on first load if draft is empty
+    useEffect(() => {
+        const savedDraft = localStorage.getItem('melotwo_inspector_scenario_draft');
+        if (!savedDraft || savedDraft.trim() === '') {
+            applySectorDefaults(selectedSector);
+        }
+    }, []);
+
     // Core states
     const [scenario, setScenario] = useState(() => localStorage.getItem('melotwo_inspector_scenario_draft') || '');
     const [systemPrompt, setSystemPrompt] = useState(() => localStorage.getItem('melotwo_inspector_system_prompt_draft') || 'You are an expert industrial compliance safety officer. Create a professional, detailed audit ledger draft based on the operational scenario.');
@@ -5843,15 +6032,33 @@ export const SafetyInspectorPage: React.FC<SafetyInspectorPageProps> = ({ setPag
     const [ledgerSearchQuery, setLedgerSearchQuery] = useState('');
 
     const filteredLedgerLogs = useMemo(() => {
-        if (!ledgerSearchQuery.trim()) return ledgerLogs;
-        const query = ledgerSearchQuery.toLowerCase();
-        return ledgerLogs.filter(log => {
-            const op = (log.operator || '').toLowerCase();
-            const term = (log.terminalId || '').toLowerCase();
-            const cat = (log.riskCategory || '').toLowerCase();
-            return op.includes(query) || term.includes(query) || cat.includes(query);
-        });
-    }, [ledgerLogs, ledgerSearchQuery]);
+        // Filter by search query
+        let list = ledgerLogs;
+        
+        // If there is a search query, apply manual filter
+        if (ledgerSearchQuery.trim()) {
+            const query = ledgerSearchQuery.toLowerCase();
+            list = ledgerLogs.filter(log => {
+                const op = (log.operator || '').toLowerCase();
+                const term = (log.terminalId || '').toLowerCase();
+                const cat = (log.riskCategory || '').toLowerCase();
+                const vec = (log.violationVector || '').toLowerCase();
+                return op.includes(query) || term.includes(query) || cat.includes(query) || vec.includes(query);
+            });
+        } else {
+            // Sort so that logs with the active sector's default standard code or category appear first!
+            const activeStandardLower = activeProfile.defaultStandardCode.toLowerCase();
+            const activeCategoryLower = activeProfile.defaultCategory.toLowerCase();
+            list = [...ledgerLogs].sort((a, b) => {
+                const aMatch = a.violationVector.toLowerCase().includes(activeStandardLower) || a.riskCategory.toLowerCase().includes(activeCategoryLower);
+                const bMatch = b.violationVector.toLowerCase().includes(activeStandardLower) || b.riskCategory.toLowerCase().includes(activeCategoryLower);
+                if (aMatch && !bMatch) return -1;
+                if (!aMatch && bMatch) return 1;
+                return 0;
+            });
+        }
+        return list;
+    }, [ledgerLogs, ledgerSearchQuery, selectedSector, activeProfile]);
 
     // Auth & Google Drive Sheets Handlers
     const handleGoogleLogin = async () => {
@@ -5931,16 +6138,6 @@ export const SafetyInspectorPage: React.FC<SafetyInspectorPageProps> = ({ setPag
     const [scanLoading, setScanLoading] = useState(false);
     const [scanError, setScanError] = useState<string | null>(null);
     const [scanSuccess, setScanSuccess] = useState(false);
-
-    // Editable review fields
-    const [parsedDate, setParsedDate] = useState(() => new Date().toISOString().split('T')[0]);
-    const [parsedOperator, setParsedOperator] = useState('');
-    const [parsedTerminalId, setParsedTerminalId] = useState('');
-    const [parsedCategory, setParsedCategory] = useState('General Compliance');
-    const [parsedViolationVector, setParsedViolationVector] = useState('');
-    const [parsedSeverity, setParsedSeverity] = useState('Medium');
-    const [parsedStatus, setParsedStatus] = useState('Action Required');
-    const [parsedNotes, setParsedNotes] = useState('');
 
     const handleDrag = (e: React.DragEvent) => {
         e.preventDefault();
@@ -6253,33 +6450,62 @@ export const SafetyInspectorPage: React.FC<SafetyInspectorPageProps> = ({ setPag
         }
     };
 
-    // Derive metrics dynamically
-    const totalAudits = ledgerLogs.length;
-    
+    // Derive metrics dynamically based on the active sector, compliance checklist, and historical ledger logs
+    const activeProfile = SECTOR_PROFILES[selectedSector] || SECTOR_PROFILES.mining;
+    const activeChecklist = sectorChecklists[selectedSector] || [];
+
+    // Calculate checked vs unchecked items for the active sector's compliance standard
+    const checkedCount = activeChecklist.filter(item => item.checked).length;
+    const uncheckedCount = activeChecklist.filter(item => !item.checked).length;
+
+    const totalAudits = useMemo(() => {
+        // Base audits for this sector plus logs in ledger
+        const baseAuditsCount = selectedSector === 'mining' ? 14 : selectedSector === 'electrical' ? 8 : selectedSector === 'catering' ? 6 : 5;
+        const currentSectorLogs = ledgerLogs.filter(log => {
+            const cat = log.riskCategory.toLowerCase();
+            const vec = log.violationVector.toLowerCase();
+            const notes = (log.detailedNotes || '').toLowerCase();
+            return cat.includes(selectedSector) || vec.includes(activeProfile.defaultStandardCode.toLowerCase()) || notes.includes(selectedSector);
+        });
+        return baseAuditsCount + currentSectorLogs.length;
+    }, [ledgerLogs, selectedSector, activeProfile]);
+
     const criticalHazards = useMemo(() => {
-        return ledgerLogs.filter(log => 
+        // Core hazards from ledger logs + active unchecked checklist items
+        const ledgerHazards = ledgerLogs.filter(log => 
             log.auditStatus === 'Critical Warning' || 
             log.auditStatus === 'Action Required' || 
             log.severityLevel === 'High'
         ).length;
-    }, [ledgerLogs]);
+        
+        return ledgerHazards + uncheckedCount;
+    }, [ledgerLogs, uncheckedCount]);
 
     const averageSafetyIndex = useMemo(() => {
-        if (ledgerLogs.length === 0) return 92.5;
-        let sum = 0;
-        ledgerLogs.forEach(log => {
-            if (log.auditStatus === 'Passed') sum += 95;
-            else if (log.auditStatus === 'Action Required') sum += 75;
-            else if (log.auditStatus === 'Critical Warning') sum += 55;
-            else sum += 85;
-        });
-        return Math.round((sum / ledgerLogs.length) * 10) / 10;
-    }, [ledgerLogs]);
+        let baseScore = activeProfile.baseSafetyIndex;
+        
+        // Checklist adds to or subtracts from safety index
+        const checklistMod = (checkedCount - uncheckedCount) * 3.5;
+        let finalScore = baseScore + checklistMod;
+        
+        // Adjust for live ledger logs (negative impact for Warnings)
+        if (ledgerLogs.length > 0) {
+            let totalPenalties = 0;
+            ledgerLogs.forEach(log => {
+                if (log.auditStatus === 'Critical Warning') totalPenalties += 4;
+                else if (log.auditStatus === 'Action Required') totalPenalties += 2;
+            });
+            finalScore -= totalPenalties;
+        }
+
+        return Math.max(45, Math.min(100, Math.round(finalScore * 10) / 10));
+    }, [ledgerLogs, selectedSector, checkedCount, uncheckedCount, activeProfile]);
 
     const activeOperators = useMemo(() => {
-        const ops = new Set(ledgerLogs.map(log => log.operator).filter(Boolean));
-        return ops.size || 1;
-    }, [ledgerLogs]);
+        const baseOps = selectedSector === 'mining' ? 2 : selectedSector === 'electrical' ? 1 : selectedSector === 'catering' ? 1 : 2;
+        const ledgerOpsCount = new Set(ledgerLogs.map(log => log.operator).filter(Boolean)).size;
+        return Math.max(baseOps, ledgerOpsCount);
+    }, [ledgerLogs, selectedSector]);
 
     const chartData = useMemo<DailyComplianceData[]>(() => {
         if (ledgerLogs.length === 0) {
@@ -6417,6 +6643,88 @@ export const SafetyInspectorPage: React.FC<SafetyInspectorPageProps> = ({ setPag
                                     <RefreshCw className="w-3 h-3" />
                                 </button>
                             )}
+                        </div>
+                    </div>
+                </div>
+
+                {/* Enterprise Auditing Profile Selector */}
+                <div className="bg-slate-900 border border-slate-800/85 rounded-2xl p-5 backdrop-blur-xl">
+                    <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
+                        {/* Selector Tabs */}
+                        <div className="flex-1">
+                            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-2.5">
+                                Select Active Business Profile & SANS Industry Sector
+                            </span>
+                            <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+                                {Object.values(SECTOR_PROFILES).map((profile) => {
+                                    const isActive = selectedSector === profile.id;
+                                    return (
+                                        <button
+                                            key={profile.id}
+                                            onClick={() => {
+                                                setSelectedSector(profile.id);
+                                                applySectorDefaults(profile.id);
+                                            }}
+                                            className={`flex flex-col items-start gap-1 p-3.5 rounded-xl border text-left transition-all cursor-pointer ${
+                                                isActive
+                                                    ? 'bg-amber-500/10 border-amber-500 text-white shadow-lg shadow-amber-500/5'
+                                                    : 'bg-slate-950 border-slate-800/80 hover:border-slate-700 hover:bg-slate-900 text-slate-400 hover:text-slate-200'
+                                            }`}
+                                        >
+                                            <div className="flex items-center gap-2 w-full">
+                                                <div className={`p-1.5 rounded-lg border flex items-center justify-center ${
+                                                    isActive ? 'bg-amber-500/20 border-amber-500/30' : 'bg-slate-900 border-slate-800'
+                                                }`}>
+                                                    {profile.id === 'mining' && <Shield className={`w-3.5 h-3.5 ${isActive ? 'text-amber-500' : 'text-slate-400'}`} />}
+                                                    {profile.id === 'electrical' && <Zap className={`w-3.5 h-3.5 ${isActive ? 'text-amber-500' : 'text-slate-400'}`} />}
+                                                    {profile.id === 'catering' && <Activity className={`w-3.5 h-3.5 ${isActive ? 'text-amber-500' : 'text-slate-400'}`} />}
+                                                    {profile.id === 'sheq' && <CheckCircle2 className={`w-3.5 h-3.5 ${isActive ? 'text-amber-500' : 'text-slate-400'}`} />}
+                                                </div>
+                                                <span className="text-[10px] font-mono font-bold tracking-tight text-slate-300">
+                                                    {profile.standardCode}
+                                                </span>
+                                            </div>
+                                            <div className="mt-1.5">
+                                                <span className="text-[11px] font-bold block truncate leading-none">
+                                                    {profile.name}
+                                                </span>
+                                            </div>
+                                        </button>
+                                    );
+                                })}
+                            </div>
+                        </div>
+
+                        {/* Profile Info Details Card */}
+                        <div className="lg:w-80 bg-slate-950 border border-slate-800/80 rounded-xl p-4 flex flex-col gap-2.5 font-mono">
+                            <div className="flex justify-between items-center border-b border-slate-800 pb-2">
+                                <span className="text-[9px] text-slate-500 uppercase font-bold tracking-wider">Assigned Profile</span>
+                                <span className="bg-emerald-500/10 text-emerald-400 text-[8px] px-1.5 py-0.5 rounded border border-emerald-500/20 font-black tracking-widest uppercase">
+                                    ACTIVE BASES
+                                </span>
+                            </div>
+                            <div className="flex flex-col gap-1 text-[11px]">
+                                <div className="flex justify-between">
+                                    <span className="text-slate-500">Business:</span>
+                                    <span className="text-slate-300 font-sans font-semibold text-right truncate max-w-[180px]" title={activeProfile.company}>
+                                        {activeProfile.company}
+                                    </span>
+                                </div>
+                                <div className="flex justify-between">
+                                    <span className="text-slate-500">Region:</span>
+                                    <span className="text-slate-300">{activeProfile.region}</span>
+                                </div>
+                                <div className="flex justify-between">
+                                    <span className="text-slate-500">Authority:</span>
+                                    <span className="text-slate-300 text-right truncate max-w-[180px]" title={activeProfile.authority}>
+                                        {activeProfile.authority}
+                                    </span>
+                                </div>
+                                <div className="flex justify-between border-t border-slate-800/60 pt-1.5 mt-1">
+                                    <span className="text-slate-500 font-bold">Standard Met:</span>
+                                    <span className="text-amber-500 font-bold">{activeProfile.standardCode}</span>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -6628,6 +6936,88 @@ export const SafetyInspectorPage: React.FC<SafetyInspectorPageProps> = ({ setPag
                             </div>
                         )}
 
+                        {/* SANS Compliance Standards Checklist Card */}
+                        <div className="bg-slate-900 border border-slate-800 rounded-3xl p-6 backdrop-blur-xl flex flex-col gap-4">
+                            <div className="flex items-center justify-between border-b border-slate-800/80 pb-3">
+                                <div>
+                                    <h3 className="text-sm font-bold text-white uppercase tracking-wider flex items-center gap-2">
+                                        <CheckCircle2 className="w-4 h-4 text-amber-500" />
+                                        SANS Sector Checklist
+                                    </h3>
+                                    <p className="text-[10px] text-slate-400 mt-0.5 font-mono">
+                                        Mandatory standards under {activeProfile.standard}
+                                    </p>
+                                </div>
+                                <div className="flex gap-2">
+                                    <button
+                                        onClick={() => {
+                                            setSectorChecklists(prev => ({
+                                                ...prev,
+                                                [selectedSector]: prev[selectedSector].map(item => ({ ...item, checked: true }))
+                                            }));
+                                        }}
+                                        className="text-[9px] font-bold text-emerald-400 hover:text-emerald-300 bg-emerald-500/10 border border-emerald-500/20 rounded-lg px-2 py-1 transition-all"
+                                    >
+                                        Pass All
+                                    </button>
+                                    <button
+                                        onClick={() => {
+                                            setSectorChecklists(prev => ({
+                                                ...prev,
+                                                [selectedSector]: prev[selectedSector].map(item => ({ ...item, checked: false }))
+                                            }));
+                                        }}
+                                        className="text-[9px] font-bold text-amber-400 hover:text-amber-300 bg-amber-500/10 border border-amber-500/20 rounded-lg px-2 py-1 transition-all"
+                                    >
+                                        Reset
+                                    </button>
+                                </div>
+                            </div>
+
+                            <div className="flex flex-col gap-2.5">
+                                {activeChecklist.map((item) => (
+                                    <div
+                                        key={item.id}
+                                        onClick={() => {
+                                            setSectorChecklists(prev => ({
+                                                ...prev,
+                                                [selectedSector]: prev[selectedSector].map(chk =>
+                                                    chk.id === item.id ? { ...chk, checked: !chk.checked } : chk
+                                                )
+                                            }));
+                                        }}
+                                        className={`flex items-start gap-3 p-3 rounded-xl border transition-all cursor-pointer select-none ${
+                                            item.checked
+                                                ? 'bg-emerald-500/5 border-emerald-500/25 text-slate-300'
+                                                : 'bg-slate-950/40 border-slate-800/80 text-slate-400 hover:border-slate-800'
+                                        }`}
+                                    >
+                                        <div className={`mt-0.5 w-4 h-4 rounded border flex items-center justify-center transition-colors ${
+                                            item.checked
+                                                ? 'bg-emerald-500 border-emerald-600 text-slate-950'
+                                                : 'border-slate-700 bg-slate-900 group-hover:border-slate-500'
+                                        }`}>
+                                            {item.checked && (
+                                                <svg className="w-3 h-3 stroke-[3]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                    <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                                                </svg>
+                                            )}
+                                        </div>
+                                        <div className="flex-1 flex justify-between items-center gap-4">
+                                            <span className="text-xs leading-snug">{item.text}</span>
+                                            <span className={`text-[9px] font-mono font-bold tracking-wider uppercase px-2 py-0.5 rounded border whitespace-nowrap ${
+                                                item.checked
+                                                    ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400'
+                                                    : 'bg-amber-500/10 border-amber-500/20 text-amber-400'
+                                            }`}>
+                                                {item.checked ? 'SANS MET' : 'CRITICAL REQ'}
+                                            </span>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+
                         {/* Editable Reviewed Parameters Panel */}
                         <div id="review-form-section" className="bg-slate-900 border border-slate-800 rounded-3xl p-6 backdrop-blur-xl flex flex-col gap-4">
                             <div className="flex items-center justify-between border-b border-slate-800/80 pb-3">
@@ -6817,6 +7207,38 @@ export const SafetyInspectorPage: React.FC<SafetyInspectorPageProps> = ({ setPag
                                         placeholder="Paste unformatted site audit notes, inspection logs, or violations here to draft comprehensive assessments..."
                                         className="bg-slate-950 border border-slate-800 rounded-xl p-3 text-xs text-slate-200 focus:outline-none focus:border-indigo-500 transition-colors resize-none"
                                     />
+                                    
+                                    {/* Quick Templates Selector */}
+                                    <div className="mt-1">
+                                        <span className="text-[9px] font-bold text-slate-500 uppercase tracking-wider block mb-1">
+                                            Sector Scenario Presets:
+                                        </span>
+                                        <div className="flex flex-wrap gap-1.5">
+                                            {activeProfile.quickTemplates.map((tmpl) => (
+                                                <button
+                                                    key={tmpl.name}
+                                                    type="button"
+                                                    onClick={() => {
+                                                        setScenario(tmpl.text);
+                                                        localStorage.setItem('melotwo_inspector_scenario_draft', tmpl.text);
+                                                        // Automatically infer some logical form settings on template select to save time
+                                                        if (tmpl.name.toLowerCase().includes('pristine') || tmpl.name.toLowerCase().includes('insulated') || tmpl.name.toLowerCase().includes('cold chain')) {
+                                                            setParsedSeverity('Low');
+                                                            setParsedStatus('Passed');
+                                                            setParsedNotes(`Baseline verification passes SANS parameters. Systems in optimal structural state.`);
+                                                        } else {
+                                                            setParsedSeverity(tmpl.name.toLowerCase().includes('ingress') || tmpl.name.toLowerCase().includes('exposed') || tmpl.name.toLowerCase().includes('reagent') ? 'High' : 'Medium');
+                                                            setParsedStatus(tmpl.name.toLowerCase().includes('alarm') || tmpl.name.toLowerCase().includes('ingress') || tmpl.name.toLowerCase().includes('exposed') ? 'Critical Warning' : 'Action Required');
+                                                            setParsedNotes(`Remediation ordered for: ${tmpl.name}. Urgently dispatch crew under ${activeProfile.standard}.`);
+                                                        }
+                                                    }}
+                                                    className="px-2 py-1 bg-slate-950 hover:bg-slate-850 border border-slate-800/80 hover:border-slate-700 text-slate-400 hover:text-slate-200 text-[10px] font-sans font-semibold rounded-lg transition-all cursor-pointer"
+                                                >
+                                                    {tmpl.name}
+                                                </button>
+                                            ))}
+                                        </div>
+                                    </div>
                                 </div>
 
                                 <div className="flex gap-2">
