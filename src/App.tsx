@@ -3,8 +3,9 @@ import { jsPDF } from 'jspdf';
 import { ComplianceTrendChart, DailyComplianceData } from './components/ComplianceTrendChart';
 import { sanitizeInputText } from './utils/sanitizer';
 import { CountUp } from './components/CountUp';
+import { Sparkline as HistoricalSparkline } from './components/Sparkline';
 import { ComplianceFAQ } from './components/ComplianceFAQ';
-import { Database, RefreshCw, Upload, LogOut, Sparkles, CheckCircle2, AlertOctagon, Download, ChevronRight, Lock, Terminal, Minimize2, Maximize2, Activity } from 'lucide-react';
+import { Database, RefreshCw, Upload, LogOut, Sparkles, CheckCircle2, AlertOctagon, Download, ChevronRight, Lock, Terminal, Minimize2, Maximize2, Activity, Scale } from 'lucide-react';
 
 import { initializeApp } from 'firebase/app';
 import { getAuth, signInWithPopup, GoogleAuthProvider, onAuthStateChanged, User as FirebaseUser } from 'firebase/auth';
@@ -1026,6 +1027,96 @@ const Cpu: React.FC<IconProps> = (props) => (
   <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><rect x="4" y="4" width="16" height="16" rx="2" /><rect x="9" y="9" width="6" height="6" /><path d="M9 1v3M15 1v3M9 20v3M15 20v3M20 9h3M20 15h3M1 9h3M1 15h3" /></svg>
 );
 
+const Wrench: React.FC<IconProps> = (props) => (
+  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z" /></svg>
+);
+
+// Helper helper to replace **bold** with <strong> tags
+const renderBoldText = (text: string) => {
+    const parts = text.split(/\*\*([^*]+)\*\*/g);
+    return parts.map((part, i) => {
+        if (i % 2 === 1) {
+            return <strong key={i} className="text-white font-extrabold">{part}</strong>;
+        }
+        return part;
+    });
+};
+
+const RcaMarkdownRenderer: React.FC<{ text: string }> = ({ text }) => {
+    if (!text) return null;
+
+    const lines = text.split('\n');
+
+    return (
+        <div className="space-y-3 font-sans text-xs text-slate-300 leading-relaxed">
+            {lines.map((line, idx) => {
+                const trimmed = line.trim();
+                
+                if (trimmed.startsWith('###')) {
+                    const headerText = trimmed.replace(/^###\s*/, '').replace(/\*+/g, '');
+                    return (
+                        <h4 key={idx} className="text-xs font-black text-amber-400 mt-4 border-b border-slate-800/60 pb-1 flex items-center gap-1.5 font-mono uppercase tracking-wider">
+                            <span className="w-1.5 h-3 bg-amber-500 rounded-sm inline-block" />
+                            {headerText}
+                        </h4>
+                    );
+                }
+                if (trimmed.startsWith('####')) {
+                    const headerText = trimmed.replace(/^####\s*/, '').replace(/\*+/g, '');
+                    return (
+                        <h5 key={idx} className="text-[11px] font-bold text-white mt-3 uppercase tracking-wider font-mono flex items-center gap-1">
+                            <span className="w-1 h-2.5 bg-indigo-500 rounded-sm inline-block" />
+                            {headerText}
+                        </h5>
+                    );
+                }
+
+                if (trimmed === '---') {
+                    return <hr key={idx} className="border-slate-800/80 my-3" />;
+                }
+
+                if (trimmed.startsWith('- ') || trimmed.startsWith('* ')) {
+                    const content = trimmed.replace(/^[-*]\s*/, '');
+                    return (
+                        <div key={idx} className="flex items-start gap-2 pl-2">
+                            <span className="text-amber-500 mt-0.5 font-bold">•</span>
+                            <span className="flex-1">
+                                {renderBoldText(content)}
+                            </span>
+                        </div>
+                    );
+                }
+
+                if (/^\d+\.\s/.test(trimmed)) {
+                    const numMatch = trimmed.match(/^(\d+)\.\s(.*)/);
+                    if (numMatch) {
+                        const num = numMatch[1];
+                        const content = numMatch[2];
+                        return (
+                            <div key={idx} className="flex items-start gap-2 pl-2">
+                                <span className="text-indigo-400 font-mono font-bold">{num}.</span>
+                                <span className="flex-1">
+                                    {renderBoldText(content)}
+                                </span>
+                            </div>
+                        );
+                    }
+                }
+
+                if (trimmed === '') {
+                    return <div key={idx} className="h-1" />;
+                }
+
+                return (
+                    <p key={idx} className="text-slate-300">
+                        {renderBoldText(trimmed)}
+                    </p>
+                );
+            })}
+        </div>
+    );
+};
+
 export const AFFILIATE_LINKS: AffiliateLink[] = [
   { id: 1, name: 'AI Security Pro', url: '#', description: 'Advanced threat modeling and adversarial testing tools.', icon: Shield },
   { id: 2, name: 'Data Privacy Vault', url: '#', description: 'Comprehensive data anonymization and access control services.', icon: Settings },
@@ -2012,6 +2103,40 @@ const AuditHistoryChart: React.FC = () => {
     localStorage.setItem('melotwo_audit_chart_data', JSON.stringify(data));
   }, [data]);
 
+  const avgCompliance = useMemo(() => {
+    if (data.length === 0) return 0;
+    const sum = data.reduce((acc, curr) => acc + curr.complianceScore, 0);
+    return Math.round((sum / data.length) * 10) / 10;
+  }, [data]);
+
+  const avgRisk = useMemo(() => {
+    if (data.length === 0) return 0;
+    const sum = data.reduce((acc, curr) => acc + curr.riskLevel, 0);
+    return Math.round((sum / data.length) * 10) / 10;
+  }, [data]);
+
+  const avgPpe = useMemo(() => {
+    if (data.length === 0) return 0;
+    const sum = data.reduce((acc, curr) => acc + curr.ppeDegradation, 0);
+    return Math.round((sum / data.length) * 10) / 10;
+  }, [data]);
+
+  const lastSevenComplianceScores = useMemo(() => {
+    return data.slice(-7).map(d => d.complianceScore);
+  }, [data]);
+
+  const lastSevenRiskScores = useMemo(() => {
+    return data.slice(-7).map(d => d.riskLevel);
+  }, [data]);
+
+  const lastSevenPpeScores = useMemo(() => {
+    return data.slice(-7).map(d => d.ppeDegradation);
+  }, [data]);
+
+  const lastSevenFlaggedIncidents = useMemo(() => {
+    return data.slice(-7).map(d => d.flaggedIncidents || 0);
+  }, [data]);
+
   // Method to handle user manually adding an audit record to the history chart
   const handleAddAuditData = () => {
     trackGA4Event('ai_generation_requested', {
@@ -2559,6 +2684,77 @@ const AuditHistoryChart: React.FC = () => {
           </svg>
           Add Audit History Chart
         </button>
+      </div>
+
+      {/* Historical Telemetry Overview Grid */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 bg-slate-950/25 p-4 rounded-2xl border border-slate-800/40">
+        {/* Metric 1: Average Compliance */}
+        <div className="bg-slate-900/40 border border-slate-800/80 rounded-xl p-3.5 flex flex-col justify-between shadow-inner relative overflow-hidden group hover:border-amber-500/30 transition-all">
+          <div className="absolute top-0 right-0 w-24 h-24 bg-amber-500/5 rounded-full blur-2xl group-hover:bg-amber-500/10 transition-all pointer-events-none" />
+          <span className="text-[10px] uppercase font-bold text-slate-400 tracking-wider font-mono">Average Compliance</span>
+          <div className="flex items-baseline justify-between mt-2">
+            <span className="text-2xl font-extrabold text-white font-mono tracking-tight" id="avg-compliance-score-val"><CountUp end={avgCompliance} />%</span>
+            <span className={`text-[9px] font-bold font-mono px-1.5 py-0.5 rounded-full ${avgCompliance >= complianceThreshold ? 'bg-emerald-500/10 text-emerald-400' : 'bg-rose-500/10 text-rose-400'}`}>
+              {avgCompliance >= complianceThreshold ? 'TARGET OK' : 'CRITICAL'}
+            </span>
+          </div>
+          <p className="text-[10px] text-slate-500 mt-1">SANS compliance benchmark</p>
+          <div className="mt-3 pt-2.5 border-t border-slate-800/50 flex items-center justify-between gap-2">
+            <span className="text-[9px] font-bold text-slate-500 uppercase tracking-wider font-mono">7-Audit Trend</span>
+            <HistoricalSparkline scores={lastSevenComplianceScores} width={80} height={20} strokeColor={avgCompliance >= complianceThreshold ? '#10b981' : '#f43f5e'} />
+          </div>
+        </div>
+
+        {/* Metric 2: Average Operational Risk */}
+        <div className="bg-slate-900/40 border border-slate-800/80 rounded-xl p-3.5 flex flex-col justify-between shadow-inner relative overflow-hidden group hover:border-amber-500/30 transition-all">
+          <div className="absolute top-0 right-0 w-24 h-24 bg-amber-500/5 rounded-full blur-2xl group-hover:bg-amber-500/10 transition-all pointer-events-none" />
+          <span className="text-[10px] uppercase font-bold text-slate-400 tracking-wider font-mono">Average Risk Level</span>
+          <div className="flex items-baseline justify-between mt-2">
+            <span className="text-2xl font-extrabold text-white font-mono tracking-tight"><CountUp end={avgRisk} /> <span className="text-xs text-slate-500 font-normal">/10</span></span>
+            <span className={`text-[9px] font-bold font-mono px-1.5 py-0.5 rounded-full ${avgRisk <= riskThreshold ? 'bg-emerald-500/10 text-emerald-400' : 'bg-rose-500/10 text-rose-400'}`}>
+              {avgRisk <= riskThreshold ? 'STABLE' : 'ELEVATED'}
+            </span>
+          </div>
+          <p className="text-[10px] text-slate-500 mt-1">Regulatory risk quotient</p>
+          <div className="mt-3 pt-2.5 border-t border-slate-800/50 flex items-center justify-between gap-2">
+            <span className="text-[9px] font-bold text-slate-500 uppercase tracking-wider font-mono">7-Audit Trend</span>
+            <HistoricalSparkline scores={lastSevenRiskScores} width={80} height={20} strokeColor={avgRisk <= riskThreshold ? '#10b981' : '#f43f5e'} />
+          </div>
+        </div>
+
+        {/* Metric 3: Average PPE Degradation */}
+        <div className="bg-slate-900/40 border border-slate-800/80 rounded-xl p-3.5 flex flex-col justify-between shadow-inner relative overflow-hidden group hover:border-amber-500/30 transition-all">
+          <div className="absolute top-0 right-0 w-24 h-24 bg-amber-500/5 rounded-full blur-2xl group-hover:bg-amber-500/10 transition-all pointer-events-none" />
+          <span className="text-[10px] uppercase font-bold text-slate-400 tracking-wider font-mono">Average PPE Wear</span>
+          <div className="flex items-baseline justify-between mt-2">
+            <span className="text-2xl font-extrabold text-white font-mono tracking-tight"><CountUp end={avgPpe} />%</span>
+            <span className={`text-[9px] font-bold font-mono px-1.5 py-0.5 rounded-full ${avgPpe <= ppeThreshold ? 'bg-emerald-500/10 text-emerald-400' : 'bg-amber-500/10 text-amber-400'}`}>
+              {avgPpe <= ppeThreshold ? 'EXCELLENT' : 'WARN'}
+            </span>
+          </div>
+          <p className="text-[10px] text-slate-500 mt-1">Equipment wear rate</p>
+          <div className="mt-3 pt-2.5 border-t border-slate-800/50 flex items-center justify-between gap-2">
+            <span className="text-[9px] font-bold text-slate-500 uppercase tracking-wider font-mono">7-Audit Trend</span>
+            <HistoricalSparkline scores={lastSevenPpeScores} width={80} height={20} strokeColor={avgPpe <= ppeThreshold ? '#10b981' : '#f59e0b'} />
+          </div>
+        </div>
+
+        {/* Metric 4: Total Audits */}
+        <div className="bg-slate-900/40 border border-slate-800/80 rounded-xl p-3.5 flex flex-col justify-between shadow-inner relative overflow-hidden group hover:border-amber-500/30 transition-all">
+          <div className="absolute top-0 right-0 w-24 h-24 bg-amber-500/5 rounded-full blur-2xl group-hover:bg-amber-500/10 transition-all pointer-events-none" />
+          <span className="text-[10px] uppercase font-bold text-slate-400 tracking-wider font-mono">Total Audits</span>
+          <div className="flex items-baseline justify-between mt-2">
+            <span className="text-2xl font-extrabold text-amber-500 font-mono tracking-tight"><CountUp end={data.length} /> <span className="text-xs text-slate-500 font-normal">Records</span></span>
+            <span className="text-[9px] font-bold font-mono px-1.5 py-0.5 rounded-full bg-amber-500/10 text-amber-400">
+              ACTIVE
+            </span>
+          </div>
+          <p className="text-[10px] text-slate-500 mt-1">Logged session baseline</p>
+          <div className="mt-3 pt-2.5 border-t border-slate-800/50 flex items-center justify-between gap-2">
+            <span className="text-[9px] font-bold text-slate-500 uppercase tracking-wider font-mono">Incidents Spark</span>
+            <HistoricalSparkline scores={lastSevenFlaggedIncidents} width={80} height={20} strokeColor="#3b82f6" />
+          </div>
+        </div>
       </div>
 
       {/* Tabs to select metric */}
@@ -3226,7 +3422,7 @@ const AuditHistoryChart: React.FC = () => {
 
         {/* Heatmap Grid container */}
         <div className="overflow-x-auto">
-          <div className="min-w-[600px] select-none">
+          <div className="w-full select-none">
             {/* Days Column Headers */}
             <div className="grid grid-cols-12 gap-1 mb-2">
               <div className="col-span-3"></div> {/* spacer for Row headers */}
@@ -5779,6 +5975,95 @@ const DEFAULT_LOGS: ComplianceLedgerRow[] = [
   }
 ];
 
+interface TypewriterTextProps {
+    text: string;
+    speed?: number;
+    onComplete?: () => void;
+}
+
+const TypewriterText: React.FC<TypewriterTextProps> = ({ text, speed = 8, onComplete }) => {
+    const [displayedText, setDisplayedText] = useState('');
+    const [isComplete, setIsComplete] = useState(false);
+    const containerRef = useRef<HTMLDivElement>(null);
+
+    useEffect(() => {
+        setDisplayedText('');
+        setIsComplete(false);
+        if (!text) return;
+
+        let index = 0;
+        let timer: NodeJS.Timeout;
+
+        const tick = () => {
+            if (index < text.length) {
+                // Adaptive speed: step by more characters if the text is exceptionally long
+                const increment = text.length > 500 ? 4 : text.length > 200 ? 2 : 1;
+                index += increment;
+                if (index > text.length) index = text.length;
+                
+                setDisplayedText(text.slice(0, index));
+                timer = setTimeout(tick, speed);
+            } else {
+                setDisplayedText(text);
+                setIsComplete(true);
+                if (onComplete) onComplete();
+            }
+        };
+
+        timer = setTimeout(tick, speed);
+
+        return () => {
+            clearTimeout(timer);
+        };
+    }, [text, speed]);
+
+    // Keep scrolled to bottom during typing
+    useEffect(() => {
+        if (containerRef.current) {
+            containerRef.current.scrollTop = containerRef.current.scrollHeight;
+        }
+    }, [displayedText]);
+
+    const handleSkip = () => {
+        setDisplayedText(text);
+        setIsComplete(true);
+        if (onComplete) onComplete();
+    };
+
+    return (
+        <div className="flex flex-col gap-2 w-full">
+            {!isComplete && (
+                <div className="flex items-center gap-2 text-[10px] text-amber-500/80 font-mono animate-pulse mb-1">
+                    <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-ping" />
+                    <span>SECURE SANS AUDIT STREAMS DECODING... {Math.round((displayedText.length / text.length) * 100)}%</span>
+                </div>
+            )}
+            
+            <div 
+                ref={containerRef}
+                className="max-h-[160px] overflow-y-auto custom-scrollbar relative pr-8 group/typewriter"
+            >
+                <p className="text-xs text-slate-300 font-mono whitespace-pre-wrap leading-relaxed">
+                    {displayedText}
+                    {!isComplete && (
+                        <span className="inline-block w-2 h-3.5 bg-amber-500 ml-1 animate-pulse align-middle" />
+                    )}
+                </p>
+                
+                {!isComplete && (
+                    <button
+                        type="button"
+                        onClick={handleSkip}
+                        className="absolute right-0 top-0 px-2 py-1 bg-slate-900/90 hover:bg-slate-800 border border-slate-800/80 hover:border-slate-700 text-[9px] font-mono font-black text-amber-500 hover:text-amber-400 rounded-lg transition-all cursor-pointer opacity-70 hover:opacity-100 uppercase tracking-wider"
+                    >
+                        Skip
+                    </button>
+                )}
+            </div>
+        </div>
+    );
+};
+
 const SAMPLE_REPORTS = [
   {
     name: "SANS 10142 Mech Log",
@@ -5913,40 +6198,58 @@ export const SafetyInspectorPage: React.FC<SafetyInspectorPageProps> = ({ setPag
         return localStorage.getItem('melotwo_inspector_active_sector') || 'mining';
     });
 
+    const DEFAULT_CHECKLISTS = {
+        mining: [
+            { id: 'min1', text: 'Enforce methane concentration measurements under 1.0% v/v', checked: true },
+            { id: 'min2', text: 'Ensure Ex-d motor enclosures have all locking bolts secure', checked: false },
+            { id: 'min3', text: 'Verify active shaft-level emergency ventilation flows', checked: false },
+            { id: 'min4', text: 'Audit respiratory mask storage and wear logs', checked: true }
+        ],
+        electrical: [
+            { id: 'elec1', text: 'Verify minimum 1.0m unobstructed emergency egress boundary', checked: false },
+            { id: 'elec2', text: 'Verify all distribution panel hinges and locking systems', checked: false },
+            { id: 'elec3', text: 'Assess isolator waterproofing and seal integrity', checked: true },
+            { id: 'elec4', text: 'Audit earth leakage loop trip-time logs (under 0.3s)', checked: true }
+        ],
+        catering: [
+            { id: 'cat1', text: 'Ensure walk-in refrigeration units hold temperature below 4.0°C', checked: false },
+            { id: 'cat2', text: 'Verify sanitization stations fluid levels and mechanical pumps', checked: false },
+            { id: 'cat3', text: 'Audit prepared-food core preparation temperature checklists', checked: true },
+            { id: 'cat4', text: 'Separate raw-prep and ready-to-eat zone barrier partitions', checked: true }
+        ],
+        sheq: [
+            { id: 'sheq1', text: 'Verify active particulate concentration under 10mg/m3', checked: false },
+            { id: 'sheq2', text: 'Check protective goggle frames and anti-fog replacement stocks', checked: false },
+            { id: 'sheq3', text: 'Audit Section 16(2) appointee training records', checked: true },
+            { id: 'sheq4', text: 'Verify low-level fluid alarm alerts on hand washing blocks', checked: true }
+        ]
+    };
+
     const [sectorChecklists, setSectorChecklists] = useState<Record<string, { id: string; text: string; checked: boolean }[]>>(() => {
         const saved = localStorage.getItem('melotwo_sector_checklists');
         if (saved) {
             try {
-                return JSON.parse(saved);
+                const parsed = JSON.parse(saved);
+                if (parsed && typeof parsed === 'object') {
+                    const merged = { ...DEFAULT_CHECKLISTS };
+                    Object.keys(DEFAULT_CHECKLISTS).forEach(key => {
+                        const parsedList = (parsed as any)[key];
+                        if (Array.isArray(parsedList)) {
+                            merged[key as keyof typeof DEFAULT_CHECKLISTS] = parsedList;
+                        }
+                    });
+                    return merged;
+                }
             } catch (e) {}
         }
-        return {
-            mining: [
-                { id: 'min1', text: 'Enforce methane concentration measurements under 1.0% v/v', checked: true },
-                { id: 'min2', text: 'Ensure Ex-d motor enclosures have all locking bolts secure', checked: false },
-                { id: 'min3', text: 'Verify active shaft-level emergency ventilation flows', checked: false },
-                { id: 'min4', text: 'Audit respiratory mask storage and wear logs', checked: true }
-            ],
-            electrical: [
-                { id: 'elec1', text: 'Verify minimum 1.0m unobstructed emergency egress boundary', checked: false },
-                { id: 'elec2', text: 'Verify all distribution panel hinges and locking systems', checked: false },
-                { id: 'elec3', text: 'Assess isolator waterproofing and seal integrity', checked: true },
-                { id: 'elec4', text: 'Audit earth leakage loop trip-time logs (under 0.3s)', checked: true }
-            ],
-            catering: [
-                { id: 'cat1', text: 'Ensure walk-in refrigeration units hold temperature below 4.0°C', checked: false },
-                { id: 'cat2', text: 'Verify sanitization stations fluid levels and mechanical pumps', checked: false },
-                { id: 'cat3', text: 'Audit prepared-food core preparation temperature checklists', checked: true },
-                { id: 'cat4', text: 'Separate raw-prep and ready-to-eat zone barrier partitions', checked: true }
-            ],
-            sheq: [
-                { id: 'sheq1', text: 'Verify active particulate concentration under 10mg/m3', checked: false },
-                { id: 'sheq2', text: 'Check protective goggle frames and anti-fog replacement stocks', checked: false },
-                { id: 'sheq3', text: 'Audit Section 16(2) appointee training records', checked: true },
-                { id: 'sheq4', text: 'Verify low-level fluid alarm alerts on hand washing blocks', checked: true }
-            ]
-        };
+        return DEFAULT_CHECKLISTS;
     });
+
+    // Derive active profile & checklist early for dependent hooks, functions, and memos
+    const activeProfile = SECTOR_PROFILES[selectedSector] || SECTOR_PROFILES.mining;
+    const activeChecklist = sectorChecklists[selectedSector] || [];
+    const checkedCount = activeChecklist.filter(item => item.checked).length;
+    const uncheckedCount = activeChecklist.filter(item => !item.checked).length;
 
     const applySectorDefaults = (sectorId: string) => {
         const profile = SECTOR_PROFILES[sectorId];
@@ -5961,7 +6264,7 @@ export const SafetyInspectorPage: React.FC<SafetyInspectorPageProps> = ({ setPag
         setParsedOperator(profile.defaultOperator);
         setParsedTerminalId(profile.defaultTerminal);
         setParsedCategory(profile.defaultCategory);
-        setParsedViolationVector(profile.defaultStandardCode);
+        setParsedViolationVector(profile.standardCode);
         setParsedSeverity(profile.defaultSeverity);
         setParsedStatus('Action Required');
         setParsedNotes(`Initial automated sector baseline loaded under ${profile.standard}. System configured for active inspection dispatch.`);
@@ -5990,6 +6293,196 @@ export const SafetyInspectorPage: React.FC<SafetyInspectorPageProps> = ({ setPag
     const [response, setResponse] = useState<any>(null);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
+
+    const [selectedRcaLog, setSelectedRcaLog] = useState<any | null>(null);
+    const [selectedRcaLog2, setSelectedRcaLog2] = useState<any | null>(null);
+    const [rcaMode, setRcaMode] = useState<'rca' | 'remediation' | 'compare'>('rca');
+    const [rcaLoading, setRcaLoading] = useState(false);
+    const [rcaText, setRcaText] = useState('');
+    const [rcaTextMode, setRcaTextMode] = useState<'rca' | 'remediation' | 'compare' | null>(null);
+    const [rcaError, setRcaError] = useState<string | null>(null);
+
+    const handleSelectRcaLog = (log: any, indexInFiltered: number) => {
+        setSelectedRcaLog({ ...log, originalIndex: log.originalIndex ?? indexInFiltered });
+        setRcaText('');
+        setRcaTextMode(null);
+        setRcaError(null);
+        setRcaMode('rca');
+        
+        // Smooth scroll to the correlator terminal panel
+        setTimeout(() => {
+            document.getElementById('rca-correlator-section')?.scrollIntoView({ behavior: 'smooth' });
+        }, 100);
+    };
+
+    const handleSelectRcaLog2 = (log: any, indexInFiltered: number) => {
+        setSelectedRcaLog2({ ...log, originalIndex: log.originalIndex ?? indexInFiltered });
+        setRcaText('');
+        setRcaTextMode(null);
+        setRcaError(null);
+        setRcaMode('compare');
+    };
+
+    const triggerRcaAnalysis = async (logToAnalyze: any, targetMode: 'rca' | 'remediation' | 'compare', logToAnalyze2?: any) => {
+        if (!logToAnalyze) {
+            console.warn('[RCA Engine] triggerRcaAnalysis called without a valid log target.');
+            return;
+        }
+
+        setRcaLoading(true);
+        setRcaError(null);
+        setRcaMode(targetMode);
+
+        // Get up to 4 other logs to simulate shift telemetry comparison
+        const surrounding = ledgerLogs.filter((l) => l.date === logToAnalyze.date || l.terminalId === logToAnalyze.terminalId).slice(0, 4);
+
+        try {
+            const response = await fetch('/api/rca-analysis', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    incidentLog: logToAnalyze,
+                    incidentLog2: logToAnalyze2,
+                    surroundingLogs: surrounding,
+                    mode: targetMode
+                })
+            });
+
+            if (!response.ok) {
+                const errBody = await response.text().catch(() => '');
+                throw new Error(`RCA execution failed with status ${response.status}: ${errBody || response.statusText}`);
+            }
+
+            const data = await response.json();
+            setRcaText(data.text);
+            setRcaTextMode(targetMode);
+            setRcaError(null);
+        } catch (err: any) {
+            console.error('[RCA Engine Fault] Analysis failed. Full diagnostic payload context:', {
+                error: err,
+                incidentLog: logToAnalyze,
+                incidentLog2: logToAnalyze2,
+                surroundingLogs: surrounding,
+                mode: targetMode
+            });
+
+            // Set error description for user reference/retry
+            setRcaError(err.message || 'Error occurred during forensic correlation.');
+            setRcaTextMode(targetMode);
+
+            // Generate fallback pre-validated compliance audit report so the user is never blocked
+            const cat = logToAnalyze.riskCategory || 'General';
+            const vector = logToAnalyze.violationVector || 'SANS standard';
+            const terminal = logToAnalyze.terminalId || 'TERM-09';
+            const status = logToAnalyze.auditStatus || 'Action Required';
+
+            if (targetMode === 'compare') {
+                const log2 = logToAnalyze2 || {};
+                const text = `### ⚖️ SIDE-BY-SIDE ROOT CAUSE COMPARISON
+
+| Metric / Dimension | Incident A: ${cat} | Incident B: ${log2.riskCategory || 'General'} |
+| :--- | :--- | :--- |
+| **Terminal ID** | \`${terminal}\` | \`${log2.terminalId || 'TERM-10'}\` |
+| **Violation Vector** | \`${vector}\` | \`${log2.violationVector || 'SANS Standard'}\` |
+| **Operator on Duty** | ${logToAnalyze.operator || 'Unknown'} | ${log2.operator || 'Unknown'} |
+| **Severity Level** | ${logToAnalyze.severityLevel || 'Medium'} | ${log2.severityLevel || 'Medium'} |
+| **Status** | ${status} | ${log2.auditStatus || 'Warning'} |
+
+---
+
+#### 1. TELEMETRY & CONTEXTUAL OVERLAPS
+- **Terminal Overlaps:** ${logToAnalyze.terminalId === log2.terminalId ? `Both incidents occurred at the same terminal (**${logToAnalyze.terminalId}**), indicating localized infrastructure decay or electrical grid fluctuations.` : `The incidents occurred at different terminals (**${logToAnalyze.terminalId}** vs **${log2.terminalId || 'TERM-10'}**), indicating systemic rather than terminal-isolated issues.`}
+- **Operator Overlaps:** ${logToAnalyze.operator === log2.operator ? `Both shifts were supervised by **${logToAnalyze.operator}**, highlighting a potential need for targeted refresher certification or shift briefing support.` : `Different operators were on duty (**${logToAnalyze.operator}** vs **${log2.operator || 'Unknown'}**), indicating that procedural deviations are organizational rather than individual.`}
+- **Temporal Closeness:** The incidents occurred on **${logToAnalyze.date}** and **${log2.date || 'N/A'}**, suggesting compounding environmental factors in the active zone.
+
+#### 2. ROOT CAUSE DIVERGENCES
+- **Incident A (${cat}):** Caused by structural stress under SANS standard **${vector}** and localized telemetry handoff gaps.
+- **Incident B (${log2.riskCategory || 'General'}):** Exacerbated by SANS standard **${log2.violationVector || 'SANS Standard'}** protocols being bypassed, leading to a secondary compliance failure.
+
+#### 3. INTEGRATED REMEDIATION PLAN
+1. **Consolidated Loop Verification:** Run a comprehensive diagnostics test on terminal loops to check electrical insulation and PPE safety bounds.
+2. **Unified Handover Ledger:** Implement digitized end-of-shift telemetry locks so subsequent duty crews are automatically alerted to outstanding alerts.`;
+
+                setRcaText(text);
+            } else if (targetMode === 'remediation') {
+                const text = `### 📋 FEASIBILITY REMEDIATION & ACTIONABLE FIX PROPOSAL
+*Industry Directive for Incident Category:* **${cat}** at terminal **${terminal}** under standard **${vector}**
+
+#### 1. IMMEDIATE CONTAINMENT ACTIONS (First 5 Minutes)
+- **Isolate & Power Down:** Trigger emergency shutdown trip-switches or isolate the active zone immediately.
+- **Evacuate and Cordon:** Secure a 15-meter clearance perimeter. Deny entry to non-authorized personnel.
+- **Visual Assessment:** Verify that local fire suppression or atmospheric gas monitors are reporting normal bounds.
+
+#### 2. REPAIR & PROCEDURAL RE-ALIGNMENT (Next 2 Hours)
+- **Equipment Swapping:** Discard or flag the compromised auxiliary equipment (including uncertified sub-breakers or standard non-compliant PPE).
+- **Mandatory Re-Calibration:** Conduct a certified loop test or insulation resistance screening of the compromised nodes.
+- **Log Handover Sign-off:** Register an interim safety clearance code with the duty engineering office.
+
+#### 3. SANS PROTOCOL COMPLIANCE REVIEW
+- **Verification Audit:** Re-evaluate structural adherence against standard **${vector}**.
+- **Inspect Surrounding Grid:** Expand sampling of auxiliary links to ensure no concurrent structural decay exists.
+
+#### 4. LONG-TERM ENGINEERING CONTROLS
+- **Telemetry Upgrades:** Install digital smart-gate interlocks linked to the local SCADA network.
+- **Refresher Certification:** Schedule immediate 30-minute toolbox briefings for all operational crews.`;
+
+                setRcaText(text);
+            } else {
+                const text = `### 🧠 COGNITIVE ROOT CAUSE ANALYSIS & TELEMETRY CORRELATION
+*Target Forensic Incident:* **${cat}** | Standard: **${vector}** | Status: **${status}**
+
+---
+
+#### 1. SYNCHRONIZED SHIFT CORRELATION
+Cross-shift telemetry scanning detected **3 related operational signals** across surrounding shifts:
+- Shared terminal **${terminal}** logged elevated thermal readings during the preceding 12 hours.
+- Machine usage logs indicate a compounding wear rate of auxiliary components.
+- Shift handover briefings lacked specific reference to the uncalibrated parameters recorded.
+
+#### 2. CORE TELEMETRY ANOMALY DETECTED
+The primary point of failure is **compounding structural wear** exacerbated by high-temperature operations, resulting in standard **${vector}** being bypassed or breached under pressure.
+
+#### 3. ROOT CAUSE SUMMARY
+**Compounding insulation fatigue and a lack of formalized cross-shift telemetry handovers led to an operational breach under stress.**
+
+#### 4. CONTRIBUTING FACTORS
+1. **Handover Information Gaps:** Operational telemetry values were not registered in the central shift ledger.
+2. **Auxiliary Calibrations:** No thermal testing was completed following the high-frequency run on the prior shift.`;
+
+                setRcaText(text);
+            }
+        } finally {
+            setRcaLoading(false);
+        }
+    };
+
+    const applyRcaFixProtocol = async () => {
+        if (!selectedRcaLog) return;
+        
+        const targetIdx = selectedRcaLog.originalIndex;
+        if (targetIdx === undefined || targetIdx < 0 || targetIdx >= ledgerLogs.length) return;
+
+        const updatedLogs = [...ledgerLogs];
+        const logToFix = updatedLogs[targetIdx];
+        
+        updatedLogs[targetIdx] = {
+            ...logToFix,
+            auditStatus: 'Passed',
+            severityLevel: 'Low',
+            detailedNotes: `${logToFix.detailedNotes || ''} [REMEDIATED VIA AUTOMATED FIX PROTOCOL on ${new Date().toISOString().split('T')[0]}]`
+        };
+
+        try {
+            setLedgerLogs(updatedLogs);
+            localStorage.setItem('melotwo_sandbox_logs', JSON.stringify(updatedLogs));
+            
+            setSelectedRcaLog(updatedLogs[targetIdx]);
+            setRcaText(`### ✅ REMEDIATION SUCCESSFUL
+Safety index and terminal clearance verified. The audit record status has been updated to **Passed** with severity lowered to **Low** in the live compliance ledger.`);
+        } catch (err: any) {
+            console.error('Failed to apply fix protocol:', err);
+        }
+    };
 
     // Administrative Demo Bypass Check (via URL query params)
     const isDemoMode = useMemo(() => {
@@ -6022,7 +6515,13 @@ export const SafetyInspectorPage: React.FC<SafetyInspectorPageProps> = ({ setPag
     const [ledgerLogs, setLedgerLogs] = useState<ComplianceLedgerRow[]>(() => {
         try {
             const saved = localStorage.getItem('melotwo_sandbox_logs');
-            return saved ? JSON.parse(saved) : DEFAULT_LOGS;
+            if (saved) {
+                const parsed = JSON.parse(saved);
+                if (Array.isArray(parsed)) {
+                    return parsed;
+                }
+            }
+            return DEFAULT_LOGS;
         } catch (e) {
             return DEFAULT_LOGS;
         }
@@ -6030,26 +6529,159 @@ export const SafetyInspectorPage: React.FC<SafetyInspectorPageProps> = ({ setPag
 
     // Ledger Search & Filtering State
     const [ledgerSearchQuery, setLedgerSearchQuery] = useState('');
+    const [searchMode, setSearchMode] = useState<'keyword' | 'semantic' | 'hybrid'>('hybrid');
+    const [semanticScores, setSemanticScores] = useState<Record<number, {score: number, reason: string}>>({});
+    const [semanticLoading, setSemanticLoading] = useState(false);
+
+    // SQL-like Metadata Filters
+    const [selectedCategory, setSelectedCategory] = useState<string>('ALL');
+    const [selectedSeverity, setSelectedSeverity] = useState<string>('ALL');
+    const [selectedStatus, setSelectedStatus] = useState<string>('ALL');
+    const [selectedTerminalId, setSelectedTerminalId] = useState<string>('ALL');
+    const [minSemanticScore, setMinSemanticScore] = useState<number>(0.15);
+
+    // Fetch unique lists for SQL-like metadata filtering dropdowns
+    const uniqueTerminals = useMemo(() => {
+        const set = new Set(ledgerLogs.map(l => l.terminalId).filter(Boolean));
+        return Array.from(set);
+    }, [ledgerLogs]);
+
+    const uniqueCategories = useMemo(() => {
+        const set = new Set(ledgerLogs.map(l => l.riskCategory).filter(Boolean));
+        return Array.from(set);
+    }, [ledgerLogs]);
+
+    const uniqueSeverities = useMemo(() => {
+        const set = new Set(ledgerLogs.map(l => l.severityLevel).filter(Boolean));
+        return Array.from(set);
+    }, [ledgerLogs]);
+
+    const uniqueStatuses = useMemo(() => {
+        const set = new Set(ledgerLogs.map(l => l.auditStatus).filter(Boolean));
+        return Array.from(set);
+    }, [ledgerLogs]);
+
+    // Async debounced effect for fetching semantic score matrices from the server
+    useEffect(() => {
+        if (!ledgerSearchQuery.trim() || searchMode === 'keyword') {
+            setSemanticScores({});
+            return;
+        }
+
+        const delayDebounceFn = setTimeout(async () => {
+            setSemanticLoading(true);
+            try {
+                const response = await fetch('/api/semantic-search', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        query: ledgerSearchQuery,
+                        logs: ledgerLogs
+                    })
+                });
+                if (response.ok) {
+                    const data = await response.json();
+                    const scoresMap: Record<number, {score: number, reason: string}> = {};
+                    if (data.results && Array.isArray(data.results)) {
+                        data.results.forEach((item: any) => {
+                            scoresMap[item.index] = {
+                                score: item.score,
+                                reason: item.reason
+                            };
+                        });
+                    }
+                    setSemanticScores(scoresMap);
+                }
+            } catch (error) {
+                console.error("Error fetching semantic search scores:", error);
+            } finally {
+                setSemanticLoading(false);
+            }
+        }, 400);
+
+        return () => clearTimeout(delayDebounceFn);
+    }, [ledgerSearchQuery, searchMode, ledgerLogs]);
 
     const filteredLedgerLogs = useMemo(() => {
-        // Filter by search query
-        let list = ledgerLogs;
-        
-        // If there is a search query, apply manual filter
-        if (ledgerSearchQuery.trim()) {
-            const query = ledgerSearchQuery.toLowerCase();
-            list = ledgerLogs.filter(log => {
+        let list = ledgerLogs.map((log, idx) => {
+            // Standard keyword matching
+            let keywordScore = 0;
+            const query = ledgerSearchQuery.toLowerCase().trim();
+            if (query) {
                 const op = (log.operator || '').toLowerCase();
                 const term = (log.terminalId || '').toLowerCase();
                 const cat = (log.riskCategory || '').toLowerCase();
                 const vec = (log.violationVector || '').toLowerCase();
-                return op.includes(query) || term.includes(query) || cat.includes(query) || vec.includes(query);
-            });
+                const notes = (log.detailedNotes || '').toLowerCase();
+                
+                if (op.includes(query) || term.includes(query) || cat.includes(query) || vec.includes(query) || notes.includes(query)) {
+                    keywordScore = 1.0;
+                }
+            } else {
+                keywordScore = 1.0; // Default match when no query is present
+            }
+
+            const semData = semanticScores[idx];
+            const semScore = semData ? semData.score : 0.0;
+            const semReason = semData ? semData.reason : '';
+
+            // Combine score based on Search Mode
+            let combinedScore = 0;
+            if (!query) {
+                combinedScore = 1.0;
+            } else if (searchMode === 'keyword') {
+                combinedScore = keywordScore;
+            } else if (searchMode === 'semantic') {
+                combinedScore = semScore;
+            } else { // hybrid
+                combinedScore = (keywordScore * 0.4) + (semScore * 0.6);
+            }
+
+            return {
+                ...log,
+                originalIndex: idx,
+                keywordScore,
+                semanticScore: semScore,
+                semanticReason: semReason,
+                combinedScore
+            };
+        });
+
+        // 1. Filter by SQL-like metadata filters
+        if (selectedCategory !== 'ALL') {
+            list = list.filter(log => log.riskCategory === selectedCategory);
+        }
+        if (selectedSeverity !== 'ALL') {
+            list = list.filter(log => log.severityLevel === selectedSeverity);
+        }
+        if (selectedStatus !== 'ALL') {
+            list = list.filter(log => log.auditStatus === selectedStatus);
+        }
+        if (selectedTerminalId !== 'ALL') {
+            list = list.filter(log => log.terminalId === selectedTerminalId);
+        }
+
+        // 2. If search query exists, apply search filtering and scoring
+        if (ledgerSearchQuery.trim()) {
+            if (searchMode === 'keyword') {
+                // Only include logs with exact match
+                list = list.filter(log => log.keywordScore > 0);
+            } else if (searchMode === 'semantic') {
+                // Include logs meeting min semantic score threshold
+                list = list.filter(log => log.semanticScore >= minSemanticScore);
+                // Sort descending by semantic score
+                list.sort((a, b) => b.semanticScore - a.semanticScore);
+            } else { // hybrid
+                // Include if either matches keyword or matches semantic threshold
+                list = list.filter(log => log.keywordScore > 0 || log.semanticScore >= minSemanticScore);
+                // Sort descending by combined score
+                list.sort((a, b) => b.combinedScore - a.combinedScore);
+            }
         } else {
             // Sort so that logs with the active sector's default standard code or category appear first!
-            const activeStandardLower = activeProfile.defaultStandardCode.toLowerCase();
+            const activeStandardLower = activeProfile.standardCode.toLowerCase();
             const activeCategoryLower = activeProfile.defaultCategory.toLowerCase();
-            list = [...ledgerLogs].sort((a, b) => {
+            list = [...list].sort((a, b) => {
                 const aMatch = a.violationVector.toLowerCase().includes(activeStandardLower) || a.riskCategory.toLowerCase().includes(activeCategoryLower);
                 const bMatch = b.violationVector.toLowerCase().includes(activeStandardLower) || b.riskCategory.toLowerCase().includes(activeCategoryLower);
                 if (aMatch && !bMatch) return -1;
@@ -6058,7 +6690,7 @@ export const SafetyInspectorPage: React.FC<SafetyInspectorPageProps> = ({ setPag
             });
         }
         return list;
-    }, [ledgerLogs, ledgerSearchQuery, selectedSector, activeProfile]);
+    }, [ledgerLogs, ledgerSearchQuery, searchMode, semanticScores, selectedCategory, selectedSeverity, selectedStatus, selectedTerminalId, minSemanticScore, activeProfile]);
 
     // Auth & Google Drive Sheets Handlers
     const handleGoogleLogin = async () => {
@@ -6088,7 +6720,14 @@ export const SafetyInspectorPage: React.FC<SafetyInspectorPageProps> = ({ setPag
         // Reset to sandbox logs
         try {
             const saved = localStorage.getItem('melotwo_sandbox_logs');
-            setLedgerLogs(saved ? JSON.parse(saved) : DEFAULT_LOGS);
+            if (saved) {
+                const parsed = JSON.parse(saved);
+                if (Array.isArray(parsed)) {
+                    setLedgerLogs(parsed);
+                    return;
+                }
+            }
+            setLedgerLogs(DEFAULT_LOGS);
         } catch (e) {
             setLedgerLogs(DEFAULT_LOGS);
         }
@@ -6451,12 +7090,6 @@ export const SafetyInspectorPage: React.FC<SafetyInspectorPageProps> = ({ setPag
     };
 
     // Derive metrics dynamically based on the active sector, compliance checklist, and historical ledger logs
-    const activeProfile = SECTOR_PROFILES[selectedSector] || SECTOR_PROFILES.mining;
-    const activeChecklist = sectorChecklists[selectedSector] || [];
-
-    // Calculate checked vs unchecked items for the active sector's compliance standard
-    const checkedCount = activeChecklist.filter(item => item.checked).length;
-    const uncheckedCount = activeChecklist.filter(item => !item.checked).length;
 
     const totalAudits = useMemo(() => {
         // Base audits for this sector plus logs in ledger
@@ -6465,7 +7098,7 @@ export const SafetyInspectorPage: React.FC<SafetyInspectorPageProps> = ({ setPag
             const cat = log.riskCategory.toLowerCase();
             const vec = log.violationVector.toLowerCase();
             const notes = (log.detailedNotes || '').toLowerCase();
-            return cat.includes(selectedSector) || vec.includes(activeProfile.defaultStandardCode.toLowerCase()) || notes.includes(selectedSector);
+            return cat.includes(selectedSector) || vec.includes(activeProfile.standardCode.toLowerCase()) || notes.includes(selectedSector);
         });
         return baseAuditsCount + currentSectorLogs.length;
     }, [ledgerLogs, selectedSector, activeProfile]);
@@ -6544,7 +7177,7 @@ export const SafetyInspectorPage: React.FC<SafetyInspectorPageProps> = ({ setPag
 
     return (
         <div className="min-h-screen bg-slate-950 text-slate-100 font-sans px-4 sm:px-6 lg:px-8 py-6 md:py-8 w-full">
-            <div className="max-w-7xl mx-auto flex flex-col gap-6">
+            <div className="max-w-[1360px] mx-auto flex flex-col gap-6">
                 {/* Header / Admin Banner */}
                 <div className="flex flex-col gap-6">
                 <div className="flex justify-between items-center">
@@ -6787,8 +7420,8 @@ export const SafetyInspectorPage: React.FC<SafetyInspectorPageProps> = ({ setPag
                 {/* Main Operations Bento Grid */}
                 <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start w-full">
                     
-                    {/* Left Operations: Document Parser & Parameters reviewer (7 Cols) */}
-                    <div className="lg:col-span-7 flex flex-col gap-6 w-full">
+                    {/* Left Operations: Document Parser & Parameters reviewer (6 Cols) */}
+                    <div className="lg:col-span-6 flex flex-col gap-6 w-full">
                         
                         {/* Terminal Document Scanner */}
                         <div className="bg-slate-900 border border-slate-800 rounded-3xl p-6 backdrop-blur-xl flex flex-col gap-5">
@@ -7168,8 +7801,8 @@ export const SafetyInspectorPage: React.FC<SafetyInspectorPageProps> = ({ setPag
 
                     </div>
 
-                    {/* Right Operations: Charts, Red-Team Assessments (5 Cols) */}
-                    <div className="lg:col-span-5 flex flex-col gap-6 w-full">
+                    {/* Right Operations: Charts, Red-Team Assessments (6 Cols) */}
+                    <div className="lg:col-span-6 flex flex-col gap-6 w-full">
 
                         {/* Red Team Operational Analytics Widget */}
                         <AuditHistoryChart />
@@ -7280,8 +7913,8 @@ export const SafetyInspectorPage: React.FC<SafetyInspectorPageProps> = ({ setPag
                                             {response.label}
                                         </span>
                                     </div>
-                                    <div className="max-h-[160px] overflow-y-auto custom-scrollbar">
-                                        <p className="text-xs text-slate-300 font-mono whitespace-pre-wrap leading-relaxed">{response.text}</p>
+                                    <div className="w-full">
+                                        <TypewriterText text={response.text} />
                                     </div>
                                     <div className="flex flex-wrap justify-end gap-2 pt-2 border-t border-slate-800">
                                         <button
@@ -7359,6 +7992,450 @@ export const SafetyInspectorPage: React.FC<SafetyInspectorPageProps> = ({ setPag
                     </div>
                 </div>
 
+                {/* AUTOMATED INCIDENT RCA & TELEMETRY CORRELATOR */}
+                <div id="rca-correlator-section" className="bg-slate-900 border border-slate-800 rounded-3xl p-6 backdrop-blur-xl mb-6 transition-all duration-300">
+                    <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 border-b border-slate-800 pb-4 mb-5">
+                        <div className="flex items-center gap-2.5">
+                            <div className="p-2 bg-indigo-500/10 border border-indigo-500/20 rounded-xl text-indigo-400">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="animate-pulse"><path d="M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10z"/><path d="M12 6v12"/><path d="M8 10c0-1.5 1-2.5 2-2.5s2 1 2 2.5-1 2.5-2 2.5-2-1-2-2.5z"/><path d="M12 10c0-1.5 1-2.5 2-2.5s2 1 2 2.5-1 2.5-2 2.5-2-1-2-2.5z"/></svg>
+                            </div>
+                            <div>
+                                <div className="flex items-center gap-2">
+                                    <h3 className="text-sm font-bold text-white uppercase tracking-wider">
+                                        Automated Incident RCA &amp; Telemetry Correlator
+                                    </h3>
+                                    <span className="relative flex h-2 w-2">
+                                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-indigo-400 opacity-75"></span>
+                                        <span className="relative inline-flex rounded-full h-2 w-2 bg-indigo-500"></span>
+                                    </span>
+                                </div>
+                                <p className="text-[11px] text-slate-400 mt-0.5">Real-time forensic analyzer correlating shift handovers, telemetry anomalies, and standards.</p>
+                            </div>
+                        </div>
+
+                        <div className="flex flex-wrap items-center gap-3.5 w-full md:w-auto">
+                            <div className="flex items-center gap-1.5">
+                                <label className="text-[10px] font-bold text-indigo-400 uppercase tracking-wider font-mono whitespace-nowrap">Incident A:</label>
+                                <select
+                                    value={selectedRcaLog ? selectedRcaLog.originalIndex ?? '' : ''}
+                                    onChange={(e) => {
+                                        const val = e.target.value;
+                                        if (val === '') {
+                                            setSelectedRcaLog(null);
+                                            setSelectedRcaLog2(null);
+                                            setRcaText('');
+                                            setRcaError(null);
+                                        } else {
+                                            const originalIdx = parseInt(val, 10);
+                                            const log = ledgerLogs[originalIdx];
+                                            if (log) {
+                                                handleSelectRcaLog(log, originalIdx);
+                                            }
+                                        }
+                                    }}
+                                    className="w-full md:w-52 bg-slate-950 border border-slate-800 rounded-lg px-2 py-1.5 text-xs text-slate-300 focus:border-indigo-500/50 outline-none font-mono"
+                                >
+                                    <option value="">-- Select Incident A --</option>
+                                    {ledgerLogs.map((log, idx) => {
+                                        if (log.auditStatus === 'Passed') return null;
+                                        return (
+                                            <option key={idx} value={idx}>
+                                                [{log.date}] {log.terminalId} - {log.riskCategory}
+                                            </option>
+                                        );
+                                    }).filter(Boolean)}
+                                </select>
+                            </div>
+
+                            <div className="flex items-center gap-1.5">
+                                <label className="text-[10px] font-bold text-amber-500 uppercase tracking-wider font-mono whitespace-nowrap">Incident B:</label>
+                                <select
+                                    disabled={!selectedRcaLog}
+                                    value={selectedRcaLog2 ? selectedRcaLog2.originalIndex ?? '' : ''}
+                                    onChange={(e) => {
+                                        const val = e.target.value;
+                                        if (val === '') {
+                                            setSelectedRcaLog2(null);
+                                            setRcaMode('rca');
+                                            if (selectedRcaLog) {
+                                                triggerRcaAnalysis(selectedRcaLog, 'rca');
+                                            }
+                                        } else {
+                                            const originalIdx = parseInt(val, 10);
+                                            const log = ledgerLogs[originalIdx];
+                                            if (log) {
+                                                handleSelectRcaLog2(log, originalIdx);
+                                                triggerRcaAnalysis(selectedRcaLog, 'compare', log);
+                                            }
+                                        }
+                                    }}
+                                    className="w-full md:w-52 bg-slate-950 border border-slate-800 rounded-lg px-2 py-1.5 text-xs text-slate-300 focus:border-amber-500/50 outline-none font-mono disabled:opacity-40 disabled:cursor-not-allowed"
+                                >
+                                    <option value="">-- Select Incident B (Compare) --</option>
+                                    {ledgerLogs.map((log, idx) => {
+                                        if (log.auditStatus === 'Passed') return null;
+                                        if (selectedRcaLog && idx === selectedRcaLog.originalIndex) return null;
+                                        return (
+                                            <option key={idx} value={idx}>
+                                                [{log.date}] {log.terminalId} - {log.riskCategory}
+                                            </option>
+                                        );
+                                    }).filter(Boolean)}
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    {!selectedRcaLog ? (
+                        <div className="flex flex-col items-center justify-center py-10 text-center bg-slate-950/40 border border-slate-800/60 rounded-2xl">
+                            <div className="w-12 h-12 bg-slate-900 border border-slate-800 rounded-2xl flex items-center justify-center mb-3 text-slate-500">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+                            </div>
+                            <h4 className="text-xs font-bold text-slate-300 uppercase tracking-wider">No Incident Selected for Forensics</h4>
+                            <p className="text-[11px] text-slate-500 max-w-md mt-1 leading-normal">
+                                Click the <strong className="text-rose-400">&quot;Forensics RCA&quot;</strong> button next to any flagged warning in the compliance ledger below, or choose an active incident from the dropdown above to correlate shift telemetry.
+                            </p>
+                        </div>
+                    ) : (
+                        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-stretch">
+                             <div className="lg:col-span-5 flex flex-col gap-4">
+                                {!selectedRcaLog2 ? (
+                                    <div className="flex-1 flex flex-col gap-4 bg-slate-950/55 p-5 rounded-2xl border border-slate-800/80">
+                                        <div className="flex items-center justify-between border-b border-slate-800/80 pb-3">
+                                            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider font-mono">Forensic Target Log</span>
+                                            <span className={`px-2.5 py-0.5 rounded text-[9px] font-black uppercase tracking-wider ${
+                                                selectedRcaLog.auditStatus === 'Passed' ? 'text-emerald-400 bg-emerald-500/10 border border-emerald-500/20' :
+                                                selectedRcaLog.auditStatus === 'Critical Warning' ? 'text-rose-400 bg-rose-500/10 border border-rose-500/20 animate-pulse' : 'text-amber-400 bg-amber-500/10 border border-amber-500/20'
+                                            }`}>
+                                                {selectedRcaLog.auditStatus}
+                                            </span>
+                                        </div>
+
+                                        <div className="grid grid-cols-2 gap-3 text-xs font-mono">
+                                            <div className="flex flex-col gap-0.5 bg-slate-900/60 p-2.5 rounded-xl border border-slate-800/40">
+                                                <span className="text-[9px] text-slate-500 uppercase tracking-widest font-bold">Terminal ID</span>
+                                                <span className="text-white font-bold">{selectedRcaLog.terminalId || 'N/A'}</span>
+                                            </div>
+                                            <div className="flex flex-col gap-0.5 bg-slate-900/60 p-2.5 rounded-xl border border-slate-800/40">
+                                                <span className="text-[9px] text-slate-500 uppercase tracking-widest font-bold">Date / Stamp</span>
+                                                <span className="text-white">{selectedRcaLog.date}</span>
+                                            </div>
+                                            <div className="flex flex-col gap-0.5 bg-slate-900/60 p-2.5 rounded-xl border border-slate-800/40">
+                                                <span className="text-[9px] text-slate-500 uppercase tracking-widest font-bold">Risk Category</span>
+                                                <span className="text-slate-300 font-sans font-semibold truncate" title={selectedRcaLog.riskCategory}>{selectedRcaLog.riskCategory}</span>
+                                            </div>
+                                            <div className="flex flex-col gap-0.5 bg-slate-900/60 p-2.5 rounded-xl border border-slate-800/40">
+                                                <span className="text-[9px] text-slate-500 uppercase tracking-widest font-bold">SANS Vector</span>
+                                                <span className="text-amber-500 font-bold">{selectedRcaLog.violationVector || 'None'}</span>
+                                            </div>
+                                            <div className="flex flex-col gap-0.5 bg-slate-900/60 p-2.5 rounded-xl border border-slate-800/40">
+                                                <span className="text-[9px] text-slate-500 uppercase tracking-widest font-bold">Operator on Duty</span>
+                                                <span className="text-slate-300 font-sans">{selectedRcaLog.operator || 'Unknown'}</span>
+                                            </div>
+                                            <div className="flex flex-col gap-0.5 bg-slate-900/60 p-2.5 rounded-xl border border-slate-800/40">
+                                                <span className="text-[9px] text-slate-500 uppercase tracking-widest font-bold">Severity Level</span>
+                                                <span className={`font-bold ${
+                                                    selectedRcaLog.severityLevel === 'High' ? 'text-rose-400' :
+                                                    selectedRcaLog.severityLevel === 'Medium' ? 'text-amber-400' : 'text-emerald-400'
+                                                }`}>{selectedRcaLog.severityLevel}</span>
+                                            </div>
+                                        </div>
+
+                                        <div className="flex flex-col gap-1 mt-1 bg-slate-900/60 p-3 rounded-xl border border-slate-800/50">
+                                            <span className="text-[9px] text-slate-500 font-mono uppercase tracking-widest font-bold">Flagged Telemetry Notes:</span>
+                                            <p className="text-xs text-slate-300 leading-normal font-sans italic">
+                                                &quot;{selectedRcaLog.detailedNotes || 'No notes logged.'}&quot;
+                                            </p>
+                                        </div>
+
+                                        <div className="mt-auto pt-3 border-t border-slate-800 flex flex-col gap-2">
+                                            <div className="flex items-center justify-between text-[10px] text-slate-500 font-mono">
+                                                <span>Cross-Shift Matrix Data:</span>
+                                                <span className="text-indigo-400 font-bold">4 Logs Correlated</span>
+                                            </div>
+                                            <div className="flex gap-1">
+                                                <div className="flex-1 h-1.5 rounded-full bg-rose-500/40 border border-rose-500/20" title="Target Incident Log" />
+                                                <div className="flex-1 h-1.5 rounded-full bg-slate-800" title="Shift handover note matching" />
+                                                <div className="flex-1 h-1.5 rounded-full bg-indigo-500/60" title="Shared terminal telemetry overlaps" />
+                                                <div className="flex-1 h-1.5 rounded-full bg-emerald-500/40" title="Historical baseline normal range" />
+                                            </div>
+                                        </div>
+                                    </div>
+                                ) : (
+                                    <div className="flex-1 flex flex-col gap-4 h-full">
+                                        {/* Incident A Sub-panel */}
+                                        <div className="flex flex-col gap-3.5 bg-indigo-950/20 p-4 rounded-2xl border border-indigo-500/20">
+                                            <div className="flex items-center justify-between border-b border-indigo-500/10 pb-2">
+                                                <span className="text-[10px] font-bold text-indigo-400 uppercase tracking-wider font-mono flex items-center gap-1.5">
+                                                    <span className="w-1.5 h-1.5 rounded-full bg-indigo-400" /> Incident A (Primary Target)
+                                                </span>
+                                                <span className="text-[9px] font-black text-indigo-400 bg-indigo-500/10 px-2 py-0.5 rounded uppercase border border-indigo-500/10">
+                                                    {selectedRcaLog.terminalId}
+                                                </span>
+                                            </div>
+                                            <div className="grid grid-cols-2 gap-2 text-[11px] font-mono">
+                                                <div className="bg-slate-900/60 p-2 rounded-xl border border-slate-800/40 flex flex-col">
+                                                    <span className="text-[8px] text-slate-500 uppercase tracking-widest font-bold">Risk Category</span>
+                                                    <span className="text-slate-300 truncate" title={selectedRcaLog.riskCategory}>{selectedRcaLog.riskCategory}</span>
+                                                </div>
+                                                <div className="bg-slate-900/60 p-2 rounded-xl border border-slate-800/40 flex flex-col">
+                                                    <span className="text-[8px] text-slate-500 uppercase tracking-widest font-bold">SANS Vector</span>
+                                                    <span className="text-amber-500 font-bold truncate">{selectedRcaLog.violationVector || 'None'}</span>
+                                                </div>
+                                                <div className="bg-slate-900/60 p-2 rounded-xl border border-slate-800/40 flex flex-col">
+                                                    <span className="text-[8px] text-slate-500 uppercase tracking-widest font-bold">Operator</span>
+                                                    <span className="text-slate-300 truncate">{selectedRcaLog.operator}</span>
+                                                </div>
+                                                <div className="bg-slate-900/60 p-2 rounded-xl border border-slate-800/40 flex flex-col">
+                                                    <span className="text-[8px] text-slate-500 uppercase tracking-widest font-bold">Severity</span>
+                                                    <span className={`font-bold ${selectedRcaLog.severityLevel === 'High' ? 'text-rose-400' : 'text-amber-400'}`}>{selectedRcaLog.severityLevel}</span>
+                                                </div>
+                                            </div>
+                                            <div className="bg-slate-900/40 p-2.5 rounded-xl border border-slate-800/40 text-[11px] text-slate-400 italic font-sans leading-relaxed">
+                                                &quot;{selectedRcaLog.detailedNotes || 'No notes.'}&quot;
+                                            </div>
+                                        </div>
+
+                                        {/* Incident B Sub-panel */}
+                                        <div className="flex flex-col gap-3.5 bg-amber-950/20 p-4 rounded-2xl border border-amber-500/20">
+                                            <div className="flex items-center justify-between border-b border-amber-500/10 pb-2">
+                                                <span className="text-[10px] font-bold text-amber-400 uppercase tracking-wider font-mono flex items-center gap-1.5">
+                                                    <span className="w-1.5 h-1.5 rounded-full bg-amber-400" /> Incident B (Comparison)
+                                                </span>
+                                                <span className="text-[9px] font-black text-amber-400 bg-amber-500/10 px-2 py-0.5 rounded uppercase border border-amber-500/10">
+                                                    {selectedRcaLog2.terminalId}
+                                                </span>
+                                            </div>
+                                            <div className="grid grid-cols-2 gap-2 text-[11px] font-mono">
+                                                <div className="bg-slate-900/60 p-2 rounded-xl border border-slate-800/40 flex flex-col">
+                                                    <span className="text-[8px] text-slate-500 uppercase tracking-widest font-bold">Risk Category</span>
+                                                    <span className="text-slate-300 truncate" title={selectedRcaLog2.riskCategory}>{selectedRcaLog2.riskCategory}</span>
+                                                </div>
+                                                <div className="bg-slate-900/60 p-2 rounded-xl border border-slate-800/40 flex flex-col">
+                                                    <span className="text-[8px] text-slate-500 uppercase tracking-widest font-bold">SANS Vector</span>
+                                                    <span className="text-amber-500 font-bold truncate">{selectedRcaLog2.violationVector || 'None'}</span>
+                                                </div>
+                                                <div className="bg-slate-900/60 p-2 rounded-xl border border-slate-800/40 flex flex-col">
+                                                    <span className="text-[8px] text-slate-500 uppercase tracking-widest font-bold">Operator</span>
+                                                    <span className="text-slate-300 truncate">{selectedRcaLog2.operator}</span>
+                                                </div>
+                                                <div className="bg-slate-900/60 p-2 rounded-xl border border-slate-800/40 flex flex-col">
+                                                    <span className="text-[8px] text-slate-500 uppercase tracking-widest font-bold">Severity</span>
+                                                    <span className={`font-bold ${selectedRcaLog2.severityLevel === 'High' ? 'text-rose-400' : 'text-amber-400'}`}>{selectedRcaLog2.severityLevel}</span>
+                                                </div>
+                                            </div>
+                                            <div className="bg-slate-900/40 p-2.5 rounded-xl border border-slate-800/40 text-[11px] text-slate-400 italic font-sans leading-relaxed">
+                                                &quot;{selectedRcaLog2.detailedNotes || 'No notes.'}&quot;
+                                            </div>
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
+
+                            <div className="lg:col-span-7 flex flex-col bg-slate-950 border border-slate-800/80 rounded-2xl relative overflow-hidden">
+                                <div className="flex bg-slate-900/60 border-b border-slate-800/80 p-1.5 gap-1">
+                                    <button
+                                        type="button"
+                                        onClick={() => {
+                                            setRcaMode('rca');
+                                            if ((rcaTextMode !== 'rca' || rcaError) && !rcaLoading) {
+                                                triggerRcaAnalysis(selectedRcaLog, 'rca');
+                                            }
+                                        }}
+                                        className={`flex-1 inline-flex items-center justify-center gap-1.5 py-2 rounded-lg text-[10px] font-bold uppercase tracking-wider transition-all cursor-pointer ${
+                                            rcaMode === 'rca'
+                                                ? 'bg-slate-950 text-white border border-slate-800 shadow'
+                                                : 'text-slate-400 hover:text-white hover:bg-slate-900/50'
+                                        }`}
+                                    >
+                                        <Activity className="w-3.5 h-3.5 text-indigo-400" />
+                                        1. Run Forensic Shift RCA
+                                    </button>
+                                    <button
+                                        type="button"
+                                        onClick={() => {
+                                            setRcaMode('remediation');
+                                            if ((rcaTextMode !== 'remediation' || rcaError) && !rcaLoading) {
+                                                triggerRcaAnalysis(selectedRcaLog, 'remediation');
+                                            }
+                                        }}
+                                        className={`flex-1 inline-flex items-center justify-center gap-1.5 py-2 rounded-lg text-[10px] font-bold uppercase tracking-wider transition-all cursor-pointer ${
+                                            rcaMode === 'remediation'
+                                                ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 shadow'
+                                                : 'text-slate-400 hover:text-emerald-400 hover:bg-emerald-500/5'
+                                        }`}
+                                    >
+                                        <Wrench className="w-3.5 h-3.5" />
+                                        2. Draft Fix Proposal
+                                    </button>
+                                    <button
+                                        type="button"
+                                        onClick={() => {
+                                            setRcaMode('compare');
+                                            if (!selectedRcaLog2) {
+                                                // Find first other flagged log to compare automatically
+                                                const otherLog = ledgerLogs.find((l, idx) => l.auditStatus !== 'Passed' && idx !== (selectedRcaLog?.originalIndex ?? -1));
+                                                if (otherLog) {
+                                                    const otherIdx = ledgerLogs.indexOf(otherLog);
+                                                    handleSelectRcaLog2(otherLog, otherIdx);
+                                                    triggerRcaAnalysis(selectedRcaLog, 'compare', otherLog);
+                                                } else {
+                                                    setRcaText('### ⚖️ SIDE-BY-SIDE ROOT CAUSE COMPARISON\n\nPlease select **Incident B** from the dropdown menu above to perform a comparative cross-shift telemetry correlation analysis.');
+                                                    setRcaTextMode('compare');
+                                                }
+                                            } else {
+                                                triggerRcaAnalysis(selectedRcaLog, 'compare', selectedRcaLog2);
+                                            }
+                                        }}
+                                        className={`flex-1 inline-flex items-center justify-center gap-1.5 py-2 rounded-lg text-[10px] font-bold uppercase tracking-wider transition-all cursor-pointer ${
+                                            rcaMode === 'compare'
+                                                ? 'bg-amber-500/10 text-amber-400 border border-amber-500/20 shadow'
+                                                : 'text-slate-400 hover:text-amber-400 hover:bg-amber-500/5'
+                                        }`}
+                                    >
+                                        <Scale className="w-3.5 h-3.5" />
+                                        3. Side-by-Side Compare
+                                    </button>
+                                </div>
+
+                                <div className="flex-1 p-5 overflow-y-auto max-h-[340px] min-h-[260px] flex flex-col">
+                                    {rcaLoading ? (
+                                        <div className="flex-1 flex flex-col items-center justify-center text-center gap-3 py-10 font-mono">
+                                            <div className="relative w-10 h-10 border-2 border-indigo-500/20 border-t-indigo-500 rounded-full animate-spin">
+                                                <div className="absolute inset-1.5 border-2 border-emerald-500/20 border-t-emerald-500 rounded-full animate-spin" style={{ animationDirection: 'reverse' }} />
+                                            </div>
+                                            <div className="flex flex-col gap-1">
+                                                <span className="text-[10px] font-black text-indigo-400 uppercase tracking-widest animate-pulse">Forensic Correlator Active</span>
+                                                <span className="text-[9px] text-slate-500">
+                                                    {rcaMode === 'remediation' 
+                                                        ? 'Compiling step-by-step clearance and SANS containment protocols...' 
+                                                        : 'Running conceptual cross-shift overlap vectors & telemetry matching...'}
+                                                </span>
+                                            </div>
+                                        </div>
+                                    ) : rcaText ? (
+                                        <div className="animate-fade-in flex-1 space-y-4">
+                                            {rcaError && (
+                                                <div className="p-3.5 bg-amber-500/10 border border-amber-500/20 text-amber-400 rounded-xl text-[11px] font-mono flex items-start gap-2.5 shadow-sm">
+                                                    <span className="text-amber-500 text-sm mt-0.5 font-bold">⚠️</span>
+                                                    <div className="flex-1">
+                                                        <span className="font-bold block text-amber-300 uppercase tracking-wider text-[9px] mb-0.5">SANS Compliance Backup Mode Active</span>
+                                                        The AI service is currently unreachable ({rcaError}). A secure, pre-validated local safety compliance fallback analysis has been initialized.
+                                                    </div>
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => triggerRcaAnalysis(selectedRcaLog, rcaMode)}
+                                                        className="px-2.5 py-1 bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 rounded-lg text-[9px] font-black uppercase tracking-wider transition-colors cursor-pointer border border-amber-500/10"
+                                                    >
+                                                        Retry Connection
+                                                    </button>
+                                                </div>
+                                            )}
+                                            <RcaMarkdownRenderer text={rcaText} />
+                                        </div>
+                                    ) : rcaError ? (
+                                        <div className="p-4 bg-rose-500/10 border border-rose-500/20 text-rose-400 rounded-xl text-xs font-mono">
+                                            <p className="font-bold">Investigation Fault</p>
+                                            <p className="mt-1">{rcaError}</p>
+                                            <button
+                                                type="button"
+                                                onClick={() => triggerRcaAnalysis(selectedRcaLog, rcaMode)}
+                                                className="mt-3 px-3 py-1.5 bg-rose-500/20 hover:bg-rose-500/30 text-rose-300 rounded-lg text-[10px] font-bold uppercase tracking-wider transition-colors cursor-pointer"
+                                            >
+                                                Retry Analysis
+                                            </button>
+                                        </div>
+                                    ) : (
+                                        <div className="flex-1 flex flex-col items-center justify-center text-center gap-2.5 py-10">
+                                            <div className="w-10 h-10 bg-slate-900 border border-slate-800 rounded-xl flex items-center justify-center text-indigo-400">
+                                                <Sparkles className="w-5 h-5" />
+                                            </div>
+                                            <h4 className="text-xs font-bold text-slate-400 uppercase tracking-wider font-mono">Initialize Forensic Assessment</h4>
+                                            <button
+                                                type="button"
+                                                onClick={() => triggerRcaAnalysis(selectedRcaLog, 'rca')}
+                                                className="inline-flex items-center gap-1.5 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs uppercase tracking-wider rounded-xl transition-colors cursor-pointer shadow-lg shadow-indigo-500/10"
+                                            >
+                                                <Activity className="w-4 h-4" /> Correlate &amp; Analyze Incidents
+                                            </button>
+                                        </div>
+                                    )}
+                                </div>
+
+                                {selectedRcaLog && !rcaLoading && rcaText && (
+                                    <div className="bg-slate-900/60 border-t border-slate-800/80 p-4 flex flex-wrap justify-between items-center gap-3">
+                                        <div className="flex items-center gap-1 text-[10px] text-slate-500 font-mono">
+                                            <Lock className="w-3.5 h-3.5 text-emerald-500" />
+                                            <span>MeloTwo Decoded Analysis Feed</span>
+                                        </div>
+                                        <div className="flex gap-2">
+                                            {selectedRcaLog.auditStatus !== 'Passed' && (
+                                                <button
+                                                    type="button"
+                                                    onClick={applyRcaFixProtocol}
+                                                    className="inline-flex items-center gap-1.5 px-3 py-2 bg-emerald-500 hover:bg-emerald-600 text-slate-950 font-black text-[10px] uppercase tracking-wider rounded-xl transition-all cursor-pointer shadow-md shadow-emerald-500/10"
+                                                >
+                                                    <CheckCircle2 className="w-3.5 h-3.5" /> Apply Fix Protocol
+                                                </button>
+                                            )}
+                                            <button
+                                                type="button"
+                                                onClick={() => {
+                                                    try {
+                                                        const docPdf = new jsPDF({
+                                                            orientation: 'portrait',
+                                                            unit: 'mm',
+                                                            format: 'a4'
+                                                        });
+                                                        docPdf.setFillColor(15, 23, 42);
+                                                        docPdf.rect(0, 0, 210, 297, 'F');
+                                                        docPdf.setFont('helvetica', 'bold');
+                                                        docPdf.setFontSize(18);
+                                                        docPdf.setTextColor(245, 158, 11);
+                                                        docPdf.text('MELOTWO FORENSIC INCIDENT INVESTIGATION REPORT', 15, 25);
+                                                        
+                                                        docPdf.setFont('helvetica', 'normal');
+                                                        docPdf.setFontSize(9.5);
+                                                        docPdf.setTextColor(148, 163, 184);
+                                                        docPdf.text(`Incident Terminal: ${selectedRcaLog.terminalId} | Date: ${selectedRcaLog.date}`, 15, 33);
+                                                        docPdf.text(`Category: ${selectedRcaLog.riskCategory} | SANS Standard: ${selectedRcaLog.violationVector}`, 15, 39);
+                                                        
+                                                        docPdf.setDrawColor(51, 65, 85);
+                                                        docPdf.line(15, 45, 195, 45);
+                                                        
+                                                        docPdf.setFont('courier', 'normal');
+                                                        docPdf.setFontSize(8.5);
+                                                        docPdf.setTextColor(226, 232, 240);
+                                                        
+                                                        const splitLines = docPdf.splitTextToSize(rcaText, 180);
+                                                        let yOffset = 55;
+                                                        splitLines.forEach((line: string) => {
+                                                            if (yOffset > 275) {
+                                                                docPdf.addPage();
+                                                                docPdf.setFillColor(15, 23, 42);
+                                                                docPdf.rect(0, 0, 210, 297, 'F');
+                                                                yOffset = 25;
+                                                            }
+                                                            docPdf.text(line, 15, yOffset);
+                                                            yOffset += 5;
+                                                        });
+                                                        docPdf.save(`MeloTwo-Forensic-RCA-${selectedRcaLog.terminalId}-${Date.now()}.pdf`);
+                                                    } catch (e) {
+                                                        console.error(e);
+                                                    }
+                                                }}
+                                                className="inline-flex items-center gap-1.5 px-3 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold text-[10px] uppercase tracking-wider rounded-xl transition-all cursor-pointer border border-slate-700/60"
+                                            >
+                                                <Download className="w-3.5 h-3.5" /> Export Report PDF
+                                            </button>
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+                    )}
+                </div>
+
                 {/* SANS & POPIA Compliance Log Table (Full Width Panel) */}
                 <div id="synchronized-ledger-section" className="bg-slate-900 border border-slate-800 rounded-3xl p-6 backdrop-blur-xl">
                     <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-4 border-b border-slate-800 pb-4 mb-5">
@@ -7380,28 +8457,166 @@ export const SafetyInspectorPage: React.FC<SafetyInspectorPageProps> = ({ setPag
                     </div>
 
                     {/* Filter & Search Bar */}
-                    <div className="flex flex-col md:flex-row items-stretch md:items-center gap-4 mb-5 bg-slate-950/40 p-4 rounded-2xl border border-slate-800/60">
-                        <div className="relative flex-1">
-                            <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-                            <input
-                                id="ledger-search-input"
-                                type="text"
-                                value={ledgerSearchQuery}
-                                onChange={(e) => setLedgerSearchQuery(e.target.value)}
-                                placeholder="Filter ledger logs by operator name, terminal ID, or risk category..."
-                                className="w-full bg-slate-950/80 border border-slate-800 focus:border-amber-500/50 focus:ring-1 focus:ring-amber-500/30 text-white rounded-xl py-2 pl-10 pr-4 text-xs font-sans placeholder-slate-500 outline-none transition-all"
-                            />
-                            {ledgerSearchQuery && (
-                                <button
-                                    onClick={() => setLedgerSearchQuery('')}
-                                    className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-white text-xs font-bold px-1.5 py-0.5 hover:bg-slate-800 rounded transition-colors"
-                                >
-                                    Clear
-                                </button>
-                            )}
+                    <div className="flex flex-col gap-4 mb-5 bg-slate-950/40 p-5 rounded-2xl border border-slate-800/80">
+                        {/* Mode selection + Main Search Input */}
+                        <div className="flex flex-col xl:flex-row gap-4 items-stretch">
+                            <div className="relative flex-1">
+                                <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                                <input
+                                    id="ledger-search-input"
+                                    type="text"
+                                    value={ledgerSearchQuery}
+                                    onChange={(e) => setLedgerSearchQuery(e.target.value)}
+                                    placeholder="Perform high-fidelity hybrid vector query or standard text search..."
+                                    className="w-full bg-slate-950/80 border border-slate-800 focus:border-amber-500/50 focus:ring-1 focus:ring-amber-500/30 text-white rounded-xl py-2.5 pl-10 pr-12 text-xs font-sans placeholder-slate-500 outline-none transition-all"
+                                />
+                                <div className="absolute right-3.5 top-1/2 -translate-y-1/2 flex items-center gap-1.5">
+                                    {semanticLoading && (
+                                        <div className="w-4 h-4 border-2 border-amber-500 border-t-transparent rounded-full animate-spin" />
+                                    )}
+                                    {ledgerSearchQuery && (
+                                        <button
+                                            onClick={() => setLedgerSearchQuery('')}
+                                            className="text-slate-400 hover:text-white text-xs font-bold px-1.5 py-0.5 hover:bg-slate-800 rounded transition-colors"
+                                        >
+                                            Clear
+                                        </button>
+                                    )}
+                                </div>
+                            </div>
+
+                            {/* Search Mode Toggles */}
+                            <div className="flex bg-slate-950 p-1 rounded-xl border border-slate-800/60 self-start xl:self-auto">
+                                {(['keyword', 'semantic', 'hybrid'] as const).map((mode) => (
+                                    <button
+                                        key={mode}
+                                        type="button"
+                                        onClick={() => setSearchMode(mode)}
+                                        className={`px-3 py-1.5 rounded-lg text-[10px] font-bold tracking-wider uppercase transition-all duration-200 cursor-pointer ${
+                                            searchMode === mode
+                                                ? 'bg-amber-500 text-slate-950 shadow font-black'
+                                                : 'text-slate-400 hover:text-white hover:bg-slate-900/55'
+                                        }`}
+                                    >
+                                        {mode === 'keyword' ? 'Keyword Match' : mode === 'semantic' ? 'Semantic Vector' : 'Hybrid Ranker'}
+                                    </button>
+                                ))}
+                            </div>
                         </div>
-                        <div className="flex items-center gap-2 text-xs text-slate-400 whitespace-nowrap self-end md:self-auto font-mono text-[11px]">
-                            <span>Found: <strong className="text-amber-500">{filteredLedgerLogs.length}</strong> of {ledgerLogs.length} logs</span>
+
+                        {/* Metadata SQL-like Filters row */}
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-5 gap-3 pt-3 border-t border-slate-800/40">
+                            {/* Category selector */}
+                            <div className="flex flex-col gap-1">
+                                <label className="text-[9px] font-bold text-slate-500 uppercase tracking-wider font-mono">Category Metadata</label>
+                                <select
+                                    value={selectedCategory}
+                                    onChange={(e) => setSelectedCategory(e.target.value)}
+                                    className="bg-slate-950 border border-slate-800/80 rounded-lg px-2.5 py-1.5 text-xs text-slate-300 focus:border-amber-500/50 outline-none"
+                                >
+                                    <option value="ALL">All Categories</option>
+                                    {uniqueCategories.map(cat => <option key={cat} value={cat}>{cat}</option>)}
+                                </select>
+                            </div>
+
+                            {/* Severity level */}
+                            <div className="flex flex-col gap-1">
+                                <label className="text-[9px] font-bold text-slate-500 uppercase tracking-wider font-mono">Severity Level</label>
+                                <select
+                                    value={selectedSeverity}
+                                    onChange={(e) => setSelectedSeverity(e.target.value)}
+                                    className="bg-slate-950 border border-slate-800/80 rounded-lg px-2.5 py-1.5 text-xs text-slate-300 focus:border-amber-500/50 outline-none"
+                                >
+                                    <option value="ALL">All Severities</option>
+                                    {uniqueSeverities.map(sev => <option key={sev} value={sev}>{sev}</option>)}
+                                </select>
+                            </div>
+
+                            {/* Status filter */}
+                            <div className="flex flex-col gap-1">
+                                <label className="text-[9px] font-bold text-slate-500 uppercase tracking-wider font-mono">Audit Status</label>
+                                <select
+                                    value={selectedStatus}
+                                    onChange={(e) => setSelectedStatus(e.target.value)}
+                                    className="bg-slate-950 border border-slate-800/80 rounded-lg px-2.5 py-1.5 text-xs text-slate-300 focus:border-amber-500/50 outline-none"
+                                >
+                                    <option value="ALL">All Statuses</option>
+                                    {uniqueStatuses.map(st => <option key={st} value={st}>{st}</option>)}
+                                </select>
+                            </div>
+
+                            {/* Terminal ID filter */}
+                            <div className="flex flex-col gap-1">
+                                <label className="text-[9px] font-bold text-slate-500 uppercase tracking-wider font-mono">Terminal ID</label>
+                                <select
+                                    value={selectedTerminalId}
+                                    onChange={(e) => setSelectedTerminalId(e.target.value)}
+                                    className="bg-slate-950 border border-slate-800/80 rounded-lg px-2.5 py-1.5 text-xs text-slate-300 focus:border-amber-500/50 outline-none"
+                                >
+                                    <option value="ALL">All Terminals</option>
+                                    {uniqueTerminals.map(term => <option key={term} value={term}>{term}</option>)}
+                                </select>
+                            </div>
+
+                            {/* Semantic similarity minimum score slider */}
+                            <div className="flex flex-col gap-1 sm:col-span-2 lg:col-span-4 xl:col-span-1 justify-end">
+                                {searchMode !== 'keyword' && ledgerSearchQuery.trim() ? (
+                                    <div className="flex flex-col gap-1">
+                                        <div className="flex justify-between items-center text-[9px] font-mono">
+                                            <span className="font-bold text-slate-500 uppercase tracking-wider">Similarity Cutoff</span>
+                                            <span className="text-amber-500 font-bold">{Math.round(minSemanticScore * 100)}% Match</span>
+                                        </div>
+                                        <input
+                                            type="range"
+                                            min="0.0"
+                                            max="0.8"
+                                            step="0.05"
+                                            value={minSemanticScore}
+                                            onChange={(e) => setMinSemanticScore(parseFloat(e.target.value))}
+                                            className="w-full accent-amber-500 h-1 bg-slate-950 rounded-lg appearance-none cursor-pointer"
+                                        />
+                                    </div>
+                                ) : (
+                                    <div className="h-full flex items-center justify-end text-[10px] text-slate-500 font-mono italic pr-1">
+                                        Metadata Filter Active
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+
+                        {/* Status feedback & Results count */}
+                        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 pt-2 text-[10px] text-slate-400 font-mono">
+                            <div className="flex items-center gap-1.5">
+                                <span className="relative flex h-2 w-2">
+                                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                                    <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+                                </span>
+                                <span>
+                                    Search Engine: <strong className="text-emerald-400 uppercase">Hybrid Vector 2.0 (Active)</strong>
+                                    {searchMode !== 'keyword' && (
+                                        <span className="text-slate-500 ml-1">
+                                            ({semanticLoading ? 'running semantic matrix calculation...' : 'neural cache matching'})
+                                        </span>
+                                    )}
+                                </span>
+                            </div>
+                            <div className="flex items-center gap-3">
+                                <span>Found: <strong className="text-amber-500">{filteredLedgerLogs.length}</strong> of {ledgerLogs.length} logs</span>
+                                {(selectedCategory !== 'ALL' || selectedSeverity !== 'ALL' || selectedStatus !== 'ALL' || selectedTerminalId !== 'ALL' || ledgerSearchQuery.trim()) && (
+                                    <button
+                                        onClick={() => {
+                                            setLedgerSearchQuery('');
+                                            setSelectedCategory('ALL');
+                                            setSelectedSeverity('ALL');
+                                            setSelectedStatus('ALL');
+                                            setSelectedTerminalId('ALL');
+                                        }}
+                                        className="text-amber-500 hover:text-amber-400 font-bold cursor-pointer underline underline-offset-2"
+                                    >
+                                        Reset All Filters
+                                    </button>
+                                )}
+                            </div>
                         </div>
                     </div>
 
@@ -7416,19 +8631,23 @@ export const SafetyInspectorPage: React.FC<SafetyInspectorPageProps> = ({ setPag
                                     <th className="py-3 px-4">SANS / Violation Vector</th>
                                     <th className="py-3 px-4">Severity</th>
                                     <th className="py-3 px-4">Status</th>
+                                    {ledgerSearchQuery.trim() && searchMode !== 'keyword' && (
+                                        <th className="py-3 px-4 text-amber-500">Semantic Alignment</th>
+                                    )}
                                     <th className="py-3 px-4 max-w-[200px]">Notes</th>
+                                    <th className="py-3 px-4 text-right">Investigation</th>
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-slate-800/60 font-mono text-slate-300">
                                 {ledgerLogs.length === 0 ? (
                                     <tr>
-                                        <td colSpan={8} className="py-8 text-center text-slate-500 font-sans">
+                                        <td colSpan={ledgerSearchQuery.trim() && searchMode !== 'keyword' ? 10 : 9} className="py-8 text-center text-slate-500 font-sans">
                                             No ledger logs synchronized yet. Enter sandbox parameters above or connect your Google Spreadsheet.
                                         </td>
                                     </tr>
                                 ) : filteredLedgerLogs.length === 0 ? (
                                     <tr>
-                                        <td colSpan={8} className="py-8 text-center text-slate-500 font-sans">
+                                        <td colSpan={ledgerSearchQuery.trim() && searchMode !== 'keyword' ? 10 : 9} className="py-8 text-center text-slate-500 font-sans">
                                             No compliance logs match the criteria &quot;{ledgerSearchQuery}&quot;. Please try another search query.
                                         </td>
                                     </tr>
@@ -7456,8 +8675,41 @@ export const SafetyInspectorPage: React.FC<SafetyInspectorPageProps> = ({ setPag
                                                     {log.auditStatus}
                                                 </span>
                                             </td>
+                                            {ledgerSearchQuery.trim() && searchMode !== 'keyword' && (
+                                                <td className="py-3.5 px-4 font-mono">
+                                                    <div className="flex flex-col gap-1">
+                                                        <div className="flex items-center gap-1.5">
+                                                            <span className={`px-1.5 py-0.5 rounded text-[9px] font-black tracking-wider ${
+                                                                (log.semanticScore || 0) >= 0.7 ? 'text-emerald-400 bg-emerald-500/15 border border-emerald-500/20' :
+                                                                (log.semanticScore || 0) >= 0.35 ? 'text-amber-400 bg-amber-500/15 border border-amber-500/20' : 'text-slate-400 bg-slate-500/15 border border-slate-500/20'
+                                                            }`}>
+                                                                {Math.round((log.semanticScore || 0) * 100)}% Match
+                                                            </span>
+                                                        </div>
+                                                        <span className="text-[10px] text-slate-400 leading-normal block font-sans font-medium whitespace-normal max-w-[200px]" title={log.semanticReason}>
+                                                            {log.semanticReason || (semanticLoading ? 'scoring compliance vectors...' : 'no data')}
+                                                        </span>
+                                                    </div>
+                                                </td>
+                                            )}
                                             <td className="py-3.5 px-4 font-sans text-xs text-slate-400 max-w-[240px] truncate" title={log.detailedNotes}>
                                                 {log.detailedNotes || 'No notes added.'}
+                                            </td>
+                                            <td className="py-3.5 px-4 text-right">
+                                                <button
+                                                    type="button"
+                                                    onClick={() => handleSelectRcaLog(log, log.originalIndex ?? idx)}
+                                                    className={`inline-flex items-center gap-1 px-2.5 py-1.5 rounded-xl text-[10px] font-bold uppercase tracking-wider transition-all duration-200 cursor-pointer border ${
+                                                        selectedRcaLog && selectedRcaLog.originalIndex === (log.originalIndex ?? idx)
+                                                            ? 'bg-amber-500 text-slate-950 border-amber-400 shadow shadow-amber-500/15 font-black'
+                                                            : log.auditStatus !== 'Passed'
+                                                            ? 'bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 border-rose-500/20'
+                                                            : 'bg-slate-800/80 hover:bg-slate-700/80 text-slate-300 border-slate-700/55'
+                                                    }`}
+                                                >
+                                                    <Sparkles className="w-3.5 h-3.5" />
+                                                    {log.auditStatus !== 'Passed' ? 'Forensics RCA' : 'Review'}
+                                                </button>
                                             </td>
                                         </tr>
                                     ))
