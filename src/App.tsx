@@ -4015,11 +4015,11 @@ const AppFooter: React.FC = () => (
 
 // --- Component: EnterpriseDemoModal ---
 interface PricingTierConfig {
-    id: 'professional' | 'enterprise' | 'audit';
+    id: 'professional' | 'enterprise' | 'full_site' | 'audit';
     name: string;
     tagline: string;
     basePrice: number;
-    billingType: 'monthly' | 'one-off';
+    billingType: 'monthly' | 'annual' | 'one-off';
     insuranceOffsetRate: string; // Marketing justification
     auditTrailDefensibility: string; // Security justification
     features: string[];
@@ -4027,10 +4027,13 @@ interface PricingTierConfig {
         activeModulesCount: number;
         numSites: '1' | '2-5' | '5+';
         workforceSize: 'under50' | '50-250' | '250+';
+        numShafts?: number;
+        contractorPassportsEnabled?: boolean;
+        contractorSeatsTier?: '50' | '150' | '500' | 'unlimited';
     }) => number;
 }
 
-export const MELOTWO_PRICING_MATRIX: Record<'professional' | 'enterprise' | 'audit', PricingTierConfig> = {
+export const MELOTWO_PRICING_MATRIX: Record<'professional' | 'enterprise' | 'full_site' | 'audit', PricingTierConfig> = {
     professional: {
         id: 'professional',
         name: 'Site Professional Tier',
@@ -4074,6 +4077,35 @@ export const MELOTWO_PRICING_MATRIX: Record<'professional' | 'enterprise' | 'aud
             return Math.max(baseFloor, calculated);
         }
     },
+    full_site: {
+        id: 'full_site',
+        name: 'Full Site Enterprise License',
+        tagline: 'Custom annual site licensing for large mining operations, multi-shaft complexes & contractor safety governance.',
+        basePrice: 180000,
+        billingType: 'annual',
+        insuranceOffsetRate: 'Up to 30% reduction in underground mining risk premiums underwritten by continuous real-time SANS adherence logs.',
+        auditTrailDefensibility: 'Full executive & legal board defensibility. Automated chain-of-custody tracking across all shafts & contractor companies.',
+        features: [
+            'Unrestricted annual multi-shaft & terminal safety telemetry logs',
+            'Contractor Ecosystem Passport tracking with digital ID & biometric verifications',
+            'Full SANS multi-module coverage (SANS 10330, SANS 10142-1, SANS 10049)',
+            '24/7 Priority SHEQ Integration Engineer SLA with emergency inspectorial response'
+        ],
+        calculatePrice: ({ numShafts = 4, contractorPassportsEnabled = true, contractorSeatsTier = '150', activeModulesCount = 3 }) => {
+            const basePrice = 180000;
+            const shaftExtra = Math.max(0, numShafts - 1) * 15000;
+            let contractorCost = 0;
+            if (contractorPassportsEnabled) {
+                if (contractorSeatsTier === '50') contractorCost = 25000;
+                else if (contractorSeatsTier === '150') contractorCost = 45000;
+                else if (contractorSeatsTier === '500') contractorCost = 85000;
+                else if (contractorSeatsTier === 'unlimited') contractorCost = 135000;
+                else contractorCost = 45000;
+            }
+            const sansCost = activeModulesCount * 20000;
+            return basePrice + shaftExtra + contractorCost + sansCost;
+        }
+    },
     audit: {
         id: 'audit',
         name: 'High-Stakes Audit Tier',
@@ -4099,15 +4131,18 @@ export const MELOTWO_PRICING_MATRIX: Record<'professional' | 'enterprise' | 'aud
 interface EnterpriseDemoModalProps {
     isOpen: boolean;
     onClose: () => void;
-    initialTier?: 'professional' | 'enterprise' | 'audit';
+    initialTier?: 'professional' | 'enterprise' | 'full_site' | 'audit';
 }
 
 const EnterpriseDemoModal: React.FC<EnterpriseDemoModalProps> = ({ isOpen, onClose, initialTier }) => {
     const [demoName, setDemoName] = useState('');
     const [demoEmail, setDemoEmail] = useState('');
     const [demoCompany, setDemoCompany] = useState('');
-    const [selectedTier, setSelectedTier] = useState<'professional' | 'enterprise' | 'audit'>('professional');
+    const [selectedTier, setSelectedTier] = useState<'professional' | 'enterprise' | 'full_site' | 'audit'>('professional');
     const [numSites, setNumSites] = useState<'1' | '2-5' | '5+'>('1');
+    const [numShafts, setNumShafts] = useState<number>(4);
+    const [contractorPassportsEnabled, setContractorPassportsEnabled] = useState<boolean>(true);
+    const [contractorSeatsTier, setContractorSeatsTier] = useState<'50' | '150' | '500' | 'unlimited'>('150');
     const [sans10330, setSans10330] = useState(true);
     const [sans10142, setSans10142] = useState(false);
     const [sans10049, setSans10049] = useState(false);
@@ -4119,6 +4154,11 @@ const EnterpriseDemoModal: React.FC<EnterpriseDemoModalProps> = ({ isOpen, onClo
             setDemoSubmitted(false);
         } else if (initialTier) {
             setSelectedTier(initialTier);
+            if (initialTier === 'full_site') {
+                setSans10330(true);
+                setSans10142(true);
+                setSans10049(true);
+            }
         }
     }, [isOpen, initialTier]);
 
@@ -4128,9 +4168,12 @@ const EnterpriseDemoModal: React.FC<EnterpriseDemoModalProps> = ({ isOpen, onClo
         return MELOTWO_PRICING_MATRIX[selectedTier].calculatePrice({
             activeModulesCount,
             numSites,
-            workforceSize
+            workforceSize,
+            numShafts,
+            contractorPassportsEnabled,
+            contractorSeatsTier
         });
-    }, [selectedTier, sans10330, sans10142, sans10049, numSites, workforceSize]);
+    }, [selectedTier, sans10330, sans10142, sans10049, numSites, workforceSize, numShafts, contractorPassportsEnabled, contractorSeatsTier]);
 
     // jsPDF corporate quotation compiler
     const handleDownloadQuotationPDF = () => {
@@ -4192,9 +4235,9 @@ const EnterpriseDemoModal: React.FC<EnterpriseDemoModalProps> = ({ isOpen, onClo
             doc.setFont('helvetica', 'normal');
             doc.setFontSize(8);
             doc.setTextColor(71, 85, 105);
-            doc.text(`Active Shafts/Sites: ${numSites} site(s)`, 130, 60);
-            doc.text(`Workforce Scale:     ${workforceSize === 'under50' ? 'Under 50' : workforceSize === '50-250' ? '50-250' : '250+'} employees`, 130, 65);
-            doc.text(`Pricing Model:       SANS Multi-Tier`, 130, 70);
+            doc.text(`Active Shafts/Sites: ${selectedTier === 'full_site' ? `${numShafts} shaft(s)` : `${numSites} site(s)`}`, 130, 60);
+            doc.text(`Contractor Passports: ${contractorPassportsEnabled ? `${contractorSeatsTier} seats` : 'Disabled'}`, 130, 65);
+            doc.text(`Pricing Model:       ${selectedTier === 'full_site' ? 'Full Site Annual' : selectedTier === 'enterprise' ? 'Enterprise Multi-Site' : selectedTier === 'professional' ? 'Site Professional' : 'Audit Event Pass'}`, 130, 70);
 
             doc.setDrawColor(226, 232, 240);
             doc.line(15, 82, 195, 82);
@@ -4220,7 +4263,42 @@ const EnterpriseDemoModal: React.FC<EnterpriseDemoModalProps> = ({ isOpen, onClo
             doc.setFont('helvetica', 'normal');
             doc.setTextColor(51, 65, 85);
 
-            if (selectedTier === 'professional') {
+            if (selectedTier === 'full_site') {
+                doc.text('MeloTwo Full Site Enterprise License Base (Annual)', 15, currentY);
+                doc.text('R180,000.00', 115, currentY);
+                doc.text('Annual Site Base', 145, currentY);
+                doc.text('R180,000.00', 175, currentY);
+                currentY += 7;
+
+                if (numShafts > 1) {
+                    const extraShafts = numShafts - 1;
+                    const extraCost = extraShafts * 15000;
+                    doc.text(`Active Mine Shafts / Terminals (${numShafts} shafts)`, 15, currentY);
+                    doc.text('R15,000.00 / shaft', 115, currentY);
+                    doc.text(`+${extraShafts} shaft(s)`, 145, currentY);
+                    doc.text(`R${extraCost.toFixed(2)}`, 175, currentY);
+                    currentY += 7;
+                }
+
+                const activeCount = [sans10330, sans10142, sans10049].filter(Boolean).length;
+                if (activeCount > 0) {
+                    const sansTotal = activeCount * 20000;
+                    doc.text(`Full SANS Multi-Module Coverage (${activeCount} selected)`, 15, currentY);
+                    doc.text('R20,000.00 / mod', 115, currentY);
+                    doc.text('Annual Module Rate', 145, currentY);
+                    doc.text(`R${sansTotal.toFixed(2)}`, 175, currentY);
+                    currentY += 7;
+                }
+
+                if (contractorPassportsEnabled) {
+                    const cCost = contractorSeatsTier === '50' ? 25000 : contractorSeatsTier === '150' ? 45000 : contractorSeatsTier === '500' ? 85000 : 135000;
+                    doc.text(`Contractor Ecosystem Passports (${contractorSeatsTier} seats)`, 15, currentY);
+                    doc.text('Annual Seat Tier', 115, currentY);
+                    doc.text(`${contractorSeatsTier} seats`, 145, currentY);
+                    doc.text(`R${cCost.toFixed(2)}`, 175, currentY);
+                    currentY += 7;
+                }
+            } else if (selectedTier === 'professional') {
                 doc.text('MeloTwo Site Professional Base Platform Subscription', 15, currentY);
                 doc.text('R4,999.00', 115, currentY);
                 doc.text('Monthly Flat', 145, currentY);
@@ -4444,15 +4522,22 @@ const EnterpriseDemoModal: React.FC<EnterpriseDemoModalProps> = ({ isOpen, onClo
                             {/* NEW TIER SELECTION FIELD */}
                             <div>
                                 <h4 className="text-sm font-bold text-slate-900 uppercase tracking-wider mb-3">1. Engagement & Pricing Tier</h4>
-                                <div className="grid grid-cols-3 gap-3">
-                                    {(['professional', 'enterprise', 'audit'] as const).map((t) => {
+                                <div className="grid grid-cols-2 md:grid-cols-4 gap-2.5">
+                                    {(['professional', 'enterprise', 'full_site', 'audit'] as const).map((t) => {
                                         const config = MELOTWO_PRICING_MATRIX[t];
                                         return (
                                             <button
                                                 key={t}
                                                 type="button"
-                                                onClick={() => setSelectedTier(t)}
-                                                className={`p-3 rounded-xl border text-left transition cursor-pointer flex flex-col justify-between min-h-[120px] ${
+                                                onClick={() => {
+                                                    setSelectedTier(t);
+                                                    if (t === 'full_site') {
+                                                        setSans10330(true);
+                                                        setSans10142(true);
+                                                        setSans10049(true);
+                                                    }
+                                                }}
+                                                className={`p-3 rounded-xl border text-left transition cursor-pointer flex flex-col justify-between min-h-[125px] ${
                                                     selectedTier === t
                                                         ? 'bg-slate-900 border-slate-900 text-white shadow-md'
                                                         : 'bg-slate-50 border-slate-200 text-slate-600 hover:bg-slate-100'
@@ -4460,12 +4545,12 @@ const EnterpriseDemoModal: React.FC<EnterpriseDemoModalProps> = ({ isOpen, onClo
                                             >
                                                 <div>
                                                     <span className="text-xs font-black block leading-tight">{config.name}</span>
-                                                    <span className="text-[9px] opacity-70 font-medium block mt-1 leading-normal line-clamp-3">
+                                                    <span className="text-[9px] opacity-70 font-medium block mt-1 leading-normal line-clamp-2">
                                                         {config.tagline}
                                                     </span>
                                                 </div>
                                                 <span className="text-[10px] font-black font-mono mt-2 block border-t border-current/20 pt-1 text-right">
-                                                    {t === 'enterprise' ? 'R25,000+' : t === 'professional' ? 'R4,999+' : 'R20,000'}
+                                                    {t === 'full_site' ? 'R180,000/yr' : t === 'enterprise' ? 'R25,000/mo' : t === 'professional' ? 'R4,999/mo' : 'R20,000'}
                                                 </span>
                                             </button>
                                         );
@@ -4513,7 +4598,21 @@ const EnterpriseDemoModal: React.FC<EnterpriseDemoModalProps> = ({ isOpen, onClo
                             </div>
 
                             <div className="border-b border-slate-100 pb-4">
-                                <h4 className="text-sm font-bold text-slate-900 uppercase tracking-wider mb-3">3. SANS Compliance Modules</h4>
+                                <div className="flex justify-between items-center mb-3">
+                                    <h4 className="text-sm font-bold text-slate-900 uppercase tracking-wider">3. SANS Multi-Module Coverage</h4>
+                                    <button
+                                        type="button"
+                                        onClick={() => {
+                                            const allSelected = sans10330 && sans10142 && sans10049;
+                                            setSans10330(!allSelected);
+                                            setSans10142(!allSelected);
+                                            setSans10049(!allSelected);
+                                        }}
+                                        className="text-[10px] font-bold text-amber-600 hover:text-amber-700 bg-amber-50 hover:bg-amber-100 border border-amber-200/80 px-2.5 py-1 rounded-lg transition"
+                                    >
+                                        {sans10330 && sans10142 && sans10049 ? 'Deselect All' : 'Select Full Multi-Module Coverage'}
+                                    </button>
+                                </div>
                                 <div className="space-y-2.5">
                                     <label className="flex items-start gap-3 p-3 bg-slate-50 border border-slate-200/60 rounded-xl hover:bg-slate-100/60 transition cursor-pointer">
                                         <input
@@ -4523,7 +4622,7 @@ const EnterpriseDemoModal: React.FC<EnterpriseDemoModalProps> = ({ isOpen, onClo
                                             className="mt-0.5 rounded text-amber-500 focus:ring-amber-500 border-slate-300 w-4 h-4 cursor-pointer"
                                         />
                                         <div>
-                                            <span className="text-xs font-black text-slate-900 block">SANS 10330 (Catering & HACCP Audit)</span>
+                                            <span className="text-xs font-black text-slate-900 block">SANS 10330 (Catering & HACCP Food Safety Audit)</span>
                                             <span className="text-[10px] text-gray-500 block">Covers kitchen storage, walk-in coolers, food sanitation pipelines.</span>
                                         </div>
                                     </label>
@@ -4536,7 +4635,7 @@ const EnterpriseDemoModal: React.FC<EnterpriseDemoModalProps> = ({ isOpen, onClo
                                             className="mt-0.5 rounded text-amber-500 focus:ring-amber-500 border-slate-300 w-4 h-4 cursor-pointer"
                                         />
                                         <div>
-                                            <span className="text-xs font-black text-slate-900 block">SANS 10142-1 (Wiring & Electrical Isolator Safety Module)</span>
+                                            <span className="text-xs font-black text-slate-900 block">SANS 10142-1 (Wiring & Electrical Isolator Safety)</span>
                                             <span className="text-[10px] text-gray-500 block">Covers electrical distribution panel obstructions and steam line mounting codes.</span>
                                         </div>
                                     </label>
@@ -4549,41 +4648,123 @@ const EnterpriseDemoModal: React.FC<EnterpriseDemoModalProps> = ({ isOpen, onClo
                                             className="mt-0.5 rounded text-amber-500 focus:ring-amber-500 border-slate-300 w-4 h-4 cursor-pointer"
                                         />
                                         <div>
-                                            <span className="text-xs font-black text-slate-900 block">SANS 10049 (Hygiene & PPE)</span>
+                                            <span className="text-xs font-black text-slate-900 block">SANS 10049 (Hygiene & PPE Compliance)</span>
                                             <span className="text-[10px] text-gray-500 block">Covers personal protective gear verification, dispenser levels, and sanitizers.</span>
                                         </div>
                                     </label>
                                 </div>
                             </div>
 
-                            {selectedTier === 'enterprise' && (
+                            {/* Active Mine Shafts / Terminals Field */}
+                            {(selectedTier === 'full_site' || selectedTier === 'enterprise') && (
                                 <div className="border-b border-slate-100 pb-4 animate-fade-in">
-                                    <h4 className="text-sm font-bold text-slate-900 uppercase tracking-wider mb-3">4. Active Operational Sites / Shafts</h4>
-                                    <div className="grid grid-cols-3 gap-3">
-                                        {(['1', '2-5', '5+'] as const).map((opt) => (
-                                            <button
-                                                key={opt}
-                                                type="button"
-                                                onClick={() => setNumSites(opt)}
-                                                className={`py-2 px-3 rounded-xl border text-center transition cursor-pointer flex flex-col justify-center items-center ${
-                                                    numSites === opt
-                                                        ? 'bg-slate-900 border-slate-900 text-white shadow-md'
-                                                        : 'bg-slate-50 border-slate-200 text-slate-600 hover:bg-slate-100'
-                                                }`}
-                                            >
-                                                <span className="text-sm font-black">{opt}</span>
-                                                <span className="text-[9px] font-mono tracking-wider uppercase opacity-80">
-                                                    {opt === '1' ? 'Site' : 'Sites'}
-                                                </span>
-                                            </button>
-                                        ))}
+                                    <div className="flex justify-between items-center mb-2">
+                                        <h4 className="text-sm font-bold text-slate-900 uppercase tracking-wider">4. Active Mine Shafts & Terminals</h4>
+                                        <span className="text-[10px] font-mono text-amber-600 bg-amber-50 px-2 py-0.5 rounded border border-amber-200 font-bold">
+                                            {numShafts} Shaft{numShafts > 1 ? 's' : ''} Selected
+                                        </span>
                                     </div>
+                                    
+                                    <div className="flex items-center gap-3 mb-3">
+                                        <button
+                                            type="button"
+                                            onClick={() => setNumShafts(Math.max(1, numShafts - 1))}
+                                            className="w-10 h-10 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-900 font-black text-lg flex items-center justify-center transition border border-slate-200"
+                                        >
+                                            -
+                                        </button>
+                                        <input
+                                            type="number"
+                                            min={1}
+                                            max={50}
+                                            value={numShafts}
+                                            onChange={(e) => setNumShafts(Math.max(1, parseInt(e.target.value) || 1))}
+                                            className="w-20 py-2 text-center bg-slate-50 border border-slate-200 rounded-xl font-mono text-sm font-bold text-slate-900 focus:ring-2 focus:ring-amber-500 outline-none"
+                                        />
+                                        <button
+                                            type="button"
+                                            onClick={() => setNumShafts(numShafts + 1)}
+                                            className="w-10 h-10 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-900 font-black text-lg flex items-center justify-center transition border border-slate-200"
+                                        >
+                                            +
+                                        </button>
+                                        
+                                        <div className="flex gap-1.5 flex-wrap ml-auto">
+                                            {[1, 3, 6, 12, 20].map((sCount) => (
+                                                <button
+                                                    key={sCount}
+                                                    type="button"
+                                                    onClick={() => setNumShafts(sCount)}
+                                                    className={`px-2.5 py-1.5 rounded-lg text-[10px] font-mono font-bold transition ${
+                                                        numShafts === sCount
+                                                            ? 'bg-slate-900 text-white'
+                                                            : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                                                    }`}
+                                                >
+                                                    {sCount} {sCount === 1 ? 'Shaft' : 'Shafts'}
+                                                </button>
+                                            ))}
+                                        </div>
+                                    </div>
+                                    <p className="text-[10px] text-slate-500 font-sans leading-relaxed">
+                                        Base Full Site License includes 1 primary shaft terminal. Additional shafts add R15,000/year each for multi-shaft synchronization.
+                                    </p>
+                                </div>
+                            )}
+
+                            {/* Contractor Ecosystem Passports Add-On Field */}
+                            {(selectedTier === 'full_site' || selectedTier === 'enterprise') && (
+                                <div className="border-b border-slate-100 pb-4 animate-fade-in">
+                                    <div className="flex justify-between items-center mb-3">
+                                        <h4 className="text-sm font-bold text-slate-900 uppercase tracking-wider">5. Contractor Ecosystem Passports</h4>
+                                        <label className="flex items-center gap-2 cursor-pointer">
+                                            <input
+                                                type="checkbox"
+                                                checked={contractorPassportsEnabled}
+                                                onChange={(e) => setContractorPassportsEnabled(e.target.checked)}
+                                                className="rounded text-amber-500 focus:ring-amber-500 border-slate-300 w-4 h-4 cursor-pointer"
+                                            />
+                                            <span className="text-xs font-bold text-slate-700">Include Add-On Tier</span>
+                                        </label>
+                                    </div>
+
+                                    {contractorPassportsEnabled && (
+                                        <div>
+                                            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mb-2">
+                                                {[
+                                                    { key: '50', label: '50 Seats', price: '+R25,000/yr' },
+                                                    { key: '150', label: '150 Seats', price: '+R45,000/yr' },
+                                                    { key: '500', label: '500 Seats', price: '+R85,000/yr' },
+                                                    { key: 'unlimited', label: 'Unlimited', price: '+R135,000/yr' }
+                                                ].map((cOpt) => (
+                                                    <button
+                                                        key={cOpt.key}
+                                                        type="button"
+                                                        onClick={() => setContractorSeatsTier(cOpt.key as any)}
+                                                        className={`p-2 rounded-xl border text-center transition cursor-pointer flex flex-col justify-center items-center ${
+                                                            contractorSeatsTier === cOpt.key
+                                                                ? 'bg-slate-900 border-slate-900 text-white shadow-md'
+                                                                : 'bg-slate-50 border-slate-200 text-slate-600 hover:bg-slate-100'
+                                                        }`}
+                                                    >
+                                                        <span className="text-xs font-black">{cOpt.label}</span>
+                                                        <span className="text-[9px] font-mono tracking-wider opacity-80 mt-0.5">
+                                                            {cOpt.price}
+                                                        </span>
+                                                    </button>
+                                                ))}
+                                            </div>
+                                            <p className="text-[10px] text-slate-500 leading-relaxed font-sans">
+                                                Enables contractor compliance passports, digital gate clearances, and third-party SANS safety verification logs.
+                                            </p>
+                                        </div>
+                                    )}
                                 </div>
                             )}
 
                             {selectedTier === 'enterprise' && (
                                 <div className="animate-fade-in">
-                                    <h4 className="text-sm font-bold text-slate-900 uppercase tracking-wider mb-3">5. Workforce Headcount Scale</h4>
+                                    <h4 className="text-sm font-bold text-slate-900 uppercase tracking-wider mb-3">6. Workforce Headcount Scale</h4>
                                     <div className="grid grid-cols-3 gap-3">
                                         {([
                                             { key: 'under50', label: '< 50 staff' },
@@ -4625,7 +4806,7 @@ const EnterpriseDemoModal: React.FC<EnterpriseDemoModalProps> = ({ isOpen, onClo
                                     <div className="flex items-baseline mt-1.5">
                                         <span className="text-4xl font-black tracking-tight text-white">R{calculatedPrice.toLocaleString('en-ZA')}</span>
                                         <span className="text-slate-400 text-xs font-bold font-mono ml-1.5">
-                                            {MELOTWO_PRICING_MATRIX[selectedTier].billingType === 'monthly' ? '/ mo' : ' once-off'}
+                                            {MELOTWO_PRICING_MATRIX[selectedTier].billingType === 'monthly' ? '/ mo' : MELOTWO_PRICING_MATRIX[selectedTier].billingType === 'annual' ? '/ yr' : ' once-off'}
                                         </span>
                                     </div>
                                     <span className="text-[9px] text-slate-500 mt-1 block">Excluding VAT. Calculated reactively based on your custom operation parameters.</span>
@@ -4652,9 +4833,35 @@ const EnterpriseDemoModal: React.FC<EnterpriseDemoModalProps> = ({ isOpen, onClo
                                     <span className="text-slate-400 text-[9px] font-black uppercase tracking-wider block mb-1">Fee Breakdown:</span>
                                     
                                     <div className="flex justify-between items-center text-xs text-slate-300">
-                                        <span className="text-slate-400">Base Cost:</span>
-                                        <span className="font-bold font-mono">R{MELOTWO_PRICING_MATRIX[selectedTier].basePrice.toLocaleString('en-ZA')}</span>
+                                        <span className="text-slate-400">Site License Base Cost:</span>
+                                        <span className="font-bold font-mono">
+                                            R{MELOTWO_PRICING_MATRIX[selectedTier].basePrice.toLocaleString('en-ZA')}
+                                            {selectedTier === 'full_site' ? ' / yr' : ''}
+                                        </span>
                                     </div>
+
+                                    {selectedTier === 'full_site' && (
+                                        <>
+                                            <div className="flex justify-between items-center text-xs text-slate-300">
+                                                <span className="text-slate-400">Active Shafts/Terminals ({numShafts} shafts):</span>
+                                                <span className="font-bold font-mono text-indigo-400">
+                                                    +{(Math.max(0, numShafts - 1) * 15000).toLocaleString('en-ZA')}
+                                                </span>
+                                            </div>
+                                            <div className="flex justify-between items-center text-xs text-slate-300">
+                                                <span className="text-slate-400">SANS Multi-Module Coverage ({[sans10330, sans10142, sans10049].filter(Boolean).length} selected):</span>
+                                                <span className="font-bold font-mono text-amber-400">
+                                                    +{([sans10330, sans10142, sans10049].filter(Boolean).length * 20000).toLocaleString('en-ZA')}
+                                                </span>
+                                            </div>
+                                            <div className="flex justify-between items-center text-xs text-slate-300">
+                                                <span className="text-slate-400">Contractor Passports ({contractorPassportsEnabled ? `${contractorSeatsTier} seats` : 'Disabled'}):</span>
+                                                <span className="font-bold font-mono text-emerald-400">
+                                                    +{contractorPassportsEnabled ? (contractorSeatsTier === '50' ? 25000 : contractorSeatsTier === '150' ? 45000 : contractorSeatsTier === '500' ? 85000 : 135000).toLocaleString('en-ZA') : 0}
+                                                </span>
+                                            </div>
+                                        </>
+                                    )}
 
                                     {selectedTier === 'professional' && (
                                         <div className="flex justify-between items-center text-xs text-slate-300">
@@ -4741,7 +4948,7 @@ interface LandingPageProps {
     currentPage: Page;
     setPage: (page: Page) => void;
     setIsDemoModalOpen: (open: boolean) => void;
-    setDemoModalTier?: (tier: 'professional' | 'enterprise' | 'audit') => void;
+    setDemoModalTier?: (tier: 'professional' | 'enterprise' | 'full_site' | 'audit') => void;
 }
 
 const LandingPage: React.FC<LandingPageProps> = ({ currentPage, setPage, setIsDemoModalOpen, setDemoModalTier }) => {
@@ -5507,83 +5714,75 @@ const LandingPage: React.FC<LandingPageProps> = ({ currentPage, setPage, setIsDe
             <div className="mb-24 scroll-mt-24 border-t border-slate-100 pt-20" id="pricing-section">
                 <div className="text-center max-w-3xl mx-auto mb-16">
                     <span className="text-[10px] font-black text-amber-600 tracking-widest uppercase bg-amber-500/10 border border-amber-500/20 px-3.5 py-1.5 rounded-full font-mono">
-                        Three-Tier Industrial Licensing
+                        Four-Tier Industrial Licensing
                     </span>
                     <h2 className="text-3xl font-black text-slate-900 tracking-tight mt-4">
                         Transparent, Premium Compliance Pricing
                     </h2>
                     <p className="text-gray-500 text-sm mt-3 leading-relaxed">
-                        Select the tier aligned with your operational footprint or inspection cycle. Calculate real-time costs and generate defensible regulatory proofs.
+                        Select the tier aligned with your operational footprint or inspection cycle. Calculate real-time costs, add shafts/contractors, and generate defensible regulatory proofs.
                     </p>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6 lg:gap-8 max-w-7xl mx-auto items-stretch">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 max-w-7xl mx-auto items-stretch">
                     {/* Tier 1: Site Professional Tier */}
-                    <div className="bg-white border-2 border-slate-100 rounded-3xl p-8 shadow-xl flex flex-col justify-between hover:border-indigo-500/40 hover:shadow-2xl transition-all duration-300 relative overflow-hidden group">
+                    <div className="bg-white border-2 border-slate-100 rounded-3xl p-6 shadow-xl flex flex-col justify-between hover:border-indigo-500/40 hover:shadow-2xl transition-all duration-300 relative overflow-hidden group">
                         <div className="absolute top-0 right-0 w-24 h-24 bg-indigo-50 rounded-bl-full -z-10 transition-transform group-hover:scale-110"></div>
                         
                         <div>
-                            <div className="flex justify-between items-start mb-6">
+                            <div className="flex justify-between items-start mb-4">
                                 <div>
-                                    <span className="text-[10px] font-bold text-indigo-600 uppercase tracking-widest font-mono bg-indigo-50 px-2.5 py-1 rounded-md">
-                                        Professional Subscription
+                                    <span className="text-[9px] font-bold text-indigo-600 uppercase tracking-widest font-mono bg-indigo-50 px-2 py-0.5 rounded">
+                                        Professional
                                     </span>
-                                    <h3 className="text-xl font-black text-slate-900 mt-2">
-                                        Site Professional Tier
+                                    <h3 className="text-lg font-black text-slate-900 mt-2">
+                                        Site Professional
                                     </h3>
                                 </div>
                             </div>
                             
-                            <div className="mb-4 flex items-baseline">
-                                <span className="text-3xl font-black text-slate-900">R4,999</span>
-                                <span className="text-xs font-bold text-gray-400 ml-2 font-mono">/ month</span>
+                            <div className="mb-3 flex items-baseline">
+                                <span className="text-2xl font-black text-slate-900">R4,999</span>
+                                <span className="text-xs font-bold text-gray-400 ml-1 font-mono">/ month</span>
                             </div>
-                            <span className="text-[10px] font-bold text-indigo-600 bg-indigo-50 border border-indigo-100 px-2 py-0.5 rounded block w-fit mb-6 font-mono">
-                                + R1,500 /mo per active SANS module
+                            <span className="text-[9px] font-bold text-indigo-600 bg-indigo-50 border border-indigo-100 px-2 py-0.5 rounded block w-fit mb-4 font-mono">
+                                + R1,500 /mo per SANS module
                             </span>
 
-                            <p className="text-xs text-gray-500 mb-6 leading-relaxed">
-                                Engineered for single-operation SHEQ compliance managers who require airtight and defensible daily risk logging.
+                            <p className="text-xs text-gray-500 mb-4 leading-relaxed">
+                                Engineered for single-operation SHEQ compliance managers needing daily risk logs.
                             </p>
 
-                            <div className="h-px bg-slate-100 mb-6"></div>
+                            <div className="h-px bg-slate-100 mb-4"></div>
 
                             {/* Risk Adjustments & Corporate Protections */}
-                            <div className="space-y-4 mb-6">
+                            <div className="space-y-3 mb-4">
                                 <div>
-                                    <span className="text-[9px] font-bold text-slate-400 uppercase tracking-wider block">Insurance Premium Offset</span>
-                                    <p className="text-xs text-slate-600 mt-0.5 leading-relaxed font-sans font-medium">
-                                        Up to 15% reduction in liability premiums by demonstrating active daily risk-mitigation logs.
+                                    <span className="text-[9px] font-bold text-slate-400 uppercase tracking-wider block">Insurance Offset</span>
+                                    <p className="text-[11px] text-slate-600 mt-0.5 leading-relaxed font-sans font-medium">
+                                        Up to 15% reduction in liability premiums with daily logs.
                                     </p>
                                 </div>
                                 <div>
-                                    <span className="text-[9px] font-bold text-slate-400 uppercase tracking-wider block">Audit-Trail Defensibility</span>
-                                    <p className="text-xs text-slate-600 mt-0.5 leading-relaxed font-sans font-medium">
-                                        Cryptographically hashed inspector entries with permanent metadata, eliminating regulatory sign-off friction.
+                                    <span className="text-[9px] font-bold text-slate-400 uppercase tracking-wider block">Audit Defensibility</span>
+                                    <p className="text-[11px] text-slate-600 mt-0.5 leading-relaxed font-sans font-medium">
+                                        Hashed entry logs with metadata and offline sync.
                                     </p>
                                 </div>
                             </div>
 
-                            <div className="h-px bg-slate-100 mb-6"></div>
+                            <div className="h-px bg-slate-100 mb-4"></div>
 
-                            <ul className="space-y-3.5 mb-8">
-                                <li className="flex items-start gap-2.5">
+                            <ul className="space-y-2.5 mb-6">
+                                <li className="flex items-start gap-2">
                                     <div className="w-4 h-4 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
                                         <svg className="w-2.5 h-2.5 stroke-[3]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                             <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
                                         </svg>
                                     </div>
-                                    <span className="text-xs text-slate-600">Standard SANS 10330/10142/10049 automated audits</span>
+                                    <span className="text-xs text-slate-600">Standard SANS automated audits</span>
                                 </li>
-                                <li className="flex items-start gap-2.5">
-                                    <div className="w-4 h-4 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
-                                        <svg className="w-2.5 h-2.5 stroke-[3]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                            <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
-                                        </svg>
-                                    </div>
-                                    <span className="text-xs text-slate-600">Localized high-fidelity reports</span>
-                                </li>
-                                <li className="flex items-start gap-2.5">
+                                <li className="flex items-start gap-2">
                                     <div className="w-4 h-4 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
                                         <svg className="w-2.5 h-2.5 stroke-[3]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                             <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
@@ -5601,84 +5800,76 @@ const LandingPage: React.FC<LandingPageProps> = ({ currentPage, setPage, setIsDe
                                 setIsDemoModalOpen(true);
                                 trackGA4Event('pricing_tier_clicked', { tier: 'professional' });
                             }}
-                            className="w-full py-3.5 px-4 bg-slate-900 hover:bg-slate-800 text-white font-black text-xs uppercase tracking-wider rounded-xl transition cursor-pointer text-center"
+                            className="w-full py-3 px-3 bg-slate-900 hover:bg-slate-800 text-white font-black text-xs uppercase tracking-wider rounded-xl transition cursor-pointer text-center"
                         >
-                            Calculate Professional Cost
+                            Calculate Cost
                         </button>
                     </div>
 
                     {/* Tier 2: Industrial Enterprise Tier */}
-                    <div className="bg-slate-950 border-2 border-slate-800 rounded-3xl p-8 shadow-xl flex flex-col justify-between hover:border-amber-500/50 hover:shadow-2xl transition-all duration-300 relative overflow-hidden group">
+                    <div className="bg-slate-900 border-2 border-slate-800 rounded-3xl p-6 shadow-xl flex flex-col justify-between hover:border-amber-500/50 hover:shadow-2xl transition-all duration-300 relative overflow-hidden group">
                         <div className="absolute top-0 inset-x-0 h-1 bg-amber-500"></div>
                         <div className="absolute top-0 right-0 w-24 h-24 bg-amber-500/5 rounded-bl-full -z-10 transition-transform group-hover:scale-110"></div>
                         
                         <div>
-                            <div className="flex justify-between items-start mb-6">
+                            <div className="flex justify-between items-start mb-4">
                                 <div>
-                                    <span className="text-[10px] font-bold text-amber-400 uppercase tracking-widest font-mono bg-amber-500/10 px-2.5 py-1 rounded-md">
-                                        Enterprise Subscription
+                                    <span className="text-[9px] font-bold text-amber-400 uppercase tracking-widest font-mono bg-amber-500/10 px-2 py-0.5 rounded">
+                                        Monthly Enterprise
                                     </span>
-                                    <h3 className="text-xl font-black text-white mt-2">
-                                        Industrial Enterprise Tier
+                                    <h3 className="text-lg font-black text-white mt-2">
+                                        Industrial Enterprise
                                     </h3>
                                 </div>
                             </div>
                             
-                            <div className="mb-4 flex items-baseline">
-                                <span className="text-2xl font-black text-amber-400">Custom Multi-Shaft Quote</span>
+                            <div className="mb-3 flex items-baseline">
+                                <span className="text-xl font-black text-amber-400">Custom Multi-Shaft</span>
                             </div>
-                            <span className="text-[10px] font-bold text-amber-400 bg-amber-500/10 border border-amber-500/20 px-2 py-0.5 rounded block w-fit mb-6 font-mono">
-                                Floor minimum: R25,000 / month
+                            <span className="text-[9px] font-bold text-amber-400 bg-amber-500/10 border border-amber-500/20 px-2 py-0.5 rounded block w-fit mb-4 font-mono">
+                                Floor minimum: R25,000 / mo
                             </span>
 
-                            <p className="text-xs text-slate-400 mb-6 leading-relaxed">
-                                Engineered specifically for multi-shaft mining operations, high-risk industrial plants, and regional SHEQ group executives.
+                            <p className="text-xs text-slate-400 mb-4 leading-relaxed">
+                                For multi-shaft mining operations & regional SHEQ group executives.
                             </p>
 
-                            <div className="h-px bg-slate-800 mb-6"></div>
+                            <div className="h-px bg-slate-800 mb-4"></div>
 
                             {/* Risk Adjustments & Corporate Protections */}
-                            <div className="space-y-4 mb-6">
+                            <div className="space-y-3 mb-4">
                                 <div>
-                                    <span className="text-[9px] font-bold text-slate-500 uppercase tracking-wider block">Insurance Premium Offset</span>
-                                    <p className="text-xs text-slate-300 mt-0.5 leading-relaxed font-sans font-medium">
-                                        Corporate insurance premium mitigation underwritten by continuous real-time SANS adherence data logs.
+                                    <span className="text-[9px] font-bold text-slate-500 uppercase tracking-wider block">Insurance Offset</span>
+                                    <p className="text-[11px] text-slate-300 mt-0.5 leading-relaxed font-sans font-medium">
+                                        Underwritten by continuous real-time SANS adherence logs.
                                     </p>
                                 </div>
                                 <div>
-                                    <span className="text-[9px] font-bold text-slate-500 uppercase tracking-wider block">Audit-Trail Defensibility</span>
-                                    <p className="text-xs text-slate-300 mt-0.5 leading-relaxed font-sans font-medium">
-                                        Full multi-site legal defensibility. Automated, chain-of-custody tracking of all safety infractions.
+                                    <span className="text-[9px] font-bold text-slate-500 uppercase tracking-wider block">Audit Defensibility</span>
+                                    <p className="text-[11px] text-slate-300 mt-0.5 leading-relaxed font-sans font-medium">
+                                        Multi-site legal defensibility with chain-of-custody tracking.
                                     </p>
                                 </div>
                             </div>
 
-                            <div className="h-px bg-slate-800 mb-6"></div>
+                            <div className="h-px bg-slate-800 mb-4"></div>
 
-                            <ul className="space-y-3.5 mb-8">
-                                <li className="flex items-start gap-2.5">
+                            <ul className="space-y-2.5 mb-6">
+                                <li className="flex items-start gap-2">
                                     <div className="w-4 h-4 bg-amber-500/10 text-amber-400 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
                                         <svg className="w-2.5 h-2.5 stroke-[3]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                             <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
                                         </svg>
                                     </div>
-                                    <span className="text-xs text-slate-300">Continuous multi-shaft auditing dashboards</span>
+                                    <span className="text-xs text-slate-300">Continuous multi-shaft auditing</span>
                                 </li>
-                                <li className="flex items-start gap-2.5">
+                                <li className="flex items-start gap-2">
                                     <div className="w-4 h-4 bg-amber-500/10 text-amber-400 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
                                         <svg className="w-2.5 h-2.5 stroke-[3]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                             <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
                                         </svg>
                                     </div>
-                                    <span className="text-xs text-slate-300">Dedicated SHEQ Integration Engineer support</span>
-                                </li>
-                                <li className="flex items-start gap-2.5">
-                                    <div className="w-4 h-4 bg-amber-500/10 text-amber-400 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
-                                        <svg className="w-2.5 h-2.5 stroke-[3]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                            <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
-                                        </svg>
-                                    </div>
-                                    <span className="text-xs text-slate-300">Offline local-database replication & webhooks</span>
+                                    <span className="text-xs text-slate-300">Dedicated SHEQ Integration Engineer</span>
                                 </li>
                             </ul>
                         </div>
@@ -5690,84 +5881,158 @@ const LandingPage: React.FC<LandingPageProps> = ({ currentPage, setPage, setIsDe
                                 setIsDemoModalOpen(true);
                                 trackGA4Event('pricing_tier_clicked', { tier: 'enterprise' });
                             }}
-                            className="w-full py-3.5 px-4 bg-amber-500 hover:bg-amber-600 text-slate-950 font-black text-xs uppercase tracking-wider rounded-xl transition cursor-pointer text-center"
+                            className="w-full py-3 px-3 bg-amber-500 hover:bg-amber-600 text-slate-950 font-black text-xs uppercase tracking-wider rounded-xl transition cursor-pointer text-center"
                         >
-                            Estimate Custom Enterprise Cost
+                            Estimate Enterprise
                         </button>
                     </div>
 
-                    {/* Tier 3: High-Stakes Audit Tier */}
-                    <div className="bg-white border-2 border-slate-100 rounded-3xl p-8 shadow-xl flex flex-col justify-between hover:border-teal-500/40 hover:shadow-2xl transition-all duration-300 relative overflow-hidden group">
-                        <div className="absolute top-0 right-0 w-24 h-24 bg-teal-50 rounded-bl-full -z-10 transition-transform group-hover:scale-110"></div>
+                    {/* Tier 3: Full Site Enterprise License Tier (NEW) */}
+                    <div className="bg-slate-950 border-2 border-amber-500/60 rounded-3xl p-6 shadow-2xl flex flex-col justify-between hover:border-amber-400 hover:shadow-2xl transition-all duration-300 relative overflow-hidden group">
+                        <div className="absolute top-0 inset-x-0 h-1.5 bg-gradient-to-r from-amber-500 via-amber-400 to-amber-500"></div>
+                        <div className="absolute -top-12 -right-12 w-28 h-28 bg-amber-500/10 rounded-full blur-xl"></div>
                         
                         <div>
-                            <div className="flex justify-between items-start mb-6">
+                            <div className="flex justify-between items-start mb-4">
                                 <div>
-                                    <span className="text-[10px] font-bold text-teal-600 uppercase tracking-widest font-mono bg-teal-50 px-2.5 py-1 rounded-md">
-                                        Project License
+                                    <span className="text-[9px] font-black text-slate-950 uppercase tracking-widest font-mono bg-amber-400 px-2 py-0.5 rounded shadow-sm">
+                                        Full Mining Site
                                     </span>
-                                    <h3 className="text-xl font-black text-slate-900 mt-2">
-                                        High-Stakes Audit Tier
+                                    <h3 className="text-lg font-black text-white mt-2">
+                                        Full Site Enterprise License
                                     </h3>
                                 </div>
                             </div>
                             
-                            <div className="mb-4 flex items-baseline">
-                                <span className="text-3xl font-black text-slate-900">R20,000</span>
-                                <span className="text-xs font-bold text-gray-400 ml-2 font-mono">/ single-event pass</span>
+                            <div className="mb-3 flex items-baseline">
+                                <span className="text-2xl font-black text-amber-400">R180,000</span>
+                                <span className="text-xs font-bold text-slate-400 ml-1 font-mono">/ year</span>
                             </div>
-                            <span className="text-[10px] font-bold text-teal-600 bg-teal-50 border border-teal-100 px-2 py-0.5 rounded block w-fit mb-6 font-mono">
-                                R10,000 per additional SANS module pass
+                            <span className="text-[9px] font-bold text-amber-300 bg-amber-500/20 border border-amber-500/30 px-2 py-0.5 rounded block w-fit mb-4 font-mono">
+                                Annual Base + Shaft & Contractor Options
                             </span>
 
-                            <p className="text-xs text-gray-500 mb-6 leading-relaxed">
-                                A standalone, single-event project license for annual regulatory compliance passes or independent audits.
+                            <p className="text-xs text-slate-300 mb-4 leading-relaxed">
+                                Complete annual site licensing for large mining operations, deep-reef shaft complexes & contractor ecosystems.
                             </p>
 
-                            <div className="h-px bg-slate-100 mb-6"></div>
+                            <div className="h-px bg-slate-800 mb-4"></div>
 
                             {/* Risk Adjustments & Corporate Protections */}
-                            <div className="space-y-4 mb-6">
+                            <div className="space-y-3 mb-4">
                                 <div>
-                                    <span className="text-[9px] font-bold text-slate-400 uppercase tracking-wider block">Insurance Premium Offset</span>
-                                    <p className="text-xs text-slate-600 mt-0.5 leading-relaxed font-sans font-medium">
-                                        Protects directors from personal liability during official regulatory reviews by presenting certified reports.
+                                    <span className="text-[9px] font-bold text-amber-400 uppercase tracking-wider block">Multi-Module Coverage</span>
+                                    <p className="text-[11px] text-slate-300 mt-0.5 leading-relaxed font-sans font-medium">
+                                        Includes SANS 10330, SANS 10142-1, and SANS 10049 modules.
                                     </p>
                                 </div>
                                 <div>
-                                    <span className="text-[9px] font-bold text-slate-400 uppercase tracking-wider block">Audit-Trail Defensibility</span>
-                                    <p className="text-xs text-slate-600 mt-0.5 leading-relaxed font-sans font-medium">
-                                        Complete snapshot audit reports structured to meet the most rigorous government inspectorial standards.
+                                    <span className="text-[9px] font-bold text-amber-400 uppercase tracking-wider block">Contractor Passports</span>
+                                    <p className="text-[11px] text-slate-300 mt-0.5 leading-relaxed font-sans font-medium">
+                                        Optional add-on seats for contractor ecosystem compliance passes.
                                     </p>
                                 </div>
                             </div>
 
-                            <div className="h-px bg-slate-100 mb-6"></div>
+                            <div className="h-px bg-slate-800 mb-4"></div>
 
-                            <ul className="space-y-3.5 mb-8">
-                                <li className="flex items-start gap-2.5">
-                                    <div className="w-4 h-4 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
+                            <ul className="space-y-2.5 mb-6">
+                                <li className="flex items-start gap-2">
+                                    <div className="w-4 h-4 bg-amber-400 text-slate-950 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
                                         <svg className="w-2.5 h-2.5 stroke-[3]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                             <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
                                         </svg>
                                     </div>
-                                    <span className="text-xs text-slate-600">Comprehensive single-event compliance pass</span>
+                                    <span className="text-xs text-white font-medium">Base 1 shaft + multi-shaft sync (+R15k/yr/shaft)</span>
                                 </li>
-                                <li className="flex items-start gap-2.5">
-                                    <div className="w-4 h-4 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
+                                <li className="flex items-start gap-2">
+                                    <div className="w-4 h-4 bg-amber-400 text-slate-950 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
                                         <svg className="w-2.5 h-2.5 stroke-[3]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                             <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
                                         </svg>
                                     </div>
-                                    <span className="text-xs text-slate-600">Full platform auditing tool access for 30 days</span>
+                                    <span className="text-xs text-white font-medium">Instant formal ZAR PDF quotation & SLA sync</span>
                                 </li>
-                                <li className="flex items-start gap-2.5">
+                            </ul>
+                        </div>
+
+                        <button
+                            type="button"
+                            onClick={() => {
+                                if (setDemoModalTier) setDemoModalTier('full_site');
+                                setIsDemoModalOpen(true);
+                                trackGA4Event('pricing_tier_clicked', { tier: 'full_site' });
+                            }}
+                            className="w-full py-3.5 px-3 bg-amber-400 hover:bg-amber-500 text-slate-950 font-black text-xs uppercase tracking-wider rounded-xl transition cursor-pointer text-center shadow-lg shadow-amber-500/20"
+                        >
+                            Calculate Full Site Quote
+                        </button>
+                    </div>
+
+                    {/* Tier 4: High-Stakes Audit Tier */}
+                    <div className="bg-white border-2 border-slate-100 rounded-3xl p-6 shadow-xl flex flex-col justify-between hover:border-teal-500/40 hover:shadow-2xl transition-all duration-300 relative overflow-hidden group">
+                        <div className="absolute top-0 right-0 w-24 h-24 bg-teal-50 rounded-bl-full -z-10 transition-transform group-hover:scale-110"></div>
+                        
+                        <div>
+                            <div className="flex justify-between items-start mb-4">
+                                <div>
+                                    <span className="text-[9px] font-bold text-teal-600 uppercase tracking-widest font-mono bg-teal-50 px-2 py-0.5 rounded">
+                                        Project License
+                                    </span>
+                                    <h3 className="text-lg font-black text-slate-900 mt-2">
+                                        High-Stakes Audit
+                                    </h3>
+                                </div>
+                            </div>
+                            
+                            <div className="mb-3 flex items-baseline">
+                                <span className="text-2xl font-black text-slate-900">R20,000</span>
+                                <span className="text-xs font-bold text-gray-400 ml-1 font-mono">/ event pass</span>
+                            </div>
+                            <span className="text-[9px] font-bold text-teal-600 bg-teal-50 border border-teal-100 px-2 py-0.5 rounded block w-fit mb-4 font-mono">
+                                + R10,000 per extra module pass
+                            </span>
+
+                            <p className="text-xs text-gray-500 mb-4 leading-relaxed">
+                                Single-event project license for annual regulatory compliance passes or audits.
+                            </p>
+
+                            <div className="h-px bg-slate-100 mb-4"></div>
+
+                            {/* Risk Adjustments & Corporate Protections */}
+                            <div className="space-y-3 mb-4">
+                                <div>
+                                    <span className="text-[9px] font-bold text-slate-400 uppercase tracking-wider block">Insurance Offset</span>
+                                    <p className="text-[11px] text-slate-600 mt-0.5 leading-relaxed font-sans font-medium">
+                                        Protects directors from personal liability during official reviews.
+                                    </p>
+                                </div>
+                                <div>
+                                    <span className="text-[9px] font-bold text-slate-400 uppercase tracking-wider block">Audit Defensibility</span>
+                                    <p className="text-[11px] text-slate-600 mt-0.5 leading-relaxed font-sans font-medium">
+                                        Snapshot reports structured to meet inspectorial standards.
+                                    </p>
+                                </div>
+                            </div>
+
+                            <div className="h-px bg-slate-100 mb-4"></div>
+
+                            <ul className="space-y-2.5 mb-6">
+                                <li className="flex items-start gap-2">
                                     <div className="w-4 h-4 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
                                         <svg className="w-2.5 h-2.5 stroke-[3]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                             <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
                                         </svg>
                                     </div>
-                                    <span className="text-xs text-slate-600">High-fidelity digital inspector signatures</span>
+                                    <span className="text-xs text-slate-600">Single-event compliance pass</span>
+                                </li>
+                                <li className="flex items-start gap-2">
+                                    <div className="w-4 h-4 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
+                                        <svg className="w-2.5 h-2.5 stroke-[3]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                            <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
+                                        </svg>
+                                    </div>
+                                    <span className="text-xs text-slate-600">30-day platform auditing tool access</span>
                                 </li>
                             </ul>
                         </div>
@@ -5779,9 +6044,9 @@ const LandingPage: React.FC<LandingPageProps> = ({ currentPage, setPage, setIsDe
                                 setIsDemoModalOpen(true);
                                 trackGA4Event('pricing_tier_clicked', { tier: 'audit' });
                             }}
-                            className="w-full py-3.5 px-4 bg-slate-900 hover:bg-slate-800 text-white font-black text-xs uppercase tracking-wider rounded-xl transition cursor-pointer text-center"
+                            className="w-full py-3 px-3 bg-slate-900 hover:bg-slate-800 text-white font-black text-xs uppercase tracking-wider rounded-xl transition cursor-pointer text-center"
                         >
-                            Configure Standalone Audit
+                            Configure Audit Pass
                         </button>
                     </div>
                 </div>
@@ -6295,10 +6560,11 @@ export const SafetyInspectorPage: React.FC<SafetyInspectorPageProps> = ({ setPag
     const [error, setError] = useState<string | null>(null);
 
     const [selectedRcaLog, setSelectedRcaLog] = useState<any | null>(null);
-    const [rcaMode, setRcaMode] = useState<'rca' | 'remediation'>('rca');
+    const [selectedRcaLog2, setSelectedRcaLog2] = useState<any | null>(null);
+    const [rcaMode, setRcaMode] = useState<'rca' | 'remediation' | 'compare'>('rca');
     const [rcaLoading, setRcaLoading] = useState(false);
     const [rcaText, setRcaText] = useState('');
-    const [rcaTextMode, setRcaTextMode] = useState<'rca' | 'remediation' | null>(null);
+    const [rcaTextMode, setRcaTextMode] = useState<'rca' | 'remediation' | 'compare' | null>(null);
     const [rcaError, setRcaError] = useState<string | null>(null);
 
     const handleSelectRcaLog = (log: any, indexInFiltered: number) => {
@@ -6314,7 +6580,15 @@ export const SafetyInspectorPage: React.FC<SafetyInspectorPageProps> = ({ setPag
         }, 100);
     };
 
-    const triggerRcaAnalysis = async (logToAnalyze: any, targetMode: 'rca' | 'remediation') => {
+    const handleSelectRcaLog2 = (log: any, indexInFiltered: number) => {
+        setSelectedRcaLog2({ ...log, originalIndex: log.originalIndex ?? indexInFiltered });
+        setRcaText('');
+        setRcaTextMode(null);
+        setRcaError(null);
+        setRcaMode('compare');
+    };
+
+    const triggerRcaAnalysis = async (logToAnalyze: any, targetMode: 'rca' | 'remediation' | 'compare', logToAnalyze2?: any) => {
         if (!logToAnalyze) {
             console.warn('[RCA Engine] triggerRcaAnalysis called without a valid log target.');
             return;
@@ -6333,6 +6607,7 @@ export const SafetyInspectorPage: React.FC<SafetyInspectorPageProps> = ({ setPag
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     incidentLog: logToAnalyze,
+                    incidentLog2: logToAnalyze2,
                     surroundingLogs: surrounding,
                     mode: targetMode
                 })
@@ -6351,6 +6626,7 @@ export const SafetyInspectorPage: React.FC<SafetyInspectorPageProps> = ({ setPag
             console.error('[RCA Engine Fault] Analysis failed. Full diagnostic payload context:', {
                 error: err,
                 incidentLog: logToAnalyze,
+                incidentLog2: logToAnalyze2,
                 surroundingLogs: surrounding,
                 mode: targetMode
             });
@@ -6365,7 +6641,35 @@ export const SafetyInspectorPage: React.FC<SafetyInspectorPageProps> = ({ setPag
             const terminal = logToAnalyze.terminalId || 'TERM-09';
             const status = logToAnalyze.auditStatus || 'Action Required';
 
-            if (targetMode === 'remediation') {
+            if (targetMode === 'compare') {
+                const log2 = logToAnalyze2 || {};
+                const text = `### ⚖️ SIDE-BY-SIDE ROOT CAUSE COMPARISON
+
+| Metric / Dimension | Incident A: ${cat} | Incident B: ${log2.riskCategory || 'General'} |
+| :--- | :--- | :--- |
+| **Terminal ID** | \`${terminal}\` | \`${log2.terminalId || 'TERM-10'}\` |
+| **Violation Vector** | \`${vector}\` | \`${log2.violationVector || 'SANS Standard'}\` |
+| **Operator on Duty** | ${logToAnalyze.operator || 'Unknown'} | ${log2.operator || 'Unknown'} |
+| **Severity Level** | ${logToAnalyze.severityLevel || 'Medium'} | ${log2.severityLevel || 'Medium'} |
+| **Status** | ${status} | ${log2.auditStatus || 'Warning'} |
+
+---
+
+#### 1. TELEMETRY & CONTEXTUAL OVERLAPS
+- **Terminal Overlaps:** ${logToAnalyze.terminalId === log2.terminalId ? `Both incidents occurred at the same terminal (**${logToAnalyze.terminalId}**), indicating localized infrastructure decay or electrical grid fluctuations.` : `The incidents occurred at different terminals (**${logToAnalyze.terminalId}** vs **${log2.terminalId || 'TERM-10'}**), indicating systemic rather than terminal-isolated issues.`}
+- **Operator Overlaps:** ${logToAnalyze.operator === log2.operator ? `Both shifts were supervised by **${logToAnalyze.operator}**, highlighting a potential need for targeted refresher certification or shift briefing support.` : `Different operators were on duty (**${logToAnalyze.operator}** vs **${log2.operator || 'Unknown'}**), indicating that procedural deviations are organizational rather than individual.`}
+- **Temporal Closeness:** The incidents occurred on **${logToAnalyze.date}** and **${log2.date || 'N/A'}**, suggesting compounding environmental factors in the active zone.
+
+#### 2. ROOT CAUSE DIVERGENCES
+- **Incident A (${cat}):** Caused by structural stress under SANS standard **${vector}** and localized telemetry handoff gaps.
+- **Incident B (${log2.riskCategory || 'General'}):** Exacerbated by SANS standard **${log2.violationVector || 'SANS Standard'}** protocols being bypassed, leading to a secondary compliance failure.
+
+#### 3. INTEGRATED REMEDIATION PLAN
+1. **Consolidated Loop Verification:** Run a comprehensive diagnostics test on terminal loops to check electrical insulation and PPE safety bounds.
+2. **Unified Handover Ledger:** Implement digitized end-of-shift telemetry locks so subsequent duty crews are automatically alerted to outstanding alerts.`;
+
+                setRcaText(text);
+            } else if (targetMode === 'remediation') {
                 const text = `### 📋 FEASIBILITY REMEDIATION & ACTIONABLE FIX PROPOSAL
 *Industry Directive for Incident Category:* **${cat}** at terminal **${terminal}** under standard **${vector}**
 
@@ -7974,36 +8278,76 @@ Safety index and terminal clearance verified. The audit record status has been u
                             </div>
                         </div>
 
-                        <div className="flex items-center gap-2 w-full md:w-auto">
-                            <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider font-mono whitespace-nowrap">Active Incidents:</label>
-                            <select
-                                value={selectedRcaLog ? selectedRcaLog.originalIndex ?? '' : ''}
-                                onChange={(e) => {
-                                    const val = e.target.value;
-                                    if (val === '') {
-                                        setSelectedRcaLog(null);
-                                        setRcaText('');
-                                        setRcaError(null);
-                                    } else {
-                                        const originalIdx = parseInt(val, 10);
-                                        const log = ledgerLogs[originalIdx];
-                                        if (log) {
-                                            handleSelectRcaLog(log, originalIdx);
+                        <div className="flex flex-wrap items-center gap-3.5 w-full md:w-auto">
+                            <div className="flex items-center gap-1.5">
+                                <label className="text-[10px] font-bold text-indigo-400 uppercase tracking-wider font-mono whitespace-nowrap">Incident A:</label>
+                                <select
+                                    value={selectedRcaLog ? selectedRcaLog.originalIndex ?? '' : ''}
+                                    onChange={(e) => {
+                                        const val = e.target.value;
+                                        if (val === '') {
+                                            setSelectedRcaLog(null);
+                                            setSelectedRcaLog2(null);
+                                            setRcaText('');
+                                            setRcaError(null);
+                                        } else {
+                                            const originalIdx = parseInt(val, 10);
+                                            const log = ledgerLogs[originalIdx];
+                                            if (log) {
+                                                handleSelectRcaLog(log, originalIdx);
+                                            }
                                         }
-                                    }
-                                }}
-                                className="w-full md:w-64 bg-slate-950 border border-slate-800 rounded-lg px-2.5 py-1.5 text-xs text-slate-300 focus:border-amber-500/50 outline-none font-mono"
-                            >
-                                <option value="">-- Select Flagged Log to Analyze --</option>
-                                {ledgerLogs.map((log, idx) => {
-                                    if (log.auditStatus === 'Passed') return null;
-                                    return (
-                                        <option key={idx} value={idx}>
-                                            [{log.date}] {log.terminalId} - {log.riskCategory} ({log.auditStatus})
-                                        </option>
-                                    );
-                                }).filter(Boolean)}
-                            </select>
+                                    }}
+                                    className="w-full md:w-52 bg-slate-950 border border-slate-800 rounded-lg px-2 py-1.5 text-xs text-slate-300 focus:border-indigo-500/50 outline-none font-mono"
+                                >
+                                    <option value="">-- Select Incident A --</option>
+                                    {ledgerLogs.map((log, idx) => {
+                                        if (log.auditStatus === 'Passed') return null;
+                                        return (
+                                            <option key={idx} value={idx}>
+                                                [{log.date}] {log.terminalId} - {log.riskCategory}
+                                            </option>
+                                        );
+                                    }).filter(Boolean)}
+                                </select>
+                            </div>
+
+                            <div className="flex items-center gap-1.5">
+                                <label className="text-[10px] font-bold text-amber-500 uppercase tracking-wider font-mono whitespace-nowrap">Incident B:</label>
+                                <select
+                                    disabled={!selectedRcaLog}
+                                    value={selectedRcaLog2 ? selectedRcaLog2.originalIndex ?? '' : ''}
+                                    onChange={(e) => {
+                                        const val = e.target.value;
+                                        if (val === '') {
+                                            setSelectedRcaLog2(null);
+                                            setRcaMode('rca');
+                                            if (selectedRcaLog) {
+                                                triggerRcaAnalysis(selectedRcaLog, 'rca');
+                                            }
+                                        } else {
+                                            const originalIdx = parseInt(val, 10);
+                                            const log = ledgerLogs[originalIdx];
+                                            if (log) {
+                                                handleSelectRcaLog2(log, originalIdx);
+                                                triggerRcaAnalysis(selectedRcaLog, 'compare', log);
+                                            }
+                                        }
+                                    }}
+                                    className="w-full md:w-52 bg-slate-950 border border-slate-800 rounded-lg px-2 py-1.5 text-xs text-slate-300 focus:border-amber-500/50 outline-none font-mono disabled:opacity-40 disabled:cursor-not-allowed"
+                                >
+                                    <option value="">-- Select Incident B (Compare) --</option>
+                                    {ledgerLogs.map((log, idx) => {
+                                        if (log.auditStatus === 'Passed') return null;
+                                        if (selectedRcaLog && idx === selectedRcaLog.originalIndex) return null;
+                                        return (
+                                            <option key={idx} value={idx}>
+                                                [{log.date}] {log.terminalId} - {log.riskCategory}
+                                            </option>
+                                        );
+                                    }).filter(Boolean)}
+                                </select>
+                            </div>
                         </div>
                     </div>
 
@@ -8019,66 +8363,138 @@ Safety index and terminal clearance verified. The audit record status has been u
                         </div>
                     ) : (
                         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-stretch">
-                            <div className="lg:col-span-5 flex flex-col gap-4 bg-slate-950/55 p-5 rounded-2xl border border-slate-800/80">
-                                <div className="flex items-center justify-between border-b border-slate-800/80 pb-3">
-                                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider font-mono">Forensic Target Log</span>
-                                    <span className={`px-2.5 py-0.5 rounded text-[9px] font-black uppercase tracking-wider ${
-                                        selectedRcaLog.auditStatus === 'Passed' ? 'text-emerald-400 bg-emerald-500/10 border border-emerald-500/20' :
-                                        selectedRcaLog.auditStatus === 'Critical Warning' ? 'text-rose-400 bg-rose-500/10 border border-rose-500/20 animate-pulse' : 'text-amber-400 bg-amber-500/10 border border-amber-500/20'
-                                    }`}>
-                                        {selectedRcaLog.auditStatus}
-                                    </span>
-                                </div>
+                             <div className="lg:col-span-5 flex flex-col gap-4">
+                                {!selectedRcaLog2 ? (
+                                    <div className="flex-1 flex flex-col gap-4 bg-slate-950/55 p-5 rounded-2xl border border-slate-800/80">
+                                        <div className="flex items-center justify-between border-b border-slate-800/80 pb-3">
+                                            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider font-mono">Forensic Target Log</span>
+                                            <span className={`px-2.5 py-0.5 rounded text-[9px] font-black uppercase tracking-wider ${
+                                                selectedRcaLog.auditStatus === 'Passed' ? 'text-emerald-400 bg-emerald-500/10 border border-emerald-500/20' :
+                                                selectedRcaLog.auditStatus === 'Critical Warning' ? 'text-rose-400 bg-rose-500/10 border border-rose-500/20 animate-pulse' : 'text-amber-400 bg-amber-500/10 border border-amber-500/20'
+                                            }`}>
+                                                {selectedRcaLog.auditStatus}
+                                            </span>
+                                        </div>
 
-                                <div className="grid grid-cols-2 gap-3 text-xs font-mono">
-                                    <div className="flex flex-col gap-0.5 bg-slate-900/60 p-2.5 rounded-xl border border-slate-800/40">
-                                        <span className="text-[9px] text-slate-500 uppercase tracking-widest font-bold">Terminal ID</span>
-                                        <span className="text-white font-bold">{selectedRcaLog.terminalId || 'N/A'}</span>
-                                    </div>
-                                    <div className="flex flex-col gap-0.5 bg-slate-900/60 p-2.5 rounded-xl border border-slate-800/40">
-                                        <span className="text-[9px] text-slate-500 uppercase tracking-widest font-bold">Date / Stamp</span>
-                                        <span className="text-white">{selectedRcaLog.date}</span>
-                                    </div>
-                                    <div className="flex flex-col gap-0.5 bg-slate-900/60 p-2.5 rounded-xl border border-slate-800/40">
-                                        <span className="text-[9px] text-slate-500 uppercase tracking-widest font-bold">Risk Category</span>
-                                        <span className="text-slate-300 font-sans font-semibold truncate" title={selectedRcaLog.riskCategory}>{selectedRcaLog.riskCategory}</span>
-                                    </div>
-                                    <div className="flex flex-col gap-0.5 bg-slate-900/60 p-2.5 rounded-xl border border-slate-800/40">
-                                        <span className="text-[9px] text-slate-500 uppercase tracking-widest font-bold">SANS Vector</span>
-                                        <span className="text-amber-500 font-bold">{selectedRcaLog.violationVector || 'None'}</span>
-                                    </div>
-                                    <div className="flex flex-col gap-0.5 bg-slate-900/60 p-2.5 rounded-xl border border-slate-800/40">
-                                        <span className="text-[9px] text-slate-500 uppercase tracking-widest font-bold">Operator on Duty</span>
-                                        <span className="text-slate-300 font-sans">{selectedRcaLog.operator || 'Unknown'}</span>
-                                    </div>
-                                    <div className="flex flex-col gap-0.5 bg-slate-900/60 p-2.5 rounded-xl border border-slate-800/40">
-                                        <span className="text-[9px] text-slate-500 uppercase tracking-widest font-bold">Severity Level</span>
-                                        <span className={`font-bold ${
-                                            selectedRcaLog.severityLevel === 'High' ? 'text-rose-400' :
-                                            selectedRcaLog.severityLevel === 'Medium' ? 'text-amber-400' : 'text-emerald-400'
-                                        }`}>{selectedRcaLog.severityLevel}</span>
-                                    </div>
-                                </div>
+                                        <div className="grid grid-cols-2 gap-3 text-xs font-mono">
+                                            <div className="flex flex-col gap-0.5 bg-slate-900/60 p-2.5 rounded-xl border border-slate-800/40">
+                                                <span className="text-[9px] text-slate-500 uppercase tracking-widest font-bold">Terminal ID</span>
+                                                <span className="text-white font-bold">{selectedRcaLog.terminalId || 'N/A'}</span>
+                                            </div>
+                                            <div className="flex flex-col gap-0.5 bg-slate-900/60 p-2.5 rounded-xl border border-slate-800/40">
+                                                <span className="text-[9px] text-slate-500 uppercase tracking-widest font-bold">Date / Stamp</span>
+                                                <span className="text-white">{selectedRcaLog.date}</span>
+                                            </div>
+                                            <div className="flex flex-col gap-0.5 bg-slate-900/60 p-2.5 rounded-xl border border-slate-800/40">
+                                                <span className="text-[9px] text-slate-500 uppercase tracking-widest font-bold">Risk Category</span>
+                                                <span className="text-slate-300 font-sans font-semibold truncate" title={selectedRcaLog.riskCategory}>{selectedRcaLog.riskCategory}</span>
+                                            </div>
+                                            <div className="flex flex-col gap-0.5 bg-slate-900/60 p-2.5 rounded-xl border border-slate-800/40">
+                                                <span className="text-[9px] text-slate-500 uppercase tracking-widest font-bold">SANS Vector</span>
+                                                <span className="text-amber-500 font-bold">{selectedRcaLog.violationVector || 'None'}</span>
+                                            </div>
+                                            <div className="flex flex-col gap-0.5 bg-slate-900/60 p-2.5 rounded-xl border border-slate-800/40">
+                                                <span className="text-[9px] text-slate-500 uppercase tracking-widest font-bold">Operator on Duty</span>
+                                                <span className="text-slate-300 font-sans">{selectedRcaLog.operator || 'Unknown'}</span>
+                                            </div>
+                                            <div className="flex flex-col gap-0.5 bg-slate-900/60 p-2.5 rounded-xl border border-slate-800/40">
+                                                <span className="text-[9px] text-slate-500 uppercase tracking-widest font-bold">Severity Level</span>
+                                                <span className={`font-bold ${
+                                                    selectedRcaLog.severityLevel === 'High' ? 'text-rose-400' :
+                                                    selectedRcaLog.severityLevel === 'Medium' ? 'text-amber-400' : 'text-emerald-400'
+                                                }`}>{selectedRcaLog.severityLevel}</span>
+                                            </div>
+                                        </div>
 
-                                <div className="flex flex-col gap-1 mt-1 bg-slate-900/60 p-3 rounded-xl border border-slate-800/50">
-                                    <span className="text-[9px] text-slate-500 font-mono uppercase tracking-widest font-bold">Flagged Telemetry Notes:</span>
-                                    <p className="text-xs text-slate-300 leading-normal font-sans italic">
-                                        &quot;{selectedRcaLog.detailedNotes || 'No notes logged.'}&quot;
-                                    </p>
-                                </div>
+                                        <div className="flex flex-col gap-1 mt-1 bg-slate-900/60 p-3 rounded-xl border border-slate-800/50">
+                                            <span className="text-[9px] text-slate-500 font-mono uppercase tracking-widest font-bold">Flagged Telemetry Notes:</span>
+                                            <p className="text-xs text-slate-300 leading-normal font-sans italic">
+                                                &quot;{selectedRcaLog.detailedNotes || 'No notes logged.'}&quot;
+                                            </p>
+                                        </div>
 
-                                <div className="mt-auto pt-3 border-t border-slate-800 flex flex-col gap-2">
-                                    <div className="flex items-center justify-between text-[10px] text-slate-500 font-mono">
-                                        <span>Cross-Shift Matrix Data:</span>
-                                        <span className="text-indigo-400 font-bold">4 Logs Correlated</span>
+                                        <div className="mt-auto pt-3 border-t border-slate-800 flex flex-col gap-2">
+                                            <div className="flex items-center justify-between text-[10px] text-slate-500 font-mono">
+                                                <span>Cross-Shift Matrix Data:</span>
+                                                <span className="text-indigo-400 font-bold">4 Logs Correlated</span>
+                                            </div>
+                                            <div className="flex gap-1">
+                                                <div className="flex-1 h-1.5 rounded-full bg-rose-500/40 border border-rose-500/20" title="Target Incident Log" />
+                                                <div className="flex-1 h-1.5 rounded-full bg-slate-800" title="Shift handover note matching" />
+                                                <div className="flex-1 h-1.5 rounded-full bg-indigo-500/60" title="Shared terminal telemetry overlaps" />
+                                                <div className="flex-1 h-1.5 rounded-full bg-emerald-500/40" title="Historical baseline normal range" />
+                                            </div>
+                                        </div>
                                     </div>
-                                    <div className="flex gap-1">
-                                        <div className="flex-1 h-1.5 rounded-full bg-rose-500/40 border border-rose-500/20" title="Target Incident Log" />
-                                        <div className="flex-1 h-1.5 rounded-full bg-slate-800" title="Shift handover note matching" />
-                                        <div className="flex-1 h-1.5 rounded-full bg-indigo-500/60" title="Shared terminal telemetry overlaps" />
-                                        <div className="flex-1 h-1.5 rounded-full bg-emerald-500/40" title="Historical baseline normal range" />
+                                ) : (
+                                    <div className="flex-1 flex flex-col gap-4 h-full">
+                                        {/* Incident A Sub-panel */}
+                                        <div className="flex flex-col gap-3.5 bg-indigo-950/20 p-4 rounded-2xl border border-indigo-500/20">
+                                            <div className="flex items-center justify-between border-b border-indigo-500/10 pb-2">
+                                                <span className="text-[10px] font-bold text-indigo-400 uppercase tracking-wider font-mono flex items-center gap-1.5">
+                                                    <span className="w-1.5 h-1.5 rounded-full bg-indigo-400" /> Incident A (Primary Target)
+                                                </span>
+                                                <span className="text-[9px] font-black text-indigo-400 bg-indigo-500/10 px-2 py-0.5 rounded uppercase border border-indigo-500/10">
+                                                    {selectedRcaLog.terminalId}
+                                                </span>
+                                            </div>
+                                            <div className="grid grid-cols-2 gap-2 text-[11px] font-mono">
+                                                <div className="bg-slate-900/60 p-2 rounded-xl border border-slate-800/40 flex flex-col">
+                                                    <span className="text-[8px] text-slate-500 uppercase tracking-widest font-bold">Risk Category</span>
+                                                    <span className="text-slate-300 truncate" title={selectedRcaLog.riskCategory}>{selectedRcaLog.riskCategory}</span>
+                                                </div>
+                                                <div className="bg-slate-900/60 p-2 rounded-xl border border-slate-800/40 flex flex-col">
+                                                    <span className="text-[8px] text-slate-500 uppercase tracking-widest font-bold">SANS Vector</span>
+                                                    <span className="text-amber-500 font-bold truncate">{selectedRcaLog.violationVector || 'None'}</span>
+                                                </div>
+                                                <div className="bg-slate-900/60 p-2 rounded-xl border border-slate-800/40 flex flex-col">
+                                                    <span className="text-[8px] text-slate-500 uppercase tracking-widest font-bold">Operator</span>
+                                                    <span className="text-slate-300 truncate">{selectedRcaLog.operator}</span>
+                                                </div>
+                                                <div className="bg-slate-900/60 p-2 rounded-xl border border-slate-800/40 flex flex-col">
+                                                    <span className="text-[8px] text-slate-500 uppercase tracking-widest font-bold">Severity</span>
+                                                    <span className={`font-bold ${selectedRcaLog.severityLevel === 'High' ? 'text-rose-400' : 'text-amber-400'}`}>{selectedRcaLog.severityLevel}</span>
+                                                </div>
+                                            </div>
+                                            <div className="bg-slate-900/40 p-2.5 rounded-xl border border-slate-800/40 text-[11px] text-slate-400 italic font-sans leading-relaxed">
+                                                &quot;{selectedRcaLog.detailedNotes || 'No notes.'}&quot;
+                                            </div>
+                                        </div>
+
+                                        {/* Incident B Sub-panel */}
+                                        <div className="flex flex-col gap-3.5 bg-amber-950/20 p-4 rounded-2xl border border-amber-500/20">
+                                            <div className="flex items-center justify-between border-b border-amber-500/10 pb-2">
+                                                <span className="text-[10px] font-bold text-amber-400 uppercase tracking-wider font-mono flex items-center gap-1.5">
+                                                    <span className="w-1.5 h-1.5 rounded-full bg-amber-400" /> Incident B (Comparison)
+                                                </span>
+                                                <span className="text-[9px] font-black text-amber-400 bg-amber-500/10 px-2 py-0.5 rounded uppercase border border-amber-500/10">
+                                                    {selectedRcaLog2.terminalId}
+                                                </span>
+                                            </div>
+                                            <div className="grid grid-cols-2 gap-2 text-[11px] font-mono">
+                                                <div className="bg-slate-900/60 p-2 rounded-xl border border-slate-800/40 flex flex-col">
+                                                    <span className="text-[8px] text-slate-500 uppercase tracking-widest font-bold">Risk Category</span>
+                                                    <span className="text-slate-300 truncate" title={selectedRcaLog2.riskCategory}>{selectedRcaLog2.riskCategory}</span>
+                                                </div>
+                                                <div className="bg-slate-900/60 p-2 rounded-xl border border-slate-800/40 flex flex-col">
+                                                    <span className="text-[8px] text-slate-500 uppercase tracking-widest font-bold">SANS Vector</span>
+                                                    <span className="text-amber-500 font-bold truncate">{selectedRcaLog2.violationVector || 'None'}</span>
+                                                </div>
+                                                <div className="bg-slate-900/60 p-2 rounded-xl border border-slate-800/40 flex flex-col">
+                                                    <span className="text-[8px] text-slate-500 uppercase tracking-widest font-bold">Operator</span>
+                                                    <span className="text-slate-300 truncate">{selectedRcaLog2.operator}</span>
+                                                </div>
+                                                <div className="bg-slate-900/60 p-2 rounded-xl border border-slate-800/40 flex flex-col">
+                                                    <span className="text-[8px] text-slate-500 uppercase tracking-widest font-bold">Severity</span>
+                                                    <span className={`font-bold ${selectedRcaLog2.severityLevel === 'High' ? 'text-rose-400' : 'text-amber-400'}`}>{selectedRcaLog2.severityLevel}</span>
+                                                </div>
+                                            </div>
+                                            <div className="bg-slate-900/40 p-2.5 rounded-xl border border-slate-800/40 text-[11px] text-slate-400 italic font-sans leading-relaxed">
+                                                &quot;{selectedRcaLog2.detailedNotes || 'No notes.'}&quot;
+                                            </div>
+                                        </div>
                                     </div>
-                                </div>
+                                )}
                             </div>
 
                             <div className="lg:col-span-7 flex flex-col bg-slate-950 border border-slate-800/80 rounded-2xl relative overflow-hidden">
@@ -8116,6 +8532,34 @@ Safety index and terminal clearance verified. The audit record status has been u
                                     >
                                         <Wrench className="w-3.5 h-3.5" />
                                         2. Draft Fix Proposal
+                                    </button>
+                                    <button
+                                        type="button"
+                                        onClick={() => {
+                                            setRcaMode('compare');
+                                            if (!selectedRcaLog2) {
+                                                // Find first other flagged log to compare automatically
+                                                const otherLog = ledgerLogs.find((l, idx) => l.auditStatus !== 'Passed' && idx !== (selectedRcaLog?.originalIndex ?? -1));
+                                                if (otherLog) {
+                                                    const otherIdx = ledgerLogs.indexOf(otherLog);
+                                                    handleSelectRcaLog2(otherLog, otherIdx);
+                                                    triggerRcaAnalysis(selectedRcaLog, 'compare', otherLog);
+                                                } else {
+                                                    setRcaText('### ⚖️ SIDE-BY-SIDE ROOT CAUSE COMPARISON\n\nPlease select **Incident B** from the dropdown menu above to perform a comparative cross-shift telemetry correlation analysis.');
+                                                    setRcaTextMode('compare');
+                                                }
+                                            } else {
+                                                triggerRcaAnalysis(selectedRcaLog, 'compare', selectedRcaLog2);
+                                            }
+                                        }}
+                                        className={`flex-1 inline-flex items-center justify-center gap-1.5 py-2 rounded-lg text-[10px] font-bold uppercase tracking-wider transition-all cursor-pointer ${
+                                            rcaMode === 'compare'
+                                                ? 'bg-amber-500/10 text-amber-400 border border-amber-500/20 shadow'
+                                                : 'text-slate-400 hover:text-amber-400 hover:bg-amber-500/5'
+                                        }`}
+                                    >
+                                        <Scale className="w-3.5 h-3.5" />
+                                        3. Side-by-Side Compare
                                     </button>
                                 </div>
 
@@ -8602,7 +9046,7 @@ const App: React.FC = () => {
     const [userId, setUserId] = useState<string | null>(null);
     const [isAuthReady, setIsAuthReady] = useState(false);
     const [isDemoModalOpen, setIsDemoModalOpen] = useState(false);
-    const [demoModalTier, setDemoModalTier] = useState<'professional' | 'enterprise' | 'audit'>('professional');
+    const [demoModalTier, setDemoModalTier] = useState<'professional' | 'enterprise' | 'full_site' | 'audit'>('professional');
 
     useEffect(() => {
         // Run with standard local session ID with fallback for non-secure contexts
