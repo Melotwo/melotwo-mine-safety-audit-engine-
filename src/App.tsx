@@ -6295,11 +6295,10 @@ export const SafetyInspectorPage: React.FC<SafetyInspectorPageProps> = ({ setPag
     const [error, setError] = useState<string | null>(null);
 
     const [selectedRcaLog, setSelectedRcaLog] = useState<any | null>(null);
-    const [selectedRcaLog2, setSelectedRcaLog2] = useState<any | null>(null);
-    const [rcaMode, setRcaMode] = useState<'rca' | 'remediation' | 'compare'>('rca');
+    const [rcaMode, setRcaMode] = useState<'rca' | 'remediation'>('rca');
     const [rcaLoading, setRcaLoading] = useState(false);
     const [rcaText, setRcaText] = useState('');
-    const [rcaTextMode, setRcaTextMode] = useState<'rca' | 'remediation' | 'compare' | null>(null);
+    const [rcaTextMode, setRcaTextMode] = useState<'rca' | 'remediation' | null>(null);
     const [rcaError, setRcaError] = useState<string | null>(null);
 
     const handleSelectRcaLog = (log: any, indexInFiltered: number) => {
@@ -6315,15 +6314,7 @@ export const SafetyInspectorPage: React.FC<SafetyInspectorPageProps> = ({ setPag
         }, 100);
     };
 
-    const handleSelectRcaLog2 = (log: any, indexInFiltered: number) => {
-        setSelectedRcaLog2({ ...log, originalIndex: log.originalIndex ?? indexInFiltered });
-        setRcaText('');
-        setRcaTextMode(null);
-        setRcaError(null);
-        setRcaMode('compare');
-    };
-
-    const triggerRcaAnalysis = async (logToAnalyze: any, targetMode: 'rca' | 'remediation' | 'compare', logToAnalyze2?: any) => {
+    const triggerRcaAnalysis = async (logToAnalyze: any, targetMode: 'rca' | 'remediation') => {
         if (!logToAnalyze) {
             console.warn('[RCA Engine] triggerRcaAnalysis called without a valid log target.');
             return;
@@ -6342,7 +6333,6 @@ export const SafetyInspectorPage: React.FC<SafetyInspectorPageProps> = ({ setPag
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     incidentLog: logToAnalyze,
-                    incidentLog2: logToAnalyze2,
                     surroundingLogs: surrounding,
                     mode: targetMode
                 })
@@ -6361,7 +6351,6 @@ export const SafetyInspectorPage: React.FC<SafetyInspectorPageProps> = ({ setPag
             console.error('[RCA Engine Fault] Analysis failed. Full diagnostic payload context:', {
                 error: err,
                 incidentLog: logToAnalyze,
-                incidentLog2: logToAnalyze2,
                 surroundingLogs: surrounding,
                 mode: targetMode
             });
@@ -6376,35 +6365,7 @@ export const SafetyInspectorPage: React.FC<SafetyInspectorPageProps> = ({ setPag
             const terminal = logToAnalyze.terminalId || 'TERM-09';
             const status = logToAnalyze.auditStatus || 'Action Required';
 
-            if (targetMode === 'compare') {
-                const log2 = logToAnalyze2 || {};
-                const text = `### ⚖️ SIDE-BY-SIDE ROOT CAUSE COMPARISON
-
-| Metric / Dimension | Incident A: ${cat} | Incident B: ${log2.riskCategory || 'General'} |
-| :--- | :--- | :--- |
-| **Terminal ID** | \`${terminal}\` | \`${log2.terminalId || 'TERM-10'}\` |
-| **Violation Vector** | \`${vector}\` | \`${log2.violationVector || 'SANS Standard'}\` |
-| **Operator on Duty** | ${logToAnalyze.operator || 'Unknown'} | ${log2.operator || 'Unknown'} |
-| **Severity Level** | ${logToAnalyze.severityLevel || 'Medium'} | ${log2.severityLevel || 'Medium'} |
-| **Status** | ${status} | ${log2.auditStatus || 'Warning'} |
-
----
-
-#### 1. TELEMETRY & CONTEXTUAL OVERLAPS
-- **Terminal Overlaps:** ${logToAnalyze.terminalId === log2.terminalId ? `Both incidents occurred at the same terminal (**${logToAnalyze.terminalId}**), indicating localized infrastructure decay or electrical grid fluctuations.` : `The incidents occurred at different terminals (**${logToAnalyze.terminalId}** vs **${log2.terminalId || 'TERM-10'}**), indicating systemic rather than terminal-isolated issues.`}
-- **Operator Overlaps:** ${logToAnalyze.operator === log2.operator ? `Both shifts were supervised by **${logToAnalyze.operator}**, highlighting a potential need for targeted refresher certification or shift briefing support.` : `Different operators were on duty (**${logToAnalyze.operator}** vs **${log2.operator || 'Unknown'}**), indicating that procedural deviations are organizational rather than individual.`}
-- **Temporal Closeness:** The incidents occurred on **${logToAnalyze.date}** and **${log2.date || 'N/A'}**, suggesting compounding environmental factors in the active zone.
-
-#### 2. ROOT CAUSE DIVERGENCES
-- **Incident A (${cat}):** Caused by structural stress under SANS standard **${vector}** and localized telemetry handoff gaps.
-- **Incident B (${log2.riskCategory || 'General'}):** Exacerbated by SANS standard **${log2.violationVector || 'SANS Standard'}** protocols being bypassed, leading to a secondary compliance failure.
-
-#### 3. INTEGRATED REMEDIATION PLAN
-1. **Consolidated Loop Verification:** Run a comprehensive diagnostics test on terminal loops to check electrical insulation and PPE safety bounds.
-2. **Unified Handover Ledger:** Implement digitized end-of-shift telemetry locks so subsequent duty crews are automatically alerted to outstanding alerts.`;
-
-                setRcaText(text);
-            } else if (targetMode === 'remediation') {
+            if (targetMode === 'remediation') {
                 const text = `### 📋 FEASIBILITY REMEDIATION & ACTIONABLE FIX PROPOSAL
 *Industry Directive for Incident Category:* **${cat}** at terminal **${terminal}** under standard **${vector}**
 
@@ -8013,76 +7974,36 @@ Safety index and terminal clearance verified. The audit record status has been u
                             </div>
                         </div>
 
-                        <div className="flex flex-wrap items-center gap-3.5 w-full md:w-auto">
-                            <div className="flex items-center gap-1.5">
-                                <label className="text-[10px] font-bold text-indigo-400 uppercase tracking-wider font-mono whitespace-nowrap">Incident A:</label>
-                                <select
-                                    value={selectedRcaLog ? selectedRcaLog.originalIndex ?? '' : ''}
-                                    onChange={(e) => {
-                                        const val = e.target.value;
-                                        if (val === '') {
-                                            setSelectedRcaLog(null);
-                                            setSelectedRcaLog2(null);
-                                            setRcaText('');
-                                            setRcaError(null);
-                                        } else {
-                                            const originalIdx = parseInt(val, 10);
-                                            const log = ledgerLogs[originalIdx];
-                                            if (log) {
-                                                handleSelectRcaLog(log, originalIdx);
-                                            }
+                        <div className="flex items-center gap-2 w-full md:w-auto">
+                            <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider font-mono whitespace-nowrap">Active Incidents:</label>
+                            <select
+                                value={selectedRcaLog ? selectedRcaLog.originalIndex ?? '' : ''}
+                                onChange={(e) => {
+                                    const val = e.target.value;
+                                    if (val === '') {
+                                        setSelectedRcaLog(null);
+                                        setRcaText('');
+                                        setRcaError(null);
+                                    } else {
+                                        const originalIdx = parseInt(val, 10);
+                                        const log = ledgerLogs[originalIdx];
+                                        if (log) {
+                                            handleSelectRcaLog(log, originalIdx);
                                         }
-                                    }}
-                                    className="w-full md:w-52 bg-slate-950 border border-slate-800 rounded-lg px-2 py-1.5 text-xs text-slate-300 focus:border-indigo-500/50 outline-none font-mono"
-                                >
-                                    <option value="">-- Select Incident A --</option>
-                                    {ledgerLogs.map((log, idx) => {
-                                        if (log.auditStatus === 'Passed') return null;
-                                        return (
-                                            <option key={idx} value={idx}>
-                                                [{log.date}] {log.terminalId} - {log.riskCategory}
-                                            </option>
-                                        );
-                                    }).filter(Boolean)}
-                                </select>
-                            </div>
-
-                            <div className="flex items-center gap-1.5">
-                                <label className="text-[10px] font-bold text-amber-500 uppercase tracking-wider font-mono whitespace-nowrap">Incident B:</label>
-                                <select
-                                    disabled={!selectedRcaLog}
-                                    value={selectedRcaLog2 ? selectedRcaLog2.originalIndex ?? '' : ''}
-                                    onChange={(e) => {
-                                        const val = e.target.value;
-                                        if (val === '') {
-                                            setSelectedRcaLog2(null);
-                                            setRcaMode('rca');
-                                            if (selectedRcaLog) {
-                                                triggerRcaAnalysis(selectedRcaLog, 'rca');
-                                            }
-                                        } else {
-                                            const originalIdx = parseInt(val, 10);
-                                            const log = ledgerLogs[originalIdx];
-                                            if (log) {
-                                                handleSelectRcaLog2(log, originalIdx);
-                                                triggerRcaAnalysis(selectedRcaLog, 'compare', log);
-                                            }
-                                        }
-                                    }}
-                                    className="w-full md:w-52 bg-slate-950 border border-slate-800 rounded-lg px-2 py-1.5 text-xs text-slate-300 focus:border-amber-500/50 outline-none font-mono disabled:opacity-40 disabled:cursor-not-allowed"
-                                >
-                                    <option value="">-- Select Incident B (Compare) --</option>
-                                    {ledgerLogs.map((log, idx) => {
-                                        if (log.auditStatus === 'Passed') return null;
-                                        if (selectedRcaLog && idx === selectedRcaLog.originalIndex) return null;
-                                        return (
-                                            <option key={idx} value={idx}>
-                                                [{log.date}] {log.terminalId} - {log.riskCategory}
-                                            </option>
-                                        );
-                                    }).filter(Boolean)}
-                                </select>
-                            </div>
+                                    }
+                                }}
+                                className="w-full md:w-64 bg-slate-950 border border-slate-800 rounded-lg px-2.5 py-1.5 text-xs text-slate-300 focus:border-amber-500/50 outline-none font-mono"
+                            >
+                                <option value="">-- Select Flagged Log to Analyze --</option>
+                                {ledgerLogs.map((log, idx) => {
+                                    if (log.auditStatus === 'Passed') return null;
+                                    return (
+                                        <option key={idx} value={idx}>
+                                            [{log.date}] {log.terminalId} - {log.riskCategory} ({log.auditStatus})
+                                        </option>
+                                    );
+                                }).filter(Boolean)}
+                            </select>
                         </div>
                     </div>
 
@@ -8098,138 +8019,66 @@ Safety index and terminal clearance verified. The audit record status has been u
                         </div>
                     ) : (
                         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-stretch">
-                             <div className="lg:col-span-5 flex flex-col gap-4">
-                                {!selectedRcaLog2 ? (
-                                    <div className="flex-1 flex flex-col gap-4 bg-slate-950/55 p-5 rounded-2xl border border-slate-800/80">
-                                        <div className="flex items-center justify-between border-b border-slate-800/80 pb-3">
-                                            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider font-mono">Forensic Target Log</span>
-                                            <span className={`px-2.5 py-0.5 rounded text-[9px] font-black uppercase tracking-wider ${
-                                                selectedRcaLog.auditStatus === 'Passed' ? 'text-emerald-400 bg-emerald-500/10 border border-emerald-500/20' :
-                                                selectedRcaLog.auditStatus === 'Critical Warning' ? 'text-rose-400 bg-rose-500/10 border border-rose-500/20 animate-pulse' : 'text-amber-400 bg-amber-500/10 border border-amber-500/20'
-                                            }`}>
-                                                {selectedRcaLog.auditStatus}
-                                            </span>
-                                        </div>
+                            <div className="lg:col-span-5 flex flex-col gap-4 bg-slate-950/55 p-5 rounded-2xl border border-slate-800/80">
+                                <div className="flex items-center justify-between border-b border-slate-800/80 pb-3">
+                                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider font-mono">Forensic Target Log</span>
+                                    <span className={`px-2.5 py-0.5 rounded text-[9px] font-black uppercase tracking-wider ${
+                                        selectedRcaLog.auditStatus === 'Passed' ? 'text-emerald-400 bg-emerald-500/10 border border-emerald-500/20' :
+                                        selectedRcaLog.auditStatus === 'Critical Warning' ? 'text-rose-400 bg-rose-500/10 border border-rose-500/20 animate-pulse' : 'text-amber-400 bg-amber-500/10 border border-amber-500/20'
+                                    }`}>
+                                        {selectedRcaLog.auditStatus}
+                                    </span>
+                                </div>
 
-                                        <div className="grid grid-cols-2 gap-3 text-xs font-mono">
-                                            <div className="flex flex-col gap-0.5 bg-slate-900/60 p-2.5 rounded-xl border border-slate-800/40">
-                                                <span className="text-[9px] text-slate-500 uppercase tracking-widest font-bold">Terminal ID</span>
-                                                <span className="text-white font-bold">{selectedRcaLog.terminalId || 'N/A'}</span>
-                                            </div>
-                                            <div className="flex flex-col gap-0.5 bg-slate-900/60 p-2.5 rounded-xl border border-slate-800/40">
-                                                <span className="text-[9px] text-slate-500 uppercase tracking-widest font-bold">Date / Stamp</span>
-                                                <span className="text-white">{selectedRcaLog.date}</span>
-                                            </div>
-                                            <div className="flex flex-col gap-0.5 bg-slate-900/60 p-2.5 rounded-xl border border-slate-800/40">
-                                                <span className="text-[9px] text-slate-500 uppercase tracking-widest font-bold">Risk Category</span>
-                                                <span className="text-slate-300 font-sans font-semibold truncate" title={selectedRcaLog.riskCategory}>{selectedRcaLog.riskCategory}</span>
-                                            </div>
-                                            <div className="flex flex-col gap-0.5 bg-slate-900/60 p-2.5 rounded-xl border border-slate-800/40">
-                                                <span className="text-[9px] text-slate-500 uppercase tracking-widest font-bold">SANS Vector</span>
-                                                <span className="text-amber-500 font-bold">{selectedRcaLog.violationVector || 'None'}</span>
-                                            </div>
-                                            <div className="flex flex-col gap-0.5 bg-slate-900/60 p-2.5 rounded-xl border border-slate-800/40">
-                                                <span className="text-[9px] text-slate-500 uppercase tracking-widest font-bold">Operator on Duty</span>
-                                                <span className="text-slate-300 font-sans">{selectedRcaLog.operator || 'Unknown'}</span>
-                                            </div>
-                                            <div className="flex flex-col gap-0.5 bg-slate-900/60 p-2.5 rounded-xl border border-slate-800/40">
-                                                <span className="text-[9px] text-slate-500 uppercase tracking-widest font-bold">Severity Level</span>
-                                                <span className={`font-bold ${
-                                                    selectedRcaLog.severityLevel === 'High' ? 'text-rose-400' :
-                                                    selectedRcaLog.severityLevel === 'Medium' ? 'text-amber-400' : 'text-emerald-400'
-                                                }`}>{selectedRcaLog.severityLevel}</span>
-                                            </div>
-                                        </div>
-
-                                        <div className="flex flex-col gap-1 mt-1 bg-slate-900/60 p-3 rounded-xl border border-slate-800/50">
-                                            <span className="text-[9px] text-slate-500 font-mono uppercase tracking-widest font-bold">Flagged Telemetry Notes:</span>
-                                            <p className="text-xs text-slate-300 leading-normal font-sans italic">
-                                                &quot;{selectedRcaLog.detailedNotes || 'No notes logged.'}&quot;
-                                            </p>
-                                        </div>
-
-                                        <div className="mt-auto pt-3 border-t border-slate-800 flex flex-col gap-2">
-                                            <div className="flex items-center justify-between text-[10px] text-slate-500 font-mono">
-                                                <span>Cross-Shift Matrix Data:</span>
-                                                <span className="text-indigo-400 font-bold">4 Logs Correlated</span>
-                                            </div>
-                                            <div className="flex gap-1">
-                                                <div className="flex-1 h-1.5 rounded-full bg-rose-500/40 border border-rose-500/20" title="Target Incident Log" />
-                                                <div className="flex-1 h-1.5 rounded-full bg-slate-800" title="Shift handover note matching" />
-                                                <div className="flex-1 h-1.5 rounded-full bg-indigo-500/60" title="Shared terminal telemetry overlaps" />
-                                                <div className="flex-1 h-1.5 rounded-full bg-emerald-500/40" title="Historical baseline normal range" />
-                                            </div>
-                                        </div>
+                                <div className="grid grid-cols-2 gap-3 text-xs font-mono">
+                                    <div className="flex flex-col gap-0.5 bg-slate-900/60 p-2.5 rounded-xl border border-slate-800/40">
+                                        <span className="text-[9px] text-slate-500 uppercase tracking-widest font-bold">Terminal ID</span>
+                                        <span className="text-white font-bold">{selectedRcaLog.terminalId || 'N/A'}</span>
                                     </div>
-                                ) : (
-                                    <div className="flex-1 flex flex-col gap-4 h-full">
-                                        {/* Incident A Sub-panel */}
-                                        <div className="flex flex-col gap-3.5 bg-indigo-950/20 p-4 rounded-2xl border border-indigo-500/20">
-                                            <div className="flex items-center justify-between border-b border-indigo-500/10 pb-2">
-                                                <span className="text-[10px] font-bold text-indigo-400 uppercase tracking-wider font-mono flex items-center gap-1.5">
-                                                    <span className="w-1.5 h-1.5 rounded-full bg-indigo-400" /> Incident A (Primary Target)
-                                                </span>
-                                                <span className="text-[9px] font-black text-indigo-400 bg-indigo-500/10 px-2 py-0.5 rounded uppercase border border-indigo-500/10">
-                                                    {selectedRcaLog.terminalId}
-                                                </span>
-                                            </div>
-                                            <div className="grid grid-cols-2 gap-2 text-[11px] font-mono">
-                                                <div className="bg-slate-900/60 p-2 rounded-xl border border-slate-800/40 flex flex-col">
-                                                    <span className="text-[8px] text-slate-500 uppercase tracking-widest font-bold">Risk Category</span>
-                                                    <span className="text-slate-300 truncate" title={selectedRcaLog.riskCategory}>{selectedRcaLog.riskCategory}</span>
-                                                </div>
-                                                <div className="bg-slate-900/60 p-2 rounded-xl border border-slate-800/40 flex flex-col">
-                                                    <span className="text-[8px] text-slate-500 uppercase tracking-widest font-bold">SANS Vector</span>
-                                                    <span className="text-amber-500 font-bold truncate">{selectedRcaLog.violationVector || 'None'}</span>
-                                                </div>
-                                                <div className="bg-slate-900/60 p-2 rounded-xl border border-slate-800/40 flex flex-col">
-                                                    <span className="text-[8px] text-slate-500 uppercase tracking-widest font-bold">Operator</span>
-                                                    <span className="text-slate-300 truncate">{selectedRcaLog.operator}</span>
-                                                </div>
-                                                <div className="bg-slate-900/60 p-2 rounded-xl border border-slate-800/40 flex flex-col">
-                                                    <span className="text-[8px] text-slate-500 uppercase tracking-widest font-bold">Severity</span>
-                                                    <span className={`font-bold ${selectedRcaLog.severityLevel === 'High' ? 'text-rose-400' : 'text-amber-400'}`}>{selectedRcaLog.severityLevel}</span>
-                                                </div>
-                                            </div>
-                                            <div className="bg-slate-900/40 p-2.5 rounded-xl border border-slate-800/40 text-[11px] text-slate-400 italic font-sans leading-relaxed">
-                                                &quot;{selectedRcaLog.detailedNotes || 'No notes.'}&quot;
-                                            </div>
-                                        </div>
-
-                                        {/* Incident B Sub-panel */}
-                                        <div className="flex flex-col gap-3.5 bg-amber-950/20 p-4 rounded-2xl border border-amber-500/20">
-                                            <div className="flex items-center justify-between border-b border-amber-500/10 pb-2">
-                                                <span className="text-[10px] font-bold text-amber-400 uppercase tracking-wider font-mono flex items-center gap-1.5">
-                                                    <span className="w-1.5 h-1.5 rounded-full bg-amber-400" /> Incident B (Comparison)
-                                                </span>
-                                                <span className="text-[9px] font-black text-amber-400 bg-amber-500/10 px-2 py-0.5 rounded uppercase border border-amber-500/10">
-                                                    {selectedRcaLog2.terminalId}
-                                                </span>
-                                            </div>
-                                            <div className="grid grid-cols-2 gap-2 text-[11px] font-mono">
-                                                <div className="bg-slate-900/60 p-2 rounded-xl border border-slate-800/40 flex flex-col">
-                                                    <span className="text-[8px] text-slate-500 uppercase tracking-widest font-bold">Risk Category</span>
-                                                    <span className="text-slate-300 truncate" title={selectedRcaLog2.riskCategory}>{selectedRcaLog2.riskCategory}</span>
-                                                </div>
-                                                <div className="bg-slate-900/60 p-2 rounded-xl border border-slate-800/40 flex flex-col">
-                                                    <span className="text-[8px] text-slate-500 uppercase tracking-widest font-bold">SANS Vector</span>
-                                                    <span className="text-amber-500 font-bold truncate">{selectedRcaLog2.violationVector || 'None'}</span>
-                                                </div>
-                                                <div className="bg-slate-900/60 p-2 rounded-xl border border-slate-800/40 flex flex-col">
-                                                    <span className="text-[8px] text-slate-500 uppercase tracking-widest font-bold">Operator</span>
-                                                    <span className="text-slate-300 truncate">{selectedRcaLog2.operator}</span>
-                                                </div>
-                                                <div className="bg-slate-900/60 p-2 rounded-xl border border-slate-800/40 flex flex-col">
-                                                    <span className="text-[8px] text-slate-500 uppercase tracking-widest font-bold">Severity</span>
-                                                    <span className={`font-bold ${selectedRcaLog2.severityLevel === 'High' ? 'text-rose-400' : 'text-amber-400'}`}>{selectedRcaLog2.severityLevel}</span>
-                                                </div>
-                                            </div>
-                                            <div className="bg-slate-900/40 p-2.5 rounded-xl border border-slate-800/40 text-[11px] text-slate-400 italic font-sans leading-relaxed">
-                                                &quot;{selectedRcaLog2.detailedNotes || 'No notes.'}&quot;
-                                            </div>
-                                        </div>
+                                    <div className="flex flex-col gap-0.5 bg-slate-900/60 p-2.5 rounded-xl border border-slate-800/40">
+                                        <span className="text-[9px] text-slate-500 uppercase tracking-widest font-bold">Date / Stamp</span>
+                                        <span className="text-white">{selectedRcaLog.date}</span>
                                     </div>
-                                )}
+                                    <div className="flex flex-col gap-0.5 bg-slate-900/60 p-2.5 rounded-xl border border-slate-800/40">
+                                        <span className="text-[9px] text-slate-500 uppercase tracking-widest font-bold">Risk Category</span>
+                                        <span className="text-slate-300 font-sans font-semibold truncate" title={selectedRcaLog.riskCategory}>{selectedRcaLog.riskCategory}</span>
+                                    </div>
+                                    <div className="flex flex-col gap-0.5 bg-slate-900/60 p-2.5 rounded-xl border border-slate-800/40">
+                                        <span className="text-[9px] text-slate-500 uppercase tracking-widest font-bold">SANS Vector</span>
+                                        <span className="text-amber-500 font-bold">{selectedRcaLog.violationVector || 'None'}</span>
+                                    </div>
+                                    <div className="flex flex-col gap-0.5 bg-slate-900/60 p-2.5 rounded-xl border border-slate-800/40">
+                                        <span className="text-[9px] text-slate-500 uppercase tracking-widest font-bold">Operator on Duty</span>
+                                        <span className="text-slate-300 font-sans">{selectedRcaLog.operator || 'Unknown'}</span>
+                                    </div>
+                                    <div className="flex flex-col gap-0.5 bg-slate-900/60 p-2.5 rounded-xl border border-slate-800/40">
+                                        <span className="text-[9px] text-slate-500 uppercase tracking-widest font-bold">Severity Level</span>
+                                        <span className={`font-bold ${
+                                            selectedRcaLog.severityLevel === 'High' ? 'text-rose-400' :
+                                            selectedRcaLog.severityLevel === 'Medium' ? 'text-amber-400' : 'text-emerald-400'
+                                        }`}>{selectedRcaLog.severityLevel}</span>
+                                    </div>
+                                </div>
+
+                                <div className="flex flex-col gap-1 mt-1 bg-slate-900/60 p-3 rounded-xl border border-slate-800/50">
+                                    <span className="text-[9px] text-slate-500 font-mono uppercase tracking-widest font-bold">Flagged Telemetry Notes:</span>
+                                    <p className="text-xs text-slate-300 leading-normal font-sans italic">
+                                        &quot;{selectedRcaLog.detailedNotes || 'No notes logged.'}&quot;
+                                    </p>
+                                </div>
+
+                                <div className="mt-auto pt-3 border-t border-slate-800 flex flex-col gap-2">
+                                    <div className="flex items-center justify-between text-[10px] text-slate-500 font-mono">
+                                        <span>Cross-Shift Matrix Data:</span>
+                                        <span className="text-indigo-400 font-bold">4 Logs Correlated</span>
+                                    </div>
+                                    <div className="flex gap-1">
+                                        <div className="flex-1 h-1.5 rounded-full bg-rose-500/40 border border-rose-500/20" title="Target Incident Log" />
+                                        <div className="flex-1 h-1.5 rounded-full bg-slate-800" title="Shift handover note matching" />
+                                        <div className="flex-1 h-1.5 rounded-full bg-indigo-500/60" title="Shared terminal telemetry overlaps" />
+                                        <div className="flex-1 h-1.5 rounded-full bg-emerald-500/40" title="Historical baseline normal range" />
+                                    </div>
+                                </div>
                             </div>
 
                             <div className="lg:col-span-7 flex flex-col bg-slate-950 border border-slate-800/80 rounded-2xl relative overflow-hidden">
@@ -8267,34 +8116,6 @@ Safety index and terminal clearance verified. The audit record status has been u
                                     >
                                         <Wrench className="w-3.5 h-3.5" />
                                         2. Draft Fix Proposal
-                                    </button>
-                                    <button
-                                        type="button"
-                                        onClick={() => {
-                                            setRcaMode('compare');
-                                            if (!selectedRcaLog2) {
-                                                // Find first other flagged log to compare automatically
-                                                const otherLog = ledgerLogs.find((l, idx) => l.auditStatus !== 'Passed' && idx !== (selectedRcaLog?.originalIndex ?? -1));
-                                                if (otherLog) {
-                                                    const otherIdx = ledgerLogs.indexOf(otherLog);
-                                                    handleSelectRcaLog2(otherLog, otherIdx);
-                                                    triggerRcaAnalysis(selectedRcaLog, 'compare', otherLog);
-                                                } else {
-                                                    setRcaText('### ⚖️ SIDE-BY-SIDE ROOT CAUSE COMPARISON\n\nPlease select **Incident B** from the dropdown menu above to perform a comparative cross-shift telemetry correlation analysis.');
-                                                    setRcaTextMode('compare');
-                                                }
-                                            } else {
-                                                triggerRcaAnalysis(selectedRcaLog, 'compare', selectedRcaLog2);
-                                            }
-                                        }}
-                                        className={`flex-1 inline-flex items-center justify-center gap-1.5 py-2 rounded-lg text-[10px] font-bold uppercase tracking-wider transition-all cursor-pointer ${
-                                            rcaMode === 'compare'
-                                                ? 'bg-amber-500/10 text-amber-400 border border-amber-500/20 shadow'
-                                                : 'text-slate-400 hover:text-amber-400 hover:bg-amber-500/5'
-                                        }`}
-                                    >
-                                        <Scale className="w-3.5 h-3.5" />
-                                        3. Side-by-Side Compare
                                     </button>
                                 </div>
 
