@@ -5155,13 +5155,36 @@ const LandingPage: React.FC<LandingPageProps> = ({ currentPage, setPage, setIsDe
                     setSandboxGenerating(false);
                     // Generate report and custom interpolate company name
                     const rawReport = MOCK_SANDBOX_REPORTS[selectedStandard];
-                    setSandboxReport({
+                    const generatedReport = {
                         ...rawReport,
                         companyName: operationName || 'Witwatersrand Deep Reef Gold Ltd',
                         email: leadEmail,
                         checklist: rawReport.checklist.map(item => ({ ...item, checked: false }))
-                    });
+                    };
+                    setSandboxReport(generatedReport);
                     setSandboxSuccessMsg(true);
+
+                    // Sync generated sandbox assessment record into ledger logs table
+                    const newSandboxLog: ComplianceLedgerRow = {
+                        date: new Date().toISOString().split('T')[0],
+                        operator: leadEmail.split('@')[0] || 'Sandbox Auditor',
+                        terminalId: 'SITE-SANDBOX',
+                        riskCategory: rawReport.title || 'Sandbox Audit',
+                        violationVector: rawReport.standardName || selectedStandard,
+                        severityLevel: rawReport.score < 70 ? 'High' : rawReport.score < 85 ? 'Medium' : 'Low',
+                        auditStatus: rawReport.score < 75 ? 'Critical Warning' : rawReport.score < 90 ? 'Action Required' : 'Passed',
+                        detailedNotes: `${operationName || 'Sandbox Operation'} assessment generated with ${rawReport.score}% score (${rawReport.grade}). Primary finding: ${rawReport.highlights?.[0] || 'Assessment complete.'}`
+                    };
+
+                    setLedgerLogs(prev => {
+                        const updated = [newSandboxLog, ...prev];
+                        localStorage.setItem('melotwo_sandbox_logs', JSON.stringify(updated));
+                        return updated;
+                    });
+
+                    if (token && ledgerId) {
+                        appendLedgerRecord(token, ledgerId, newSandboxLog).catch(console.error);
+                    }
                     
                     trackGA4Event('sandbox_generation_success', {
                         standard: selectedStandard,
@@ -6878,8 +6901,11 @@ Safety index and terminal clearance verified. The audit record status has been u
                 const cat = (log.riskCategory || '').toLowerCase();
                 const vec = (log.violationVector || '').toLowerCase();
                 const notes = (log.detailedNotes || '').toLowerCase();
+                const dt = (log.date || '').toLowerCase();
+                const sev = (log.severityLevel || '').toLowerCase();
+                const st = (log.auditStatus || '').toLowerCase();
                 
-                if (op.includes(query) || term.includes(query) || cat.includes(query) || vec.includes(query) || notes.includes(query)) {
+                if (op.includes(query) || term.includes(query) || cat.includes(query) || vec.includes(query) || notes.includes(query) || dt.includes(query) || sev.includes(query) || st.includes(query)) {
                     keywordScore = 1.0;
                 }
             } else {
