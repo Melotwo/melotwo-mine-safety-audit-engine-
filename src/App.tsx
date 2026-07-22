@@ -1079,6 +1079,10 @@ const Briefcase: React.FC<IconProps> = (props) => (
   <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><rect x="2" y="7" width="20" height="14" rx="2" ry="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg>
 );
 
+const Anchor: React.FC<IconProps> = (props) => (
+  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><circle cx="12" cy="5" r="3"/><line x1="12" y1="8" x2="12" y2="21"/><path d="M5 12H2a10 10 0 0 0 20 0h-3"/></svg>
+);
+
 // Helper helper to replace **bold** with <strong> tags
 const renderBoldText = (text: string) => {
     const parts = text.split(/\*\*([^*]+)\*\*/g);
@@ -5199,7 +5203,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ currentPage, setPage, setIsDe
 
     // CRO State variables for Interactive Sandbox
     const [operationName, setOperationName] = useState('');
-    const [selectedStandard, setSelectedStandard] = useState<'sans-10330' | 'sans-10142' | 'sans-10049' | 'sans-10108' | 'iso-42001'>('sans-10330');
+    const [selectedStandard, setSelectedStandard] = useState<'sans-10330' | 'sans-10142' | 'sans-10049' | 'sans-10108' | 'iso-42001' | 'sans-10375'>('sans-10330');
     const [leadEmail, setLeadEmail] = useState('');
     
     // Generator state
@@ -5209,7 +5213,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ currentPage, setPage, setIsDe
     const [sandboxSuccessMsg, setSandboxSuccessMsg] = useState(false);
 
     // Active preset samples for instant zero-friction viewer
-    const [activeSampleStandard, setActiveSampleStandard] = useState<'sans-10330' | 'sans-10142' | 'sans-10049' | 'sans-10108' | 'iso-42001'>('sans-10330');
+    const [activeSampleStandard, setActiveSampleStandard] = useState<'sans-10330' | 'sans-10142' | 'sans-10049' | 'sans-10108' | 'iso-42001' | 'sans-10375'>('sans-10330');
 
     const MOCK_SANDBOX_REPORTS = useMemo(() => ({
         'sans-10330': {
@@ -5330,6 +5334,30 @@ const LandingPage: React.FC<LandingPageProps> = ({ currentPage, setPage, setIsDe
                 { id: 'ai1', task: 'Halt feedback loops and execute PII scrubs', checked: false },
                 { id: 'ai2', task: 'Log AIMS Systemic Impact Assessment', checked: false },
                 { id: 'ai3', task: 'Deploy drift-alert triggers & override bounds', checked: false }
+            ]
+        },
+        'sans-10375': {
+            standardName: 'SANS 10375 / ISO 45001: Lifting & Rigging',
+            score: 55,
+            grade: 'Critical Action Required',
+            color: 'border-rose-600/40 text-rose-500 bg-rose-600/5',
+            badgeColor: 'bg-rose-600/10 text-rose-500 border border-rose-600/25',
+            scoreColor: 'text-rose-600 font-black',
+            description: 'Statutory overhead lifting gear, hook latch tension fatigue, and wire rope tolerances are compromised.',
+            highlights: [
+                'Lifting Tackle Fatigue: Main crane hook safety latch spring tension failed deflection tolerance test.',
+                'Wire Rope Integrity: Secondary hoisting wire rope exhibits surface fraying exceeding 5% strand limit.',
+                'ISO 45001 Alignment: Operational load testing certification expired for overhead gantry hoist.'
+            ],
+            recommendations: [
+                'Immediately remove compromised lifting tackle from service and tag out unit.',
+                'Perform magnetic particle NDT and torque load testing on overhead crane hooks.',
+                'Re-certify wire ropes and log statutory inspection under SANS 10375 & ISO 45001 Clause 8.1.'
+            ],
+            checklist: [
+                { id: 'lift1', task: 'Tag out compromised hook and wire rope assembly', checked: false },
+                { id: 'lift2', task: 'Execute NDT crack detection & torque load test', checked: false },
+                { id: 'lift3', task: 'Issue SANS 10375 re-certification clearance log', checked: false }
             ]
         }
     }), []);
@@ -5757,8 +5785,8 @@ const LandingPage: React.FC<LandingPageProps> = ({ currentPage, setPage, setIsDe
 
                                         {/* Standard presets toggle bar if we are in "Browse samples" mode */}
                                         {!sandboxSuccessMsg && (
-                                            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-1.5 p-1.5 bg-slate-950 border border-slate-800/80 rounded-xl text-center">
-                                                {(['sans-10330', 'sans-10142', 'sans-10049', 'sans-10108', 'iso-42001'] as const).map((std) => (
+                                            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-1.5 p-1.5 bg-slate-950 border border-slate-800/80 rounded-xl text-center">
+                                                {(['sans-10330', 'sans-10142', 'sans-10049', 'sans-10108', 'iso-42001', 'sans-10375'] as const).map((std) => (
                                                     <button
                                                         key={std}
                                                         onClick={() => {
@@ -5778,7 +5806,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ currentPage, setPage, setIsDe
                                                                 : 'text-slate-400 hover:text-slate-300'
                                                         }`}
                                                     >
-                                                        {std === 'sans-10330' ? '10330' : std === 'sans-10142' ? '10142' : std === 'sans-10049' ? '10049' : std === 'sans-10108' ? '10108' : 'ISO 42001'}
+                                                        {std === 'sans-10330' ? '10330' : std === 'sans-10142' ? '10142' : std === 'sans-10049' ? '10049' : std === 'sans-10108' ? '10108' : std === 'iso-42001' ? 'ISO 42001' : '10375'}
                                                     </button>
                                                 ))}
                                             </div>
@@ -5843,7 +5871,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ currentPage, setPage, setIsDe
                                     <form onSubmit={handleSandboxSubmit} className="space-y-4 text-left">
                                         <div>
                                             <span className="block text-[10px] font-black text-slate-400 uppercase tracking-wider mb-2">1. Select standard focus</span>
-                                            <div className="grid grid-cols-2 lg:grid-cols-5 gap-2">
+                                            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2">
                                                 <button
                                                     type="button"
                                                     onClick={() => {
@@ -5913,6 +5941,20 @@ const LandingPage: React.FC<LandingPageProps> = ({ currentPage, setPage, setIsDe
                                                     }`}
                                                 >
                                                     ISO 42001 (AI)
+                                                </button>
+                                                <button
+                                                    type="button"
+                                                    onClick={() => {
+                                                        setSelectedStandard('sans-10375');
+                                                        trackGA4Event('sandbox_standard_selected', { standard: 'sans-10375' });
+                                                    }}
+                                                    className={`py-2 text-[10px] font-black uppercase rounded-lg border tracking-wide transition cursor-pointer ${
+                                                        selectedStandard === 'sans-10375' 
+                                                            ? 'bg-amber-500/10 border-amber-500 text-amber-500' 
+                                                            : 'bg-slate-950/40 border-slate-800 text-slate-400 hover:text-slate-300'
+                                                    }`}
+                                                >
+                                                    10375 (Lifting)
                                                 </button>
                                             </div>
                                         </div>
@@ -6316,7 +6358,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ currentPage, setPage, setIsDe
                     </p>
                 </div>
 
-                <div className="grid md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-6">
+                <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
                     {/* Solution Card 1 */}
                     <div className="bg-white border border-gray-100 rounded-3xl p-6 shadow-xl hover:shadow-2xl transition-all duration-300 flex flex-col justify-between">
                         <div>
@@ -6434,6 +6476,31 @@ const LandingPage: React.FC<LandingPageProps> = ({ currentPage, setPage, setIsDe
                                 onClick={() => {
                                     setPage('inspector');
                                     trackGA4Event('solutions_card_clicked', { standard: 'iso-42001' });
+                                }}
+                                className="text-xs font-bold text-indigo-600 hover:text-indigo-800 flex items-center gap-1 transition cursor-pointer"
+                            >
+                                Launch →
+                            </button>
+                        </div>
+                    </div>
+
+                    {/* Solution Card 6 */}
+                    <div className="bg-white border border-gray-100 rounded-3xl p-6 shadow-xl hover:shadow-2xl transition-all duration-300 flex flex-col justify-between">
+                        <div>
+                            <div className="w-12 h-12 rounded-2xl bg-sky-500/10 border border-sky-500/20 flex items-center justify-center mb-6">
+                                <Anchor className="w-6 h-6 text-sky-500" />
+                            </div>
+                            <h3 className="text-base font-bold text-gray-950 mb-2">SANS 10375 / ISO 45001: Overhead Lifting & Rigging</h3>
+                            <p className="text-xs text-gray-500 leading-relaxed">
+                                Statutory overhead lifting tackle and rigging inspection. Evaluates wire rope fraying, hook latch tension fatigue, load limits, and ISO 45001 OH&S compliance tracking.
+                            </p>
+                        </div>
+                        <div className="mt-8 pt-4 border-t border-gray-50 flex items-center justify-between">
+                            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">SANS 10375 VERIFIED</span>
+                            <button
+                                onClick={() => {
+                                    setPage('inspector');
+                                    trackGA4Event('solutions_card_clicked', { standard: 'sans-10375' });
                                 }}
                                 className="text-xs font-bold text-indigo-600 hover:text-indigo-800 flex items-center gap-1 transition cursor-pointer"
                             >
