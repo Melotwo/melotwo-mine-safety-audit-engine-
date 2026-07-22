@@ -5,7 +5,7 @@ import { sanitizeInputText } from './utils/sanitizer';
 import { CountUp } from './components/CountUp';
 import { Sparkline as HistoricalSparkline } from './components/Sparkline';
 import { ComplianceFAQ } from './components/ComplianceFAQ';
-import { Database, RefreshCw, Upload, LogOut, Sparkles, CheckCircle2, AlertOctagon, Download, ChevronRight, Lock, Terminal, Minimize2, Maximize2, Activity, Scale } from 'lucide-react';
+import { Database, RefreshCw, Upload, LogOut, Sparkles, CheckCircle2, AlertOctagon, Download, ChevronRight, Lock, Terminal, Minimize2, Maximize2, Activity, Scale, ShieldCheck, Globe } from 'lucide-react';
 
 import { initializeApp } from 'firebase/app';
 import { getAuth, signInWithPopup, GoogleAuthProvider, onAuthStateChanged, User as FirebaseUser } from 'firebase/auth';
@@ -6954,6 +6954,7 @@ export const SafetyInspectorPage: React.FC<SafetyInspectorPageProps> = ({ setPag
     const [response, setResponse] = useState<any>(null);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
+    const [showIsoCrossMap, setShowIsoCrossMap] = useState<boolean>(false);
 
     const [selectedRcaLog, setSelectedRcaLog] = useState<any | null>(null);
     const [selectedRcaLog2, setSelectedRcaLog2] = useState<any | null>(null);
@@ -7629,6 +7630,19 @@ Safety index and terminal clearance verified. The audit record status has been u
             findings: 'Surface sanitization verified under HACCP specs. Minor pitted corrosion along rear backsplash join requires epoxy re-seal.',
             sampleName: 'Canteen Prep Photo',
             previewUrl: 'https://images.unsplash.com/photo-1556911220-e15b29be8c8f?w=500&auto=format&fit=crop&q=80'
+        },
+        lifting: {
+            equipmentType: 'Overhead Lifting Crane Hook & Rigging Gear Assembly',
+            sansStandard: 'SANS 10375 & ISO 45001 (Overhead Lifting Integrity)',
+            integrityScore: 52,
+            recommendation: 'Flagged Breach',
+            severity: 'High',
+            auditStatus: 'Critical Warning',
+            riskCategory: 'Lifting & Rigging Integrity',
+            violationVector: 'SANS 10375 § 5.2 / ISO 45001 Cl 8.1',
+            findings: 'Material surface scan reveals hook latch tension fatigue and wire rope fraying beyond 5% tolerance. Mandatory physical torque load test and re-certification required before re-entry.',
+            sampleName: 'Lifting & Rigging Gear',
+            previewUrl: 'https://images.unsplash.com/photo-1504307651254-35680f356dfd?w=500&auto=format&fit=crop&q=80'
         }
     };
 
@@ -8575,7 +8589,7 @@ Safety index and terminal clearance verified. The audit record status has been u
                                         {/* Sample Equipment Photo Chips for quick demo */}
                                         <div className="flex flex-col gap-1.5 bg-slate-950/60 border border-slate-800/80 rounded-2xl p-3">
                                             <span className="text-[9px] font-bold text-slate-500 uppercase tracking-wider block">Or select sample equipment photo for instant vision analysis:</span>
-                                            <div className="grid grid-cols-2 gap-2">
+                                            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
                                                 {Object.entries(MOCK_VISION_PRESETS).map(([key, item]) => (
                                                     <button
                                                         key={key}
@@ -8599,14 +8613,61 @@ Safety index and terminal clearance verified. The audit record status has been u
                                                         <Sparkles className="w-4 h-4 text-amber-400" />
                                                         <h4 className="text-xs font-black text-white uppercase tracking-wider">AI Inspection Result</h4>
                                                     </div>
-                                                    <span className={`text-[9px] font-mono font-bold px-2 py-0.5 rounded-full border ${
-                                                        visionResult.recommendation === 'Pass'
-                                                            ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-400'
-                                                            : 'bg-rose-500/10 border-rose-500/30 text-rose-400 animate-pulse'
-                                                    }`}>
-                                                        {visionResult.recommendation === 'Pass' ? '✓ SANS COMPLIANT' : '⚠ FLAGGED BREACH'}
-                                                    </span>
+                                                    <div className="flex items-center gap-2">
+                                                        <button
+                                                            type="button"
+                                                            onClick={() => setShowIsoCrossMap(!showIsoCrossMap)}
+                                                            className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[9px] font-bold font-mono transition-all cursor-pointer border ${
+                                                                showIsoCrossMap
+                                                                    ? 'bg-indigo-500/20 text-indigo-300 border-indigo-500/50'
+                                                                    : 'bg-slate-900 text-slate-400 hover:text-slate-200 border-slate-800'
+                                                            }`}
+                                                        >
+                                                            <Scale className="w-3 h-3 text-indigo-400" />
+                                                            <span>ISO 45001</span>
+                                                        </button>
+                                                        <span className={`text-[9px] font-mono font-bold px-2 py-0.5 rounded-full border ${
+                                                            visionResult.recommendation === 'Pass'
+                                                                ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-400'
+                                                                : 'bg-rose-500/10 border-rose-500/30 text-rose-400 animate-pulse'
+                                                        }`}>
+                                                            {visionResult.recommendation === 'Pass' ? '✓ SANS COMPLIANT' : '⚠ FLAGGED BREACH'}
+                                                        </span>
+                                                    </div>
                                                 </div>
+
+                                                {showIsoCrossMap && (
+                                                    <div className="bg-indigo-950/30 border border-indigo-500/30 rounded-xl p-3 flex flex-col gap-2 animate-fade-in">
+                                                        <div className="flex items-center justify-between border-b border-indigo-500/20 pb-1.5">
+                                                            <div className="flex items-center gap-1.5">
+                                                                <ShieldCheck className="w-3.5 h-3.5 text-indigo-400" />
+                                                                <span className="text-[10px] font-black text-indigo-300 uppercase tracking-wider font-mono">
+                                                                    ISO 45001 STATUTORY CROSS-MAPPING
+                                                                </span>
+                                                            </div>
+                                                            <span className="text-[8px] font-mono font-bold bg-indigo-500/20 text-indigo-300 px-1.5 py-0.5 rounded">
+                                                                MHSA ↔ ISO 45001
+                                                            </span>
+                                                        </div>
+                                                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 font-mono text-[9.5px]">
+                                                            <div className="bg-slate-900/90 p-2 rounded-lg border border-slate-800/80 flex flex-col gap-0.5">
+                                                                <span className="text-[8px] font-bold text-amber-400 uppercase">MHSA Sec 2 / 11</span>
+                                                                <span className="text-white font-semibold">ISO 45001 Cl 6.1</span>
+                                                                <span className="text-[8.5px] text-slate-400 font-sans">Risk &amp; opportunity controls</span>
+                                                            </div>
+                                                            <div className="bg-slate-900/90 p-2 rounded-lg border border-slate-800/80 flex flex-col gap-0.5">
+                                                                <span className="text-[8px] font-bold text-amber-400 uppercase">SANS 10142-1 / Isolation</span>
+                                                                <span className="text-white font-semibold">ISO 45001 Cl 8.1</span>
+                                                                <span className="text-[8.5px] text-slate-400 font-sans">Operational planning &amp; hazard control</span>
+                                                            </div>
+                                                            <div className="bg-slate-900/90 p-2 rounded-lg border border-slate-800/80 flex flex-col gap-0.5">
+                                                                <span className="text-[8px] font-bold text-amber-400 uppercase">PPE Degradation / HIRA</span>
+                                                                <span className="text-white font-semibold">ISO 45001 Cl 8.2</span>
+                                                                <span className="text-[8.5px] text-slate-400 font-sans">Emergency preparedness &amp; PPE control</span>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                )}
 
                                                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
                                                     {visionImagePreview && (
@@ -9161,10 +9222,62 @@ Safety index and terminal clearance verified. The audit record status has been u
                                             <span className="text-[9px] font-bold text-slate-500 uppercase tracking-widest block font-mono">Cognitive Score</span>
                                             <span className="text-lg font-black text-white">{response.score}</span>
                                         </div>
-                                        <span className={`text-[10px] font-bold px-2.5 py-1 rounded-full border ${response.color}`}>
-                                            {response.label}
-                                        </span>
+                                        <div className="flex items-center gap-2">
+                                            <button
+                                                type="button"
+                                                onClick={() => setShowIsoCrossMap(!showIsoCrossMap)}
+                                                className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-bold font-mono transition-all cursor-pointer border ${
+                                                    showIsoCrossMap
+                                                        ? 'bg-indigo-500/20 text-indigo-300 border-indigo-500/50 shadow-md shadow-indigo-500/10'
+                                                        : 'bg-slate-900 text-slate-400 hover:text-slate-200 border-slate-800 hover:border-slate-700'
+                                                }`}
+                                            >
+                                                <Scale className="w-3.5 h-3.5 text-indigo-400" />
+                                                <span>ISO 45001 Cross-Mapping</span>
+                                                <span className={`w-2 h-2 rounded-full ${showIsoCrossMap ? 'bg-indigo-400 animate-pulse' : 'bg-slate-600'}`} />
+                                            </button>
+                                            <span className={`text-[10px] font-bold px-2.5 py-1 rounded-full border ${response.color}`}>
+                                                {response.label}
+                                            </span>
+                                        </div>
                                     </div>
+
+                                    {showIsoCrossMap && (
+                                        <div className="bg-indigo-950/30 border border-indigo-500/30 rounded-xl p-3.5 flex flex-col gap-2.5 animate-fade-in font-sans">
+                                            <div className="flex items-center justify-between border-b border-indigo-500/20 pb-2">
+                                                <div className="flex items-center gap-2">
+                                                    <ShieldCheck className="w-4 h-4 text-indigo-400" />
+                                                    <span className="text-xs font-black text-indigo-300 uppercase tracking-wider font-mono">
+                                                        ISO 45001 STATUTORY CROSS-ALIGNMENT MATRIX
+                                                    </span>
+                                                </div>
+                                                <span className="text-[9px] font-mono font-bold bg-indigo-500/20 text-indigo-300 px-2 py-0.5 rounded border border-indigo-500/30">
+                                                    MHSA ↔ ISO 45001 ACTIVE
+                                                </span>
+                                            </div>
+                                            <p className="text-[11px] text-slate-300 leading-relaxed font-sans">
+                                                Statutory South African Mine Health &amp; Safety Act (MHSA) findings cross-referenced directly against ISO 45001:2018 Occupational Health and Safety Management System clauses:
+                                            </p>
+                                            <div className="grid grid-cols-1 md:grid-cols-3 gap-2.5 font-mono text-[10.5px]">
+                                                <div className="bg-slate-900/90 p-2.5 rounded-lg border border-slate-800/80 flex flex-col gap-1">
+                                                    <span className="text-[9px] font-bold text-amber-400 uppercase tracking-wider">MHSA Sec 2 / 11</span>
+                                                    <span className="text-white font-semibold">ISO 45001 Clause 6.1</span>
+                                                    <span className="text-[9.5px] text-slate-400 font-sans">Actions to address risks &amp; opportunities</span>
+                                                </div>
+                                                <div className="bg-slate-900/90 p-2.5 rounded-lg border border-slate-800/80 flex flex-col gap-1">
+                                                    <span className="text-[9px] font-bold text-amber-400 uppercase tracking-wider">SANS 10142-1 / Isolation</span>
+                                                    <span className="text-white font-semibold">ISO 45001 Clause 8.1</span>
+                                                    <span className="text-[9.5px] text-slate-400 font-sans">Operational planning &amp; hazard control</span>
+                                                </div>
+                                                <div className="bg-slate-900/90 p-2.5 rounded-lg border border-slate-800/80 flex flex-col gap-1">
+                                                    <span className="text-[9px] font-bold text-amber-400 uppercase tracking-wider">PPE Degradation / HIRA</span>
+                                                    <span className="text-white font-semibold">ISO 45001 Clause 8.2</span>
+                                                    <span className="text-[9.5px] text-slate-400 font-sans">Emergency preparedness &amp; PPE control</span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    )}
+
                                     <div className="w-full">
                                         <TypewriterText text={response.text} />
                                     </div>
