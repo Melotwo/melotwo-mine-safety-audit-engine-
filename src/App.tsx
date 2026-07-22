@@ -5,7 +5,7 @@ import { sanitizeInputText } from './utils/sanitizer';
 import { CountUp } from './components/CountUp';
 import { Sparkline as HistoricalSparkline } from './components/Sparkline';
 import { ComplianceFAQ } from './components/ComplianceFAQ';
-import { Database, RefreshCw, Upload, LogOut, Sparkles, CheckCircle2, AlertOctagon, Download, ChevronRight, Lock, Terminal, Minimize2, Maximize2, Activity, Scale, ShieldCheck, Globe } from 'lucide-react';
+import { Database, RefreshCw, Upload, LogOut, Sparkles, CheckCircle2, AlertOctagon, Download, ChevronRight, Lock, Terminal, Minimize2, Maximize2, Activity, Scale, Globe } from 'lucide-react';
 
 import { initializeApp } from 'firebase/app';
 import { getAuth, signInWithPopup, GoogleAuthProvider, onAuthStateChanged, User as FirebaseUser } from 'firebase/auth';
