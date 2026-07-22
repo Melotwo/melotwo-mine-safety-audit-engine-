@@ -9024,27 +9024,11 @@ Safety index and terminal clearance verified. The audit record status has been u
                                                             {highlightMatchText(log.severityLevel)}
                                                         </span>
                                                     </td>
-                                                    <td className={`py-3.5 px-4 transition-colors ${
-                                                        log.auditStatus === 'Critical Warning' || log.auditStatus === 'Failed'
-                                                            ? 'bg-rose-950/45 border-l-2 border-l-rose-500/90'
-                                                            : log.auditStatus === 'Action Required' || log.auditStatus === 'Warning' || log.auditStatus === 'Under Review'
-                                                            ? 'bg-amber-950/35 border-l-2 border-l-amber-500/80'
-                                                            : 'bg-emerald-950/20 border-l-2 border-l-emerald-500/50'
-                                                    }`}>
-                                                        <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[10px] font-black uppercase tracking-wider border shadow-xs ${
-                                                            log.auditStatus === 'Critical Warning' || log.auditStatus === 'Failed'
-                                                                ? 'text-rose-200 bg-rose-500/25 border-rose-500/40 shadow-rose-950/50 animate-pulse'
-                                                                : log.auditStatus === 'Action Required' || log.auditStatus === 'Warning' || log.auditStatus === 'Under Review'
-                                                                ? 'text-amber-200 bg-amber-500/20 border-amber-500/40 shadow-amber-950/30'
-                                                                : 'text-emerald-300 bg-emerald-500/15 border-emerald-500/30'
+                                                    <td className="py-3.5 px-4">
+                                                        <span className={`px-2.5 py-0.5 rounded text-[10px] font-black uppercase ${
+                                                            log.auditStatus === 'Passed' ? 'text-emerald-400 bg-emerald-500/10' :
+                                                            log.auditStatus === 'Critical Warning' ? 'text-rose-400 bg-rose-500/10 animate-pulse' : 'text-amber-400 bg-amber-500/10'
                                                         }`}>
-                                                            <span className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${
-                                                                log.auditStatus === 'Critical Warning' || log.auditStatus === 'Failed'
-                                                                    ? 'bg-rose-400 animate-ping'
-                                                                    : log.auditStatus === 'Action Required' || log.auditStatus === 'Warning' || log.auditStatus === 'Under Review'
-                                                                    ? 'bg-amber-400'
-                                                                    : 'bg-emerald-400'
-                                                            }`}></span>
                                                             {highlightMatchText(log.auditStatus)}
                                                         </span>
                                                     </td>
