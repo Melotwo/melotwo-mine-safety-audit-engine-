@@ -6929,7 +6929,7 @@ Safety index and terminal clearance verified. The audit record status has been u
     const handleApplyVipCode = (e?: React.FormEvent) => {
         if (e) e.preventDefault();
         const cleanCode = vipCodeInput.trim().toUpperCase();
-        const validCodes = ['MELO-FOUNDER-2026', 'VIP-DEMO', 'MELLOTWO-PASS'];
+        const validCodes = ['MELOVIP1', 'MELO-FOUNDER-2026', 'VIP-DEMO', 'MELLOTWO-PASS'];
 
         if (validCodes.includes(cleanCode)) {
             setIsVipUnlocked(true);
@@ -9824,7 +9824,7 @@ Safety index and terminal clearance verified. The audit record status has been u
                                         setVipCodeInput(e.target.value);
                                         if (vipCodeError) setVipCodeError(null);
                                     }}
-                                    placeholder="e.g. MELO-FOUNDER-2026"
+                                    placeholder="Enter access code..."
                                     className="flex-1 bg-slate-950 border border-slate-800 focus:border-amber-500 rounded-xl px-3 py-2 text-xs text-white placeholder-slate-600 focus:outline-none font-mono uppercase tracking-wider"
                                 />
                                 <button
