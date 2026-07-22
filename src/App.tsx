@@ -6677,6 +6677,140 @@ export const SafetyInspectorPage: React.FC<SafetyInspectorPageProps> = ({ setPag
     const checkedCount = activeChecklist.filter(item => item.checked).length;
     const uncheckedCount = activeChecklist.filter(item => !item.checked).length;
 
+    const handleExportSectorChecklistPDF = () => {
+        try {
+            const docPdf = new jsPDF();
+            
+            // Header Background Accent
+            docPdf.setFillColor(15, 23, 42); // slate-900
+            docPdf.rect(0, 0, 210, 297, 'F');
+
+            // Header Banner Container
+            docPdf.setFillColor(30, 41, 59); // slate-800
+            docPdf.roundedRect(15, 15, 180, 32, 3, 3, 'F');
+
+            docPdf.setFont('helvetica', 'bold');
+            docPdf.setFontSize(15);
+            docPdf.setTextColor(245, 158, 11); // amber-500
+            docPdf.text('MELO TWO SAFETY & COMPLIANCE', 22, 28);
+
+            docPdf.setFont('helvetica', 'bold');
+            docPdf.setFontSize(11);
+            docPdf.setTextColor(255, 255, 255);
+            docPdf.text('SANS SECTOR COMPLIANCE CHECKLIST REPORT', 22, 38);
+
+            // Metadata Box
+            docPdf.setFillColor(2, 6, 23); // slate-950
+            docPdf.setDrawColor(51, 65, 85); // slate-700
+            docPdf.roundedRect(15, 52, 180, 42, 3, 3, 'FD');
+
+            docPdf.setFontSize(9);
+            docPdf.setFont('helvetica', 'bold');
+            docPdf.setTextColor(248, 250, 252);
+
+            const complianceRate = activeChecklist.length > 0
+                ? Math.round((checkedCount / activeChecklist.length) * 100)
+                : 0;
+
+            docPdf.text(`Sector: ${activeProfile.name} (${activeProfile.company})`, 22, 60);
+            docPdf.setFont('helvetica', 'normal');
+            docPdf.setTextColor(148, 163, 184);
+            docPdf.text(`Regulatory Standard: ${activeProfile.standard}`, 22, 67);
+            docPdf.text(`Authority: ${activeProfile.authority} | Region: ${activeProfile.region}`, 22, 74);
+            docPdf.text(`Generated Date: ${new Date().toLocaleString()} (UTC)`, 22, 81);
+            docPdf.text(`Checklist Summary: ${checkedCount}/${activeChecklist.length} Items Passed (${complianceRate}% SANS Met)`, 22, 88);
+
+            // Section Divider Line
+            docPdf.setDrawColor(245, 158, 11); // amber accent
+            docPdf.setLineWidth(0.5);
+            docPdf.line(15, 100, 195, 100);
+
+            // Checklist Items Table Title
+            docPdf.setFont('helvetica', 'bold');
+            docPdf.setFontSize(11);
+            docPdf.setTextColor(255, 255, 255);
+            docPdf.text('MANDATORY SANS COMPLIANCE CHECKLIST ITEMS', 15, 110);
+
+            let yPos = 118;
+
+            activeChecklist.forEach((item, index) => {
+                if (yPos > 255) {
+                    docPdf.addPage();
+                    docPdf.setFillColor(15, 23, 42);
+                    docPdf.rect(0, 0, 210, 297, 'F');
+                    yPos = 25;
+                }
+
+                // Item Container Box
+                if (item.checked) {
+                    docPdf.setFillColor(6, 78, 59); // emerald-900 / dark green tint
+                    docPdf.setDrawColor(16, 185, 129); // emerald-500
+                } else {
+                    docPdf.setFillColor(69, 26, 3); // amber-950 / dark amber tint
+                    docPdf.setDrawColor(245, 158, 11); // amber-500
+                }
+                docPdf.roundedRect(15, yPos, 180, 16, 2, 2, 'FD');
+
+                // Status Badge Box
+                if (item.checked) {
+                    docPdf.setFillColor(16, 185, 129);
+                    docPdf.rect(20, yPos + 3, 26, 10, 'F');
+                    docPdf.setFont('helvetica', 'bold');
+                    docPdf.setFontSize(8);
+                    docPdf.setTextColor(15, 23, 42);
+                    docPdf.text('SANS MET', 22, yPos + 9.5);
+                } else {
+                    docPdf.setFillColor(245, 158, 11);
+                    docPdf.rect(20, yPos + 3, 28, 10, 'F');
+                    docPdf.setFont('helvetica', 'bold');
+                    docPdf.setFontSize(7.5);
+                    docPdf.setTextColor(15, 23, 42);
+                    docPdf.text('CRITICAL REQ', 20.5, yPos + 9.5);
+                }
+
+                // Item text
+                docPdf.setFont('helvetica', 'normal');
+                docPdf.setFontSize(9);
+                docPdf.setTextColor(248, 250, 252);
+
+                const itemLines = docPdf.splitTextToSize(`${index + 1}. ${item.text}`, 125);
+                docPdf.text(itemLines[0] || '', 52, yPos + 10);
+
+                yPos += 20;
+            });
+
+            // Overall Compliance Footer Summary
+            if (yPos > 245) {
+                docPdf.addPage();
+                docPdf.setFillColor(15, 23, 42);
+                docPdf.rect(0, 0, 210, 297, 'F');
+                yPos = 25;
+            }
+
+            docPdf.setFillColor(30, 41, 59);
+            docPdf.setDrawColor(71, 85, 105);
+            docPdf.roundedRect(15, yPos + 5, 180, 25, 3, 3, 'FD');
+
+            docPdf.setFont('helvetica', 'bold');
+            docPdf.setFontSize(9);
+            docPdf.setTextColor(245, 158, 11);
+            docPdf.text('SECTOR AUDIT VERIFICATION DIRECTIVE:', 22, yPos + 14);
+
+            docPdf.setFont('helvetica', 'normal');
+            docPdf.setFontSize(8);
+            docPdf.setTextColor(203, 213, 225);
+            const assessmentNote = complianceRate === 100
+                ? `All ${activeChecklist.length} mandatory SANS standards are currently verified as compliant under ${activeProfile.standard}. Active sector operational status: FULL PASS.`
+                : `Sector has ${uncheckedCount} critical SANS requirement(s) pending resolution under ${activeProfile.standard}. Immediate corrective action directive dispatched.`;
+            docPdf.text(assessmentNote, 22, yPos + 22);
+
+            const safeSectorName = activeProfile.name.replace(/[^a-zA-Z0-9]/g, '-').toLowerCase();
+            docPdf.save(`MeloTwo-SANS-Checklist-${safeSectorName}-${Date.now()}.pdf`);
+        } catch (pdfErr) {
+            console.error('Checklist PDF Generation error:', pdfErr);
+        }
+    };
+
     const applySectorDefaults = (sectorId: string) => {
         const profile = SECTOR_PROFILES[sectorId];
         if (!profile) return;
@@ -8536,13 +8670,22 @@ Safety index and terminal clearance verified. The audit record status has been u
                                 </div>
                                 <div className="flex gap-2">
                                     <button
+                                        onClick={handleExportSectorChecklistPDF}
+                                        id="btn-export-sector-checklist-pdf"
+                                        className="text-[9px] font-bold text-slate-200 hover:text-white bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded-lg px-2.5 py-1 transition-all flex items-center gap-1 cursor-pointer"
+                                        title="Export current sector SANS checklist as PDF report"
+                                    >
+                                        <Download className="w-3 h-3 text-amber-400" />
+                                        Export PDF
+                                    </button>
+                                    <button
                                         onClick={() => {
                                             setSectorChecklists(prev => ({
                                                 ...prev,
                                                 [selectedSector]: prev[selectedSector].map(item => ({ ...item, checked: true }))
                                             }));
                                         }}
-                                        className="text-[9px] font-bold text-emerald-400 hover:text-emerald-300 bg-emerald-500/10 border border-emerald-500/20 rounded-lg px-2 py-1 transition-all"
+                                        className="text-[9px] font-bold text-emerald-400 hover:text-emerald-300 bg-emerald-500/10 border border-emerald-500/20 rounded-lg px-2 py-1 transition-all cursor-pointer"
                                     >
                                         Pass All
                                     </button>
@@ -8553,7 +8696,7 @@ Safety index and terminal clearance verified. The audit record status has been u
                                                 [selectedSector]: prev[selectedSector].map(item => ({ ...item, checked: false }))
                                             }));
                                         }}
-                                        className="text-[9px] font-bold text-amber-400 hover:text-amber-300 bg-amber-500/10 border border-amber-500/20 rounded-lg px-2 py-1 transition-all"
+                                        className="text-[9px] font-bold text-amber-400 hover:text-amber-300 bg-amber-500/10 border border-amber-500/20 rounded-lg px-2 py-1 transition-all cursor-pointer"
                                     >
                                         Reset
                                     </button>
@@ -8788,14 +8931,6 @@ Safety index and terminal clearance verified. The audit record status has been u
                             </div>
                         </div>
 
-                    </div>
-
-                    {/* Right Operations: Charts, Red-Team Assessments (6 Cols) */}
-                    <div className="lg:col-span-6 flex flex-col gap-6 w-full">
-
-                        {/* Red Team Operational Analytics Widget */}
-                        <AuditHistoryChart />
-
                         {/* Direct Compliance Assessment Drafter (Red-Team Suite) */}
                         <div className="bg-slate-900 border border-slate-800 rounded-3xl p-6 backdrop-blur-xl flex flex-col gap-4 w-full">
                             <div className="flex items-center justify-between border-b border-slate-800/80 pb-3">
@@ -9012,6 +9147,14 @@ Safety index and terminal clearance verified. The audit record status has been u
                                 </div>
                             )}
                         </div>
+
+                    </div>
+
+                    {/* Right Operations: Charts, Red-Team Assessments (6 Cols) */}
+                    <div className="lg:col-span-6 flex flex-col gap-6 w-full">
+
+                        {/* Red Team Operational Analytics Widget */}
+                        <AuditHistoryChart />
 
                     </div>
                 </div>
