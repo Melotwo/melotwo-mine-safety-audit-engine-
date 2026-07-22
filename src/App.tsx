@@ -1031,6 +1031,30 @@ const Wrench: React.FC<IconProps> = (props) => (
   <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z" /></svg>
 );
 
+const Mic: React.FC<IconProps> = (props) => (
+  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="22"/></svg>
+);
+
+const MicOff: React.FC<IconProps> = (props) => (
+  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><line x1="1" y1="1" x2="23" y2="23"/><path d="M9 9v3a3 3 0 0 0 5.12 2.12M15 9.34V5a3 3 0 0 0-5.94-.6"/><path d="M17 16.95A7 7 0 0 1 5 12v-2m14 0v2a7 7 0 0 1-.11 1.23"/><line x1="12" y1="19" x2="12" y2="22"/></svg>
+);
+
+const Camera: React.FC<IconProps> = (props) => (
+  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z"/><circle cx="12" cy="13" r="3"/></svg>
+);
+
+const ImageIcon: React.FC<IconProps> = (props) => (
+  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+);
+
+const Eye: React.FC<IconProps> = (props) => (
+  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+);
+
+const ShieldCheck: React.FC<IconProps> = (props) => (
+  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="m9 12 2 2 4-4"/></svg>
+);
+
 // Helper helper to replace **bold** with <strong> tags
 const renderBoldText = (text: string) => {
     const parts = text.split(/\*\*([^*]+)\*\*/g);
@@ -1636,16 +1660,32 @@ const MineCompliancePanel: React.FC = () => {
   const [newMineType, setNewMineType] = useState('Chrome & Platinum Operation');
   const [newMineLocation, setNewMineLocation] = useState('Mokopane, South Africa');
   const [auditSearchQuery, setAuditSearchQuery] = useState('');
+  const [selectedSansTag, setSelectedSansTag] = useState<string>('all');
+
+  const SANS_CHIPS = [
+    { id: 'all', label: 'All Standards', tag: 'all' },
+    { id: '10108', label: 'SANS 10108 (Deep Mining & Gas)', tag: '10108' },
+    { id: '10142', label: 'SANS 10142-1 (Electrical Infrastructure)', tag: '10142' },
+    { id: '10330', label: 'SANS 10330 (HACCP & Canteen Safety)', tag: '10330' },
+    { id: '10049', label: 'SANS 10049 (General SHEQ & PPE)', tag: '10049' },
+  ];
 
   const filteredAudits = useMemo(() => {
-    if (!auditSearchQuery.trim()) return activeProfile.audits;
-    const query = auditSearchQuery.trim().toLowerCase();
-    return activeProfile.audits.filter(
-      (audit) =>
+    return activeProfile.audits.filter((audit) => {
+      const query = auditSearchQuery.trim().toLowerCase();
+      const matchesSearch =
+        !query ||
         audit.id.toLowerCase().includes(query) ||
-        audit.category.toLowerCase().includes(query)
-    );
-  }, [activeProfile.audits, auditSearchQuery]);
+        audit.category.toLowerCase().includes(query);
+
+      const matchesTag =
+        selectedSansTag === 'all' ||
+        audit.category.toLowerCase().includes(selectedSansTag) ||
+        audit.id.toLowerCase().includes(selectedSansTag);
+
+      return matchesSearch && matchesTag;
+    });
+  }, [activeProfile.audits, auditSearchQuery, selectedSansTag]);
 
   useEffect(() => {
     localStorage.setItem('melotwo_mine_profiles', JSON.stringify(profiles));
@@ -1910,36 +1950,59 @@ const MineCompliancePanel: React.FC = () => {
             <div className="grid lg:grid-cols-12 gap-6 items-start">
               {/* Table section */}
               <div className="lg:col-span-7">
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-3">
-                  <div className="flex items-center gap-2">
-                    <h4 className="text-xs font-bold text-gray-500 uppercase tracking-wider">Active SANS Audits</h4>
-                    {auditSearchQuery.trim() && (
-                      <span className="text-[10px] font-bold text-indigo-600 bg-indigo-50 border border-indigo-100 px-2 py-0.5 rounded-full">
-                        {filteredAudits.length} of {activeProfile.audits.length}
-                      </span>
-                    )}
+                <div className="flex flex-col gap-2.5 mb-3">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                    <div className="flex items-center gap-2">
+                      <h4 className="text-xs font-bold text-gray-500 uppercase tracking-wider">Active SANS Audits</h4>
+                      {(auditSearchQuery.trim() || selectedSansTag !== 'all') && (
+                        <span className="text-[10px] font-bold text-indigo-600 bg-indigo-50 border border-indigo-100 px-2 py-0.5 rounded-full">
+                          {filteredAudits.length} of {activeProfile.audits.length}
+                        </span>
+                      )}
+                    </div>
+                    
+                    {/* Search Bar */}
+                    <div className="relative w-full sm:w-64">
+                      <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400 pointer-events-none" />
+                      <input
+                        type="text"
+                        value={auditSearchQuery}
+                        onChange={(e) => setAuditSearchQuery(e.target.value)}
+                        placeholder="Filter by ID or Category..."
+                        className="w-full pl-8 pr-7 py-1.5 bg-gray-50 border border-gray-200 rounded-xl text-xs text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/30 focus:border-indigo-500 transition-all font-sans"
+                      />
+                      {auditSearchQuery && (
+                        <button
+                          type="button"
+                          onClick={() => setAuditSearchQuery('')}
+                          className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 text-xs font-bold p-1 cursor-pointer"
+                          title="Clear filter"
+                        >
+                          ✕
+                        </button>
+                      )}
+                    </div>
                   </div>
-                  
-                  {/* Search Bar */}
-                  <div className="relative w-full sm:w-64">
-                    <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400 pointer-events-none" />
-                    <input
-                      type="text"
-                      value={auditSearchQuery}
-                      onChange={(e) => setAuditSearchQuery(e.target.value)}
-                      placeholder="Filter by ID or Category..."
-                      className="w-full pl-8 pr-7 py-1.5 bg-gray-50 border border-gray-200 rounded-xl text-xs text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/30 focus:border-indigo-500 transition-all font-sans"
-                    />
-                    {auditSearchQuery && (
-                      <button
-                        type="button"
-                        onClick={() => setAuditSearchQuery('')}
-                        className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 text-xs font-bold p-1 cursor-pointer"
-                        title="Clear filter"
-                      >
-                        ✕
-                      </button>
-                    )}
+
+                  {/* One-Click SANS Sector Quick-Filter Tags */}
+                  <div className="flex flex-wrap items-center gap-1.5 pt-1">
+                    {SANS_CHIPS.map((chip) => {
+                      const isActive = selectedSansTag === chip.tag;
+                      return (
+                        <button
+                          key={chip.id}
+                          type="button"
+                          onClick={() => setSelectedSansTag(chip.tag)}
+                          className={`px-2.5 py-1 rounded-xl text-[10px] font-bold transition-all cursor-pointer border select-none ${
+                            isActive
+                              ? 'bg-slate-900 text-amber-400 border-amber-500/40 shadow-sm'
+                              : 'bg-gray-100/90 text-gray-600 hover:bg-gray-200 border-transparent'
+                          }`}
+                        >
+                          {chip.label}
+                        </button>
+                      );
+                    })}
                   </div>
                 </div>
 
@@ -7114,11 +7177,194 @@ Safety index and terminal clearance verified. The audit record status has been u
         }
     };
 
-    // Drag-and-drop document scanner states
+    // Drag-and-drop document & vision scanner states
+    const [scannerMode, setScannerMode] = useState<'document' | 'vision'>('document');
     const [dragActive, setDragActive] = useState(false);
     const [scanLoading, setScanLoading] = useState(false);
     const [scanError, setScanError] = useState<string | null>(null);
     const [scanSuccess, setScanSuccess] = useState(false);
+
+    // Vision Analysis Mockup States
+    const [visionLoading, setVisionLoading] = useState(false);
+    const [visionStep, setVisionStep] = useState(0);
+    const [visionResult, setVisionResult] = useState<{
+        equipmentType: string;
+        sansStandard: string;
+        integrityScore: number;
+        recommendation: 'Pass' | 'Flagged Breach';
+        severity: 'Low' | 'Medium' | 'High';
+        auditStatus: 'Passed' | 'Action Required' | 'Critical Warning';
+        findings: string;
+        riskCategory: string;
+        violationVector: string;
+        previewUrl?: string;
+    } | null>(null);
+    const [visionImagePreview, setVisionImagePreview] = useState<string | null>(null);
+
+    // Hands-Free Voice Dictation States
+    const [isListening, setIsListening] = useState(false);
+    const recognitionRef = useRef<any>(null);
+
+    const toggleSpeechDictation = () => {
+        const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+        if (!SpeechRecognition) {
+            alert('Web Speech API is not supported in this browser environment. You can type detailed findings directly into the text field.');
+            return;
+        }
+
+        if (isListening) {
+            if (recognitionRef.current) {
+                try {
+                    recognitionRef.current.stop();
+                } catch (e) {}
+            }
+            setIsListening(false);
+            return;
+        }
+
+        try {
+            const recognition = new SpeechRecognition();
+            recognition.continuous = true;
+            recognition.interimResults = true;
+            recognition.lang = 'en-US';
+
+            recognition.onstart = () => {
+                setIsListening(true);
+            };
+
+            recognition.onresult = (event: any) => {
+                let finalTranscript = '';
+                for (let i = event.resultIndex; i < event.results.length; ++i) {
+                    if (event.results[i].isFinal) {
+                        finalTranscript += event.results[i][0].transcript + ' ';
+                    }
+                }
+                if (finalTranscript) {
+                    setParsedNotes(prev => prev ? `${prev.trim()} ${finalTranscript.trim()}` : finalTranscript.trim());
+                }
+            };
+
+            recognition.onerror = (event: any) => {
+                console.warn('Speech recognition error:', event.error);
+                setIsListening(false);
+            };
+
+            recognition.onend = () => {
+                setIsListening(false);
+            };
+
+            recognitionRef.current = recognition;
+            recognition.start();
+        } catch (err) {
+            console.error('Failed to start speech dictation:', err);
+            setIsListening(false);
+        }
+    };
+
+    const MOCK_VISION_PRESETS: Record<string, {
+        equipmentType: string;
+        sansStandard: string;
+        integrityScore: number;
+        recommendation: 'Pass' | 'Flagged Breach';
+        severity: 'Low' | 'Medium' | 'High';
+        auditStatus: 'Passed' | 'Action Required' | 'Critical Warning';
+        findings: string;
+        riskCategory: string;
+        violationVector: string;
+        previewUrl: string;
+        sampleName: string;
+    }> = {
+        electrical: {
+            equipmentType: '3-Phase High-Voltage Distribution Sub-Panel',
+            sansStandard: 'SANS 10142-1 (Electrical Infrastructure)',
+            integrityScore: 62,
+            recommendation: 'Flagged Breach',
+            severity: 'High',
+            auditStatus: 'Critical Warning',
+            riskCategory: 'Electrical Safety',
+            violationVector: 'SANS 10142-1 § 6.4.2',
+            findings: 'Thermal degradation detected on phase-B lug connection. Unsealed cabling glands present arc-flash risk under SANS 10142-1.',
+            sampleName: 'Sub-Panel Photo',
+            previewUrl: 'https://images.unsplash.com/photo-1581092335397-9583fe92d232?w=500&auto=format&fit=crop&q=80'
+        },
+        harness: {
+            equipmentType: 'Class-A Full-Body Fall-Arrest Safety Harness',
+            sansStandard: 'SANS 10049 (General SHEQ & PPE)',
+            integrityScore: 94,
+            recommendation: 'Pass',
+            severity: 'Low',
+            auditStatus: 'Passed',
+            riskCategory: 'Hygiene & PPE',
+            violationVector: 'SANS 10049 § 4.2',
+            findings: 'Webbing stitch pattern intact. D-ring latch mechanism verified without micro-fissures or galvanic corrosion.',
+            sampleName: 'Fall Harness Photo',
+            previewUrl: 'https://images.unsplash.com/photo-1504307651254-35680f356dfd?w=500&auto=format&fit=crop&q=80'
+        },
+        gas_valve: {
+            equipmentType: 'ATEX-Zone 0 Methane Gas Extraction Valve',
+            sansStandard: 'SANS 10108 (Deep Mining & Gas Hazards)',
+            integrityScore: 48,
+            recommendation: 'Flagged Breach',
+            severity: 'High',
+            auditStatus: 'Critical Warning',
+            riskCategory: 'Explosion Prevention',
+            violationVector: 'SANS 10108 § 8.1',
+            findings: 'Elastomer seal brittleness and micro-crack detected. Pressure sensor recalibration overdue by 14 days under SANS 10108.',
+            sampleName: 'Gas Valve Photo',
+            previewUrl: 'https://images.unsplash.com/photo-1581092160607-ee22621dd758?w=500&auto=format&fit=crop&q=80'
+        },
+        canteen: {
+            equipmentType: 'Stainless Steel Culinary Sanitation Station',
+            sansStandard: 'SANS 10330 (HACCP & Canteen Safety)',
+            integrityScore: 88,
+            recommendation: 'Pass',
+            severity: 'Medium',
+            auditStatus: 'Action Required',
+            riskCategory: 'Hygiene & PPE',
+            violationVector: 'SANS 10330 § 5.3',
+            findings: 'Surface sanitization verified under HACCP specs. Minor pitted corrosion along rear backsplash join requires epoxy re-seal.',
+            sampleName: 'Canteen Prep Photo',
+            previewUrl: 'https://images.unsplash.com/photo-1556911220-e15b29be8c8f?w=500&auto=format&fit=crop&q=80'
+        }
+    };
+
+    const triggerVisionAnalysis = (imageSrc: string, presetKey?: string) => {
+        setVisionLoading(true);
+        setVisionStep(0);
+        setVisionImagePreview(imageSrc);
+        setVisionResult(null);
+
+        const steps = [
+            'Initializing Gemini 2.5 Flash Vision engine...',
+            'Scanning material integrity & surface thermal distribution...',
+            'Cross-referencing SANS 10142 / 10049 / 10108 specifications...',
+            'Generating AI equipment inspection score & directive...'
+        ];
+
+        let stepIndex = 0;
+        const interval = setInterval(() => {
+            stepIndex += 1;
+            if (stepIndex < steps.length) {
+                setVisionStep(stepIndex);
+            } else {
+                clearInterval(interval);
+                setVisionLoading(false);
+                const preset = presetKey && MOCK_VISION_PRESETS[presetKey] ? MOCK_VISION_PRESETS[presetKey] : null;
+                const resultData = preset || {
+                    equipmentType: 'Uploaded Material / Equipment Specimen',
+                    sansStandard: 'SANS 10142-1 (Industrial Integrity)',
+                    integrityScore: 78,
+                    recommendation: 'Flagged Breach' as const,
+                    severity: 'Medium' as const,
+                    auditStatus: 'Action Required' as const,
+                    riskCategory: 'General Compliance',
+                    violationVector: 'SANS 10142-1',
+                    findings: 'Material surface scan reveals surface wear on protective insulation sleeve. Requires physical torque check and re-certification.'
+                };
+                setVisionResult(resultData);
+            }
+        }, 550);
+    };
 
     const handleDrag = (e: React.DragEvent) => {
         e.preventDefault();
@@ -7212,8 +7458,21 @@ Safety index and terminal clearance verified. The audit record status has been u
         }
     };
 
-    // Parse files safely
+    // Parse files safely (supports both document text & vision images)
     const processUploadedFile = (file: File) => {
+        if (file.type.startsWith('image/') || file.name.match(/\.(jpg|jpeg|png|webp|gif)$/i)) {
+            setScannerMode('vision');
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                const src = e.target?.result as string;
+                if (src) {
+                    triggerVisionAnalysis(src);
+                }
+            };
+            reader.readAsDataURL(file);
+            return;
+        }
+
         setScanLoading(true);
         setScanError(null);
         const reader = new FileReader();
@@ -7765,76 +8024,256 @@ Safety index and terminal clearance verified. The audit record status has been u
                     {/* Left Operations: Document Parser & Parameters reviewer (6 Cols) */}
                     <div className="lg:col-span-6 flex flex-col gap-6 w-full">
                         
-                        {/* Terminal Document Scanner */}
+                        {/* Terminal Document & AI Vision Scanner */}
                         <div className="bg-slate-900 border border-slate-800 rounded-3xl p-6 backdrop-blur-xl flex flex-col gap-5">
-                            <div className="flex items-center justify-between border-b border-slate-800/80 pb-3">
+                            <div className="flex flex-col sm:flex-row sm:items-center justify-between border-b border-slate-800/80 pb-3 gap-3">
                                 <h3 className="text-sm font-bold text-white uppercase tracking-wider flex items-center gap-2">
                                     <Cpu className="w-4 h-4 text-amber-500" />
-                                    Terminal Document Scanner
+                                    Terminal Audit Engine
                                 </h3>
-                                <span className="text-[9px] text-slate-500 font-mono">Gemini-2.5 Optical Extraction</span>
-                            </div>
-
-                            {/* Drag & Drop Box */}
-                            <div 
-                                onDragEnter={handleDrag}
-                                onDragOver={handleDrag}
-                                onDragLeave={handleDrag}
-                                onDrop={handleDrop}
-                                onClick={() => document.getElementById('terminal-file-input')?.click()}
-                                className={`h-[180px] rounded-2xl border-2 border-dashed flex flex-col items-center justify-center p-6 text-center transition-all cursor-pointer group select-none relative overflow-hidden ${
-                                    dragActive ? 'border-amber-500 bg-amber-500/5' : 'border-slate-800 hover:border-slate-700 bg-slate-950/40'
-                                }`}
-                            >
-                                <input 
-                                    id="terminal-file-input" 
-                                    type="file" 
-                                    className="hidden" 
-                                    onChange={handleFileInputChange} 
-                                    accept=".txt,.csv,.json,.doc,.docx"
-                                />
-
-                                {scanLoading ? (
-                                    <div className="flex flex-col items-center gap-3 animate-pulse">
-                                        <div className="relative">
-                                            <div className="w-12 h-12 rounded-full border-2 border-amber-500/20 border-t-amber-500 animate-spin" />
-                                            <RefreshCw className="w-5 h-5 text-amber-500 absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 animate-pulse" />
-                                        </div>
-                                        <div>
-                                            <span className="text-xs font-bold text-white block">SCANNING CORRUPTED OPERATIONAL RECORDS</span>
-                                            <span className="text-[9px] text-slate-500 font-mono block mt-1">Lifting structured keys via upstream cognitive models...</span>
-                                        </div>
-                                    </div>
-                                ) : (
-                                    <div className="flex flex-col items-center gap-2">
-                                        <div className="p-3 bg-slate-900 border border-slate-800 rounded-xl text-slate-400 group-hover:text-amber-500 transition-colors">
-                                            <Upload className="w-6 h-6" />
-                                        </div>
-                                        <div>
-                                            <p className="text-xs font-bold text-slate-300">Drag & Drop Safety Sheets or Plant Logs</p>
-                                            <p className="text-[10px] text-slate-500 mt-1 font-mono">Supports raw .txt, .csv, inspection logs, or click to browse</p>
-                                        </div>
-                                    </div>
-                                )}
-                            </div>
-
-                            {/* Presets and Sample Files for instant testing */}
-                            <div className="flex flex-col gap-2 bg-slate-950/60 border border-slate-800/80 rounded-2xl p-4">
-                                <span className="text-[9px] font-bold text-slate-500 uppercase tracking-wider block">Or load a messy diagnostic sheet to test parser</span>
-                                <div className="grid grid-cols-2 gap-2 mt-1">
-                                    {SAMPLE_REPORTS.map((report, idx) => (
-                                        <button
-                                            key={idx}
-                                            onClick={() => loadSampleLog(report.text)}
-                                            disabled={scanLoading}
-                                            className="text-[10px] font-bold text-left px-3 py-2 bg-slate-900 hover:bg-slate-800 border border-slate-800/80 hover:border-slate-700 text-slate-300 rounded-xl transition-all cursor-pointer flex items-center justify-between"
-                                        >
-                                            <span className="truncate">{report.name}</span>
-                                            <ChevronRight className="w-3 h-3 text-amber-500" />
-                                        </button>
-                                    ))}
+                                {/* Scanner Mode Selector Tabs */}
+                                <div className="flex items-center gap-1 bg-slate-950 p-1 rounded-2xl border border-slate-800">
+                                    <button
+                                        type="button"
+                                        onClick={() => setScannerMode('document')}
+                                        className={`px-3 py-1 rounded-xl text-[10px] font-bold uppercase transition-all cursor-pointer flex items-center gap-1.5 ${
+                                            scannerMode === 'document'
+                                                ? 'bg-amber-500 text-slate-950 shadow-md'
+                                                : 'text-slate-400 hover:text-white'
+                                        }`}
+                                    >
+                                        <FileText className="w-3 h-3" />
+                                        <span>Document Scanner</span>
+                                    </button>
+                                    <button
+                                        type="button"
+                                        onClick={() => setScannerMode('vision')}
+                                        className={`px-3 py-1 rounded-xl text-[10px] font-bold uppercase transition-all cursor-pointer flex items-center gap-1.5 ${
+                                            scannerMode === 'vision'
+                                                ? 'bg-amber-500 text-slate-950 shadow-md'
+                                                : 'text-slate-400 hover:text-white'
+                                        }`}
+                                    >
+                                        <Camera className="w-3 h-3" />
+                                        <span>AI Vision Analysis</span>
+                                    </button>
                                 </div>
                             </div>
+
+                            {scannerMode === 'document' ? (
+                                <>
+                                    {/* Drag & Drop Document Box */}
+                                    <div 
+                                        onDragEnter={handleDrag}
+                                        onDragOver={handleDrag}
+                                        onDragLeave={handleDrag}
+                                        onDrop={handleDrop}
+                                        onClick={() => document.getElementById('terminal-file-input')?.click()}
+                                        className={`h-[170px] rounded-2xl border-2 border-dashed flex flex-col items-center justify-center p-6 text-center transition-all cursor-pointer group select-none relative overflow-hidden ${
+                                            dragActive ? 'border-amber-500 bg-amber-500/5' : 'border-slate-800 hover:border-slate-700 bg-slate-950/40'
+                                        }`}
+                                    >
+                                        <input 
+                                            id="terminal-file-input" 
+                                            type="file" 
+                                            className="hidden" 
+                                            onChange={handleFileInputChange} 
+                                            accept=".txt,.csv,.json,.doc,.docx,image/*"
+                                        />
+
+                                        {scanLoading ? (
+                                            <div className="flex flex-col items-center gap-3 animate-pulse">
+                                                <div className="relative">
+                                                    <div className="w-12 h-12 rounded-full border-2 border-amber-500/20 border-t-amber-500 animate-spin" />
+                                                    <RefreshCw className="w-5 h-5 text-amber-500 absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 animate-pulse" />
+                                                </div>
+                                                <div>
+                                                    <span className="text-xs font-bold text-white block">SCANNING CORRUPTED OPERATIONAL RECORDS</span>
+                                                    <span className="text-[9px] text-slate-500 font-mono block mt-1">Lifting structured keys via upstream cognitive models...</span>
+                                                </div>
+                                            </div>
+                                        ) : (
+                                            <div className="flex flex-col items-center gap-2">
+                                                <div className="p-3 bg-slate-900 border border-slate-800 rounded-xl text-slate-400 group-hover:text-amber-500 transition-colors">
+                                                    <Upload className="w-6 h-6" />
+                                                </div>
+                                                <div>
+                                                    <p className="text-xs font-bold text-slate-300">Drag & Drop Safety Sheets or Plant Logs</p>
+                                                    <p className="text-[10px] text-slate-500 mt-1 font-mono">Supports raw .txt, .csv, diagnostic logs, or click to browse</p>
+                                                </div>
+                                            </div>
+                                        )}
+                                    </div>
+
+                                    {/* Presets and Sample Files for instant testing */}
+                                    <div className="flex flex-col gap-2 bg-slate-950/60 border border-slate-800/80 rounded-2xl p-4">
+                                        <span className="text-[9px] font-bold text-slate-500 uppercase tracking-wider block">Or load a messy diagnostic sheet to test parser</span>
+                                        <div className="grid grid-cols-2 gap-2 mt-1">
+                                            {SAMPLE_REPORTS.map((report, idx) => (
+                                                <button
+                                                    key={idx}
+                                                    onClick={() => loadSampleLog(report.text)}
+                                                    disabled={scanLoading}
+                                                    className="text-[10px] font-bold text-left px-3 py-2 bg-slate-900 hover:bg-slate-800 border border-slate-800/80 hover:border-slate-700 text-slate-300 rounded-xl transition-all cursor-pointer flex items-center justify-between"
+                                                >
+                                                    <span className="truncate">{report.name}</span>
+                                                    <ChevronRight className="w-3 h-3 text-amber-500" />
+                                                </button>
+                                            ))}
+                                        </div>
+                                    </div>
+                                </>
+                            ) : (
+                                <>
+                                    {/* AI Vision & Equipment Inspection Component */}
+                                    <div className="flex flex-col gap-4">
+                                        {/* Drop / Capture Area */}
+                                        <div 
+                                            onDragEnter={handleDrag}
+                                            onDragOver={handleDrag}
+                                            onDragLeave={handleDrag}
+                                            onDrop={handleDrop}
+                                            onClick={() => document.getElementById('vision-file-input')?.click()}
+                                            className={`h-[150px] rounded-2xl border-2 border-dashed flex flex-col items-center justify-center p-4 text-center transition-all cursor-pointer group select-none relative overflow-hidden ${
+                                                dragActive ? 'border-amber-500 bg-amber-500/5' : 'border-slate-800 hover:border-slate-700 bg-slate-950/40'
+                                            }`}
+                                        >
+                                            <input 
+                                                id="vision-file-input" 
+                                                type="file" 
+                                                className="hidden" 
+                                                onChange={handleFileInputChange} 
+                                                accept="image/*"
+                                            />
+
+                                            {visionLoading ? (
+                                                <div className="flex flex-col items-center gap-2.5 animate-pulse">
+                                                    <div className="relative">
+                                                        <div className="w-10 h-10 rounded-full border-2 border-amber-500/20 border-t-amber-500 animate-spin" />
+                                                        <Sparkles className="w-4 h-4 text-amber-500 absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 animate-pulse" />
+                                                    </div>
+                                                    <div>
+                                                        <span className="text-xs font-bold text-amber-400 block uppercase tracking-wider">Scanning Material Integrity...</span>
+                                                        <span className="text-[10px] text-slate-400 font-mono block mt-0.5">
+                                                            {['Initializing Gemini 2.5 Flash Vision...', 'Scanning material integrity & thermal distribution...', 'Cross-referencing SANS 10142 / 10049 / 10108 specs...', 'Generating AI inspection score & directive...'][visionStep]}
+                                                        </span>
+                                                    </div>
+                                                </div>
+                                            ) : (
+                                                <div className="flex flex-col items-center gap-2">
+                                                    <div className="p-2.5 bg-slate-900 border border-slate-800 rounded-xl text-slate-400 group-hover:text-amber-500 transition-colors flex items-center gap-2">
+                                                        <Camera className="w-5 h-5 text-amber-500" />
+                                                        <ImageIcon className="w-5 h-5" />
+                                                    </div>
+                                                    <div>
+                                                        <p className="text-xs font-bold text-slate-200">Upload or Capture Equipment Photo</p>
+                                                        <p className="text-[10px] text-slate-500 mt-0.5 font-mono">Photos of PPE, harnesses, electrical panels, or methane valves</p>
+                                                    </div>
+                                                </div>
+                                            )}
+                                        </div>
+
+                                        {/* Sample Equipment Photo Chips for quick demo */}
+                                        <div className="flex flex-col gap-1.5 bg-slate-950/60 border border-slate-800/80 rounded-2xl p-3">
+                                            <span className="text-[9px] font-bold text-slate-500 uppercase tracking-wider block">Or select sample equipment photo for instant vision analysis:</span>
+                                            <div className="grid grid-cols-2 gap-2">
+                                                {Object.entries(MOCK_VISION_PRESETS).map(([key, item]) => (
+                                                    <button
+                                                        key={key}
+                                                        type="button"
+                                                        onClick={() => triggerVisionAnalysis(item.previewUrl, key)}
+                                                        disabled={visionLoading}
+                                                        className="text-[10px] font-bold text-left px-2.5 py-1.5 bg-slate-900 hover:bg-slate-800 border border-slate-800/80 hover:border-amber-500/50 text-slate-300 rounded-xl transition-all cursor-pointer flex items-center justify-between"
+                                                    >
+                                                        <span className="truncate">📸 {item.sampleName}</span>
+                                                        <ChevronRight className="w-3 h-3 text-amber-500 shrink-0" />
+                                                    </button>
+                                                ))}
+                                            </div>
+                                        </div>
+
+                                        {/* AI Inspection Result Card */}
+                                        {visionResult && !visionLoading && (
+                                            <div className="bg-slate-950 border border-slate-800 rounded-2xl p-4 flex flex-col gap-3 animate-fade-in">
+                                                <div className="flex items-center justify-between border-b border-slate-800 pb-2.5">
+                                                    <div className="flex items-center gap-2">
+                                                        <Sparkles className="w-4 h-4 text-amber-400" />
+                                                        <h4 className="text-xs font-black text-white uppercase tracking-wider">AI Inspection Result</h4>
+                                                    </div>
+                                                    <span className={`text-[9px] font-mono font-bold px-2 py-0.5 rounded-full border ${
+                                                        visionResult.recommendation === 'Pass'
+                                                            ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-400'
+                                                            : 'bg-rose-500/10 border-rose-500/30 text-rose-400 animate-pulse'
+                                                    }`}>
+                                                        {visionResult.recommendation === 'Pass' ? '✓ SANS COMPLIANT' : '⚠ FLAGGED BREACH'}
+                                                    </span>
+                                                </div>
+
+                                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+                                                    {visionImagePreview && (
+                                                        <div className="sm:col-span-2 relative h-32 rounded-xl overflow-hidden border border-slate-800">
+                                                            <img src={visionImagePreview} alt="Inspected Equipment" className="w-full h-full object-cover" />
+                                                            <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-transparent to-transparent opacity-80" />
+                                                            <div className="absolute bottom-2 left-2 right-2 flex items-center justify-between text-[10px] text-white font-mono">
+                                                                <span className="bg-slate-950/80 px-2 py-0.5 rounded border border-slate-800">GEMINI VISION SPECTRUM SCAN</span>
+                                                                <span className="bg-amber-500/20 text-amber-300 px-2 py-0.5 rounded border border-amber-500/40">SCORE: {visionResult.integrityScore}%</span>
+                                                            </div>
+                                                        </div>
+                                                    )}
+
+                                                    <div className="bg-slate-900/80 p-2.5 rounded-xl border border-slate-800/80">
+                                                        <span className="text-[9px] font-bold text-slate-500 uppercase block">Equipment Type</span>
+                                                        <span className="text-xs text-white font-bold block truncate">{visionResult.equipmentType}</span>
+                                                    </div>
+
+                                                    <div className="bg-slate-900/80 p-2.5 rounded-xl border border-slate-800/80">
+                                                        <span className="text-[9px] font-bold text-slate-500 uppercase block">SANS Standard Matched</span>
+                                                        <span className="text-xs text-amber-400 font-mono font-bold block truncate">{visionResult.sansStandard}</span>
+                                                    </div>
+
+                                                    <div className="sm:col-span-2 bg-slate-900/80 p-2.5 rounded-xl border border-slate-800/80 flex flex-col gap-1.5">
+                                                        <div className="flex items-center justify-between">
+                                                            <span className="text-[9px] font-bold text-slate-500 uppercase">Integrity Score</span>
+                                                            <span className={`text-xs font-mono font-bold ${
+                                                                visionResult.integrityScore >= 80 ? 'text-emerald-400' : visionResult.integrityScore >= 60 ? 'text-amber-400' : 'text-rose-400'
+                                                            }`}>{visionResult.integrityScore}%</span>
+                                                        </div>
+                                                        <div className="w-full h-2 bg-slate-950 rounded-full overflow-hidden border border-slate-800">
+                                                            <div 
+                                                                className={`h-full transition-all duration-500 ${
+                                                                    visionResult.integrityScore >= 80 ? 'bg-emerald-500' : visionResult.integrityScore >= 60 ? 'bg-amber-500' : 'bg-rose-500'
+                                                                }`} 
+                                                                style={{ width: `${visionResult.integrityScore}%` }}
+                                                            />
+                                                        </div>
+                                                    </div>
+
+                                                    <div className="sm:col-span-2 bg-slate-900/80 p-2.5 rounded-xl border border-slate-800/80">
+                                                        <span className="text-[9px] font-bold text-slate-500 uppercase block mb-1">AI Findings & Directives</span>
+                                                        <p className="text-[11px] text-slate-300 leading-relaxed">{visionResult.findings}</p>
+                                                    </div>
+                                                </div>
+
+                                                <button
+                                                    type="button"
+                                                    onClick={() => {
+                                                        setParsedCategory(visionResult.riskCategory);
+                                                        setParsedViolationVector(visionResult.violationVector);
+                                                        setParsedSeverity(visionResult.severity);
+                                                        setParsedStatus(visionResult.auditStatus);
+                                                        setParsedNotes(`[AI VISION INSPECTION RESULT - ${visionResult.equipmentType}]\nSANS Standard: ${visionResult.sansStandard}\nIntegrity Score: ${visionResult.integrityScore}%\nRecommendation: ${visionResult.recommendation.toUpperCase()}\nFindings: ${visionResult.findings}`);
+                                                        document.getElementById('review-form-section')?.scrollIntoView({ behavior: 'smooth' });
+                                                    }}
+                                                    className="w-full py-2 bg-amber-500 hover:bg-amber-400 text-slate-950 font-black text-[10px] uppercase tracking-wider rounded-xl transition-all cursor-pointer shadow-md flex items-center justify-center gap-1.5 mt-1"
+                                                >
+                                                    <Zap className="w-3.5 h-3.5 fill-current" />
+                                                    <span>Auto-Fill Audit Form with AI Inspection</span>
+                                                </button>
+                                            </div>
+                                        )}
+                                    </div>
+                                </>
+                            )}
 
                             {scanError && (
                                 <div className="p-4 bg-rose-500/10 border border-rose-500/20 text-rose-400 rounded-2xl text-xs flex items-start gap-2.5">
@@ -8100,15 +8539,51 @@ Safety index and terminal clearance verified. The audit record status has been u
                                 </select>
                             </div>
 
-                            {/* Parameter Notes */}
+                            {/* Parameter Notes & Hands-Free Voice Dictation */}
                             <div className="flex flex-col gap-1.5">
-                                <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Detailed Findings & Corrective Action Notes</label>
+                                <div className="flex items-center justify-between">
+                                    <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider flex items-center gap-2">
+                                        <span>Detailed Findings & Corrective Action Notes</span>
+                                        {isListening && (
+                                            <span className="inline-flex items-center gap-1.5 text-[9px] font-mono font-bold text-rose-400 bg-rose-500/10 border border-rose-500/30 px-2 py-0.5 rounded-full animate-pulse">
+                                                <span className="w-1.5 h-1.5 rounded-full bg-rose-500 animate-ping" />
+                                                DICTATING LIVE...
+                                            </span>
+                                        )}
+                                    </label>
+                                    <button
+                                        type="button"
+                                        onClick={toggleSpeechDictation}
+                                        className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl text-[10px] font-bold uppercase transition-all cursor-pointer ${
+                                            isListening
+                                                ? 'bg-rose-500 text-white shadow-lg shadow-rose-500/30 animate-pulse'
+                                                : 'bg-slate-900 text-slate-300 hover:text-white border border-slate-800 hover:border-amber-500/50'
+                                        }`}
+                                        title={isListening ? 'Stop Speech Dictation' : 'Start Hands-Free Voice Dictation (Web Speech API)'}
+                                    >
+                                        {isListening ? (
+                                            <>
+                                                <MicOff className="w-3.5 h-3.5 text-white" />
+                                                <span>Stop Voice Dictation</span>
+                                            </>
+                                        ) : (
+                                            <>
+                                                <Mic className="w-3.5 h-3.5 text-amber-400" />
+                                                <span>Voice Dictate</span>
+                                            </>
+                                        )}
+                                    </button>
+                                </div>
                                 <textarea 
                                     rows={3}
-                                    placeholder="Enter detailed safety findings, violations, or SANS compliance directives..."
+                                    placeholder={isListening ? "Listening... Speak findings now..." : "Enter detailed safety findings, violations, or SANS compliance directives..."}
                                     value={parsedNotes}
                                     onChange={e => setParsedNotes(e.target.value)}
-                                    className="bg-slate-950 border border-slate-800 rounded-xl p-3 text-xs text-white focus:outline-none focus:border-amber-500 transition-colors resize-none"
+                                    className={`bg-slate-950 border rounded-xl p-3 text-xs text-white focus:outline-none transition-all resize-none ${
+                                        isListening
+                                            ? 'border-rose-500 ring-2 ring-rose-500/20 bg-slate-950/90'
+                                            : 'border-slate-800 focus:border-amber-500'
+                                    }`}
                                 />
                             </div>
 
