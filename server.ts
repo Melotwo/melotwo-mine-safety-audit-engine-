@@ -82,13 +82,48 @@ app.all(['/api/analyze', '/api/analyze/'], async (req, res) => {
 // Automated Incident RCA & Telemetry Correlator API endpoint
 app.post(['/api/rca-analysis', '/api/rca-analysis/'], async (req, res) => {
   try {
-    const { incidentLog, surroundingLogs, mode } = req.body;
+    const { incidentLog, incidentLog2, surroundingLogs, mode } = req.body;
     if (!incidentLog) {
       res.status(400).json({ error: 'Incident log is required.' });
       return;
     }
 
-    if (!ai) {
+    if (mode === 'compare') {
+      if (!incidentLog2) {
+        res.status(400).json({ error: 'Second incident log is required for comparison.' });
+        return;
+      }
+      if (!ai) {
+        // Return local simulated side-by-side comparison report
+        const text = `### ⚖️ SIDE-BY-SIDE ROOT CAUSE COMPARISON
+
+| Metric / Dimension | Incident A: ${incidentLog.riskCategory} | Incident B: ${incidentLog2.riskCategory} |
+| :--- | :--- | :--- |
+| **Terminal ID** | \`${incidentLog.terminalId}\` | \`${incidentLog2.terminalId}\` |
+| **Violation Vector** | \`${incidentLog.violationVector}\` | \`${incidentLog2.violationVector}\` |
+| **Operator on Duty** | ${incidentLog.operator} | ${incidentLog2.operator} |
+| **Severity Level** | ${incidentLog.severityLevel} | ${incidentLog2.severityLevel} |
+| **Status** | ${incidentLog.auditStatus} | ${incidentLog2.auditStatus} |
+
+---
+
+#### 1. TELEMETRY & CONTEXTUAL OVERLAPS
+- **Terminal Overlaps:** ${incidentLog.terminalId === incidentLog2.terminalId ? `Both incidents occurred at the same terminal (**${incidentLog.terminalId}**), indicating localized infrastructure decay or electrical grid fluctuations.` : `The incidents occurred at different terminals (**${incidentLog.terminalId}** vs **${incidentLog2.terminalId}**), indicating systemic rather than terminal-isolated issues.`}
+- **Operator Overlaps:** ${incidentLog.operator === incidentLog2.operator ? `Both shifts were supervised by **${incidentLog.operator}**, highlighting a potential need for targeted refresher certification or shift briefing support.` : `Different operators were on duty (**${incidentLog.operator}** vs **${incidentLog2.operator}**), indicating that procedural deviations are organizational rather than individual.`}
+- **Temporal Closeness:** The incidents occurred on **${incidentLog.date}** and **${incidentLog2.date}**, suggesting compounding environmental factors in the active zone.
+
+#### 2. ROOT CAUSE DIVERGENCES
+- **Incident A (${incidentLog.riskCategory}):** Caused by structural stress under SANS standard **${incidentLog.violationVector}** and localized telemetry handoff gaps.
+- **Incident B (${incidentLog2.riskCategory}):** Exacerbated by SANS standard **${incidentLog2.violationVector}** protocols being bypassed, leading to a secondary compliance failure.
+
+#### 3. INTEGRATED REMEDIATION PLAN
+1. **Consolidated Loop Verification:** Run a comprehensive diagnostics test on terminal loops to check electrical insulation and PPE safety bounds.
+2. **Unified Handover Ledger:** Implement digitized end-of-shift telemetry locks so subsequent duty crews are automatically alerted to outstanding alerts.`;
+
+        res.json({ text, method: 'local-simulated-comparison' });
+        return;
+      }
+    } else if (!ai) {
       // Fallback: Return realistic simulated forensic analysis if Gemini key is missing
       const cat = incidentLog.riskCategory || 'General';
       const vector = incidentLog.violationVector || 'SANS standard';
@@ -114,7 +149,7 @@ app.post(['/api/rca-analysis', '/api/rca-analysis/'], async (req, res) => {
 - **Inspect Surrounding Grid:** Expand sampling of auxiliary links to ensure no concurrent structural decay exists.
 
 #### 4. LONG-TERM ENGINEERING CONTROLS
-- **Telemetry Upgrades:** Install digital smart-gate interlocks linked to the local SCADA network.
+- **Telemetry Upgrades:** Install digital smart-gate interlocks linked to the central shift ledger.
 - **Refresher Certification:** Schedule immediate 30-minute toolbox briefings for all operational crews.`;
 
         res.json({ text, method: 'local-simulated-remediation' });
@@ -149,7 +184,42 @@ The primary point of failure is **compounding structural wear** exacerbated by h
     let systemPrompt = '';
     let prompt = '';
 
-    if (mode === 'remediation') {
+    if (mode === 'compare') {
+      systemPrompt = `You are a Chief Safety Officer and Forensic Industrial Auditor specializing in heavy machinery, mining safety (SHEQ), and SANS compliance.
+Your job is to compare two distinct flagged incident logs, identify any hidden or structural telemetry overlaps (such as identical operators, terminal proximity, compounding machine stress, or correlated SANS violations), highlight their differences, and suggest an integrated corrective response.
+Return a beautifully structured Markdown document. Include a markdown table at the beginning comparing the two incidents on key metrics like Terminal, Operator, Category, Severity, and Status.
+Your document should use these precise headings:
+### ⚖️ SIDE-BY-SIDE ROOT CAUSE COMPARISON
+(Include a clean, comparison markdown table here)
+#### 1. TELEMETRY & CONTEXTUAL OVERLAPS
+(Detailed analysis of shared attributes like operators, terminals, temporal links, or recurring compliance vectors)
+#### 2. ROOT CAUSE DIVERGENCES
+(How the underlying failure mechanisms differ or relate)
+#### 3. INTEGRATED CORRECTIVE ACTION PLAN
+(Actionable consolidated response to prevent both categories of failures)`;
+
+      prompt = `Perform a side-by-side comparison and cross-incident correlation for these two incident logs:
+
+Incident A (Target):
+- Date: ${incidentLog.date}
+- Operator: ${incidentLog.operator}
+- Terminal: ${incidentLog.terminalId}
+- Risk Category: ${incidentLog.riskCategory}
+- SANS Code / Violation Vector: ${incidentLog.violationVector}
+- Severity: ${incidentLog.severityLevel}
+- Status: ${incidentLog.auditStatus}
+- Detailed Notes: ${incidentLog.detailedNotes || 'N/A'}
+
+Incident B (Comparison):
+- Date: ${incidentLog2.date}
+- Operator: ${incidentLog2.operator}
+- Terminal: ${incidentLog2.terminalId}
+- Risk Category: ${incidentLog2.riskCategory}
+- SANS Code / Violation Vector: ${incidentLog2.violationVector}
+- Severity: ${incidentLog2.severityLevel}
+- Status: ${incidentLog2.auditStatus}
+- Detailed Notes: ${incidentLog2.detailedNotes || 'N/A'}`;
+    } else if (mode === 'remediation') {
       systemPrompt = `You are a Principal Industrial Safety Engineer, SHEQ Specialist and Remediation Auditor.
 Your job is to provide an immediate, highly actionable, step-by-step fix proposal to resolve a flagged industrial safety violation or telemetry error.
 Return a beautifully structured Markdown document. Use clear headings, bullet points, and bold text. Include these headings:
@@ -303,12 +373,15 @@ Each object in the array must have exactly these fields:
       const notes = (log.detailedNotes || '').toLowerCase();
       const operator = (log.operator || '').toLowerCase();
       const terminal = (log.terminalId || '').toLowerCase();
+      const dateStr = (log.date || '').toLowerCase();
+      const severity = (log.severityLevel || '').toLowerCase();
+      const status = (log.auditStatus || '').toLowerCase();
 
       let matchCount = 0;
       let directMatch = false;
 
       // Direct exact query match (highest weight)
-      if (lowerQuery && (category.includes(lowerQuery) || vector.includes(lowerQuery) || notes.includes(lowerQuery) || operator.includes(lowerQuery) || terminal.includes(lowerQuery))) {
+      if (lowerQuery && (category.includes(lowerQuery) || vector.includes(lowerQuery) || notes.includes(lowerQuery) || operator.includes(lowerQuery) || terminal.includes(lowerQuery) || dateStr.includes(lowerQuery) || severity.includes(lowerQuery) || status.includes(lowerQuery))) {
         directMatch = true;
         matchCount += 5;
       }
