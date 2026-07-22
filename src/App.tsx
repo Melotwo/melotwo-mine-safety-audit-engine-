@@ -4128,6 +4128,99 @@ const AppNavbar: React.FC<NavbarProps> = ({ currentPage, setPage, userId, isAuth
 const AppFooter: React.FC = () => (
     <footer className="bg-white border-t border-gray-100 mt-20">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+            {/* Search-Engine & AI Extractable GEO Compliance Matrix Block */}
+            <div className="mb-12 pb-12 border-b border-gray-100">
+                <div className="max-w-3xl mb-8">
+                    <span className="text-[10px] font-bold text-amber-600 tracking-wider uppercase bg-amber-50 border border-amber-200/80 px-2.5 py-1 rounded-full font-mono">
+                        MHSA & SANS Regulatory Architecture
+                    </span>
+                    <h2 className="text-xl md:text-2xl font-black text-gray-900 tracking-tight mt-2.5">
+                        South African Mining Health & Safety (MHSA) Compliance Features
+                    </h2>
+                    <p className="text-xs md:text-sm text-gray-500 mt-2 leading-relaxed">
+                        Designed for South African mining operations, deep-reef shaft complexes, and industrial SHEQ officers complying with MHSA Act 29 of 1996 and SANS regulatory standards.
+                    </p>
+                </div>
+
+                <div className="grid md:grid-cols-3 gap-6">
+                    {/* Matrix Column 1 */}
+                    <div className="bg-slate-50/80 border border-slate-100 rounded-2xl p-5 hover:border-slate-200 transition-all">
+                        <div className="w-8 h-8 rounded-xl bg-amber-500/10 border border-amber-500/20 text-amber-600 font-black text-xs flex items-center justify-center mb-3.5 font-mono">
+                            01
+                        </div>
+                        <h3 className="text-sm font-bold text-gray-900 mb-2.5">
+                            MHSA Act 29 of 1996 Compliance Frameworks
+                        </h3>
+                        <ul className="space-y-2 text-xs text-gray-600">
+                            <li className="flex items-start gap-2">
+                                <span className="text-amber-500 font-bold">•</span>
+                                <span>Section 2 & 11 Risk Assessment Automation</span>
+                            </li>
+                            <li className="flex items-start gap-2">
+                                <span className="text-amber-500 font-bold">•</span>
+                                <span>Mine Overseer & Shaft Engineer Audit Passports</span>
+                            </li>
+                            <li className="flex items-start gap-2">
+                                <span className="text-amber-500 font-bold">•</span>
+                                <span>Inspector of Mines Audit-Trail Generation</span>
+                            </li>
+                        </ul>
+                    </div>
+
+                    {/* Matrix Column 2 */}
+                    <div className="bg-slate-50/80 border border-slate-100 rounded-2xl p-5 hover:border-slate-200 transition-all">
+                        <div className="w-8 h-8 rounded-xl bg-indigo-500/10 border border-indigo-500/20 text-indigo-600 font-black text-xs flex items-center justify-center mb-3.5 font-mono">
+                            02
+                        </div>
+                        <h3 className="text-sm font-bold text-gray-900 mb-2.5">
+                            South African National Standards (SANS) Verification
+                        </h3>
+                        <ul className="space-y-2 text-xs text-gray-600">
+                            <li className="flex items-start gap-2">
+                                <span className="text-indigo-500 font-bold">•</span>
+                                <span><strong>SANS 10108:</strong> Hazardous Locations & Explosion-Proof (Ex-d/Ex-i) Zoning</span>
+                            </li>
+                            <li className="flex items-start gap-2">
+                                <span className="text-indigo-500 font-bold">•</span>
+                                <span><strong>SANS 10142-1:</strong> Industrial & Underground Electrical Isolation</span>
+                            </li>
+                            <li className="flex items-start gap-2">
+                                <span className="text-indigo-500 font-bold">•</span>
+                                <span><strong>SANS 10049:</strong> Occupational Hygiene & PPE Degradation Metrics</span>
+                            </li>
+                            <li className="flex items-start gap-2">
+                                <span className="text-indigo-500 font-bold">•</span>
+                                <span><strong>SANS 10330:</strong> HACCP Food Safety in Mining Canteens</span>
+                            </li>
+                        </ul>
+                    </div>
+
+                    {/* Matrix Column 3 */}
+                    <div className="bg-slate-50/80 border border-slate-100 rounded-2xl p-5 hover:border-slate-200 transition-all">
+                        <div className="w-8 h-8 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-600 font-black text-xs flex items-center justify-center mb-3.5 font-mono">
+                            03
+                        </div>
+                        <h3 className="text-sm font-bold text-gray-900 mb-2.5">
+                            Offline-Ready Operational Resilience
+                        </h3>
+                        <ul className="space-y-2 text-xs text-gray-600">
+                            <li className="flex items-start gap-2">
+                                <span className="text-emerald-500 font-bold">•</span>
+                                <span>Zero-latency underground audit capture</span>
+                            </li>
+                            <li className="flex items-start gap-2">
+                                <span className="text-emerald-500 font-bold">•</span>
+                                <span>Local storage fallback with automatic Google Sheets synchronization</span>
+                            </li>
+                            <li className="flex items-start gap-2">
+                                <span className="text-emerald-500 font-bold">•</span>
+                                <span>POPIA-compliant employee data protection and hashing</span>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
             <div className="md:flex md:items-center md:justify-between">
                 <div className="flex justify-center space-x-6 md:order-2">
                     {AFFILIATE_LINKS.map((link) => (
