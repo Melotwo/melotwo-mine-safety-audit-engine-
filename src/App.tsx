@@ -1635,6 +1635,17 @@ const MineCompliancePanel: React.FC = () => {
   const [newMineName, setNewMineName] = useState('');
   const [newMineType, setNewMineType] = useState('Chrome & Platinum Operation');
   const [newMineLocation, setNewMineLocation] = useState('Mokopane, South Africa');
+  const [auditSearchQuery, setAuditSearchQuery] = useState('');
+
+  const filteredAudits = useMemo(() => {
+    if (!auditSearchQuery.trim()) return activeProfile.audits;
+    const query = auditSearchQuery.trim().toLowerCase();
+    return activeProfile.audits.filter(
+      (audit) =>
+        audit.id.toLowerCase().includes(query) ||
+        audit.category.toLowerCase().includes(query)
+    );
+  }, [activeProfile.audits, auditSearchQuery]);
 
   useEffect(() => {
     localStorage.setItem('melotwo_mine_profiles', JSON.stringify(profiles));
@@ -1899,7 +1910,39 @@ const MineCompliancePanel: React.FC = () => {
             <div className="grid lg:grid-cols-12 gap-6 items-start">
               {/* Table section */}
               <div className="lg:col-span-7">
-                <h4 className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-3">Active SANS Audits</h4>
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-3">
+                  <div className="flex items-center gap-2">
+                    <h4 className="text-xs font-bold text-gray-500 uppercase tracking-wider">Active SANS Audits</h4>
+                    {auditSearchQuery.trim() && (
+                      <span className="text-[10px] font-bold text-indigo-600 bg-indigo-50 border border-indigo-100 px-2 py-0.5 rounded-full">
+                        {filteredAudits.length} of {activeProfile.audits.length}
+                      </span>
+                    )}
+                  </div>
+                  
+                  {/* Search Bar */}
+                  <div className="relative w-full sm:w-64">
+                    <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400 pointer-events-none" />
+                    <input
+                      type="text"
+                      value={auditSearchQuery}
+                      onChange={(e) => setAuditSearchQuery(e.target.value)}
+                      placeholder="Filter by ID or Category..."
+                      className="w-full pl-8 pr-7 py-1.5 bg-gray-50 border border-gray-200 rounded-xl text-xs text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/30 focus:border-indigo-500 transition-all font-sans"
+                    />
+                    {auditSearchQuery && (
+                      <button
+                        type="button"
+                        onClick={() => setAuditSearchQuery('')}
+                        className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 text-xs font-bold p-1 cursor-pointer"
+                        title="Clear filter"
+                      >
+                        ✕
+                      </button>
+                    )}
+                  </div>
+                </div>
+
                 <div className="overflow-x-auto">
                   <table className="w-full text-left border-collapse text-xs">
                     <thead>
@@ -1912,21 +1955,29 @@ const MineCompliancePanel: React.FC = () => {
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-gray-50 text-gray-600">
-                      {activeProfile.audits.map((audit) => (
-                        <tr key={audit.id} className="hover:bg-gray-50/50">
-                          <td className="py-2.5 font-mono font-semibold text-gray-900">{audit.id}</td>
-                          <td className="py-2.5">{audit.category}</td>
-                          <td className="py-2.5 text-gray-500">{audit.date}</td>
-                          <td className="py-2.5 text-right font-bold text-gray-900">{audit.score}%</td>
-                          <td className="py-2.5 text-right">
-                            <span className={`px-2 py-0.5 rounded-full font-bold text-[10px] ${
-                              audit.status === 'Passed' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'
-                            }`}>
-                              {audit.status}
-                            </span>
+                      {filteredAudits.length === 0 ? (
+                        <tr>
+                          <td colSpan={5} className="py-8 text-center text-gray-400 italic font-sans">
+                            No active SANS audits matching "{auditSearchQuery}"
                           </td>
                         </tr>
-                      ))}
+                      ) : (
+                        filteredAudits.map((audit) => (
+                          <tr key={audit.id} className="hover:bg-gray-50/50 transition-colors">
+                            <td className="py-2.5 font-mono font-semibold text-gray-900">{audit.id}</td>
+                            <td className="py-2.5">{audit.category}</td>
+                            <td className="py-2.5 text-gray-500">{audit.date}</td>
+                            <td className="py-2.5 text-right font-bold text-gray-900">{audit.score}%</td>
+                            <td className="py-2.5 text-right">
+                              <span className={`px-2 py-0.5 rounded-full font-bold text-[10px] ${
+                                audit.status === 'Passed' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'
+                              }`}>
+                                {audit.status}
+                              </span>
+                            </td>
+                          </tr>
+                        ))
+                      )}
                     </tbody>
                   </table>
                 </div>
@@ -9024,11 +9075,27 @@ Safety index and terminal clearance verified. The audit record status has been u
                                                             {highlightMatchText(log.severityLevel)}
                                                         </span>
                                                     </td>
-                                                    <td className="py-3.5 px-4">
-                                                        <span className={`px-2.5 py-0.5 rounded text-[10px] font-black uppercase ${
-                                                            log.auditStatus === 'Passed' ? 'text-emerald-400 bg-emerald-500/10' :
-                                                            log.auditStatus === 'Critical Warning' ? 'text-rose-400 bg-rose-500/10 animate-pulse' : 'text-amber-400 bg-amber-500/10'
+                                                    <td className={`py-3.5 px-4 transition-colors ${
+                                                        log.auditStatus === 'Critical Warning' || log.auditStatus === 'Failed'
+                                                            ? 'bg-rose-950/45 border-l-2 border-l-rose-500/90'
+                                                            : log.auditStatus === 'Action Required' || log.auditStatus === 'Warning' || log.auditStatus === 'Under Review'
+                                                            ? 'bg-amber-950/35 border-l-2 border-l-amber-500/80'
+                                                            : 'bg-emerald-950/20 border-l-2 border-l-emerald-500/50'
+                                                    }`}>
+                                                        <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[10px] font-black uppercase tracking-wider border shadow-xs ${
+                                                            log.auditStatus === 'Critical Warning' || log.auditStatus === 'Failed'
+                                                                ? 'text-rose-200 bg-rose-500/25 border-rose-500/40 shadow-rose-950/50 animate-pulse'
+                                                                : log.auditStatus === 'Action Required' || log.auditStatus === 'Warning' || log.auditStatus === 'Under Review'
+                                                                ? 'text-amber-200 bg-amber-500/20 border-amber-500/40 shadow-amber-950/30'
+                                                                : 'text-emerald-300 bg-emerald-500/15 border-emerald-500/30'
                                                         }`}>
+                                                            <span className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${
+                                                                log.auditStatus === 'Critical Warning' || log.auditStatus === 'Failed'
+                                                                    ? 'bg-rose-400 animate-ping'
+                                                                    : log.auditStatus === 'Action Required' || log.auditStatus === 'Warning' || log.auditStatus === 'Under Review'
+                                                                    ? 'bg-amber-400'
+                                                                    : 'bg-emerald-400'
+                                                            }`}></span>
                                                             {highlightMatchText(log.auditStatus)}
                                                         </span>
                                                     </td>
