@@ -8917,67 +8917,135 @@ Safety index and terminal clearance verified. The audit record status has been u
                                         </td>
                                     </tr>
                                 ) : (
-                                    filteredLedgerLogs.map((log, idx) => (
-                                        <tr key={idx} className="hover:bg-slate-950/40 transition-colors">
-                                            <td className="py-3.5 px-4 text-white whitespace-nowrap">{log.date}</td>
-                                            <td className="py-3.5 px-4 font-sans font-medium text-slate-200">{log.operator || 'Unknown'}</td>
-                                            <td className="py-3.5 px-4"><span className="bg-slate-950 border border-slate-800/80 px-2 py-0.5 rounded text-slate-400">{log.terminalId || 'N/A'}</span></td>
-                                            <td className="py-3.5 px-4 font-sans">{log.riskCategory}</td>
-                                            <td className="py-3.5 px-4 text-amber-500">{log.violationVector || 'None'}</td>
-                                            <td className="py-3.5 px-4">
-                                                <span className={`px-2 py-0.5 rounded text-[10px] font-black ${
-                                                    log.severityLevel === 'High' ? 'text-rose-400 bg-rose-500/10' :
-                                                    log.severityLevel === 'Medium' ? 'text-amber-400 bg-amber-500/10' : 'text-emerald-400 bg-emerald-500/10'
-                                                }`}>
-                                                    {log.severityLevel}
-                                                </span>
-                                            </td>
-                                            <td className="py-3.5 px-4">
-                                                <span className={`px-2.5 py-0.5 rounded text-[10px] font-black uppercase ${
-                                                    log.auditStatus === 'Passed' ? 'text-emerald-400 bg-emerald-500/10' :
-                                                    log.auditStatus === 'Critical Warning' ? 'text-rose-400 bg-rose-500/10 animate-pulse' : 'text-amber-400 bg-amber-500/10'
-                                                }`}>
-                                                    {log.auditStatus}
-                                                </span>
-                                            </td>
-                                            {ledgerSearchQuery.trim() && searchMode !== 'keyword' && (
-                                                <td className="py-3.5 px-4 font-mono">
-                                                    <div className="flex flex-col gap-1">
-                                                        <div className="flex items-center gap-1.5">
-                                                            <span className={`px-1.5 py-0.5 rounded text-[9px] font-black tracking-wider ${
-                                                                (log.semanticScore || 0) >= 0.7 ? 'text-emerald-400 bg-emerald-500/15 border border-emerald-500/20' :
-                                                                (log.semanticScore || 0) >= 0.35 ? 'text-amber-400 bg-amber-500/15 border border-amber-500/20' : 'text-slate-400 bg-slate-500/15 border border-slate-500/20'
-                                                            }`}>
-                                                                {Math.round((log.semanticScore || 0) * 100)}% Match
-                                                            </span>
-                                                        </div>
-                                                        <span className="text-[10px] text-slate-400 leading-normal block font-sans font-medium whitespace-normal max-w-[200px]" title={log.semanticReason}>
-                                                            {log.semanticReason || (semanticLoading ? 'scoring compliance vectors...' : 'no data')}
-                                                        </span>
-                                                    </div>
-                                                </td>
-                                            )}
-                                            <td className="py-3.5 px-4 font-sans text-xs text-slate-400 max-w-[240px] truncate" title={log.detailedNotes}>
-                                                {log.detailedNotes || 'No notes added.'}
-                                            </td>
-                                            <td className="py-3.5 px-4 text-right">
-                                                <button
-                                                    type="button"
-                                                    onClick={() => handleSelectRcaLog(log, log.originalIndex ?? idx)}
-                                                    className={`inline-flex items-center gap-1 px-2.5 py-1.5 rounded-xl text-[10px] font-bold uppercase tracking-wider transition-all duration-200 cursor-pointer border ${
-                                                        selectedRcaLog && selectedRcaLog.originalIndex === (log.originalIndex ?? idx)
-                                                            ? 'bg-amber-500 text-slate-950 border-amber-400 shadow shadow-amber-500/15 font-black'
-                                                            : log.auditStatus !== 'Passed'
-                                                            ? 'bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 border-rose-500/20'
-                                                            : 'bg-slate-800/80 hover:bg-slate-700/80 text-slate-300 border-slate-700/55'
+                                    (() => {
+                                        const queryTrimmed = ledgerSearchQuery.trim();
+                                        const queryActive = queryTrimmed.length > 0;
+                                        const queryLower = queryTrimmed.toLowerCase();
+
+                                        const highlightMatchText = (text: string | undefined | null) => {
+                                            if (!text) return null;
+                                            if (!queryActive) return text;
+                                            const escaped = queryTrimmed.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+                                            const regex = new RegExp(`(${escaped})`, 'gi');
+                                            const parts = text.split(regex);
+                                            if (parts.length === 1) return text;
+                                            return (
+                                                <>
+                                                    {parts.map((part, i) =>
+                                                        part.toLowerCase() === queryLower ? (
+                                                            <mark key={i} className="bg-amber-400/35 text-amber-100 font-bold px-1 py-0.5 rounded shadow-xs border border-amber-400/50">
+                                                                {part}
+                                                            </mark>
+                                                        ) : (
+                                                            part
+                                                        )
+                                                    )}
+                                                </>
+                                            );
+                                        };
+
+                                        return filteredLedgerLogs.map((log, idx) => {
+                                            const isQueryMatch = queryActive && (
+                                                (log.operator && log.operator.toLowerCase().includes(queryLower)) ||
+                                                (log.terminalId && log.terminalId.toLowerCase().includes(queryLower)) ||
+                                                (log.riskCategory && log.riskCategory.toLowerCase().includes(queryLower)) ||
+                                                (log.violationVector && log.violationVector.toLowerCase().includes(queryLower)) ||
+                                                (log.severityLevel && log.severityLevel.toLowerCase().includes(queryLower)) ||
+                                                (log.auditStatus && log.auditStatus.toLowerCase().includes(queryLower)) ||
+                                                (log.detailedNotes && log.detailedNotes.toLowerCase().includes(queryLower)) ||
+                                                (log.date && log.date.toLowerCase().includes(queryLower)) ||
+                                                (log.semanticReason && log.semanticReason.toLowerCase().includes(queryLower))
+                                            );
+
+                                            return (
+                                                <tr
+                                                    key={idx}
+                                                    className={`transition-all duration-200 ${
+                                                        isQueryMatch
+                                                            ? 'bg-amber-500/15 hover:bg-amber-500/25 border-l-4 border-l-amber-500 shadow-md shadow-amber-500/10'
+                                                            : 'hover:bg-slate-950/40'
                                                     }`}
                                                 >
-                                                    <Sparkles className="w-3.5 h-3.5" />
-                                                    {log.auditStatus !== 'Passed' ? 'Forensics RCA' : 'Review'}
-                                                </button>
-                                            </td>
-                                        </tr>
-                                    ))
+                                                    <td className="py-3.5 px-4 text-white whitespace-nowrap">
+                                                        <div className="flex items-center gap-2">
+                                                            {highlightMatchText(log.date)}
+                                                            {isQueryMatch && (
+                                                                <span className="px-1.5 py-0.5 rounded text-[8px] font-black uppercase tracking-wider bg-amber-500/25 text-amber-300 border border-amber-500/40 shadow-xs">
+                                                                    Matched
+                                                                </span>
+                                                            )}
+                                                        </div>
+                                                    </td>
+                                                    <td className="py-3.5 px-4 font-sans font-medium text-slate-200">
+                                                        {highlightMatchText(log.operator || 'Unknown')}
+                                                    </td>
+                                                    <td className="py-3.5 px-4">
+                                                        <span className="bg-slate-950 border border-slate-800/80 px-2 py-0.5 rounded text-slate-400">
+                                                            {highlightMatchText(log.terminalId || 'N/A')}
+                                                        </span>
+                                                    </td>
+                                                    <td className="py-3.5 px-4 font-sans">
+                                                        {highlightMatchText(log.riskCategory)}
+                                                    </td>
+                                                    <td className="py-3.5 px-4 text-amber-500">
+                                                        {highlightMatchText(log.violationVector || 'None')}
+                                                    </td>
+                                                    <td className="py-3.5 px-4">
+                                                        <span className={`px-2 py-0.5 rounded text-[10px] font-black ${
+                                                            log.severityLevel === 'High' ? 'text-rose-400 bg-rose-500/10' :
+                                                            log.severityLevel === 'Medium' ? 'text-amber-400 bg-amber-500/10' : 'text-emerald-400 bg-emerald-500/10'
+                                                        }`}>
+                                                            {highlightMatchText(log.severityLevel)}
+                                                        </span>
+                                                    </td>
+                                                    <td className="py-3.5 px-4">
+                                                        <span className={`px-2.5 py-0.5 rounded text-[10px] font-black uppercase ${
+                                                            log.auditStatus === 'Passed' ? 'text-emerald-400 bg-emerald-500/10' :
+                                                            log.auditStatus === 'Critical Warning' ? 'text-rose-400 bg-rose-500/10 animate-pulse' : 'text-amber-400 bg-amber-500/10'
+                                                        }`}>
+                                                            {highlightMatchText(log.auditStatus)}
+                                                        </span>
+                                                    </td>
+                                                    {ledgerSearchQuery.trim() && searchMode !== 'keyword' && (
+                                                        <td className="py-3.5 px-4 font-mono">
+                                                            <div className="flex flex-col gap-1">
+                                                                <div className="flex items-center gap-1.5">
+                                                                    <span className={`px-1.5 py-0.5 rounded text-[9px] font-black tracking-wider ${
+                                                                        (log.semanticScore || 0) >= 0.7 ? 'text-emerald-400 bg-emerald-500/15 border border-emerald-500/20' :
+                                                                        (log.semanticScore || 0) >= 0.35 ? 'text-amber-400 bg-amber-500/15 border border-amber-500/20' : 'text-slate-400 bg-slate-500/15 border border-slate-500/20'
+                                                                    }`}>
+                                                                        {Math.round((log.semanticScore || 0) * 100)}% Match
+                                                                    </span>
+                                                                </div>
+                                                                <span className="text-[10px] text-slate-400 leading-normal block font-sans font-medium whitespace-normal max-w-[200px]" title={log.semanticReason}>
+                                                                    {highlightMatchText(log.semanticReason || (semanticLoading ? 'scoring compliance vectors...' : 'no data'))}
+                                                                </span>
+                                                            </div>
+                                                        </td>
+                                                    )}
+                                                    <td className="py-3.5 px-4 font-sans text-xs text-slate-400 max-w-[240px] truncate" title={log.detailedNotes}>
+                                                        {highlightMatchText(log.detailedNotes || 'No notes added.')}
+                                                    </td>
+                                                    <td className="py-3.5 px-4 text-right">
+                                                        <button
+                                                            type="button"
+                                                            onClick={() => handleSelectRcaLog(log, log.originalIndex ?? idx)}
+                                                            className={`inline-flex items-center gap-1 px-2.5 py-1.5 rounded-xl text-[10px] font-bold uppercase tracking-wider transition-all duration-200 cursor-pointer border ${
+                                                                selectedRcaLog && selectedRcaLog.originalIndex === (log.originalIndex ?? idx)
+                                                                    ? 'bg-amber-500 text-slate-950 border-amber-400 shadow shadow-amber-500/15 font-black'
+                                                                    : log.auditStatus !== 'Passed'
+                                                                    ? 'bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 border-rose-500/20'
+                                                                    : 'bg-slate-800/80 hover:bg-slate-700/80 text-slate-300 border-slate-700/55'
+                                                            }`}
+                                                        >
+                                                            <Sparkles className="w-3.5 h-3.5" />
+                                                            {log.auditStatus !== 'Passed' ? 'Forensics RCA' : 'Review'}
+                                                        </button>
+                                                    </td>
+                                                </tr>
+                                            );
+                                        });
+                                    })()
                                 )}
                             </tbody>
                         </table>
