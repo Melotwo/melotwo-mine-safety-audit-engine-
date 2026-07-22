@@ -1055,6 +1055,10 @@ const ShieldCheck: React.FC<IconProps> = (props) => (
   <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="m9 12 2 2 4-4"/></svg>
 );
 
+const Briefcase: React.FC<IconProps> = (props) => (
+  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><rect x="2" y="7" width="20" height="14" rx="2" ry="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg>
+);
+
 // Helper helper to replace **bold** with <strong> tags
 const renderBoldText = (text: string) => {
     const parts = text.split(/\*\*([^*]+)\*\*/g);
@@ -6690,6 +6694,14 @@ export const SafetyInspectorPage: React.FC<SafetyInspectorPageProps> = ({ setPag
     }, []);
 
     // Core states
+    const [viewMode, setViewMode] = useState<'inspector' | 'manager'>(() => {
+        return (localStorage.getItem('melotwo_ui_view_mode') as 'inspector' | 'manager') || 'inspector';
+    });
+
+    useEffect(() => {
+        localStorage.setItem('melotwo_ui_view_mode', viewMode);
+    }, [viewMode]);
+
     const [scenario, setScenario] = useState(() => localStorage.getItem('melotwo_inspector_scenario_draft') || '');
     const [systemPrompt, setSystemPrompt] = useState(() => localStorage.getItem('melotwo_inspector_system_prompt_draft') || 'You are an expert industrial compliance safety officer. Create a professional, detailed audit ledger draft based on the operational scenario.');
     const [response, setResponse] = useState<any>(null);
@@ -7817,6 +7829,36 @@ Safety index and terminal clearance verified. The audit record status has been u
 
                     {/* Google OAuth Profile & Sync State Controls */}
                     <div className="flex flex-wrap items-center gap-3">
+                        {/* UI View Mode Switcher: Inspector View vs Manager View */}
+                        <div className="flex items-center gap-1 bg-slate-950 p-1 rounded-2xl border border-slate-800 shadow-inner">
+                            <button
+                                type="button"
+                                onClick={() => setViewMode('inspector')}
+                                className={`px-3 py-1.5 rounded-xl text-[10px] font-bold uppercase tracking-wider transition-all cursor-pointer flex items-center gap-1.5 ${
+                                    viewMode === 'inspector'
+                                        ? 'bg-amber-500 text-slate-950 font-black shadow-md'
+                                        : 'text-slate-400 hover:text-slate-200'
+                                }`}
+                                title="Inspector View: Show full granular prompt engineering console & system directives"
+                            >
+                                <Shield className="w-3.5 h-3.5" />
+                                <span>Inspector View</span>
+                            </button>
+                            <button
+                                type="button"
+                                onClick={() => setViewMode('manager')}
+                                className={`px-3 py-1.5 rounded-xl text-[10px] font-bold uppercase tracking-wider transition-all cursor-pointer flex items-center gap-1.5 ${
+                                    viewMode === 'manager'
+                                        ? 'bg-indigo-600 text-white font-black shadow-md'
+                                        : 'text-slate-400 hover:text-slate-200'
+                                }`}
+                                title="Manager View: Hide granular prompt engineering console to reduce UI clutter"
+                            >
+                                <Briefcase className="w-3.5 h-3.5" />
+                                <span>Manager View</span>
+                            </button>
+                        </div>
+
                         {user ? (
                             <div className="flex items-center gap-3 bg-slate-950 border border-slate-800 rounded-xl p-2.5 pl-3">
                                 {user.photoURL ? (
@@ -8631,22 +8673,57 @@ Safety index and terminal clearance verified. The audit record status has been u
                                     <Sparkles className="w-4 h-4 text-amber-500" />
                                     Automated Assessment Drafter
                                 </h3>
-                                <div className="flex items-center gap-1.5 text-[9px] font-mono text-slate-400">
-                                    <span className="w-2 h-2 rounded-full bg-indigo-500" />
-                                    <span>{generationCount >= 3 ? '0 credits' : `${3 - generationCount} left`}</span>
+                                <div className="flex items-center gap-2">
+                                    <span className={`text-[9px] font-mono px-2 py-0.5 rounded-full border ${
+                                        viewMode === 'manager' ? 'bg-indigo-500/10 border-indigo-500/30 text-indigo-300' : 'bg-amber-500/10 border-amber-500/30 text-amber-300'
+                                    }`}>
+                                        {viewMode === 'manager' ? 'MANAGER MODE' : 'INSPECTOR MODE'}
+                                    </span>
+                                    <div className="flex items-center gap-1.5 text-[9px] font-mono text-slate-400">
+                                        <span className="w-2 h-2 rounded-full bg-indigo-500" />
+                                        <span>{generationCount >= 3 ? '0 credits' : `${3 - generationCount} left`}</span>
+                                    </div>
                                 </div>
                             </div>
 
                             <form onSubmit={e => { e.preventDefault(); }} className="flex flex-col gap-4">
-                                <div className="flex flex-col gap-1.5">
-                                    <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Persona Directives</label>
-                                    <input 
-                                        type="text"
-                                        value={systemPrompt}
-                                        onChange={e => { setSystemPrompt(e.target.value); localStorage.setItem('melotwo_inspector_system_prompt_draft', e.target.value); }}
-                                        className="bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-indigo-500 transition-colors"
-                                    />
-                                </div>
+                                {viewMode === 'inspector' ? (
+                                    <div className="flex flex-col gap-1.5 bg-slate-950/80 border border-slate-800/90 rounded-2xl p-3.5">
+                                        <div className="flex items-center justify-between">
+                                            <label className="text-[10px] font-bold text-amber-400 uppercase tracking-wider flex items-center gap-1.5">
+                                                <Terminal className="w-3.5 h-3.5" />
+                                                <span>Prompt Engineering Console — Persona Directives</span>
+                                            </label>
+                                            <span className="text-[9px] font-mono text-slate-500">System Prompt Override</span>
+                                        </div>
+                                        <input 
+                                            type="text"
+                                            value={systemPrompt}
+                                            onChange={e => { setSystemPrompt(e.target.value); localStorage.setItem('melotwo_inspector_system_prompt_draft', e.target.value); }}
+                                            placeholder="Enter custom AI persona instructions, system prompt rules, or SANS enforcement logic..."
+                                            className="bg-slate-900 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-amber-500 transition-colors font-mono"
+                                        />
+                                    </div>
+                                ) : (
+                                    <div className="bg-slate-950/80 border border-indigo-500/20 rounded-2xl p-3.5 flex items-center justify-between text-xs text-indigo-300">
+                                        <div className="flex items-center gap-2.5">
+                                            <div className="p-2 bg-indigo-500/10 border border-indigo-500/30 rounded-xl shrink-0">
+                                                <ShieldCheck className="w-4 h-4 text-indigo-400" />
+                                            </div>
+                                            <div>
+                                                <span className="text-xs font-bold text-white block">Manager View Active</span>
+                                                <span className="text-[10px] text-slate-400 block mt-0.5">Prompt engineering console hidden. Persona directives auto-optimized by SANS policies.</span>
+                                            </div>
+                                        </div>
+                                        <button
+                                            type="button"
+                                            onClick={() => setViewMode('inspector')}
+                                            className="text-[10px] font-bold text-amber-400 hover:text-amber-300 hover:underline shrink-0 ml-2 cursor-pointer bg-slate-900 border border-slate-800 px-2.5 py-1 rounded-lg"
+                                        >
+                                            Show Prompt Console
+                                        </button>
+                                    </div>
+                                )}
 
                                 <div className="flex flex-col gap-1.5">
                                     <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Raw Inspection Details / Scenario</label>
