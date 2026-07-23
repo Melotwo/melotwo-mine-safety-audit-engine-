@@ -4866,6 +4866,25 @@ const EnterpriseDemoModal: React.FC<EnterpriseDemoModalProps> = ({ isOpen, onClo
                                         {sans10330 && sans10142 && sans10049 && sans10108 && sans10375 && iso42001 ? 'Deselect All' : 'Select Full Multi-Module Coverage'}
                                     </button>
                                 </div>
+
+                                {/* Dynamic Module Coverage Progress Bar */}
+                                <div className="mb-3.5 bg-slate-100/90 p-2.5 rounded-xl border border-slate-200/80">
+                                    <div className="flex justify-between items-center text-[11px] font-bold text-slate-700 mb-1.5">
+                                        <span className="flex items-center gap-1.5">
+                                            <span className="w-2 h-2 rounded-full bg-amber-500 animate-pulse"></span>
+                                            Module Coverage Strength
+                                        </span>
+                                        <span className="font-mono text-amber-600 font-black">
+                                            {[sans10330, sans10142, sans10049, sans10108, sans10375, iso42001].filter(Boolean).length} / 6 Selected ({Math.round(([sans10330, sans10142, sans10049, sans10108, sans10375, iso42001].filter(Boolean).length / 6) * 100)}%)
+                                        </span>
+                                    </div>
+                                    <div className="w-full h-2 bg-slate-200 rounded-full overflow-hidden p-0.5 border border-slate-300/40">
+                                        <div 
+                                            className="h-full bg-gradient-to-r from-amber-500 to-amber-400 rounded-full transition-all duration-300 ease-out shadow-sm"
+                                            style={{ width: `${([sans10330, sans10142, sans10049, sans10108, sans10375, iso42001].filter(Boolean).length / 6) * 100}%` }}
+                                        />
+                                    </div>
+                                </div>
                                 <div className="space-y-2.5">
                                     <label className="flex items-start gap-3 p-3 bg-slate-50 border border-slate-200/60 rounded-xl hover:bg-slate-100/60 transition cursor-pointer">
                                         <input
