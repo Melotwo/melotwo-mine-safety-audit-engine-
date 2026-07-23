@@ -4278,7 +4278,7 @@ export const MELOTWO_PRICING_MATRIX: Record<'professional' | 'enterprise' | 'ful
         insuranceOffsetRate: 'Up to 15% reduction in liability premiums by demonstrating active daily risk-mitigation logs.',
         auditTrailDefensibility: 'Cryptographically hashed inspector entries with permanent metadata, eliminating regulatory sign-off friction.',
         features: [
-            'Standard SANS 10330/10142/10049 automated audit workflows',
+            'Standard SANS 10330 / 10142-1 / 10049 / 10108 / 10375 / ISO 42001 automated audit workflows',
             'Immutable digital ledger for high-stakes forensic inspection defense',
             'Full compliance telemetry with 1-click PDF export pipelines',
             'Offline-first data caching with automatic Cloud synchronization'
@@ -4323,7 +4323,7 @@ export const MELOTWO_PRICING_MATRIX: Record<'professional' | 'enterprise' | 'ful
         features: [
             'Unrestricted annual multi-shaft & terminal safety telemetry logs',
             'Contractor Ecosystem Passport tracking with digital ID & biometric verifications',
-            'Full SANS multi-module coverage (SANS 10330, SANS 10142-1, SANS 10049)',
+            'Full SANS & ISO multi-module coverage (SANS 10330, SANS 10142-1, SANS 10049, SANS 10108, SANS 10375, ISO 42001)',
             '24/7 Priority SHEQ Integration Engineer SLA with emergency inspectorial response'
         ],
         calculatePrice: ({ numShafts = 4, contractorPassportsEnabled = true, contractorSeatsTier = '150', activeModulesCount = 3 }) => {
@@ -4381,6 +4381,9 @@ const EnterpriseDemoModal: React.FC<EnterpriseDemoModalProps> = ({ isOpen, onClo
     const [sans10330, setSans10330] = useState(true);
     const [sans10142, setSans10142] = useState(false);
     const [sans10049, setSans10049] = useState(false);
+    const [sans10108, setSans10108] = useState(false);
+    const [sans10375, setSans10375] = useState(false);
+    const [iso42001, setIso42001] = useState(false);
     const [workforceSize, setWorkforceSize] = useState<'under50' | '50-250' | '250+'>('under50');
     const [demoSubmitted, setDemoSubmitted] = useState(false);
 
@@ -4393,13 +4396,16 @@ const EnterpriseDemoModal: React.FC<EnterpriseDemoModalProps> = ({ isOpen, onClo
                 setSans10330(true);
                 setSans10142(true);
                 setSans10049(true);
+                setSans10108(true);
+                setSans10375(true);
+                setIso42001(true);
             }
         }
     }, [isOpen, initialTier]);
 
     // Math calculation engine
     const calculatedPrice = React.useMemo(() => {
-        const activeModulesCount = [sans10330, sans10142, sans10049].filter(Boolean).length;
+        const activeModulesCount = [sans10330, sans10142, sans10049, sans10108, sans10375, iso42001].filter(Boolean).length;
         return MELOTWO_PRICING_MATRIX[selectedTier].calculatePrice({
             activeModulesCount,
             numSites,
@@ -4408,7 +4414,7 @@ const EnterpriseDemoModal: React.FC<EnterpriseDemoModalProps> = ({ isOpen, onClo
             contractorPassportsEnabled,
             contractorSeatsTier
         });
-    }, [selectedTier, sans10330, sans10142, sans10049, numSites, workforceSize, numShafts, contractorPassportsEnabled, contractorSeatsTier]);
+    }, [selectedTier, sans10330, sans10142, sans10049, sans10108, sans10375, iso42001, numSites, workforceSize, numShafts, contractorPassportsEnabled, contractorSeatsTier]);
 
     // jsPDF corporate quotation compiler
     const handleDownloadQuotationPDF = () => {
@@ -4515,7 +4521,7 @@ const EnterpriseDemoModal: React.FC<EnterpriseDemoModalProps> = ({ isOpen, onClo
                     currentY += 7;
                 }
 
-                const activeCount = [sans10330, sans10142, sans10049].filter(Boolean).length;
+                const activeCount = [sans10330, sans10142, sans10049, sans10108, sans10375, iso42001].filter(Boolean).length;
                 if (activeCount > 0) {
                     const sansTotal = activeCount * 20000;
                     doc.text(`Full SANS Multi-Module Coverage (${activeCount} selected)`, 15, currentY);
@@ -4543,7 +4549,10 @@ const EnterpriseDemoModal: React.FC<EnterpriseDemoModalProps> = ({ isOpen, onClo
                 const activeModules = [
                     sans10330 && 'SANS 10330 (HACCP Food Safety)',
                     sans10142 && 'SANS 10142-1 (Wiring Codes)',
-                    sans10049 && 'SANS 10049 (Hygiene PPE)'
+                    sans10049 && 'SANS 10049 (Hygiene PPE)',
+                    sans10108 && 'SANS 10108 (Hazardous Areas)',
+                    sans10375 && 'SANS 10375 / ISO 45001 (Lifting & Rigging)',
+                    iso42001 && 'ISO/IEC 42001 (AI Governance)'
                 ].filter(Boolean);
 
                 activeModules.forEach(modName => {
@@ -4560,7 +4569,7 @@ const EnterpriseDemoModal: React.FC<EnterpriseDemoModalProps> = ({ isOpen, onClo
                 doc.text('R25,000.00', 175, currentY);
                 currentY += 7;
 
-                const activeCount = [sans10330, sans10142, sans10049].filter(Boolean).length;
+                const activeCount = [sans10330, sans10142, sans10049, sans10108, sans10375, iso42001].filter(Boolean).length;
                 if (activeCount > 0) {
                     doc.text(`Active SANS Modules (${activeCount} selected)`, 15, currentY);
                     doc.text('R3,000.00 / mod', 115, currentY);
@@ -4584,7 +4593,7 @@ const EnterpriseDemoModal: React.FC<EnterpriseDemoModalProps> = ({ isOpen, onClo
                 doc.text('R20,000.00', 175, currentY);
                 currentY += 7;
 
-                const activeCount = [sans10330, sans10142, sans10049].filter(Boolean).length;
+                const activeCount = [sans10330, sans10142, sans10049, sans10108, sans10375, iso42001].filter(Boolean).length;
                 if (activeCount > 1) {
                     doc.text(`Additional SANS Module Auditing Pass`, 15, currentY);
                     doc.text('R10,000.00', 115, currentY);
@@ -4688,7 +4697,7 @@ const EnterpriseDemoModal: React.FC<EnterpriseDemoModalProps> = ({ isOpen, onClo
                     </span>
                     <h3 className="text-2xl font-black tracking-tight">Interactive Compliance Quotation</h3>
                     <p className="text-xs text-slate-400 mt-1 leading-relaxed">
-                        Assess multi-site licensing costs for SANS 10330, SANS 10142-1, and SANS 10049. Instantly export an official PDF quote.
+                        Assess multi-site licensing costs across all 6 core SANS & ISO compliance modules. Instantly export an official PDF quote.
                     </p>
                 </div>
                 
@@ -4729,7 +4738,10 @@ const EnterpriseDemoModal: React.FC<EnterpriseDemoModalProps> = ({ isOpen, onClo
                                 const activeModulesStr = [
                                     sans10330 && 'SANS 10330',
                                     sans10142 && 'SANS 10142-1',
-                                    sans10049 && 'SANS 10049'
+                                    sans10049 && 'SANS 10049',
+                                    sans10108 && 'SANS 10108',
+                                    sans10375 && 'SANS 10375',
+                                    iso42001 && 'ISO/IEC 42001'
                                 ].filter(Boolean).join(', ');
 
                                 syncLeadToKlaviyoAndBackup({
@@ -4770,6 +4782,9 @@ const EnterpriseDemoModal: React.FC<EnterpriseDemoModalProps> = ({ isOpen, onClo
                                                         setSans10330(true);
                                                         setSans10142(true);
                                                         setSans10049(true);
+                                                        setSans10108(true);
+                                                        setSans10375(true);
+                                                        setIso42001(true);
                                                     }
                                                 }}
                                                 className={`p-3 rounded-xl border text-left transition cursor-pointer flex flex-col justify-between min-h-[125px] ${
@@ -4838,14 +4853,17 @@ const EnterpriseDemoModal: React.FC<EnterpriseDemoModalProps> = ({ isOpen, onClo
                                     <button
                                         type="button"
                                         onClick={() => {
-                                            const allSelected = sans10330 && sans10142 && sans10049;
+                                            const allSelected = sans10330 && sans10142 && sans10049 && sans10108 && sans10375 && iso42001;
                                             setSans10330(!allSelected);
                                             setSans10142(!allSelected);
                                             setSans10049(!allSelected);
+                                            setSans10108(!allSelected);
+                                            setSans10375(!allSelected);
+                                            setIso42001(!allSelected);
                                         }}
                                         className="text-[10px] font-bold text-amber-600 hover:text-amber-700 bg-amber-50 hover:bg-amber-100 border border-amber-200/80 px-2.5 py-1 rounded-lg transition"
                                     >
-                                        {sans10330 && sans10142 && sans10049 ? 'Deselect All' : 'Select Full Multi-Module Coverage'}
+                                        {sans10330 && sans10142 && sans10049 && sans10108 && sans10375 && iso42001 ? 'Deselect All' : 'Select Full Multi-Module Coverage'}
                                     </button>
                                 </div>
                                 <div className="space-y-2.5">
@@ -4885,6 +4903,45 @@ const EnterpriseDemoModal: React.FC<EnterpriseDemoModalProps> = ({ isOpen, onClo
                                         <div>
                                             <span className="text-xs font-black text-slate-900 block">SANS 10049 (Hygiene & PPE Compliance)</span>
                                             <span className="text-[10px] text-gray-500 block">Covers personal protective gear verification, dispenser levels, and sanitizers.</span>
+                                        </div>
+                                    </label>
+
+                                    <label className="flex items-start gap-3 p-3 bg-slate-50 border border-slate-200/60 rounded-xl hover:bg-slate-100/60 transition cursor-pointer">
+                                        <input
+                                            type="checkbox"
+                                            checked={sans10108}
+                                            onChange={(e) => setSans10108(e.target.checked)}
+                                            className="mt-0.5 rounded text-amber-500 focus:ring-amber-500 border-slate-300 w-4 h-4 cursor-pointer"
+                                        />
+                                        <div>
+                                            <span className="text-xs font-black text-slate-900 block">SANS 10108 (Hazardous Location & Explosive Atmosphere Classification)</span>
+                                            <span className="text-[10px] text-gray-500 block">Covers Ex-d flameproof enclosures, gas extraction fans, and hazardous area zone audits.</span>
+                                        </div>
+                                    </label>
+
+                                    <label className="flex items-start gap-3 p-3 bg-slate-50 border border-slate-200/60 rounded-xl hover:bg-slate-100/60 transition cursor-pointer">
+                                        <input
+                                            type="checkbox"
+                                            checked={sans10375}
+                                            onChange={(e) => setSans10375(e.target.checked)}
+                                            className="mt-0.5 rounded text-amber-500 focus:ring-amber-500 border-slate-300 w-4 h-4 cursor-pointer"
+                                        />
+                                        <div>
+                                            <span className="text-xs font-black text-slate-900 block">SANS 10375 / ISO 45001 (Lifting Equipment & Operational Safety Management)</span>
+                                            <span className="text-[10px] text-gray-500 block">Covers overhead crane hooks, wire rope fraying, load limit testing, and OH&S tracking.</span>
+                                        </div>
+                                    </label>
+
+                                    <label className="flex items-start gap-3 p-3 bg-slate-50 border border-slate-200/60 rounded-xl hover:bg-slate-100/60 transition cursor-pointer">
+                                        <input
+                                            type="checkbox"
+                                            checked={iso42001}
+                                            onChange={(e) => setIso42001(e.target.checked)}
+                                            className="mt-0.5 rounded text-amber-500 focus:ring-amber-500 border-slate-300 w-4 h-4 cursor-pointer"
+                                        />
+                                        <div>
+                                            <span className="text-xs font-black text-slate-900 block">ISO/IEC 42001 (AI Governance & Safety Automation Compliance)</span>
+                                            <span className="text-[10px] text-gray-500 block">Covers automated AI risk assessment, safety guardrails, and algorithmic audit trails.</span>
                                         </div>
                                     </label>
                                 </div>
@@ -5084,9 +5141,9 @@ const EnterpriseDemoModal: React.FC<EnterpriseDemoModalProps> = ({ isOpen, onClo
                                                 </span>
                                             </div>
                                             <div className="flex justify-between items-center text-xs text-slate-300">
-                                                <span className="text-slate-400">SANS Multi-Module Coverage ({[sans10330, sans10142, sans10049].filter(Boolean).length} selected):</span>
+                                                <span className="text-slate-400">SANS Multi-Module Coverage ({[sans10330, sans10142, sans10049, sans10108, sans10375, iso42001].filter(Boolean).length} selected):</span>
                                                 <span className="font-bold font-mono text-amber-400">
-                                                    +{([sans10330, sans10142, sans10049].filter(Boolean).length * 20000).toLocaleString('en-ZA')}
+                                                    +{([sans10330, sans10142, sans10049, sans10108, sans10375, iso42001].filter(Boolean).length * 20000).toLocaleString('en-ZA')}
                                                 </span>
                                             </div>
                                             <div className="flex justify-between items-center text-xs text-slate-300">
@@ -5102,7 +5159,7 @@ const EnterpriseDemoModal: React.FC<EnterpriseDemoModalProps> = ({ isOpen, onClo
                                         <div className="flex justify-between items-center text-xs text-slate-300">
                                             <span className="text-slate-400">SANS Modules (R1,500/mod):</span>
                                             <span className="font-bold font-mono text-amber-400">
-                                                +{([sans10330, sans10142, sans10049].filter(Boolean).length * 1500).toLocaleString('en-ZA')}
+                                                +{([sans10330, sans10142, sans10049, sans10108, sans10375, iso42001].filter(Boolean).length * 1500).toLocaleString('en-ZA')}
                                             </span>
                                         </div>
                                     )}
@@ -5112,7 +5169,7 @@ const EnterpriseDemoModal: React.FC<EnterpriseDemoModalProps> = ({ isOpen, onClo
                                             <div className="flex justify-between items-center text-xs text-slate-300">
                                                 <span className="text-slate-400">Enterprise Modules (R3,000/mod):</span>
                                                 <span className="font-bold font-mono text-amber-400">
-                                                    +{([sans10330, sans10142, sans10049].filter(Boolean).length * 3000).toLocaleString('en-ZA')}
+                                                    +{([sans10330, sans10142, sans10049, sans10108, sans10375, iso42001].filter(Boolean).length * 3000).toLocaleString('en-ZA')}
                                                 </span>
                                             </div>
                                             <div className="flex justify-between items-center text-xs text-slate-300">
@@ -5128,7 +5185,7 @@ const EnterpriseDemoModal: React.FC<EnterpriseDemoModalProps> = ({ isOpen, onClo
                                         <div className="flex justify-between items-center text-xs text-slate-300">
                                             <span className="text-slate-400">Add-on Modules (R10,000/mod):</span>
                                             <span className="font-bold font-mono text-teal-400">
-                                                +{(Math.max(0, [sans10330, sans10142, sans10049].filter(Boolean).length - 1) * 10000).toLocaleString('en-ZA')}
+                                                +{(Math.max(0, [sans10330, sans10142, sans10049, sans10108, sans10375, iso42001].filter(Boolean).length - 1) * 10000).toLocaleString('en-ZA')}
                                             </span>
                                         </div>
                                     )}
