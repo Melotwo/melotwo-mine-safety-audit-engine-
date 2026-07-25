@@ -51,6 +51,10 @@ googleProvider.addScope('https://www.googleapis.com/auth/spreadsheets');
 let cachedAccessToken: string | null = null;
 let isSigningIn = false;
 
+// --- Klaviyo Integration Constants ---
+export const KLAVIYO_PUBLIC_API_KEY = 'U3wcsH'; // Configured Klaviyo Site ID / Public API Key
+export const KLAVIYO_LIST_ID = 'YOUR_KLAVIYO_LIST_ID'; // Placeholder for customer list configuration
+
 export interface ComplianceLedgerRow {
   date: string;
   operator: string;
@@ -377,77 +381,68 @@ export const syncLeadToKlaviyoAndBackup = async (lead: Omit<CapturedLead, 'id' |
         console.error('[MeloTwo Backup] Local storage backup failed:', e);
     }
 
-    // 2. Klaviyo Connection Configuration
-    const KLAVIYO_PUBLIC_API_KEY = 'U3wcsH'; // Configured Klaviyo Site ID / Public API Key
-    const KLAVIYO_LIST_ID = 'YOUR_KLAVIYO_LIST_ID'; // Placeholder for customer list configuration
-
+    // 2. Klaviyo Connection & Flow Trigger
     try {
         const firstName = lead.fullName.split(' ')[0] || '';
         const lastName = lead.fullName.split(' ').slice(1).join(' ') || '';
 
         // 2a. Sync via Klaviyo Client-Side Identify API payload
-        const identifyPayload = {
-            token: KLAVIYO_PUBLIC_API_KEY,
-            properties: {
-                $email: lead.email,
-                $first_name: firstName,
-                $last_name: lastName,
-                $organization: lead.companyName,
-                CompanyName: lead.companyName,
-                SelectedSANS: lead.selectedSans,
-                Source: 'MeloTwo Compliance Platform',
-                LastInteraction: new Date().toISOString()
-            }
-        };
-
-        // Encode to base64 for native GET payload format
-        const identifyDataStr = btoa(unescape(encodeURIComponent(JSON.stringify(identifyPayload))));
-        
-        fetch(`https://a.klaviyo.com/api/identify?data=${encodeURIComponent(identifyDataStr)}`, {
-            method: 'GET',
-            mode: 'no-cors'
-        }).then(() => {
-            console.log('[Klaviyo Identify] Profile track sync dispatched successfully.');
-        }).catch((err) => {
-            console.error('[Klaviyo Identify] Track dispatch failure:', err);
-        });
-
-        // 2b. Klaviyo AJAX Subscribe integration if list ID is customized
-        if (KLAVIYO_LIST_ID && KLAVIYO_LIST_ID !== 'YOUR_KLAVIYO_LIST_ID') {
-            const formData = new URLSearchParams();
-            formData.append('g', KLAVIYO_LIST_ID);
-            formData.append('email', lead.email);
-            formData.append('$fields', '$first_name,$last_name,CompanyName,SelectedSANS,Source');
-            
-            const customProperties = {
-                '$first_name': firstName,
-                '$last_name': lastName,
-                'CompanyName': lead.companyName,
-                'SelectedSANS': lead.selectedSans,
-                'Source': 'MeloTwo Compliance Platform'
+        if (KLAVIYO_PUBLIC_API_KEY) {
+            const identifyPayload = {
+                token: KLAVIYO_PUBLIC_API_KEY,
+                properties: {
+                    $email: lead.email,
+                    $first_name: firstName,
+                    $last_name: lastName,
+                    $organization: lead.companyName,
+                    CompanyName: lead.companyName,
+                    SelectedSANS: lead.selectedSans,
+                    Source: 'MeloTwo Compliance Platform',
+                    LastInteraction: new Date().toISOString()
+                }
             };
-            formData.append('properties', JSON.stringify(customProperties));
 
-            const response = await fetch('https://manage.kmail-lists.com/ajax/subscriptions/subscribe', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/x-www-form-urlencoded',
-                    'Accept': 'application/json'
-                },
-                body: formData.toString()
+            const identifyDataStr = btoa(unescape(encodeURIComponent(JSON.stringify(identifyPayload))));
+            
+            fetch(`https://a.klaviyo.com/api/identify?data=${encodeURIComponent(identifyDataStr)}`, {
+                method: 'GET',
+                mode: 'no-cors'
+            }).then(() => {
+                console.log('[Klaviyo Identify] Profile track sync dispatched successfully.');
+            }).catch((err) => {
+                console.error('[Klaviyo Identify] Track dispatch failure:', err);
             });
-
-            if (response.ok) {
-                const data = await response.json();
-                console.log('[Klaviyo Subscribe] Subscribed lead to list:', data);
-            } else {
-                console.error('[Klaviyo Subscribe] List subscribe failed:', response.status);
-            }
-        } else {
-            console.warn('[Klaviyo Subscribe] Klaviyo List ID placeholder remains active. Profile sync accomplished via Identify API.');
         }
+
+        // 2b. Klaviyo List Subscribe fetch to push lead name and email into Klaviyo list
+        const formData = new URLSearchParams();
+        formData.append('g', KLAVIYO_LIST_ID || 'YOUR_KLAVIYO_LIST_ID');
+        formData.append('email', lead.email);
+        formData.append('$fields', '$first_name,$last_name,CompanyName,SelectedSANS,Source');
+        
+        const customProperties = {
+            '$first_name': firstName,
+            '$last_name': lastName,
+            'CompanyName': lead.companyName,
+            'SelectedSANS': lead.selectedSans,
+            'Source': 'MeloTwo Compliance Platform'
+        };
+        formData.append('properties', JSON.stringify(customProperties));
+
+        fetch('https://manage.kmail-lists.com/ajax/subscriptions/subscribe', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded',
+                'Accept': 'application/json'
+            },
+            body: formData.toString()
+        }).then(res => {
+            console.log('[Klaviyo Subscribe] Response status:', res.status);
+        }).catch((err) => {
+            console.error('[Klaviyo Subscribe] Non-blocking network error:', err);
+        });
     } catch (err) {
-        console.error('[Klaviyo Sync] General sync Exception:', err);
+        console.error('[Klaviyo Sync] Exception caught safely:', err);
     }
 };
 
