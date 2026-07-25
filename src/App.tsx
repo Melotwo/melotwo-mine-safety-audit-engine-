@@ -53,7 +53,7 @@ let isSigningIn = false;
 
 // --- Klaviyo Integration Constants ---
 export const KLAVIYO_PUBLIC_API_KEY = 'U3wcsH'; // Configured Klaviyo Site ID / Public API Key
-export const KLAVIYO_LIST_ID = 'YOUR_KLAVIYO_LIST_ID'; // Placeholder for customer list configuration
+export const KLAVIYO_LIST_ID = 'SHEXv3'; // Configured Klaviyo List ID for MeloTwo Safety Engine Leads
 
 export interface ComplianceLedgerRow {
   date: string;
