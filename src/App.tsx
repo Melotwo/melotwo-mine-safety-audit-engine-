@@ -485,10 +485,12 @@ export const MINE_PROFILES_BASELINE: MineProfile[] = [
       ppeAdherence: 98,
     },
     audits: [
+      { id: 'AUD-W-105', date: '2026-07-10', category: 'SANS 10375: Fall Protection & Lifting', score: 94, status: 'Passed' },
+      { id: 'AUD-W-104', date: '2026-07-02', category: 'ISO 42001: AI Risk Governance', score: 92, status: 'Passed' },
       { id: 'AUD-W-103', date: '2026-06-28', category: 'SANS 10108: Hazardous Areas', score: 89, status: 'Passed' },
       { id: 'AUD-W-102', date: '2026-06-15', category: 'SANS 10330: HACCP / Canteen', score: 95, status: 'Passed' },
       { id: 'AUD-W-101', date: '2026-05-10', category: 'SANS 10142: Electrical', score: 91, status: 'Passed' },
-      { id: 'AUD-W-100', date: '2026-04-02', category: 'SANS 10049: Hygiene', score: 90, status: 'Passed' },
+      { id: 'AUD-W-100', date: '2026-04-02', category: 'SANS 10049: Hygiene & PPE', score: 90, status: 'Passed' },
     ]
   },
   {
@@ -506,10 +508,12 @@ export const MINE_PROFILES_BASELINE: MineProfile[] = [
       ppeAdherence: 85,
     },
     audits: [
+      { id: 'AUD-M-205', date: '2026-07-12', category: 'SANS 10375: Fall Protection & Lifting', score: 72, status: 'Action Required' },
+      { id: 'AUD-M-204', date: '2026-07-05', category: 'ISO 42001: AI Risk Governance', score: 78, status: 'Action Required' },
       { id: 'AUD-M-203', date: '2026-06-18', category: 'SANS 10108: Hazardous Areas', score: 59, status: 'Action Required' },
       { id: 'AUD-M-202', date: '2026-06-20', category: 'SANS 10142: Electrical', score: 82, status: 'Action Required' },
       { id: 'AUD-M-201', date: '2026-05-15', category: 'SANS 10330: HACCP / Canteen', score: 88, status: 'Passed' },
-      { id: 'AUD-M-200', date: '2026-03-22', category: 'SANS 10049: Hygiene', score: 81, status: 'Action Required' },
+      { id: 'AUD-M-200', date: '2026-03-22', category: 'SANS 10049: Hygiene & PPE', score: 81, status: 'Action Required' },
     ]
   },
   {
@@ -527,8 +531,10 @@ export const MINE_PROFILES_BASELINE: MineProfile[] = [
       ppeAdherence: 96,
     },
     audits: [
+      { id: 'AUD-R-305', date: '2026-07-11', category: 'SANS 10375: Fall Protection & Lifting', score: 96, status: 'Passed' },
+      { id: 'AUD-R-304', date: '2026-07-04', category: 'ISO 42001: AI Risk Governance', score: 94, status: 'Passed' },
       { id: 'AUD-R-303', date: '2026-06-29', category: 'SANS 10108: Hazardous Areas', score: 98, status: 'Passed' },
-      { id: 'AUD-R-302', date: '2026-06-25', category: 'SANS 10049: Hygiene', score: 97, status: 'Passed' },
+      { id: 'AUD-R-302', date: '2026-06-25', category: 'SANS 10049: Hygiene & PPE', score: 97, status: 'Passed' },
       { id: 'AUD-R-301', date: '2026-05-18', category: 'SANS 10330: HACCP / Canteen', score: 95, status: 'Passed' },
       { id: 'AUD-R-300', date: '2026-04-11', category: 'SANS 10142: Electrical', score: 96, status: 'Passed' },
     ]
@@ -1696,6 +1702,8 @@ const MineCompliancePanel: React.FC = () => {
     { id: '10142', label: 'SANS 10142-1 (Electrical Infrastructure)', tag: '10142' },
     { id: '10330', label: 'SANS 10330 (HACCP & Canteen Safety)', tag: '10330' },
     { id: '10049', label: 'SANS 10049 (General SHEQ & PPE)', tag: '10049' },
+    { id: '10375', label: 'SANS 10375 / EN 362 (Lifting & Fall Protection)', tag: '10375' },
+    { id: '42001', label: 'ISO/IEC 42001 (AI Risk & Governance)', tag: '42001' },
   ];
 
   const filteredAudits = useMemo(() => {
@@ -4196,6 +4204,14 @@ const AppFooter: React.FC = () => (
                                 <span className="text-indigo-500 font-bold">•</span>
                                 <span><strong>SANS 10330:</strong> HACCP Food Safety in Mining Canteens</span>
                             </li>
+                            <li className="flex items-start gap-2">
+                                <span className="text-indigo-500 font-bold">•</span>
+                                <span><strong>SANS 10375 / EN 362:</strong> Fall Protection, Overhead Hoisting & Rigging</span>
+                            </li>
+                            <li className="flex items-start gap-2">
+                                <span className="text-indigo-500 font-bold">•</span>
+                                <span><strong>ISO/IEC 42001:</strong> AI Governance, Model Safety & Risk Management</span>
+                            </li>
                         </ul>
                     </div>
 
@@ -6295,7 +6311,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ currentPage, setPage, setIsDe
                                 <div>
                                     <span className="text-[9px] font-bold text-amber-400 uppercase tracking-wider block">Multi-Module Coverage</span>
                                     <p className="text-[11px] text-slate-300 mt-0.5 leading-relaxed font-sans font-medium">
-                                        Includes SANS 10330, SANS 10142-1, and SANS 10049 modules.
+                                        Includes SANS 10330, SANS 10142-1, SANS 10049, SANS 10108, SANS 10375 / EN 362, and ISO/IEC 42001 modules.
                                     </p>
                                 </div>
                                 <div>
@@ -6606,6 +6622,16 @@ const DEFAULT_LOGS: ComplianceLedgerRow[] = [
     detailedNotes: 'Exposed high-voltage sub-breakers in processing plant 3, situated directly below a steam ventilation bypass pipe.'
   },
   {
+    date: '2026-07-02',
+    operator: 'Dr. Aaron Chen',
+    terminalId: 'CANTEEN-02',
+    riskCategory: 'HACCP & Food Safety',
+    violationVector: 'SANS 10330',
+    severityLevel: 'Medium',
+    auditStatus: 'Action Required',
+    detailedNotes: 'Walk-in poultry chilling unit temperature holding recorded at 6.8°C against mandatory 4.0°C maximum limit.'
+  },
+  {
     date: '2026-07-03',
     operator: 'Elena Rostova',
     terminalId: 'SITE-201',
@@ -6624,6 +6650,16 @@ const DEFAULT_LOGS: ComplianceLedgerRow[] = [
     severityLevel: 'Low',
     auditStatus: 'Passed',
     detailedNotes: 'Standard dust masks and protective goggles deployed correctly for drill operators. No particulate breaches logged.'
+  },
+  {
+    date: '2026-07-05',
+    operator: 'Johan Bezuidenhout',
+    terminalId: 'SHAFT-1-HOIST',
+    riskCategory: 'Lifting & Fall Protection',
+    violationVector: 'SANS 10375 / EN 362',
+    severityLevel: 'High',
+    auditStatus: 'Action Required',
+    detailedNotes: 'Secondary hoisting wire rope shows 6% surface strand fraying exceeding 5% threshold. Hook safety latch recoil spring fatigued.'
   },
   {
     date: '2026-07-06',
@@ -6841,6 +6877,48 @@ export const SECTOR_PROFILES: Record<string, {
             { name: 'PPE Station Locked', text: 'SITE INSPECTION: Area B safety stores. Mandatory protective safety goggle cabinets are locked. Storekeeper reports key log is missing. Sorting team operating with standard commercial sunglasses.' },
             { name: 'Surface Safety Audit', text: 'ANNUAL REVIEW: Sorting facility surface belt. Dust ventilation hoods functioning normally at 12 m/s. All employees equipped with certified SANS 10049 respiratory cartridges.' }
         ]
+    },
+    lifting: {
+        id: 'lifting',
+        name: 'Fall Protection, Rigging & Lifting',
+        company: 'Murray & Roberts Shaft Operations',
+        region: 'Free State (FS)',
+        authority: 'Department of Mineral Resources (DMR)',
+        standard: 'SANS 10375 & EN 362:2004',
+        standardCode: 'SANS 10375',
+        defaultOperator: 'Johan Bezuidenhout',
+        defaultTerminal: 'SHAFT-1-HOIST',
+        defaultCategory: 'Lifting & Rigging',
+        defaultSeverity: 'High',
+        defaultScenario: 'OVERHEAD GANTRY & FALL PROTECTION AUDIT: Shaft 1 main hoisting gantry. Wire rope inspection revealed 6% surface wire strand fraying on the secondary hoist drum (exceeding SANS 10375 limit of 5%). Fall protection EN 362:2004 carabiner double-action locking latches on two harness assemblies showed mechanical spring fatigue during tension testing.',
+        systemPrompt: 'You are a certified Lifting Tackle & Fall Protection Inspector under SANS 10375 and EN 362:2004. Evaluate this hoisting wire rope and harness safety scenario. Draft a formal statutory machinery lockout order.',
+        baseSafetyIndex: 81.5,
+        quickTemplates: [
+            { name: 'Wire Rope Fraying', text: 'OVERHEAD GANTRY AUDIT: Shaft 1 hoisting rope. Inspection revealed 6% wire strand fraying on secondary drum, exceeding SANS 10375 5% threshold. Hook safety latch tension fatigued.' },
+            { name: 'EN 362 Carabiner Fatigue', text: 'EN 362 HARNESS AUDIT: Working-at-heights platform B. Harness carabiners failed gate locking recoil test. Secondary safety lanyards show fraying.' },
+            { name: 'Load Test Pass', text: 'GANTRY HOIST CLEARANCE: 10-Ton overhead gantry crane passed dynamic load test at 125% capacity. SANS 10375 & ISO 45001 certificates issued.' }
+        ]
+    },
+    ai_governance: {
+        id: 'ai_governance',
+        name: 'AI Governance & Risk',
+        company: 'MeloTwo Autonomous Mine Systems',
+        region: 'Gauteng (GP)',
+        authority: 'AI Governance Board (ISO)',
+        standard: 'ISO/IEC 42001 (AIMS)',
+        standardCode: 'ISO 42001',
+        defaultOperator: 'Dr. Aaron Chen',
+        defaultTerminal: 'SYS-AIMS-01',
+        defaultCategory: 'AI Governance',
+        defaultSeverity: 'High',
+        defaultScenario: 'AI GOVERNANCE AUDIT: Autonomous Underground Vehicle Navigation Copilot v2.4. Real-time telemetry monitoring flagged 4.2% model drift in collision avoidance thresholds during high-dust scenarios. Unscrubbed operational telemetry logs were routed through unencrypted feedback channels. Emergency human override circuit test latency measured at 420ms (max threshold 100ms).',
+        systemPrompt: 'You are an ISO/IEC 42001 AI Risk Management System (AIMS) Lead Auditor. Evaluate this algorithmic drift, data privacy, and autonomous vehicle safety scenario. Draft an official ISO 42001 non-conformity directive.',
+        baseSafetyIndex: 76.2,
+        quickTemplates: [
+            { name: 'Algorithmic Drift Alert', text: 'AI DRIFT ALERT: Autonomous haulage routing model v2.4 drift exceeded 4.0% boundary. Human override latency measured at 420ms during simulated dust storm.' },
+            { name: 'Unscrubbed PII Telemetry', text: 'PII DATA BREACH: Continuous learning pipeline ingested unscrubbed operator biometric logs into cloud fine-tuning buffer without POPIA hashing.' },
+            { name: 'AIMS Verification Pass', text: 'ISO 42001 VERIFICATION: Automated collision avoidance vision model passed all adversarial robustness tests. Human-in-the-loop override verified at 45ms.' }
+        ]
     }
 };
 
@@ -6884,6 +6962,18 @@ export const SafetyInspectorPage: React.FC<SafetyInspectorPageProps> = ({ setPag
             { id: 'sheq2', text: 'Check protective goggle frames and anti-fog replacement stocks', checked: false },
             { id: 'sheq3', text: 'Audit Section 16(2) appointee training records', checked: true },
             { id: 'sheq4', text: 'Verify low-level fluid alarm alerts on hand washing blocks', checked: true }
+        ],
+        lifting: [
+            { id: 'lift1', text: 'Inspect wire rope strands for surface fraying under 5% limit', checked: false },
+            { id: 'lift2', text: 'Test EN 362:2004 carabiner double-locking gate recoil tension', checked: false },
+            { id: 'lift3', text: 'Verify 10-ton overhead gantry annual load test certification', checked: true },
+            { id: 'lift4', text: 'Audit working-at-heights harness inspection logbook', checked: true }
+        ],
+        ai_governance: [
+            { id: 'ai1', text: 'Verify autonomous vehicle model drift stays below 2.0% threshold', checked: false },
+            { id: 'ai2', text: 'Audit POPIA data scrubbing pipeline before AI model training', checked: false },
+            { id: 'ai3', text: 'Verify emergency human override latency stays under 100ms', checked: true },
+            { id: 'ai4', text: 'Log ISO/IEC 42001 Clause 6 Systemic Impact Assessment', checked: true }
         ]
     };
 
@@ -7375,6 +7465,31 @@ Safety index and terminal clearance verified. The audit record status has been u
     const [selectedStatus, setSelectedStatus] = useState<string>('ALL');
     const [selectedTerminalId, setSelectedTerminalId] = useState<string>('ALL');
     const [minSemanticScore, setMinSemanticScore] = useState<number>(0.15);
+
+    // Ledger Row Bulk Selection State
+    const [selectedLogIndices, setSelectedLogIndices] = useState<number[]>([]);
+
+    const handleToggleSelectRow = (originalIndex: number) => {
+        setSelectedLogIndices(prev =>
+            prev.includes(originalIndex)
+                ? prev.filter(i => i !== originalIndex)
+                : [...prev, originalIndex]
+        );
+    };
+
+    const handleDeleteSelectedLogs = () => {
+        if (selectedLogIndices.length === 0) return;
+        if (confirm(`Are you sure you want to delete ${selectedLogIndices.length} selected compliance log ${selectedLogIndices.length === 1 ? 'entry' : 'entries'}? This action cannot be undone.`)) {
+            const updated = ledgerLogs.filter((_, idx) => !selectedLogIndices.includes(idx));
+            setLedgerLogs(updated);
+            localStorage.setItem('melotwo_sandbox_logs', JSON.stringify(updated));
+            setSelectedLogIndices([]);
+            if (selectedRcaLog && selectedLogIndices.includes(selectedRcaLog.originalIndex)) {
+                setSelectedRcaLog(null);
+                setRcaMode('rca');
+            }
+        }
+    };
 
     // Fetch unique lists for SQL-like metadata filtering dropdowns
     const uniqueTerminals = useMemo(() => {
@@ -8296,6 +8411,7 @@ Safety index and terminal clearance verified. The audit record status has been u
     const handleClearLedger = () => {
         if (confirm('Are you sure you want to clear current logs? If connected to Google Sheets, this only resets local state. If offline, this resets sandbox ledger.')) {
             setLedgerLogs([]);
+            setSelectedLogIndices([]);
             if (!token) {
                 localStorage.removeItem('melotwo_sandbox_logs');
             }
@@ -9962,12 +10078,20 @@ Safety index and terminal clearance verified. The audit record status has been u
                             </h3>
                             <p className="text-[11px] text-slate-400 mt-0.5">Real-time status of mine terminals, SANS directives, and POPIA data vectors.</p>
                         </div>
-                        <div className="flex items-center gap-3">
+                        <div className="flex items-center gap-2 sm:gap-3">
+                            {selectedLogIndices.length > 0 && (
+                                <button
+                                    onClick={handleDeleteSelectedLogs}
+                                    className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-rose-600 hover:bg-rose-700 text-white rounded-xl text-xs font-bold transition-all cursor-pointer shadow-md shadow-rose-600/20 border border-rose-500/40 animate-fadeIn"
+                                >
+                                    <Trash2 className="w-3.5 h-3.5" /> Delete Selected ({selectedLogIndices.length})
+                                </button>
+                            )}
                             <button
                                 onClick={handleClearLedger}
                                 className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 rounded-xl text-xs font-bold transition-all cursor-pointer border border-rose-500/20"
                             >
-                                <Trash2 className="w-3.5 h-3.5" /> Clear Ledger Logs
+                                <Trash2 className="w-3.5 h-3.5" /> Clear All Logs
                             </button>
                         </div>
                     </div>
@@ -10117,7 +10241,13 @@ Safety index and terminal clearance verified. The audit record status has been u
                                 </span>
                             </div>
                             <div className="flex items-center gap-3">
-                                <span>Found: <strong className="text-amber-500">{filteredLedgerLogs.length}</strong> of {ledgerLogs.length} logs</span>
+                                <span>Found: <strong className="text-amber-500">{filteredLedgerLogs.length}</strong> of {ledgerLogs.length} logs
+                                    {selectedLogIndices.length > 0 && (
+                                        <span className="ml-2 px-1.5 py-0.5 rounded text-[10px] bg-rose-500/20 text-rose-300 font-bold border border-rose-500/30">
+                                            {selectedLogIndices.length} Selected
+                                        </span>
+                                    )}
+                                </span>
                                 {(selectedCategory !== 'ALL' || selectedSeverity !== 'ALL' || selectedStatus !== 'ALL' || selectedTerminalId !== 'ALL' || ledgerSearchQuery.trim()) && (
                                     <button
                                         onClick={() => {
@@ -10140,6 +10270,23 @@ Safety index and terminal clearance verified. The audit record status has been u
                         <table className="w-full text-left text-xs border-collapse">
                             <thead>
                                 <tr className="border-b border-slate-800 text-slate-400 uppercase tracking-wider text-[9px] font-bold">
+                                    <th className="py-3 px-3 w-10 text-center">
+                                        <input
+                                            type="checkbox"
+                                            checked={filteredLedgerLogs.length > 0 && filteredLedgerLogs.every(l => selectedLogIndices.includes(l.originalIndex))}
+                                            onChange={() => {
+                                                const visibleOriginalIndices = filteredLedgerLogs.map(l => l.originalIndex);
+                                                const areAllVisibleSelected = visibleOriginalIndices.length > 0 && visibleOriginalIndices.every(i => selectedLogIndices.includes(i));
+                                                if (areAllVisibleSelected) {
+                                                    setSelectedLogIndices(prev => prev.filter(i => !visibleOriginalIndices.includes(i)));
+                                                } else {
+                                                    setSelectedLogIndices(prev => Array.from(new Set([...prev, ...visibleOriginalIndices])));
+                                                }
+                                            }}
+                                            title={filteredLedgerLogs.length > 0 && filteredLedgerLogs.every(l => selectedLogIndices.includes(l.originalIndex)) ? 'Deselect All Visible' : 'Select All Visible'}
+                                            className="rounded text-amber-500 focus:ring-amber-500 border-slate-700 bg-slate-950 w-3.5 h-3.5 cursor-pointer"
+                                        />
+                                    </th>
                                     <th className="py-3 px-4">Date</th>
                                     <th className="py-3 px-4">Operator</th>
                                     <th className="py-3 px-4">Terminal ID</th>
@@ -10157,13 +10304,13 @@ Safety index and terminal clearance verified. The audit record status has been u
                             <tbody className="divide-y divide-slate-800/60 font-mono text-slate-300">
                                 {ledgerLogs.length === 0 ? (
                                     <tr>
-                                        <td colSpan={ledgerSearchQuery.trim() && searchMode !== 'keyword' ? 10 : 9} className="py-8 text-center text-slate-500 font-sans">
+                                        <td colSpan={ledgerSearchQuery.trim() && searchMode !== 'keyword' ? 11 : 10} className="py-8 text-center text-slate-500 font-sans">
                                             No ledger logs synchronized yet. Enter sandbox parameters above or connect your Google Spreadsheet.
                                         </td>
                                     </tr>
                                 ) : filteredLedgerLogs.length === 0 ? (
                                     <tr>
-                                        <td colSpan={ledgerSearchQuery.trim() && searchMode !== 'keyword' ? 10 : 9} className="py-8 text-center text-slate-500 font-sans">
+                                        <td colSpan={ledgerSearchQuery.trim() && searchMode !== 'keyword' ? 11 : 10} className="py-8 text-center text-slate-500 font-sans">
                                             No compliance logs match the criteria &quot;{ledgerSearchQuery}&quot;. Please try another search query.
                                         </td>
                                     </tr>
@@ -10208,15 +10355,27 @@ Safety index and terminal clearance verified. The audit record status has been u
                                                 (log.semanticReason && log.semanticReason.toLowerCase().includes(queryLower))
                                             );
 
+                                            const isRowSelected = selectedLogIndices.includes(log.originalIndex);
+
                                             return (
                                                 <tr
                                                     key={idx}
                                                     className={`transition-all duration-200 ${
-                                                        isQueryMatch
+                                                        isRowSelected
+                                                            ? 'bg-amber-500/20 border-l-4 border-l-amber-400 shadow-md shadow-amber-500/10'
+                                                            : isQueryMatch
                                                             ? 'bg-amber-500/15 hover:bg-amber-500/25 border-l-4 border-l-amber-500 shadow-md shadow-amber-500/10'
                                                             : 'hover:bg-slate-950/40'
                                                     }`}
                                                 >
+                                                    <td className="py-3.5 px-3 text-center">
+                                                        <input
+                                                            type="checkbox"
+                                                            checked={isRowSelected}
+                                                            onChange={() => handleToggleSelectRow(log.originalIndex)}
+                                                            className="rounded text-amber-500 focus:ring-amber-500 border-slate-700 bg-slate-950 w-3.5 h-3.5 cursor-pointer"
+                                                        />
+                                                    </td>
                                                     <td className="py-3.5 px-4 text-white whitespace-nowrap">
                                                         <div className="flex items-center gap-2">
                                                             {highlightMatchText(log.date)}
