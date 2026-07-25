@@ -12,6 +12,8 @@ import { getAuth, signInWithPopup, GoogleAuthProvider, onAuthStateChanged, User 
 import { getFirestore, doc, setDoc } from 'firebase/firestore';
 import firebaseConfig from '../firebase-applet-config.json';
 
+import { ErrorBoundary } from './components/ErrorBoundary';
+
 // Initialize Firebase with fallback for environments where config is missing/empty during compilation
 const hasValidConfig = firebaseConfig && (firebaseConfig as any).apiKey && (firebaseConfig as any).projectId;
 const finalConfig = hasValidConfig ? firebaseConfig : {
@@ -1702,17 +1704,17 @@ const MineCompliancePanel: React.FC = () => {
   ];
 
   const filteredAudits = useMemo(() => {
-    return activeProfile.audits.filter((audit) => {
+    return (activeProfile?.audits || []).filter((audit) => {
       const query = auditSearchQuery.trim().toLowerCase();
       const matchesSearch =
         !query ||
-        audit.id.toLowerCase().includes(query) ||
-        audit.category.toLowerCase().includes(query);
+        audit?.id?.toLowerCase()?.includes(query) ||
+        audit?.category?.toLowerCase()?.includes(query);
 
       const matchesTag =
         selectedSansTag === 'all' ||
-        audit.category.toLowerCase().includes(selectedSansTag) ||
-        audit.id.toLowerCase().includes(selectedSansTag);
+        audit?.category?.toLowerCase()?.includes(selectedSansTag) ||
+        audit?.id?.toLowerCase()?.includes(selectedSansTag);
 
       return matchesSearch && matchesTag;
     });
@@ -5690,7 +5692,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ currentPage, setPage, setIsDe
             doc.setFontSize(9);
             doc.setTextColor(51, 65, 85);
 
-            sandboxReport.highlights.forEach((hl: string) => {
+            (sandboxReport?.highlights || []).forEach((hl: string) => {
                 const lines = doc.splitTextToSize(`• ${hl}`, 174);
                 lines.forEach((l: string) => {
                     if (y > 250) return;
@@ -5713,7 +5715,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ currentPage, setPage, setIsDe
             doc.setFontSize(9);
             doc.setTextColor(51, 65, 85);
 
-            sandboxReport.recommendations.forEach((rec: string) => {
+            (sandboxReport?.recommendations || []).forEach((rec: string) => {
                 const lines = doc.splitTextToSize(`• ${rec}`, 174);
                 lines.forEach((l: string) => {
                     if (y > 250) return;
@@ -5723,7 +5725,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ currentPage, setPage, setIsDe
             });
 
             // SECTION 3: Interactive Checklist Status
-            if (sandboxReport.checklist && sandboxReport.checklist.length > 0) {
+            if (sandboxReport?.checklist && sandboxReport.checklist.length > 0) {
                 y += 4;
                 doc.setFillColor(15, 23, 42);
                 doc.rect(15, y, 180, 6, 'F');
@@ -5733,7 +5735,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ currentPage, setPage, setIsDe
                 doc.text('3. CORRECTIVE CHECKLIST AUDIT TRAIL', 18, y + 4.5);
 
                 y += 10;
-                sandboxReport.checklist.forEach((item: any) => {
+                (sandboxReport?.checklist || []).forEach((item: any) => {
                     if (y > 250) return;
                     doc.setFont('helvetica', 'bold');
                     if (item.checked) {
@@ -10806,29 +10808,39 @@ const App: React.FC = () => {
 
 
     return (
-        <div className="flex flex-col min-h-screen bg-gray-50 font-sans relative">
-            <AppNavbar 
-                currentPage={currentPage} 
-                setPage={setCurrentPage} 
-                userId={userId} 
-                isAuthReady={isAuthReady} 
-                onGetStarted={() => {
-                    setDemoModalTier('professional');
-                    setIsDemoModalOpen(true);
-                }}
-            />
-            <main className={`flex-grow ${currentPage === 'inspector' ? 'pt-0' : 'pt-4'}`}>
-                {renderPage}
-            </main>
-            <AppFooter />
-            <GA4MonitorConsole />
+        <ErrorBoundary fallbackTitle="MeloTwo Session Isolated">
+            <div className="flex flex-col min-h-screen bg-gray-50 font-sans relative">
+                <ErrorBoundary fallbackTitle="Navigation Bar Recovering...">
+                    <AppNavbar 
+                        currentPage={currentPage} 
+                        setPage={setCurrentPage} 
+                        userId={userId} 
+                        isAuthReady={isAuthReady} 
+                        onGetStarted={() => {
+                            setDemoModalTier('professional');
+                            setIsDemoModalOpen(true);
+                        }}
+                    />
+                </ErrorBoundary>
+                <main className={`flex-grow ${currentPage === 'inspector' ? 'pt-0' : 'pt-4'}`}>
+                    <ErrorBoundary fallbackTitle="Compliance View Recovering...">
+                        {renderPage}
+                    </ErrorBoundary>
+                </main>
+                <ErrorBoundary fallbackTitle="Footer Module Recovering...">
+                    <AppFooter />
+                </ErrorBoundary>
+                <GA4MonitorConsole />
 
-            <EnterpriseDemoModal 
-                isOpen={isDemoModalOpen} 
-                onClose={() => setIsDemoModalOpen(false)} 
-                initialTier={demoModalTier}
-            />
-        </div>
+                <ErrorBoundary fallbackTitle="Demo Modal Recovering...">
+                    <EnterpriseDemoModal 
+                        isOpen={isDemoModalOpen} 
+                        onClose={() => setIsDemoModalOpen(false)} 
+                        initialTier={demoModalTier}
+                    />
+                </ErrorBoundary>
+            </div>
+        </ErrorBoundary>
     );
 };
 
