@@ -5298,6 +5298,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ currentPage, setPage, setIsDe
     const [sandboxStep, setSandboxStep] = useState(0);
     const [sandboxReport, setSandboxReport] = useState<any | null>(null);
     const [sandboxSuccessMsg, setSandboxSuccessMsg] = useState(false);
+    const [sandboxButtonSuccess, setSandboxButtonSuccess] = useState(false);
 
     // Active preset samples for instant zero-friction viewer
     const [activeSampleStandard, setActiveSampleStandard] = useState<'sans-10330' | 'sans-10142' | 'sans-10049' | 'sans-10108' | 'iso-42001' | 'sans-10375'>('sans-10330');
@@ -5468,6 +5469,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ currentPage, setPage, setIsDe
         setSandboxStep(0);
         setSandboxReport(null);
         setSandboxSuccessMsg(false);
+        setSandboxButtonSuccess(false);
 
         try {
             // Sync lead with Klaviyo & back up locally
@@ -5514,8 +5516,8 @@ const LandingPage: React.FC<LandingPageProps> = ({ currentPage, setPage, setIsDe
                         email: leadEmail,
                         checklist: (rawReport.checklist || []).map((item: any) => ({ ...item, checked: false }))
                     };
-                    setSandboxReport(generatedReport);
-                    setSandboxSuccessMsg(true);
+                    // Trigger high-tech button morph success badge state
+                    setSandboxButtonSuccess(true);
 
                     // Sync generated sandbox assessment record into ledger logs table
                     const newSandboxLog: ComplianceLedgerRow = {
@@ -5542,6 +5544,13 @@ const LandingPage: React.FC<LandingPageProps> = ({ currentPage, setPage, setIsDe
                         standard: selectedStandard,
                         score: rawReport.score
                     });
+
+                    // Keep button in morphed success badge state for 3.5s before transitioning to report view
+                    setTimeout(() => {
+                        setSandboxButtonSuccess(false);
+                        setSandboxReport(generatedReport);
+                        setSandboxSuccessMsg(true);
+                    }, 3500);
                 } catch (err) {
                     console.error('Error in sandbox report generation:', err);
                 }
@@ -5573,112 +5582,202 @@ const LandingPage: React.FC<LandingPageProps> = ({ currentPage, setPage, setIsDe
 
             const activeCompany = sandboxReport.companyName || 'Witwatersrand Deep Reef Gold Ltd';
             const activeEmail = sandboxReport.email || 'sheq@melotwo.com';
+            const isPassed = sandboxReport.score >= 80;
+            const statusLabel = isPassed ? 'PASSED' : 'FAILED';
 
-            // Slate Navy header background
-            doc.setFillColor(15, 23, 42); 
-            doc.rect(0, 0, 210, 42, 'F');
+            // Top Header Slate Navy Background
+            doc.setFillColor(15, 23, 42); // #0F172A
+            doc.rect(0, 0, 210, 48, 'F');
 
-            // Header titles
+            // Top Decorative Amber Accent Bar
+            doc.setFillColor(245, 158, 11); // Amber
+            doc.rect(0, 0, 210, 2.5, 'F');
+
+            // Header Branding & Title
             doc.setTextColor(255, 255, 255);
             doc.setFont('helvetica', 'bold');
-            doc.setFontSize(22);
-            doc.text('MELOTWO AUTOMATED S-TIER LEDGER', 15, 18);
+            doc.setFontSize(20);
+            doc.text('MELOTWO SAFETY ENGINE', 15, 18);
 
             doc.setFontSize(10);
+            doc.setFont('helvetica', 'bold');
             doc.setTextColor(245, 158, 11); // Amber
-            doc.text('SOUTH AFRICAN NATIONAL STANDARDS (SANS) COMPLIANCE DRAFT ASSESSMENT', 15, 26);
-
-            // Target metadata block
-            doc.setTextColor(51, 65, 85); // Slate 700
-            doc.setFont('helvetica', 'bold');
-            doc.setFontSize(12);
-            doc.text('ASSESSMENT METADATA', 15, 52);
+            doc.text('SANS & MSHA INDUSTRIAL COMPLIANCE DRAFT SUMMARY', 15, 26);
 
             doc.setFont('helvetica', 'normal');
-            doc.setFontSize(10);
-            doc.text(`Registered Operation:  ${activeCompany}`, 15, 60);
-            doc.text(`Contact Email:         ${activeEmail}`, 15, 66);
-            doc.text(`Audit Pipeline:        ${sandboxReport.standardName}`, 15, 72);
-            doc.text(`Assessment Date:       ${new Date().toLocaleDateString()}`, 15, 78);
+            doc.setFontSize(8.5);
+            doc.setTextColor(148, 163, 184); // Slate 400
+            doc.text('AUTOMATED AUDIT TRAIL • CERTIFIED COMPLIANCE LEDGER', 15, 33);
+            doc.text(`REF ID: M2-SANS-${Math.floor(100000 + Math.random() * 900000)} • ISSUED: ${new Date().toLocaleDateString()}`, 15, 39);
 
-            // Audit Score Box
-            doc.setFillColor(241, 245, 249);
-            doc.rect(138, 52, 57, 26, 'F');
-            doc.setFont('helvetica', 'bold');
-            doc.setFontSize(10);
-            doc.setTextColor(15, 23, 42);
-            doc.text('COMPLIANCE SCORE', 143, 60);
-            doc.setFontSize(22);
-            
-            // Red vs Teal score coloring
-            if (sandboxReport.score < 80) {
-                doc.setTextColor(239, 68, 68);
+            // PASS / FAIL Stamp Badge Box in top right header
+            if (isPassed) {
+                // Passed: Emerald Green Badge
+                doc.setFillColor(16, 185, 129); // Emerald 500
+                doc.rect(132, 12, 63, 26, 'F');
+                doc.setDrawColor(52, 211, 153);
+                doc.rect(133, 13, 61, 24, 'D');
+                doc.setTextColor(255, 255, 255);
+                doc.setFont('helvetica', 'bold');
+                doc.setFontSize(8.5);
+                doc.text('AUDIT DETERMINATION', 136, 19);
+                doc.setFontSize(15);
+                doc.text('[✓] PASSED', 136, 30);
             } else {
-                doc.setTextColor(13, 148, 136);
+                // Failed: Crimson Red Badge
+                doc.setFillColor(225, 29, 72); // Rose 600
+                doc.rect(132, 12, 63, 26, 'F');
+                doc.setDrawColor(251, 113, 133);
+                doc.rect(133, 13, 61, 24, 'D');
+                doc.setTextColor(255, 255, 255);
+                doc.setFont('helvetica', 'bold');
+                doc.setFontSize(8.5);
+                doc.text('AUDIT DETERMINATION', 136, 19);
+                doc.setFontSize(13);
+                doc.text('[!] FAIL / ACTION REQ.', 136, 30);
             }
-            doc.text(`${sandboxReport.score}%`, 143, 70);
+
+            // Target Metadata Card
+            doc.setFillColor(248, 250, 252); // Slate 50
+            doc.setDrawColor(226, 232, 240); // Slate 200
+            doc.roundedRect(15, 54, 180, 32, 3, 3, 'FD');
+
+            doc.setTextColor(15, 23, 42); // Slate 900
+            doc.setFont('helvetica', 'bold');
+            doc.setFontSize(10);
+            doc.text('FACILITY & AUDIT METADATA', 20, 62);
+
+            doc.setFont('helvetica', 'normal');
             doc.setFontSize(9);
+            doc.setTextColor(51, 65, 85);
+            doc.text(`Registered Operation:   ${activeCompany}`, 20, 69);
+            doc.text(`Contact Email:          ${activeEmail}`, 20, 75);
+            doc.text(`Target Standard:        ${sandboxReport.standardName}`, 20, 81);
+
+            // Score Summary Pillar Box on right
+            doc.setFillColor(241, 245, 249);
+            doc.roundedRect(138, 58, 52, 24, 2, 2, 'F');
+            doc.setFont('helvetica', 'bold');
+            doc.setFontSize(8);
             doc.setTextColor(100, 116, 139);
-            doc.text(sandboxReport.grade, 143, 75);
+            doc.text('COMPLIANCE SCORE', 142, 65);
 
-            doc.setDrawColor(226, 232, 240);
-            doc.line(15, 86, 195, 86);
+            doc.setFontSize(18);
+            if (isPassed) {
+                doc.setTextColor(13, 148, 136); // Teal
+            } else {
+                doc.setTextColor(225, 29, 72); // Rose
+            }
+            doc.text(`${sandboxReport.score}%`, 142, 74);
 
-            // Risks
-            doc.setTextColor(15, 23, 42);
-            doc.setFont('helvetica', 'bold');
-            doc.setFontSize(12);
-            doc.text('COMPLIANCE DEVIATIONS & FIELD RISK VECTOR DETECTIONS', 15, 96);
-
-            doc.setFont('helvetica', 'normal');
-            doc.setFontSize(9.5);
+            doc.setFontSize(7.5);
             doc.setTextColor(71, 85, 105);
-            let y = 104;
+            const shortGrade = sandboxReport.grade.length > 15 ? sandboxReport.grade.substring(0, 14) + '...' : sandboxReport.grade;
+            doc.text(shortGrade, 166, 74);
+
+            let y = 94;
+
+            // SECTION 1: Compliance Deviations & Field Risk Detection
+            doc.setFillColor(15, 23, 42);
+            doc.rect(15, y, 180, 6, 'F');
+            doc.setTextColor(255, 255, 255);
+            doc.setFont('helvetica', 'bold');
+            doc.setFontSize(9);
+            doc.text('1. COMPLIANCE DEVIATIONS & FIELD RISK DETECTIONS', 18, y + 4.5);
+
+            y += 11;
+            doc.setFont('helvetica', 'normal');
+            doc.setFontSize(9);
+            doc.setTextColor(51, 65, 85);
+
             sandboxReport.highlights.forEach((hl: string) => {
-                const lines = doc.splitTextToSize(`• ${hl}`, 180);
+                const lines = doc.splitTextToSize(`• ${hl}`, 174);
                 lines.forEach((l: string) => {
-                    doc.text(l, 15, y);
+                    if (y > 250) return;
+                    doc.text(l, 18, y);
                     y += 5.5;
                 });
             });
 
-            // Corrections
+            // SECTION 2: Corrective Action Timeline
             y += 4;
-            doc.setTextColor(15, 23, 42);
+            doc.setFillColor(15, 23, 42);
+            doc.rect(15, y, 180, 6, 'F');
+            doc.setTextColor(255, 255, 255);
             doc.setFont('helvetica', 'bold');
-            doc.setFontSize(12);
-            doc.text('REQUIRED CORRECTIVE ACTION TIMELINE (SANS ENFORCED)', 15, y);
+            doc.setFontSize(9);
+            doc.text('2. REQUIRED CORRECTIVE ACTION TIMELINE (SANS ENFORCED)', 18, y + 4.5);
 
+            y += 11;
             doc.setFont('helvetica', 'normal');
-            doc.setFontSize(9.5);
-            doc.setTextColor(71, 85, 105);
-            y += 8;
+            doc.setFontSize(9);
+            doc.setTextColor(51, 65, 85);
+
             sandboxReport.recommendations.forEach((rec: string) => {
-                const lines = doc.splitTextToSize(`• ${rec}`, 180);
+                const lines = doc.splitTextToSize(`• ${rec}`, 174);
                 lines.forEach((l: string) => {
-                    doc.text(l, 15, y);
+                    if (y > 250) return;
+                    doc.text(l, 18, y);
                     y += 5.5;
                 });
             });
+
+            // SECTION 3: Interactive Checklist Status
+            if (sandboxReport.checklist && sandboxReport.checklist.length > 0) {
+                y += 4;
+                doc.setFillColor(15, 23, 42);
+                doc.rect(15, y, 180, 6, 'F');
+                doc.setTextColor(255, 255, 255);
+                doc.setFont('helvetica', 'bold');
+                doc.setFontSize(9);
+                doc.text('3. CORRECTIVE CHECKLIST AUDIT TRAIL', 18, y + 4.5);
+
+                y += 10;
+                sandboxReport.checklist.forEach((item: any) => {
+                    if (y > 250) return;
+                    doc.setFont('helvetica', 'bold');
+                    if (item.checked) {
+                        doc.setTextColor(13, 148, 136); // Teal green
+                        doc.text('[✓ RESOLVED]', 18, y);
+                    } else {
+                        doc.setTextColor(225, 29, 72); // Rose red
+                        doc.text('[  PENDING ]', 18, y);
+                    }
+
+                    doc.setFont('helvetica', 'normal');
+                    doc.setTextColor(51, 65, 85);
+                    const taskLines = doc.splitTextToSize(item.task, 140);
+                    doc.text(taskLines[0], 48, y);
+                    y += 5.5;
+                });
+            }
 
             // Footer / Disclaimer
-            doc.setDrawColor(241, 245, 249);
+            doc.setDrawColor(226, 232, 240);
             doc.setFillColor(248, 250, 252);
-            doc.rect(15, 238, 180, 24, 'F');
-            doc.setTextColor(148, 163, 184);
-            doc.setFont('helvetica', 'normal');
+            doc.rect(15, 252, 180, 28, 'F');
+            doc.setDrawColor(203, 213, 225);
+            doc.rect(15, 252, 180, 28, 'D');
+
+            doc.setTextColor(100, 116, 139);
+            doc.setFont('helvetica', 'bold');
             doc.setFontSize(8);
-            doc.text('LEGAL COMPLIANCE NOTICE & AUDITING BOUNDS', 18, 244);
-            const disclaimer = 'This automated assessment acts as an immediate compliance simulation under South African National Standards frameworks. Site physical measurements must verify core parameters prior to formal government submittals.';
+            doc.text('CERTIFIED BY MELOTWO INDUSTRIAL SAFETY ENGINE', 18, 258);
+
+            doc.setFont('helvetica', 'normal');
+            doc.setFontSize(7.5);
+            doc.setTextColor(148, 163, 184);
+            const disclaimer = 'This automated assessment acts as an official compliance summary under South African National Standards (SANS) & MSHA frameworks. Site physical measurements must verify core parameters prior to formal government submittals.';
             const lines = doc.splitTextToSize(disclaimer, 174);
-            let dy = 248;
+            let dy = 263;
             lines.forEach((l: string) => {
                 doc.text(l, 18, dy);
                 dy += 3.5;
             });
 
-            doc.save(`MeloTwo_Assessment_${activeCompany.replace(/\s+/g, '_')}.pdf`);
-            trackGA4Event('sandbox_pdf_downloaded', { company: activeCompany, standard: sandboxReport.standardName });
+            const fileName = `MeloTwo_Compliance_${statusLabel}_${activeCompany.replace(/[^a-zA-Z0-9]/g, '_')}.pdf`;
+            doc.save(fileName);
+            trackGA4Event('sandbox_pdf_downloaded', { company: activeCompany, standard: sandboxReport.standardName, status: statusLabel });
         } catch (e) {
             console.error('Sandbox PDF generation failed:', e);
         }
@@ -5849,22 +5948,37 @@ const LandingPage: React.FC<LandingPageProps> = ({ currentPage, setPage, setIsDe
                                         </div>
                                         <p className="text-xs text-slate-400 font-medium text-center mt-6">Simulating compliance models. No staging errors detected.</p>
                                     </div>
-                                ) : sandboxReport ? (
+                                ) : (sandboxReport && !sandboxButtonSuccess) ? (
                                     /* Interactive SANS Report Output */
                                     <div className="space-y-6 animate-fade-in text-left">
                                         
                                         {/* Generation Success Banner */}
                                         {sandboxSuccessMsg && (
-                                            <div className="bg-emerald-500/10 border border-emerald-500/30 rounded-2xl p-4 flex items-start gap-3 text-emerald-300 font-sans shadow-lg shadow-emerald-500/5 animate-fade-in">
-                                                <CheckCircle2 className="w-5 h-5 text-emerald-400 shrink-0 mt-0.5" />
-                                                <div className="space-y-1">
-                                                    <h4 className="text-xs font-bold uppercase tracking-wider text-emerald-400">
-                                                        Draft Generated! Check Your Email
-                                                    </h4>
-                                                    <p className="text-xs text-slate-300 leading-relaxed font-medium">
-                                                        Your custom <strong className="text-white">{sandboxReport.standardName}</strong> assessment draft for <strong className="text-white">{sandboxReport.companyName}</strong> has been generated and logged to your local sandbox ledger. A confirmation copy was sent to <strong className="text-amber-400 font-mono">{sandboxReport.email}</strong>.
-                                                    </p>
+                                            <div className="bg-emerald-500/10 border border-emerald-500/30 rounded-2xl p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 text-emerald-300 font-sans shadow-lg shadow-emerald-500/5 animate-fade-in">
+                                                <div className="flex items-start gap-3">
+                                                    <CheckCircle2 className="w-5 h-5 text-emerald-400 shrink-0 mt-0.5" />
+                                                    <div className="space-y-1">
+                                                        <h4 className="text-xs font-bold uppercase tracking-wider text-emerald-400">
+                                                            Draft Generated! Check Your Email
+                                                        </h4>
+                                                        <p className="text-xs text-slate-300 leading-relaxed font-medium">
+                                                            Your custom <strong className="text-white">{sandboxReport.standardName}</strong> assessment draft for <strong className="text-white">{sandboxReport.companyName}</strong> has been generated and logged to your local sandbox ledger. A confirmation copy was sent to <strong className="text-amber-400 font-mono">{sandboxReport.email}</strong>.
+                                                        </p>
+                                                    </div>
                                                 </div>
+                                                <button
+                                                    type="button"
+                                                    onClick={handleDownloadSandboxPDF}
+                                                    className="inline-flex items-center justify-center px-3.5 py-2 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black text-xs uppercase tracking-wider rounded-xl shadow-md transition cursor-pointer shrink-0 gap-2"
+                                                >
+                                                    <Download className="w-3.5 h-3.5 stroke-[2.5]" />
+                                                    <span>Download PDF</span>
+                                                    <span className={`px-1.5 py-0.5 rounded text-[9px] font-black uppercase ${
+                                                        sandboxReport.score >= 80 ? 'bg-emerald-950 text-emerald-200' : 'bg-rose-950 text-rose-200'
+                                                    }`}>
+                                                        {sandboxReport.score >= 80 ? 'PASS' : 'FAIL'}
+                                                    </span>
+                                                </button>
                                             </div>
                                         )}
 
@@ -5951,16 +6065,21 @@ const LandingPage: React.FC<LandingPageProps> = ({ currentPage, setPage, setIsDe
                                         </div>
 
                                         {/* Download trigger or retry options */}
-                                        <div className="flex items-center gap-3 pt-2">
+                                        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 pt-2">
                                             <button
                                                 type="button"
                                                 onClick={handleDownloadSandboxPDF}
-                                                className="flex-1 inline-flex items-center justify-center px-4 py-3 bg-amber-500 hover:bg-amber-600 text-slate-950 font-black text-xs uppercase tracking-wider rounded-xl shadow-md transition cursor-pointer"
+                                                className="flex-1 inline-flex items-center justify-center px-5 py-3.5 bg-gradient-to-r from-amber-500 via-amber-400 to-amber-500 hover:from-amber-600 hover:to-amber-500 text-slate-950 font-black text-xs sm:text-sm uppercase tracking-wider rounded-xl shadow-[0_4px_20px_rgba(245,158,11,0.25)] hover:shadow-[0_4px_25px_rgba(245,158,11,0.35)] transition-all transform active:scale-[0.99] cursor-pointer border border-amber-300/30 gap-2"
                                             >
-                                                <svg className="w-4 h-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
-                                                    <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3" />
-                                                </svg>
-                                                Download Certified PDF Report
+                                                <FileText className="w-4 h-4 text-slate-950 stroke-[2.5]" />
+                                                <span>Download MeloTwo Certified PDF Summary</span>
+                                                <span className={`ml-2 px-2 py-0.5 rounded text-[10px] font-black uppercase tracking-widest ${
+                                                    sandboxReport.score >= 80 
+                                                        ? 'bg-emerald-950 text-emerald-300 border border-emerald-400/40' 
+                                                        : 'bg-rose-950 text-rose-300 border border-rose-400/40'
+                                                }`}>
+                                                    {sandboxReport.score >= 80 ? '✓ PASS' : '⚠ FAIL'}
+                                                </span>
                                             </button>
                                             
                                             <button
@@ -6092,13 +6211,39 @@ const LandingPage: React.FC<LandingPageProps> = ({ currentPage, setPage, setIsDe
                                         </div>
 
                                         <div className="flex flex-col items-center justify-center pt-2">
-                                            <button
-                                                type="submit"
-                                                className="w-full inline-flex items-center justify-center px-6 py-4 bg-gradient-to-r from-amber-500 to-amber-400 hover:from-amber-600 hover:to-amber-500 text-slate-950 font-black text-xs sm:text-sm uppercase tracking-widest rounded-xl shadow-[0_4px_20px_rgba(245,158,11,0.3)] hover:shadow-[0_4px_25px_rgba(245,158,11,0.4)] active:scale-[0.98] transition-all cursor-pointer border border-amber-300/20"
-                                            >
-                                                <Zap className="w-4 h-4 mr-2 text-slate-950 animate-pulse" />
-                                                Generate Compliance Assessment Draft
-                                            </button>
+                                            {sandboxButtonSuccess ? (
+                                                <button
+                                                    type="button"
+                                                    disabled={true}
+                                                    className="w-full inline-flex items-center justify-center px-6 py-4 bg-gradient-to-r from-emerald-950 via-emerald-900 to-teal-950 border border-emerald-400/60 text-emerald-100 font-extrabold text-xs sm:text-sm uppercase tracking-wider rounded-xl shadow-[0_0_25px_rgba(16,185,129,0.4)] cursor-not-allowed transition-all duration-500 ease-out transform scale-[1.01] animate-fade-in"
+                                                >
+                                                    <div className="relative flex items-center justify-center shrink-0 mr-3">
+                                                        <span className="absolute inline-flex h-5 w-5 rounded-full bg-emerald-400/70 opacity-75 animate-ping" />
+                                                        <span className="absolute -inset-1 rounded-full bg-emerald-500/30 blur-sm animate-pulse" />
+                                                        <ShieldCheck className="relative w-5 h-5 text-emerald-300 drop-shadow-[0_0_10px_rgba(52,211,153,0.9)]" />
+                                                    </div>
+                                                    <span className="text-emerald-100 font-black tracking-wide drop-shadow-sm">
+                                                        Compliance Draft Dispatched! Check your inbox.
+                                                    </span>
+                                                </button>
+                                            ) : sandboxGenerating ? (
+                                                <button
+                                                    type="button"
+                                                    disabled={true}
+                                                    className="w-full inline-flex items-center justify-center px-6 py-4 bg-slate-900 border border-slate-700/80 text-amber-400 font-bold text-xs sm:text-sm uppercase tracking-widest rounded-xl shadow-lg cursor-not-allowed opacity-90 transition-all duration-300"
+                                                >
+                                                    <Loader2 className="w-4 h-4 mr-2 animate-spin text-amber-400" />
+                                                    <span>Compiling Compliance Assessment...</span>
+                                                </button>
+                                            ) : (
+                                                <button
+                                                    type="submit"
+                                                    className="w-full inline-flex items-center justify-center px-6 py-4 bg-gradient-to-r from-amber-500 to-amber-400 hover:from-amber-600 hover:to-amber-500 text-slate-950 font-black text-xs sm:text-sm uppercase tracking-widest rounded-xl shadow-[0_4px_20px_rgba(245,158,11,0.3)] hover:shadow-[0_4px_25px_rgba(245,158,11,0.4)] active:scale-[0.98] transition-all duration-300 cursor-pointer border border-amber-300/20"
+                                                >
+                                                    <Zap className="w-4 h-4 mr-2 text-slate-950 animate-pulse" />
+                                                    <span>Generate Compliance Assessment Draft</span>
+                                                </button>
+                                            )}
                                         </div>
                                         
                                         <p className="text-[10px] text-slate-500 leading-normal text-center">
