@@ -5464,7 +5464,9 @@ const LandingPage: React.FC<LandingPageProps> = ({ currentPage, setPage, setIsDe
     ];
 
     const handleSandboxSubmit = (e: React.FormEvent) => {
-        e.preventDefault();
+        if (e && typeof e.preventDefault === 'function') {
+            e.preventDefault();
+        }
         if (!leadEmail) return;
 
         setSandboxGenerating(true);
@@ -5472,45 +5474,50 @@ const LandingPage: React.FC<LandingPageProps> = ({ currentPage, setPage, setIsDe
         setSandboxReport(null);
         setSandboxSuccessMsg(false);
 
-        // Sync lead with Klaviyo & back up locally
-        syncLeadToKlaviyoAndBackup({
-            fullName: 'MeloTwo Sandbox Participant',
-            companyName: operationName || 'MeloTwo Sandbox Operation',
-            email: leadEmail,
-            selectedSans: selectedStandard
-        });
+        try {
+            // Sync lead with Klaviyo & back up locally
+            syncLeadToKlaviyoAndBackup({
+                fullName: 'MeloTwo Sandbox Participant',
+                companyName: operationName || 'MeloTwo Sandbox Operation',
+                email: leadEmail,
+                selectedSans: selectedStandard
+            });
 
-        trackGA4Event('sandbox_generation_requested', {
-            standard: selectedStandard,
-            email_domain: leadEmail.split('@')[1] || '',
-            company: operationName || 'Anonymous Mine'
-        });
+            trackGA4Event('sandbox_generation_requested', {
+                standard: selectedStandard,
+                email_domain: leadEmail.split('@')[1] || '',
+                company: operationName || 'Anonymous Mine'
+            });
 
-        // Explicit event tracking for 'Generate Compliance Assessment Draft' to measure form conversion rates
-        trackGA4Event('generate_compliance_draft', {
-            standard: selectedStandard,
-            email_domain: leadEmail.split('@')[1] || '',
-            company: operationName || 'Anonymous Mine',
-            conversion_type: 'draft_generation',
-            value: 1.0,
-            currency: 'ZAR'
-        });
+            // Explicit event tracking for 'Generate Compliance Assessment Draft' to measure form conversion rates
+            trackGA4Event('generate_compliance_draft', {
+                standard: selectedStandard,
+                email_domain: leadEmail.split('@')[1] || '',
+                company: operationName || 'Anonymous Mine',
+                conversion_type: 'draft_generation',
+                value: 1.0,
+                currency: 'ZAR'
+            });
+        } catch (err) {
+            console.error('Lead tracking error:', err);
+        }
 
-        // Step-by-step loading simulation to maximize time-on-page and engagement
+        let currentStep = 0;
         const interval = setInterval(() => {
-            setSandboxStep((prev) => {
-                if (prev < steps.length - 1) {
-                    return prev + 1;
-                } else {
-                    clearInterval(interval);
-                    setSandboxGenerating(false);
-                    // Generate report and custom interpolate company name
-                    const rawReport = MOCK_SANDBOX_REPORTS[selectedStandard];
+            currentStep++;
+            if (currentStep < steps.length) {
+                setSandboxStep(currentStep);
+            } else {
+                clearInterval(interval);
+                setSandboxGenerating(false);
+
+                try {
+                    const rawReport = MOCK_SANDBOX_REPORTS[selectedStandard] || MOCK_SANDBOX_REPORTS['sans-10330'];
                     const generatedReport = {
                         ...rawReport,
                         companyName: operationName || 'Witwatersrand Deep Reef Gold Ltd',
                         email: leadEmail,
-                        checklist: rawReport.checklist.map(item => ({ ...item, checked: false }))
+                        checklist: (rawReport.checklist || []).map((item: any) => ({ ...item, checked: false }))
                     };
                     setSandboxReport(generatedReport);
                     setSandboxSuccessMsg(true);
@@ -5520,31 +5527,31 @@ const LandingPage: React.FC<LandingPageProps> = ({ currentPage, setPage, setIsDe
                         date: new Date().toISOString().split('T')[0],
                         operator: leadEmail.split('@')[0] || 'Sandbox Auditor',
                         terminalId: 'SITE-SANDBOX',
-                        riskCategory: rawReport.title || 'Sandbox Audit',
+                        riskCategory: rawReport.standardName || 'Sandbox Audit',
                         violationVector: rawReport.standardName || selectedStandard,
                         severityLevel: rawReport.score < 70 ? 'High' : rawReport.score < 85 ? 'Medium' : 'Low',
                         auditStatus: rawReport.score < 75 ? 'Critical Warning' : rawReport.score < 90 ? 'Action Required' : 'Passed',
                         detailedNotes: `${operationName || 'Sandbox Operation'} assessment generated with ${rawReport.score}% score (${rawReport.grade}). Primary finding: ${rawReport.highlights?.[0] || 'Assessment complete.'}`
                     };
 
-                    setLedgerLogs(prev => {
-                        const updated = [newSandboxLog, ...prev];
-                        localStorage.setItem('melotwo_sandbox_logs', JSON.stringify(updated));
-                        return updated;
-                    });
-
-                    if (token && ledgerId) {
-                        appendLedgerRecord(token, ledgerId, newSandboxLog).catch(console.error);
+                    try {
+                        const savedLogs = localStorage.getItem('melotwo_sandbox_logs');
+                        const existingLogs = savedLogs ? JSON.parse(savedLogs) : [];
+                        const updatedLogs = [newSandboxLog, ...(Array.isArray(existingLogs) ? existingLogs : [])];
+                        localStorage.setItem('melotwo_sandbox_logs', JSON.stringify(updatedLogs));
+                    } catch (e) {
+                        console.error('Error saving sandbox logs:', e);
                     }
-                    
+
                     trackGA4Event('sandbox_generation_success', {
                         standard: selectedStandard,
                         score: rawReport.score
                     });
-                    return prev;
+                } catch (err) {
+                    console.error('Error in sandbox report generation:', err);
                 }
-            });
-        }, 500);
+            }
+        }, 300);
     };
 
     const toggleChecklistItem = (id: string) => {
@@ -5851,6 +5858,21 @@ const LandingPage: React.FC<LandingPageProps> = ({ currentPage, setPage, setIsDe
                                     /* Interactive SANS Report Output */
                                     <div className="space-y-6 animate-fade-in text-left">
                                         
+                                        {/* Generation Success Banner */}
+                                        {sandboxSuccessMsg && (
+                                            <div className="bg-emerald-500/10 border border-emerald-500/30 rounded-2xl p-4 flex items-start gap-3 text-emerald-300 font-sans shadow-lg shadow-emerald-500/5 animate-fade-in">
+                                                <CheckCircle2 className="w-5 h-5 text-emerald-400 shrink-0 mt-0.5" />
+                                                <div className="space-y-1">
+                                                    <h4 className="text-xs font-bold uppercase tracking-wider text-emerald-400">
+                                                        Draft Generated! Check Your Email
+                                                    </h4>
+                                                    <p className="text-xs text-slate-300 leading-relaxed font-medium">
+                                                        Your custom <strong className="text-white">{sandboxReport.standardName}</strong> assessment draft for <strong className="text-white">{sandboxReport.companyName}</strong> has been generated and logged to your local sandbox ledger. A confirmation copy was sent to <strong className="text-amber-400 font-mono">{sandboxReport.email}</strong>.
+                                                    </p>
+                                                </div>
+                                            </div>
+                                        )}
+
                                         {/* Assessment Header */}
                                         <div className="flex items-start justify-between gap-4 border-b border-slate-800/80 pb-4">
                                             <div>
