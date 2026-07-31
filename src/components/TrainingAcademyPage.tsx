@@ -22,7 +22,14 @@ import {
   ArrowRight,
   ShieldCheck,
   Building,
-  Activity
+  Activity,
+  Lock,
+  Unlock,
+  Key,
+  Star,
+  X,
+  CheckCircle,
+  ExternalLink
 } from 'lucide-react';
 import { Page } from '../types';
 
@@ -177,6 +184,14 @@ export const TrainingAcademyPage: React.FC<TrainingAcademyPageProps> = ({ setPag
   const [selectedModule, setSelectedModule] = useState<number | null>(1);
   const [userAnswers, setUserAnswers] = useState<Record<number, number>>({});
   const [isQuizSubmitted, setIsQuizSubmitted] = useState<boolean>(false);
+  
+  // Freemium Pro State
+  const [isProUser, setIsProUser] = useState<boolean>(() => {
+    return localStorage.getItem('melotwo_pro_access') === 'true';
+  });
+  const [showProPaywallModal, setShowProPaywallModal] = useState<boolean>(false);
+  const [paywallFeatureTrigger, setPaywallFeatureTrigger] = useState<string>('Interactive Scenario & Quiz Access');
+
   const [checklistState, setChecklistState] = useState<Record<number, boolean>>({
     1: true,
     2: true,
@@ -184,6 +199,21 @@ export const TrainingAcademyPage: React.FC<TrainingAcademyPageProps> = ({ setPag
     4: false,
     5: false
   });
+
+  const toggleProUserMode = () => {
+    const nextVal = !isProUser;
+    setIsProUser(nextVal);
+    localStorage.setItem('melotwo_pro_access', String(nextVal));
+  };
+
+  const handleProProtectedAction = (actionName: string, onProSuccess: () => void) => {
+    if (isProUser) {
+      onProSuccess();
+    } else {
+      setPaywallFeatureTrigger(actionName);
+      setShowProPaywallModal(true);
+    }
+  };
 
   const modules = [
     {
@@ -294,7 +324,52 @@ export const TrainingAcademyPage: React.FC<TrainingAcademyPageProps> = ({ setPag
   const completedChecklistCount = Object.values(checklistState).filter(Boolean).length;
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8 relative">
+      {/* FREEMIUM / DEMO VIEW TOGGLE FLOATING BAR */}
+      <div className="bg-slate-900 border border-slate-800 text-white rounded-2xl p-4 shadow-lg flex flex-col sm:flex-row items-center justify-between gap-4">
+        <div className="flex items-center space-x-3">
+          <div className={`p-2 rounded-xl ${isProUser ? 'bg-amber-500/20 text-amber-400 border border-amber-500/30' : 'bg-slate-800 text-slate-400'}`}>
+            {isProUser ? <Unlock className="w-5 h-5" /> : <Lock className="w-5 h-5" />}
+          </div>
+          <div>
+            <div className="flex items-center space-x-2">
+              <span className="font-bold text-sm text-white">Academy View Mode:</span>
+              <span className={`px-2.5 py-0.5 rounded-full text-xs font-black uppercase tracking-wide ${
+                isProUser ? 'bg-amber-400 text-slate-950' : 'bg-slate-800 text-slate-300 border border-slate-700'
+              }`}>
+                {isProUser ? 'Pro Subscribed (Unlocked)' : 'Public Guest (Freemium Teaser)'}
+              </span>
+            </div>
+            <p className="text-xs text-slate-400 mt-0.5">
+              {isProUser 
+                ? 'Full interactive quiz runner, terminal drills, and 1-click PDF exports enabled.' 
+                : 'Modules & rules are public for SEO/Trust. Interactive quizzes & terminal access show Pro paywall.'}
+            </p>
+          </div>
+        </div>
+
+        <button
+          onClick={toggleProUserMode}
+          className={`px-4 py-2 rounded-xl font-bold text-xs transition cursor-pointer flex items-center space-x-2 shrink-0 ${
+            isProUser
+              ? 'bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700'
+              : 'bg-amber-500 hover:bg-amber-400 text-slate-950 shadow-md'
+          }`}
+        >
+          {isProUser ? (
+            <>
+              <Lock className="w-3.5 h-3.5" />
+              <span>Simulate Guest / Free Mode</span>
+            </>
+          ) : (
+            <>
+              <Sparkles className="w-3.5 h-3.5" />
+              <span>Switch to Pro Member Mode</span>
+            </>
+          )}
+        </button>
+      </div>
+
       {/* HEADER BANNER */}
       <div className="relative overflow-hidden rounded-3xl bg-slate-900 border border-slate-800 p-8 sm:p-10 text-white shadow-2xl">
         <div className="absolute -right-12 -bottom-12 w-96 h-96 bg-indigo-600/20 rounded-full blur-3xl pointer-events-none"></div>
@@ -316,18 +391,30 @@ export const TrainingAcademyPage: React.FC<TrainingAcademyPageProps> = ({ setPag
 
           <div className="flex flex-wrap lg:flex-col gap-3 w-full sm:w-auto shrink-0">
             <button
-              onClick={() => setPage('inspector')}
-              className="inline-flex items-center justify-center space-x-2 px-5 py-3 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-sm transition shadow-lg hover:shadow-amber-500/25 cursor-pointer"
+              onClick={() => handleProProtectedAction('Auditing Terminal Live Execution', () => setPage('inspector'))}
+              className="inline-flex items-center justify-center space-x-2 px-5 py-3 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-sm transition shadow-lg hover:shadow-amber-500/25 cursor-pointer relative group"
             >
               <ShieldCheck className="w-4 h-4" />
               <span>Open Auditing Terminal</span>
+              {!isProUser && (
+                <span className="ml-1.5 px-2 py-0.5 rounded-md bg-slate-950/80 text-amber-300 text-[10px] font-black uppercase tracking-wider flex items-center space-x-1">
+                  <Lock className="w-2.5 h-2.5" />
+                  <span>PRO</span>
+                </span>
+              )}
             </button>
             <button
-              onClick={() => setActiveTab('quiz')}
+              onClick={() => handleProProtectedAction('10-Question Field Practice Quiz', () => setActiveTab('quiz'))}
               className="inline-flex items-center justify-center space-x-2 px-5 py-3 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-700 text-white font-medium text-sm transition cursor-pointer"
             >
               <Award className="w-4 h-4 text-amber-400" />
               <span>Take 10-Question Quiz</span>
+              {!isProUser && (
+                <span className="ml-1.5 px-2 py-0.5 rounded-md bg-amber-500/20 text-amber-300 text-[10px] font-bold uppercase tracking-wider border border-amber-500/30 flex items-center space-x-1">
+                  <Lock className="w-2.5 h-2.5" />
+                  <span>PRO</span>
+                </span>
+              )}
             </button>
           </div>
         </div>
@@ -380,7 +467,13 @@ export const TrainingAcademyPage: React.FC<TrainingAcademyPageProps> = ({ setPag
         </button>
 
         <button
-          onClick={() => setActiveTab('quiz')}
+          onClick={() => {
+            if (isProUser) {
+              setActiveTab('quiz');
+            } else {
+              handleProProtectedAction('Interactive 10-Question Field Practice Quiz', () => setActiveTab('quiz'));
+            }
+          }}
           className={`flex items-center space-x-2 px-5 py-3 rounded-t-xl font-bold text-xs sm:text-sm whitespace-nowrap transition cursor-pointer ${
             activeTab === 'quiz'
               ? 'bg-white border border-b-0 border-gray-200 text-indigo-700 shadow-sm'
@@ -389,6 +482,7 @@ export const TrainingAcademyPage: React.FC<TrainingAcademyPageProps> = ({ setPag
         >
           <Award className="w-4 h-4 text-amber-500" />
           <span>3. 10-Question Field Practice Quiz</span>
+          {!isProUser && <Lock className="w-3 h-3 text-amber-500 ml-1" />}
         </button>
 
         <button
@@ -407,11 +501,19 @@ export const TrainingAcademyPage: React.FC<TrainingAcademyPageProps> = ({ setPag
       {/* TAB 1: 6-MODULE COURSE PATHWAY */}
       {activeTab === 'modules' && (
         <div className="space-y-6">
-          <div className="bg-white rounded-2xl border border-gray-200 p-6 shadow-sm">
-            <h2 className="text-lg font-bold text-gray-900">Module Overview & Core Compliance Rules</h2>
-            <p className="text-gray-600 text-sm mt-1">
-              Each module establishes the 3 non-negotiable rules required to achieve S-Tier compliance and prevent multi-million Rand litigation or operational shutdowns.
-            </p>
+          <div className="bg-white rounded-2xl border border-gray-200 p-6 shadow-sm flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+            <div>
+              <h2 className="text-lg font-bold text-gray-900">Module Overview & Core Compliance Rules</h2>
+              <p className="text-gray-600 text-sm mt-1">
+                Each module establishes the 3 non-negotiable rules required to achieve S-Tier compliance and prevent multi-million Rand litigation or operational shutdowns.
+              </p>
+            </div>
+            {!isProUser && (
+              <span className="px-3 py-1.5 rounded-xl bg-amber-50 border border-amber-200 text-amber-800 text-xs font-bold flex items-center space-x-1.5 shrink-0">
+                <Sparkles className="w-4 h-4 text-amber-600" />
+                <span>Freemium Teaser Active</span>
+              </span>
+            )}
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -469,7 +571,20 @@ export const TrainingAcademyPage: React.FC<TrainingAcademyPageProps> = ({ setPag
                     <span className={isSelected ? 'text-amber-400' : 'text-indigo-600'}>
                       {isSelected ? 'Active Focus' : 'Click to Select'}
                     </span>
-                    <ArrowRight className={`w-4 h-4 ${isSelected ? 'text-amber-400' : 'text-gray-400'}`} />
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleProProtectedAction(`${m.badge} Interactive Scenario Drill`, () => setPage('inspector'));
+                      }}
+                      className={`inline-flex items-center space-x-1 px-3 py-1.5 rounded-lg font-bold text-xs transition ${
+                        isSelected
+                          ? 'bg-amber-400 text-slate-950 hover:bg-amber-300'
+                          : 'bg-indigo-50 text-indigo-700 hover:bg-indigo-100'
+                      }`}
+                    >
+                      <span>Scenario Drill</span>
+                      {!isProUser ? <Lock className="w-3 h-3 ml-0.5" /> : <ArrowRight className="w-3.5 h-3.5 ml-0.5" />}
+                    </button>
                   </div>
                 </div>
               );
@@ -823,6 +938,83 @@ export const TrainingAcademyPage: React.FC<TrainingAcademyPageProps> = ({ setPag
                 </div>
               );
             })}
+          </div>
+        </div>
+      )}
+
+      {/* MELOTWO PRO / FREEMIUM PAYWALL MODAL */}
+      {showProPaywallModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md animate-fade-in">
+          <div className="bg-slate-900 border border-slate-800 rounded-3xl max-w-lg w-full p-6 sm:p-8 text-white space-y-6 shadow-2xl relative overflow-hidden">
+            <div className="absolute -right-16 -top-16 w-48 h-48 bg-amber-500/20 rounded-full blur-2xl pointer-events-none"></div>
+
+            <button
+              onClick={() => setShowProPaywallModal(false)}
+              className="absolute top-5 right-5 p-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white transition cursor-pointer"
+            >
+              <X className="w-5 h-5" />
+            </button>
+
+            <div className="space-y-3">
+              <div className="inline-flex items-center space-x-2 px-3 py-1 rounded-full bg-amber-500/20 border border-amber-500/30 text-amber-300 text-xs font-extrabold uppercase tracking-wider">
+                <Sparkles className="w-3.5 h-3.5" />
+                <span>MeloTwo Pro Access</span>
+              </div>
+              <h3 className="text-2xl font-black text-white tracking-tight">
+                Unlock MeloTwo Pro & Enterprise Suite
+              </h3>
+              <p className="text-slate-300 text-sm leading-relaxed">
+                Unlock full interactive scenario drills, 10-question field quizzes, and official audit exports with MeloTwo Pro.
+              </p>
+            </div>
+
+            <div className="p-4 rounded-2xl bg-slate-800/80 border border-slate-700/80 space-y-3 text-xs">
+              <p className="font-bold text-amber-400 uppercase tracking-wide">Included in MeloTwo Pro Tier:</p>
+              <ul className="space-y-2.5">
+                <li className="flex items-start space-x-2.5 text-slate-200">
+                  <CheckCircle className="w-4 h-4 text-emerald-400 shrink-0 mt-0.5" />
+                  <span><strong>Full 10-Question Field Practice Quiz</strong> with instant scoring and SANS citation breakdowns.</span>
+                </li>
+                <li className="flex items-start space-x-2.5 text-slate-200">
+                  <CheckCircle className="w-4 h-4 text-emerald-400 shrink-0 mt-0.5" />
+                  <span><strong>Deep Auditing Terminal Access</strong> with offline database sync & Conflict Reconciliation engine.</span>
+                </li>
+                <li className="flex items-start space-x-2.5 text-slate-200">
+                  <CheckCircle className="w-4 h-4 text-emerald-400 shrink-0 mt-0.5" />
+                  <span><strong>1-Click Verified PDF Download</strong> for DMR / SANS legal regulatory sign-off.</span>
+                </li>
+                <li className="flex items-start space-x-2.5 text-slate-200">
+                  <CheckCircle className="w-4 h-4 text-emerald-400 shrink-0 mt-0.5" />
+                  <span><strong>Multi-Site Regional Executive Dashboard</strong> across Shafts & Processing Plants.</span>
+                </li>
+              </ul>
+            </div>
+
+            <div className="space-y-3 pt-2">
+              <button
+                onClick={() => {
+                  setShowProPaywallModal(false);
+                  setIsProUser(true);
+                  localStorage.setItem('melotwo_pro_access', 'true');
+                  if (paywallFeatureTrigger.includes('Auditing Terminal')) {
+                    setPage('inspector');
+                  } else if (paywallFeatureTrigger.includes('Quiz')) {
+                    setActiveTab('quiz');
+                  }
+                }}
+                className="w-full py-3.5 px-6 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-black text-sm transition shadow-lg shadow-amber-500/25 flex items-center justify-center space-x-2 cursor-pointer"
+              >
+                <Sparkles className="w-4 h-4" />
+                <span>Start Subscription / Sign In</span>
+              </button>
+
+              <button
+                onClick={() => setShowProPaywallModal(false)}
+                className="w-full py-2.5 px-4 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold text-xs transition cursor-pointer text-center"
+              >
+                Continue Browsing Public Curriculum
+              </button>
+            </div>
           </div>
         </div>
       )}
