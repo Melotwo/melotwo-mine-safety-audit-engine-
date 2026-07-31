@@ -5,6 +5,7 @@ import { sanitizeInputText } from './utils/sanitizer';
 import { CountUp } from './components/CountUp';
 import { Sparkline as HistoricalSparkline } from './components/Sparkline';
 import { ComplianceFAQ } from './components/ComplianceFAQ';
+import { TrainingAcademyPage } from './components/TrainingAcademyPage';
 import { Database, RefreshCw, Upload, LogOut, Sparkles, CheckCircle2, AlertOctagon, Download, ChevronRight, Lock, Terminal, Minimize2, Maximize2, Activity, Scale, Globe } from 'lucide-react';
 
 import { initializeApp } from 'firebase/app';
@@ -4065,6 +4066,7 @@ const AppNavbar: React.FC<NavbarProps> = ({ currentPage, setPage, userId, isAuth
         { name: 'Home', page: 'home' },
         { name: 'Solutions', page: 'solutions' },
         { name: 'Auditing Terminal', page: 'inspector' },
+        { name: 'SHEQ Academy', page: 'academy' },
     ];
 
     return (
@@ -10800,6 +10802,12 @@ const App: React.FC = () => {
   } else if (currentPage === 'inspector') {
     return (
       <SafetyInspectorPage
+        setPage={setCurrentPage}
+      />
+    );
+  } else if (currentPage === 'academy') {
+    return (
+      <TrainingAcademyPage
         setPage={setCurrentPage}
       />
     );
