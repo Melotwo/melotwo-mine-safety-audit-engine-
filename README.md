@@ -1,51 +1,73 @@
-# Melotwo Mine Safety Compliance & PPE Audit Engine
+# Melotwo AI Safety Inspector
 
-The **Melotwo Mine Safety Compliance & PPE Audit Engine** is a full-stack engineering solution designed to evaluate and verify underground personnel protective wear against South African National Standards (SANS) and Department of Mineral Resources and Energy (DMRE) guidelines.
+Melotwo provides cutting-edge tools to analyze, test, and ensure Large Language Models (LLMs) operate within ethical and regulatory guardrails. This application features a **Safety Inspector** powered by Google Gemini to simulate adversarial prompts and edge-case scenarios.
 
----
+## ✨ Features
 
-## 🚀 14-Day Free Beta Trial Architecture
+*   **AI Safety Inspector**: Test specific scenarios and system prompts against an AI safety guardrail.
+*   **Risk Analysis**: Automatically scores potential output for safety risks (Negligible, Low, Medium, High).
+*   **Template Library**: Pre-loaded adversarial templates (Jailbreak, Phishing, Bias) for quick testing.
+*   **Inspection History**: Automatically saves your testing history locally.
+*   **Draft Auto-Save**: Never lose your work; inputs are saved as you type.
 
-The platform includes a premium "14-Day Free Beta Trial" onboarding and registration system to lock in early-bird corporate access for the **2026 South African Industry Beta**.
+## 🇿🇦 South African Mining Health & Safety (MHSA) Compliance Architecture
 
-### 1. Client-Side Access Control & Overlay Shield
-- **Protected Features**:
-  - **Tender Specification Blueprint Generator**: Converts complex audit metrics into structured, copyable procurement tender documents.
-  - **Official Certificate Print Portal**: Allows the extraction of legally defensible, physical PDF/Paper print audits for DMRE inspections.
-- **Visual State**:
-  - Locked premium cards are wrapped with a sleek, high-contrast, blurred overlay (`backdrop-blur-sm` & Slate backgrounds `#1e293b`).
-  - An animated **SANS Compliance Score Gauge** remains fully interactive and visible to all users.
-- **Onboarding Modal**:
-  - Displays high-converting B2B copy.
-  - Collects Enterprise Name, Primary Operation Type (Mining / Construction), and Workforce Size.
+Melotwo Mine Safety Audit Engine provides specialized compliance auditing and digital safety file management aligned with South African mining regulations:
 
-### 2. Paystack Subscription Pipeline Integration (`/api/paystack/initialize-trial`)
-- **Deferred Billing**:
-  - The API route processes corporate signups by preparing a subscription request targeting the future.
-  - Deferral is structured using a `start_date` calculated precisely **14 days in the future**.
-  - Payload structure passed to Paystack:
-    ```json
-    {
-      "email": "user@enterprise.co.za",
-      "amount": "0",
-      "plan": "SANS_ENTERPRISE_BETA_2026",
-      "start_date": "2026-07-08T00:37:03.000Z",
-      "metadata": {
-        "enterpriseName": "Anglo American Platinum",
-        "operationType": "Mining",
-        "workforceSize": "1500 personnel",
-        "trial_duration": "14 days",
-        "compliance_shield_active": true
-      }
-    }
+- **MHSA Act 29 of 1996:** Automated Section 2 & Section 11 Risk Assessments (HIRA / JSA).
+- **DMRE Inspection Readiness:** Statutory reporting and digital audit trail generation for Inspector of Mines audits.
+- **SANS Regulatory Verification:**
+  - `SANS 10108`: Hazardous Locations & Explosion-Proof Zoning
+  - `SANS 10142-1`: Industrial & Underground Electrical Isolation
+  - `SANS 10049`: Occupational Hygiene & PPE Degradation Metrics
+  - `SANS 10330`: HACCP Food Safety in Mining Canteens
+- **Offline Operational Resilience:** Zero-latency underground audit capture with automatic cloud sync.
+
+## 🚀 Deployment to GitHub Pages
+
+This project is configured to deploy automatically to **GitHub Pages** using GitHub Actions.
+
+### 1. Prerequisites
+
+*   A GitHub repository.
+*   A Google Gemini API Key.
+
+### 2. Configure GitHub Secrets
+
+To enable the application to talk to Google Gemini, you must add your API Key to the repository secrets.
+
+1.  Go to your GitHub repository.
+2.  Navigate to **Settings** > **Secrets and variables** > **Actions**.
+3.  Click **New repository secret**.
+4.  **Name**: `API_KEY`
+5.  **Value**: Paste your actual Google Gemini API Key.
+6.  Click **Add secret**.
+
+### 3. Enable GitHub Pages
+
+1.  Go to **Settings** > **Pages**.
+2.  Under **Build and deployment** > **Source**, select **GitHub Actions**.
+3.  The deployment workflow will run automatically on the next push to `main`, or you can manually trigger it from the **Actions** tab.
+
+## 🛠️ Local Development
+
+1.  **Install Dependencies**:
+    ```bash
+    npm install
+    ```
+2.  **Environment Variables**:
+    Create a `.env` file in the root directory for local testing:
+    ```env
+    API_KEY=your_actual_api_key_here
+    ```
+3.  **Start Dev Server**:
+    ```bash
+    npm run dev
     ```
 
----
+## 🏗️ Tech Stack
 
-## 🛠️ Project Structure & Architecture
-
-- **`server.ts`**: Express backend executing SANS regulatory rules & proxying the Paystack trial initialization.
-- **`src/components/AuditReport.tsx`**: Presents audit conclusions, gauges, and the premium overlay shield with the onboarding modal form.
-- **`src/components/AuditForm.tsx`**: Dynamic input capturing current clothing, footwear, depth levels, and environmental threats.
-- **`src/components/WashCycleSimulator.tsx`**: Demonstrates degradation of Treated FR coatings vs. Inherent atomic-level FR blends.
-- **`src/components/SANSReferenceTable.tsx`**: Interactive reference library for SANS regulatory codes.
+*   **Frontend**: React, TypeScript, Vite
+*   **Styling**: Tailwind CSS
+*   **AI Integration**: Google GenAI SDK (Gemini 2.5 Flash)
+*   **Hosting**: GitHub Pages
