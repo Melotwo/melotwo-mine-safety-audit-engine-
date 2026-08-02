@@ -52,6 +52,22 @@ export const Navbar: React.FC<NavbarProps> = ({
           >
             Inspector
           </button>
+          <button
+            onClick={() => setPage('handover')}
+            className={`text-sm font-medium transition-colors hover:text-indigo-400 ${
+              currentPage === 'handover' ? 'text-indigo-400' : 'text-slate-300'
+            }`}
+          >
+            Shift Handover
+          </button>
+          <button
+            onClick={() => setPage('academy')}
+            className={`text-sm font-medium transition-colors hover:text-indigo-400 ${
+              currentPage === 'academy' ? 'text-indigo-400' : 'text-slate-300'
+            }`}
+          >
+            SHEQ Academy
+          </button>
 
           {isAuthReady && (
             <div>
