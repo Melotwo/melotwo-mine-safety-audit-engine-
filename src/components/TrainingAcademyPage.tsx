@@ -1005,14 +1005,14 @@ export const TrainingAcademyPage: React.FC<TrainingAcademyPageProps> = ({ setPag
                 className="w-full py-3.5 px-6 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-black text-sm transition shadow-lg shadow-amber-500/25 flex items-center justify-center space-x-2 cursor-pointer"
               >
                 <Sparkles className="w-4 h-4" />
-                <span>Start Subscription / Sign In</span>
+                <span>Start Subscription / Sign Up for MeloTwo Pro</span>
               </button>
 
               <button
                 onClick={() => setShowProPaywallModal(false)}
                 className="w-full py-2.5 px-4 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold text-xs transition cursor-pointer text-center"
               >
-                Continue Browsing Public Curriculum
+                Explore Free Overview
               </button>
             </div>
           </div>
