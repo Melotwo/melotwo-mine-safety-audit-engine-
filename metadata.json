@@ -1,7 +1,9 @@
 {
   "name": "Melotwo AI Safety Inspector",
   "description": "An industrial mine safety audit and SANS compliance console featuring dynamic business profiles, sector-specific checklists, cognitive audits, and synchronized Google Sheets ledgering.",
-  "requestFramePermissions": [],
+  "requestFramePermissions": [
+    "microphone"
+  ],
   "majorCapabilities": [
     "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
   ]
