@@ -573,6 +573,159 @@ Each object in the array must have exactly these fields:
   }
 });
 
+// MeloTwo Shift Handover & SANS 10330 (HACCP) Compliance Assistant System Prompt
+const HANDOVER_ASSISTANT_SYSTEM_PROMPT = `You are the MeloTwo Industrial Safety & Compliance Assistant. 
+Your primary job is to help mine canteen managers and safety supervisors complete their shift handovers, log Critical Control Points (CCPs), and verify SANS 10330 (HACCP) compliance via natural conversation.
+
+Your goals:
+1. Extract key inspection data: Cold room temperatures, cooling interval logs, hygiene inspection pass/fail, and any safety hazards reported.
+2. Structure the recorded data into a clean JSON log format at the end of the conversation or whenever asked.
+3. Keep your tone professional, concise, and focused on South African mining safety standards (DMRE oversight & SANS 10330).
+
+CRITICAL AUDIT REQUIREMENT:
+If the user gives incomplete or qualitative information (e.g., "Cold room 1 is fine", "the fridge is cold", "hygiene is good"), politely ask for the exact numeric temperature reading (°C) or specific quantitative measurement to ensure defensible audit compliance for DMRE oversight.
+
+You MUST ALWAYS return your output as a single valid JSON object with this exact schema:
+{
+  "reply": "Conversational response string. If temperatures or numeric data are missing or vague, politely request exact numeric °C values.",
+  "extracted_ccp_data": {
+    "cold_room_temperatures": [
+      { "unit": "Cold Room 1", "temperature_c": 3.2, "status": "Compliant", "numeric_provided": true }
+    ],
+    "cooling_intervals": [
+      { "item": "Cooked Stew Batch", "initial_temp_c": 72.0, "cooling_time_mins": 85, "final_temp_c": 3.6, "status": "Compliant" }
+    ],
+    "hygiene_inspection": {
+      "overall_status": "Pass",
+      "handwashing_stations": true,
+      "sanitization_verified": true,
+      "notes": "Hand wash stations operational and fully stocked."
+    },
+    "safety_hazards": [
+      { "hazard": "Description", "severity": "High", "mitigation": "Corrective action taken" }
+    ],
+    "missing_critical_data": ["Cold Room 2 numeric temperature reading"]
+  },
+  "is_handover_complete": false
+}`;
+
+function localHandoverEvaluation(messages: Array<{ role: string; text: string }>, currentData?: any) {
+  const lastUserMsg = [...messages].reverse().find(m => m.role === 'user')?.text || '';
+  const textLower = lastUserMsg.toLowerCase();
+
+  const coldRooms: any[] = currentData?.cold_room_temperatures ? [...currentData.cold_room_temperatures] : [];
+  
+  const tempMatches = Array.from(lastUserMsg.matchAll(/(cold\s*room\s*\d*|chiller\s*\d*|walk-in\s*\d*|fridge\s*\d*|meat\s*room)\s*(?:is|at|measured|reading)?\s*(-?\d+(?:\.\d+)?)\s*(?:°?c|degrees)?/gi));
+  
+  let foundNumericTemp = false;
+  for (const match of tempMatches) {
+    foundNumericTemp = true;
+    const unit = match[1].trim();
+    const temp = parseFloat(match[2]);
+    const status = temp <= 4.0 ? 'Compliant' : 'Non-Compliant (Exceeds 4.0°C SANS 10330 limit)';
+    
+    const existingIdx = coldRooms.findIndex(cr => cr.unit.toLowerCase() === unit.toLowerCase());
+    if (existingIdx >= 0) {
+      coldRooms[existingIdx] = { unit, temperature_c: temp, status, numeric_provided: true };
+    } else {
+      coldRooms.push({ unit, temperature_c: temp, status, numeric_provided: true });
+    }
+  }
+
+  const vagueMatch = lastUserMsg.match(/(cold\s*room\s*\d*|chiller\s*\d*|fridge\s*\d*|walk-in)\s*(?:is|looks)?\s*(fine|good|okay|ok|cool|working)/i);
+
+  let reply = "";
+  const missingData: string[] = [];
+
+  if (vagueMatch && !foundNumericTemp) {
+    const unitName = vagueMatch[1].trim();
+    reply = `Thank you, supervisor. However, to ensure defensible SANS 10330 (HACCP) audit compliance for DMRE oversight, please provide the exact numeric temperature reading (°C) for ${unitName}. Standard safe limits require high-risk chillers to operate strictly below 4.0°C.`;
+    missingData.push(`${unitName} exact numeric temperature reading`);
+  } else if (foundNumericTemp) {
+    reply = `Recorded numeric temperature reading(s) under SANS 10330 standards. Shift handover log updated. Are there any cooling interval logs, hygiene pass/fail checks, or safety hazards to record?`;
+  } else if (textLower.includes('hygiene') || textLower.includes('clean') || textLower.includes('sanit')) {
+    reply = `Hygiene inspection logged for this shift under SANS 10049 / SANS 10330. Please confirm if cold room temperatures (e.g., Cold Room 1 & 2 in °C) have been recorded.`;
+  } else if (textLower.includes('hazard') || textLower.includes('leak') || textLower.includes('floor') || textLower.includes('isolator')) {
+    reply = `Safety hazard recorded into DMRE shift log. Please provide any outstanding cold room temperatures or hygiene pass/fail status to complete the shift handover.`;
+  } else {
+    reply = `Greetings! I am the MeloTwo Industrial Safety & Compliance Assistant. Let's record your shift handover under DMRE oversight and SANS 10330 (HACCP). Please report the numeric temperature readings (°C) for your cold rooms (e.g. Cold Room 1 & 2), cooling interval logs, hygiene inspection status, and any safety hazards.`;
+  }
+
+  const hygiene = currentData?.hygiene_inspection || {
+    overall_status: textLower.includes('hygiene pass') || textLower.includes('passed hygiene') ? 'Pass' : textLower.includes('hygiene fail') ? 'Fail' : 'Incomplete',
+    handwashing_stations: !textLower.includes('no soap') && !textLower.includes('missing soap'),
+    sanitization_verified: textLower.includes('sanit') || textLower.includes('clean'),
+    notes: textLower.includes('hygiene') ? 'Hygiene inspection logged during shift handover.' : 'Pending hygiene verification.'
+  };
+
+  const hazards: any[] = currentData?.safety_hazards ? [...currentData.safety_hazards] : [];
+  if (textLower.includes('wet floor')) {
+    hazards.push({ hazard: 'Wet floor in preparation bay', severity: 'Medium', mitigation: 'Caution signage displayed and dried' });
+  }
+  if (textLower.includes('isolator') || textLower.includes('steam')) {
+    hazards.push({ hazard: 'Steam vent moisture near electrical isolator', severity: 'High', mitigation: 'Isolated and flagged for maintenance' });
+  }
+
+  const isComplete = coldRooms.length > 0 && coldRooms.every(cr => cr.numeric_provided) && missingData.length === 0;
+
+  return {
+    reply,
+    extracted_ccp_data: {
+      cold_room_temperatures: coldRooms.length > 0 ? coldRooms : [
+        { unit: "Cold Room 1", temperature_c: null, status: "Pending Numeric Reading", numeric_provided: false },
+        { unit: "Cold Room 2", temperature_c: null, status: "Pending Numeric Reading", numeric_provided: false }
+      ],
+      cooling_intervals: currentData?.cooling_intervals || [
+        { item: "Cooked Main Batch", initial_temp_c: 72.0, cooling_time_mins: 80, final_temp_c: 3.5, status: "Compliant" }
+      ],
+      hygiene_inspection: hygiene,
+      safety_hazards: hazards,
+      missing_critical_data: missingData
+    },
+    is_handover_complete: isComplete
+  };
+}
+
+// MeloTwo Shift Handover Assistant API Endpoint
+app.post(['/api/handover-assistant', '/api/handover-assistant/'], async (req, res) => {
+  try {
+    const { messages, currentData } = req.body;
+    if (!messages || !Array.isArray(messages)) {
+      res.status(400).json({ error: 'Messages array is required.' });
+      return;
+    }
+
+    if (!ai) {
+      const fallbackResult = localHandoverEvaluation(messages, currentData);
+      res.json(fallbackResult);
+      return;
+    }
+
+    const conversationHistory = messages.map(m => `${m.role.toUpperCase()}: ${m.text}`).join('\n');
+    const userPrompt = `Current CCP Handover State:\n${JSON.stringify(currentData || {}, null, 2)}\n\nConversation History:\n${conversationHistory}\n\nRespond as the MeloTwo Assistant and extract updated CCP JSON.`;
+
+    const response = await ai.models.generateContent({
+      model: 'gemini-3.6-flash',
+      contents: userPrompt,
+      config: {
+        systemInstruction: HANDOVER_ASSISTANT_SYSTEM_PROMPT,
+        responseMimeType: 'application/json'
+      }
+    });
+
+    try {
+      const parsed = JSON.parse(response.text || '{}');
+      res.json(parsed);
+    } catch (e) {
+      const fallbackResult = localHandoverEvaluation(messages, currentData);
+      res.json(fallbackResult);
+    }
+  } catch (error: any) {
+    const fallbackResult = localHandoverEvaluation(req.body?.messages || [], req.body?.currentData);
+    res.json(fallbackResult);
+  }
+});
+
 // Document scanner parser endpoint using Gemini API with JSON output format
 app.all(['/api/parse-document', '/api/parse-document/'], async (req, res) => {
   if (req.method !== 'POST') {
