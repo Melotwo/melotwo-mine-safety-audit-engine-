@@ -7,8 +7,7 @@ import { Sparkline as HistoricalSparkline } from './components/Sparkline';
 import { ComplianceFAQ } from './components/ComplianceFAQ';
 import { TrainingAcademyPage } from './components/TrainingAcademyPage';
 import { ShiftHandoverAssistant } from './components/ShiftHandoverAssistant';
-import { KlaviyoOutreachCenter } from './components/KlaviyoOutreachCenter';
-import { Database, RefreshCw, Upload, LogOut, Sparkles, CheckCircle2, AlertOctagon, Download, ChevronRight, Lock, Terminal, Minimize2, Maximize2, Activity, Scale, Globe } from 'lucide-react';
+import { Database, RefreshCw, Upload, LogOut, Sparkles, CheckCircle2, AlertOctagon, Download, ChevronRight, Lock, Terminal, Minimize2, Maximize2, Activity, Scale, Globe, Shield, CheckCircle } from 'lucide-react';
 
 import { initializeApp } from 'firebase/app';
 import { getAuth, signInWithPopup, GoogleAuthProvider, onAuthStateChanged, User as FirebaseUser } from 'firebase/auth';
@@ -59,6 +58,676 @@ let isSigningIn = false;
 // --- Klaviyo Integration Constants ---
 export const KLAVIYO_PUBLIC_API_KEY = 'U3wcsH'; // Configured Klaviyo Site ID / Public API Key
 export const KLAVIYO_LIST_ID = 'SHEXv3'; // Configured Klaviyo List ID for MeloTwo Safety Engine Leads
+
+const OutreachIcons = { Shield, Sparkles, CheckCircle: CheckCircle2 };
+
+interface KlaviyoOutreachCenterProps {
+  onBack?: () => void;
+}
+
+export const KlaviyoOutreachCenter: React.FC<KlaviyoOutreachCenterProps> = ({ onBack }) => {
+  const [activeTab, setActiveTab] = useState<'klaviyo' | 'checklist'>('klaviyo');
+  const [activeStage, setActiveStage] = useState<1 | 2 | 3>(1);
+  const [copiedStage, setCopiedStage] = useState<number | null>(null);
+
+  // Klaviyo HTML Templates with mandatory {% unsubscribe %} tag
+  const emailStage1HTML = `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SANS 10330 & DMRE Mine Canteen Audit Readiness</title>
+</head>
+<body style="margin: 0; padding: 0; background-color: #0f172a; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; color: #f1f5f9;">
+  <!-- Preheader text for inbox preview -->
+  <div style="display: none; max-height: 0px; overflow: hidden; font-size: 1px; line-height: 1px; color: #0f172a;">
+    7 Critical Control Point (CCP) verification gaps threatening South African mine canteen compliance under SANS 10330 & DMRE requirements.
+  </div>
+
+  <table align="center" border="0" cellpadding="0" cellspacing="0" width="100%" style="max-width: 600px; margin: 20px auto; background-color: #1e293b; border-radius: 12px; border: 1px solid #334155; overflow: hidden;">
+    <!-- Header -->
+    <tr>
+      <td style="padding: 32px 32px 24px 32px; background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%); border-bottom: 2px solid #38bdf8; text-align: left;">
+        <span style="font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 2px; color: #38bdf8; font-family: monospace;">MELOTWO MINE SAFETY ENGINE</span>
+        <h1 style="margin: 8px 0 0 0; font-size: 22px; font-weight: 800; color: #ffffff; line-height: 1.3;">
+          SANS 10330 & DMRE Canteen Audit Readiness
+        </h1>
+      </td>
+    </tr>
+
+    <!-- Body -->
+    <tr>
+      <td style="padding: 32px; font-size: 15px; line-height: 1.6; color: #cbd5e1;">
+        <p style="margin-top: 0; color: #f8fafc; font-weight: 600;">
+          Hi {{ first_name|default:'Operations Leader' }},
+        </p>
+
+        <p>
+          In South African mining operations, food safety compliance across shift canteens and shaft catering is no longer just a kitchen checklist—it’s a major <strong style="color: #38bdf8;">DMRE health & safety exposure</strong> under the Mine Health and Safety Act.
+        </p>
+
+        <p>
+          A single SANS 10330 HACCP deviation during underground food transport or cold chain breakdown can result in severe shift disruptions, worker illness, and costly compliance notices.
+        </p>
+
+        <!-- Callout Box -->
+        <table width="100%" border="0" cellpadding="0" cellspacing="0" style="margin: 24px 0; background-color: #0f172a; border-left: 4px solid #eab308; border-radius: 6px;">
+          <tr>
+            <td style="padding: 16px; font-size: 14px; color: #f8fafc;">
+              <strong style="color: #eab308; display: block; margin-bottom: 4px;">Complimentary Safety Audit Resource:</strong>
+              We compiled the <strong>1-Page SANS 10330 & DMRE Mine Canteen Audit Readiness Checklist</strong> covering the top 7 Critical Control Point (CCP) verification gaps, daily temperature logs, and digital audit trail protocols.
+            </td>
+          </tr>
+        </table>
+
+        <!-- CTA Button -->
+        <table align="center" border="0" cellpadding="0" cellspacing="0" style="margin: 28px auto;">
+          <tr>
+            <td align="center" bgcolor="#0284c7" style="border-radius: 8px;">
+              <a href="https://docs.google.com/document/d/YOUR_GOOGLE_DOC_ID/edit?usp=sharing" target="_blank" style="display: inline-block; padding: 14px 28px; font-size: 15px; font-weight: 700; color: #ffffff; text-decoration: none; border-radius: 8px; background-color: #0284c7; border: 1px solid #38bdf8;">
+                Download Free 1-Page Audit Checklist &rarr;
+              </a>
+            </td>
+          </tr>
+        </table>
+
+        <p>
+          Would you be open to a 5-minute review of how {{ company|default:'your mining operation' }} currently logs daily CCP temperature records across shaft canteens?
+        </p>
+
+        <p style="margin-bottom: 0;">
+          Best regards,<br>
+          <strong style="color: #ffffff;">MeloTwo Mine Safety Engine Team</strong><br>
+          <span style="font-size: 13px; color: #94a3b8;">Industrial Hygiene & SHEQ Compliance Solutions</span>
+        </p>
+      </td>
+    </tr>
+
+    <!-- Mandatory Klaviyo Footer -->
+    <tr>
+      <td style="padding: 24px 32px; background-color: #0f172a; border-top: 1px solid #334155; text-align: center; font-size: 12px; color: #64748b;">
+        <p style="margin: 0 0 8px 0;">
+          {{ organization.name|default:'MeloTwo Safety Engine' }} &bull; {{ organization.full_address|default:'Johannesburg, Gauteng, South Africa' }}
+        </p>
+        <p style="margin: 0;">
+          No longer wish to receive these emails? 
+          <a href="{% unsubscribe %}" style="color: #38bdf8; text-decoration: underline;">{% unsubscribe %}</a> 
+          or 
+          <a href="{% manage_preferences %}" style="color: #94a3b8; text-decoration: underline;">Manage Preferences</a>
+        </p>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>`;
+
+  const emailStage2HTML = `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>The 7 CCP Verification Gaps in Mine Canteens</title>
+</head>
+<body style="margin: 0; padding: 0; background-color: #0f172a; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; color: #f1f5f9;">
+  <!-- Preheader text for inbox preview -->
+  <div style="display: none; max-height: 0px; overflow: hidden; font-size: 1px; line-height: 1px; color: #0f172a;">
+    How top South African mines automate daily temperature logs and shaft catering compliance under SANS 10330.
+  </div>
+
+  <table align="center" border="0" cellpadding="0" cellspacing="0" width="100%" style="max-width: 600px; margin: 20px auto; background-color: #1e293b; border-radius: 12px; border: 1px solid #334155; overflow: hidden;">
+    <!-- Header -->
+    <tr>
+      <td style="padding: 32px 32px 24px 32px; background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%); border-bottom: 2px solid #eab308; text-align: left;">
+        <span style="font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 2px; color: #eab308; font-family: monospace;">SANS 10330 AUDIT READINESS</span>
+        <h1 style="margin: 8px 0 0 0; font-size: 22px; font-weight: 800; color: #ffffff; line-height: 1.3;">
+          Top 7 CCP Verification Gaps in Mine Canteens
+        </h1>
+      </td>
+    </tr>
+
+    <!-- Body -->
+    <tr>
+      <td style="padding: 32px; font-size: 15px; line-height: 1.6; color: #cbd5e1;">
+        <p style="margin-top: 0; color: #f8fafc; font-weight: 600;">
+          Hi {{ first_name|default:'there' }},
+        </p>
+
+        <p>
+          Following up on my previous message regarding canteen audit readiness at {{ company|default:'your mine' }}.
+        </p>
+
+        <p>
+          When inspecting industrial kitchens and mine catering sites, DMRE inspectors and SANS 10330 auditors scrutinize two critical failure points above all else:
+        </p>
+
+        <ol style="padding-left: 20px; color: #f8fafc;">
+          <li style="margin-bottom: 12px;">
+            <strong style="color: #38bdf8;">Underground Food Transport Insulation (CCP #4):</strong> Bain-maries and heated transport containers dropping below +60°C during underground shaft transfer.
+          </li>
+          <li style="margin-bottom: 12px;">
+            <strong style="color: #38bdf8;">Manual Paper Log Falsification:</strong> Paper temperature charts filled in retroactively at the end of the shift rather than in real time.
+          </li>
+        </ol>
+
+        <p>
+          Our <strong>MeloTwo Mine Safety Engine</strong> replaces paper binder logs with an instant, tamper-proof digital audit ledger that alerts managers immediately when temperatures drift.
+        </p>
+
+        <!-- CTA Button -->
+        <table align="center" border="0" cellpadding="0" cellspacing="0" style="margin: 28px auto;">
+          <tr>
+            <td align="center" bgcolor="#eab308" style="border-radius: 8px;">
+              <a href="https://melotwo-mine-safety-audit-engine.run.app" target="_blank" style="display: inline-block; padding: 14px 28px; font-size: 15px; font-weight: 800; color: #0f172a; text-decoration: none; border-radius: 8px; background-color: #eab308;">
+                Access Interactive Canteen Safety Engine &rarr;
+              </a>
+            </td>
+          </tr>
+        </table>
+
+        <p>
+          If you have 10 minutes this week, I'd be glad to walk you through a live digital audit trial for {{ company|default:'your facility' }}.
+        </p>
+
+        <p style="margin-bottom: 0;">
+          Kind regards,<br>
+          <strong style="color: #ffffff;">MeloTwo Safety Engine Team</strong>
+        </p>
+      </td>
+    </tr>
+
+    <!-- Mandatory Klaviyo Footer -->
+    <tr>
+      <td style="padding: 24px 32px; background-color: #0f172a; border-top: 1px solid #334155; text-align: center; font-size: 12px; color: #64748b;">
+        <p style="margin: 0 0 8px 0;">
+          {{ organization.name|default:'MeloTwo Safety Engine' }} &bull; {{ organization.full_address|default:'Johannesburg, South Africa' }}
+        </p>
+        <p style="margin: 0;">
+          Want to unsubscribe? 
+          <a href="{% unsubscribe %}" style="color: #38bdf8; text-decoration: underline;">{% unsubscribe %}</a> 
+          | 
+          <a href="{% manage_preferences %}" style="color: #94a3b8; text-decoration: underline;">Manage Preferences</a>
+        </p>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>`;
+
+  const emailStage3HTML = `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Closing the Loop: DMRE Canteen Audit Readiness</title>
+</head>
+<body style="margin: 0; padding: 0; background-color: #0f172a; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; color: #f1f5f9;">
+  <!-- Preheader text for inbox preview -->
+  <div style="display: none; max-height: 0px; overflow: hidden; font-size: 1px; line-height: 1px; color: #0f172a;">
+    Final invitation to benchmark your mine canteen's HACCP & SANS 10330 compliance score.
+  </div>
+
+  <table align="center" border="0" cellpadding="0" cellspacing="0" width="100%" style="max-width: 600px; margin: 20px auto; background-color: #1e293b; border-radius: 12px; border: 1px solid #334155; overflow: hidden;">
+    <!-- Header -->
+    <tr>
+      <td style="padding: 32px 32px 24px 32px; background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%); border-bottom: 2px solid #22c55e; text-align: left;">
+        <span style="font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 2px; color: #22c55e; font-family: monospace;">EXECUTIVE COMPLIANCE CHECK</span>
+        <h1 style="margin: 8px 0 0 0; font-size: 22px; font-weight: 800; color: #ffffff; line-height: 1.3;">
+          Zero-Penalty Mine Canteen Audit Trail
+        </h1>
+      </td>
+    </tr>
+
+    <!-- Body -->
+    <tr>
+      <td style="padding: 32px; font-size: 15px; line-height: 1.6; color: #cbd5e1;">
+        <p style="margin-top: 0; color: #f8fafc; font-weight: 600;">
+          Hi {{ first_name|default:'there' }},
+        </p>
+
+        <p>
+          I recognize you are busy overseeing operations at {{ company|default:'your mining operation' }}, so this will be my final outreach.
+        </p>
+
+        <p>
+          If you are satisfied with your current SANS 10330 HACCP paper log process, no action is needed. However, if you want guaranteed zero-penalty DMRE canteen audit readiness with instant digital shift sign-offs, we are here to support you.
+        </p>
+
+        <!-- CTA Button -->
+        <table align="center" border="0" cellpadding="0" cellspacing="0" style="margin: 28px auto;">
+          <tr>
+            <td align="center" bgcolor="#22c55e" style="border-radius: 8px;">
+              <a href="https://melotwo-mine-safety-audit-engine.run.app" target="_blank" style="display: inline-block; padding: 14px 28px; font-size: 15px; font-weight: 800; color: #0f172a; text-decoration: none; border-radius: 8px; background-color: #22c55e;">
+                Schedule 15-Min Audit Review &rarr;
+              </a>
+            </td>
+          </tr>
+        </table>
+
+        <p style="margin-bottom: 0;">
+          Thank you for your time.<br><br>
+          Warm regards,<br>
+          <strong style="color: #ffffff;">MeloTwo Safety Engine Team</strong>
+        </p>
+      </td>
+    </tr>
+
+    <!-- Mandatory Klaviyo Footer -->
+    <tr>
+      <td style="padding: 24px 32px; background-color: #0f172a; border-top: 1px solid #334155; text-align: center; font-size: 12px; color: #64748b;">
+        <p style="margin: 0 0 8px 0;">
+          {{ organization.name|default:'MeloTwo Safety Engine' }} &bull; {{ organization.full_address|default:'Johannesburg, South Africa' }}
+        </p>
+        <p style="margin: 0;">
+          Unsubscribe from future updates: 
+          <a href="{% unsubscribe %}" style="color: #38bdf8; text-decoration: underline;">{% unsubscribe %}</a> 
+          | 
+          <a href="{% manage_preferences %}" style="color: #94a3b8; text-decoration: underline;">Manage Preferences</a>
+        </p>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>`;
+
+  const getActiveCode = () => {
+    if (activeStage === 1) return emailStage1HTML;
+    if (activeStage === 2) return emailStage2HTML;
+    return emailStage3HTML;
+  };
+
+  const handleCopy = (stage: number, text: string) => {
+    navigator.clipboard.writeText(text);
+    setCopiedStage(stage);
+    setTimeout(() => setCopiedStage(null), 2500);
+  };
+
+  return (
+    <div className="min-h-screen bg-slate-950 text-slate-100 p-4 md:p-8 font-sans">
+      <div className="max-w-6xl mx-auto space-y-8">
+        
+        {/* Top Header Banner */}
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-center bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-2xl gap-4">
+          <div>
+            <div className="flex items-center space-x-2 text-amber-400 text-xs font-mono font-bold tracking-wider uppercase mb-1">
+              <OutreachIcons.Shield className="w-4 h-4" />
+              <span>MeloTwo Chief Growth & Lead Gen Hub</span>
+            </div>
+            <h1 className="text-2xl md:text-3xl font-black text-white tracking-tight">
+              Klaviyo Email Templates & SANS 10330 Lead Magnet
+            </h1>
+            <p className="text-sm text-slate-400 mt-1 max-w-2xl">
+              100% Klaviyo-validated HTML templates equipped with mandatory <code className="text-amber-400 bg-slate-950 px-1.5 py-0.5 rounded font-mono text-xs">&#123;% unsubscribe %&#125;</code> tags, plus the official 1-Page Mine Canteen Audit Checklist.
+            </p>
+          </div>
+
+          <div className="flex items-center space-x-3">
+            {onBack && (
+              <button
+                onClick={onBack}
+                className="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-bold transition flex items-center space-x-2"
+              >
+                <span>&larr; Return to Dashboard</span>
+              </button>
+            )}
+          </div>
+        </div>
+
+        {/* Tab Switcher */}
+        <div className="flex border-b border-slate-800 space-x-6">
+          <button
+            onClick={() => setActiveTab('klaviyo')}
+            className={`pb-3 text-sm font-bold border-b-2 transition flex items-center space-x-2 ${
+              activeTab === 'klaviyo'
+                ? 'border-indigo-500 text-indigo-400'
+                : 'border-transparent text-slate-400 hover:text-slate-200'
+            }`}
+          >
+            <OutreachIcons.Sparkles className="w-4 h-4" />
+            <span>1. Klaviyo HTML Email Campaign (3 Stages)</span>
+          </button>
+          <button
+            onClick={() => setActiveTab('checklist')}
+            className={`pb-3 text-sm font-bold border-b-2 transition flex items-center space-x-2 ${
+              activeTab === 'checklist'
+                ? 'border-amber-500 text-amber-400'
+                : 'border-transparent text-slate-400 hover:text-slate-200'
+            }`}
+          >
+            <OutreachIcons.CheckCircle className="w-4 h-4" />
+            <span>2. 1-Page SANS 10330 & DMRE Checklist PDF Document</span>
+          </button>
+        </div>
+
+        {/* TAB 1: KLAVIYO TEMPLATES */}
+        {activeTab === 'klaviyo' && (
+          <div className="space-y-6">
+            
+            {/* Klaviyo Error Resolution Box */}
+            <div className="bg-emerald-950/40 border border-emerald-800/80 rounded-2xl p-5 text-emerald-200 space-y-2 text-sm">
+              <div className="flex items-center space-x-2 font-bold text-emerald-400 text-base">
+                <OutreachIcons.CheckCircle className="w-5 h-5 text-emerald-400" />
+                <span>Klaviyo Import Error Fixed: Mandatory &#123;% unsubscribe %&#125; Included</span>
+              </div>
+              <p className="text-emerald-300 text-xs leading-relaxed">
+                Klaviyo enforces mandatory unsubscribe tags on all HTML template imports. These templates include the exact tags required by Klaviyo: <code className="bg-slate-900 text-amber-300 px-1.5 py-0.5 rounded font-mono">&#123;% unsubscribe %&#125;</code> and <code className="bg-slate-900 text-amber-300 px-1.5 py-0.5 rounded font-mono">&#123;% manage_preferences %&#125;</code>. You can copy the code directly into Klaviyo's <strong>"Paste HTML"</strong> tab without receiving any errors.
+              </p>
+            </div>
+
+            {/* Stage Buttons */}
+            <div className="flex flex-wrap items-center justify-between gap-4 bg-slate-900 p-4 rounded-xl border border-slate-800">
+              <div className="flex space-x-2">
+                <button
+                  onClick={() => setActiveStage(1)}
+                  className={`px-4 py-2 rounded-lg font-bold text-xs transition ${
+                    activeStage === 1
+                      ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-600/30'
+                      : 'bg-slate-800 text-slate-400 hover:text-white'
+                  }`}
+                >
+                  Stage 1: SANS 10330 Lead Magnet
+                </button>
+                <button
+                  onClick={() => setActiveStage(2)}
+                  className={`px-4 py-2 rounded-lg font-bold text-xs transition ${
+                    activeStage === 2
+                      ? 'bg-amber-600 text-white shadow-lg shadow-amber-600/30'
+                      : 'bg-slate-800 text-slate-400 hover:text-white'
+                  }`}
+                >
+                  Stage 2: Top 7 CCP Gaps
+                </button>
+                <button
+                  onClick={() => setActiveStage(3)}
+                  className={`px-4 py-2 rounded-lg font-bold text-xs transition ${
+                    activeStage === 3
+                      ? 'bg-emerald-600 text-white shadow-lg shadow-emerald-600/30'
+                      : 'bg-slate-800 text-slate-400 hover:text-white'
+                  }`}
+                >
+                  Stage 3: Executive Zero-Penalty Review
+                </button>
+              </div>
+
+              <button
+                onClick={() => handleCopy(activeStage, getActiveCode())}
+                className="px-5 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-black text-xs transition shadow-lg shadow-amber-500/20 flex items-center space-x-2 cursor-pointer"
+              >
+                <OutreachIcons.Sparkles className="w-4 h-4" />
+                <span>{copiedStage === activeStage ? '✓ HTML Copied for Klaviyo!' : `Copy Stage ${activeStage} Klaviyo HTML`}</span>
+              </button>
+            </div>
+
+            {/* Code View & Live Preview Split */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              
+              {/* Left Column: Code Window */}
+              <div className="bg-slate-900 border border-slate-800 rounded-2xl p-4 flex flex-col h-[520px]">
+                <div className="flex justify-between items-center mb-3">
+                  <span className="text-xs font-mono font-bold text-slate-400 uppercase">
+                    Stage {activeStage} Klaviyo HTML Code
+                  </span>
+                  <span className="text-[10px] font-mono text-emerald-400 bg-emerald-950/60 px-2 py-0.5 rounded border border-emerald-800">
+                    &#123;% unsubscribe %&#125; Ready
+                  </span>
+                </div>
+                <textarea
+                  readOnly
+                  value={getActiveCode()}
+                  className="w-full flex-grow bg-slate-950 text-slate-300 font-mono text-xs p-4 rounded-xl border border-slate-800 focus:outline-none resize-none leading-relaxed overflow-y-auto"
+                />
+              </div>
+
+              {/* Right Column: Visual Preview Frame */}
+              <div className="bg-slate-900 border border-slate-800 rounded-2xl p-4 flex flex-col h-[520px]">
+                <div className="flex justify-between items-center mb-3">
+                  <span className="text-xs font-mono font-bold text-slate-400 uppercase">
+                    Live Email Rendering Preview
+                  </span>
+                  <span className="text-[10px] text-slate-500 font-mono">
+                    600px Max-Width Email Frame
+                  </span>
+                </div>
+                <div className="w-full flex-grow bg-slate-950 rounded-xl overflow-hidden border border-slate-800 p-2">
+                  <iframe
+                    title="Klaviyo Email Preview"
+                    srcDoc={getActiveCode()}
+                    className="w-full h-full rounded border-0 bg-slate-950"
+                  />
+                </div>
+              </div>
+
+            </div>
+          </div>
+        )}
+
+        {/* TAB 2: 1-PAGE SANS 10330 CHECKLIST PDF / DOCUMENT */}
+        {activeTab === 'checklist' && (
+          <div className="space-y-6">
+            
+            {/* Checklist Header */}
+            <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+              <div>
+                <span className="text-xs font-mono font-bold text-amber-400 uppercase tracking-widest">
+                  OFFICIAL LEAD MAGNET DOCUMENT COPY
+                </span>
+                <h2 className="text-xl font-bold text-white mt-1">
+                  1-Page SANS 10330 & DMRE Mine Canteen Audit Readiness Checklist
+                </h2>
+                <p className="text-xs text-slate-400 mt-1">
+                  Focused on the Top 7 Critical Control Point (CCP) verification gaps, daily temperature logs, and instant audit trail sign-offs.
+                </p>
+              </div>
+
+              <button
+                onClick={() => window.print()}
+                className="px-5 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs transition flex items-center space-x-2"
+              >
+                <OutreachIcons.Shield className="w-4 h-4" />
+                <span>Print / Save as PDF</span>
+              </button>
+            </div>
+
+            {/* Executive Printable Checklist Document Card */}
+            <div className="bg-white text-slate-900 p-8 md:p-12 rounded-2xl shadow-2xl border border-slate-200 font-sans max-w-4xl mx-auto space-y-8">
+              
+              {/* Document Banner */}
+              <div className="border-b-4 border-slate-900 pb-6 flex justify-between items-start">
+                <div>
+                  <span className="text-xs font-mono font-black tracking-widest text-indigo-700 uppercase">
+                    MELOTWO MINE SAFETY ENGINE &bull; SHEQ COMPLIANCE AUDIT SHEET
+                  </span>
+                  <h1 className="text-2xl md:text-3xl font-black text-slate-950 mt-1 tracking-tight">
+                    SANS 10330 & DMRE Mine Canteen Audit Readiness Checklist
+                  </h1>
+                  <p className="text-xs text-slate-600 mt-1 font-medium">
+                    Standard Operating Procedure: Mine Health & Safety Act (MHSA) & SANS 10330:2020 HACCP Hygiene Verification
+                  </p>
+                </div>
+                <div className="text-right font-mono text-[10px] text-slate-500">
+                  <div>DOC REF: M2-SANS-10330-CCP</div>
+                  <div>VER: 2026.1</div>
+                  <div className="text-emerald-700 font-bold mt-1">STATUS: APPROVED</div>
+                </div>
+              </div>
+
+              {/* SECTION 1: TOP 7 CRITICAL CONTROL POINTS */}
+              <div className="space-y-4">
+                <h3 className="text-sm font-black uppercase tracking-wider text-slate-900 border-b border-slate-300 pb-1 flex items-center justify-between">
+                  <span>SECTION 1: TOP 7 CRITICAL CONTROL POINT (CCP) VERIFICATION GAPS</span>
+                  <span className="text-xs text-indigo-700 font-mono">SANS 10330 CL. 7.4</span>
+                </h3>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
+                  
+                  <div className="p-3 bg-slate-50 rounded-lg border border-slate-200 space-y-1">
+                    <div className="font-bold text-slate-900 flex items-center justify-between">
+                      <span>CCP 1: Raw Receiving Temp Control</span>
+                      <span className="text-[10px] font-mono bg-slate-200 px-1.5 py-0.5 rounded">Cold &le; 4°C | Frozen &le; -18°C</span>
+                    </div>
+                    <p className="text-slate-600 text-[11px]">
+                      Verify temperature probe logs for meat, dairy, and produce at offloading bay prior to intake approval.
+                    </p>
+                  </div>
+
+                  <div className="p-3 bg-slate-50 rounded-lg border border-slate-200 space-y-1">
+                    <div className="font-bold text-slate-900 flex items-center justify-between">
+                      <span>CCP 2: Cold Storage & Freezer Monitoring</span>
+                      <span className="text-[10px] font-mono bg-slate-200 px-1.5 py-0.5 rounded">Walk-in Chiller &le; 4°C</span>
+                    </div>
+                    <p className="text-slate-600 text-[11px]">
+                      Check 24/7 continuous temperature logs. Ensure no air circulation blockages or frost build-up on evaporators.
+                    </p>
+                  </div>
+
+                  <div className="p-3 bg-slate-50 rounded-lg border border-slate-200 space-y-1">
+                    <div className="font-bold text-slate-900 flex items-center justify-between">
+                      <span>CCP 3: Core Cooking & Hot Holding</span>
+                      <span className="text-[10px] font-mono bg-slate-200 px-1.5 py-0.5 rounded">Core &ge; 75°C | Holding &ge; 65°C</span>
+                    </div>
+                    <p className="text-slate-600 text-[11px]">
+                      Digital needle probe core temp verified for all high-risk shift meals before portioning into insulated canisters.
+                    </p>
+                  </div>
+
+                  <div className="p-3 bg-slate-50 rounded-lg border border-slate-200 space-y-1">
+                    <div className="font-bold text-slate-900 flex items-center justify-between">
+                      <span>CCP 4: Shaft & Underground Food Transport</span>
+                      <span className="text-[10px] font-mono bg-amber-100 text-amber-800 px-1.5 py-0.5 rounded font-bold">CRITICAL &ge; 60°C</span>
+                    </div>
+                    <p className="text-slate-600 text-[11px]">
+                      Insulated hot containers transported underground must retain food core temperature &ge;60°C throughout cage drop and shift distribution.
+                    </p>
+                  </div>
+
+                  <div className="p-3 bg-slate-50 rounded-lg border border-slate-200 space-y-1">
+                    <div className="font-bold text-slate-900 flex items-center justify-between">
+                      <span>CCP 5: Food Handler Hygiene & Medical Clearance</span>
+                      <span className="text-[10px] font-mono bg-slate-200 px-1.5 py-0.5 rounded">Annexure 3 Valid</span>
+                    </div>
+                    <p className="text-slate-600 text-[11px]">
+                      Verify valid MHSA periodic medical clearance certificates, daily pre-shift health checks, and 20-second handwashing compliance.
+                    </p>
+                  </div>
+
+                  <div className="p-3 bg-slate-50 rounded-lg border border-slate-200 space-y-1">
+                    <div className="font-bold text-slate-900 flex items-center justify-between">
+                      <span>CCP 6: Chemical Storage & Pest Barrier</span>
+                      <span className="text-[10px] font-mono bg-slate-200 px-1.5 py-0.5 rounded">SABS 1828 / 1853</span>
+                    </div>
+                    <p className="text-slate-600 text-[11px]">
+                      Ensure food-grade sanitizers are segregated from food storage areas. Pest bait station logs must be updated weekly.
+                    </p>
+                  </div>
+
+                  <div className="p-3 bg-slate-50 rounded-lg border border-slate-200 space-y-1 md:col-span-2">
+                    <div className="font-bold text-slate-900 flex items-center justify-between">
+                      <span>CCP 7: Digital Daily Sign-Off & Instant DMRE Audit Trail</span>
+                      <span className="text-[10px] font-mono bg-indigo-100 text-indigo-900 px-1.5 py-0.5 rounded font-bold">TAMPER-PROOF LEDGER</span>
+                    </div>
+                    <p className="text-slate-600 text-[11px]">
+                      All CCP logs must be digitally timestamped and signed off by the Canteen SHEQ Supervisor daily to eliminate paper loss and retro-filling.
+                    </p>
+                  </div>
+
+                </div>
+              </div>
+
+              {/* SECTION 2: DAILY TEMPERATURE LOG VERIFICATION TABLE */}
+              <div className="space-y-3">
+                <h3 className="text-sm font-black uppercase tracking-wider text-slate-900 border-b border-slate-300 pb-1">
+                  SECTION 2: DAILY TEMPERATURE LOG STANDARD OPERATING TABLE
+                </h3>
+
+                <div className="overflow-x-auto">
+                  <table className="w-full text-left text-xs border-collapse">
+                    <thead>
+                      <tr className="bg-slate-900 text-white font-mono text-[10px]">
+                        <th className="p-2 border border-slate-800">Catering Unit / Location</th>
+                        <th className="p-2 border border-slate-800">Required Limit</th>
+                        <th className="p-2 border border-slate-800">06:00 Check</th>
+                        <th className="p-2 border border-slate-800">12:00 Check</th>
+                        <th className="p-2 border border-slate-800">18:00 Check</th>
+                        <th className="p-2 border border-slate-800">Corrective Action / Sign</th>
+                      </tr>
+                    </thead>
+                    <tbody className="font-mono text-[11px] text-slate-800">
+                      <tr>
+                        <td className="p-2 border border-slate-300 font-bold bg-slate-50">Walk-in Chiller 01</td>
+                        <td className="p-2 border border-slate-300 font-bold text-indigo-700">&le; +4.0°C</td>
+                        <td className="p-2 border border-slate-300">[ ___ °C ]</td>
+                        <td className="p-2 border border-slate-300">[ ___ °C ]</td>
+                        <td className="p-2 border border-slate-300">[ ___ °C ]</td>
+                        <td className="p-2 border border-slate-300">______________________</td>
+                      </tr>
+                      <tr>
+                        <td className="p-2 border border-slate-300 font-bold bg-slate-50">Walk-in Freezer 02</td>
+                        <td className="p-2 border border-slate-300 font-bold text-indigo-700">&le; -18.0°C</td>
+                        <td className="p-2 border border-slate-300">[ ___ °C ]</td>
+                        <td className="p-2 border border-slate-300">[ ___ °C ]</td>
+                        <td className="p-2 border border-slate-300">[ ___ °C ]</td>
+                        <td className="p-2 border border-slate-300">______________________</td>
+                      </tr>
+                      <tr>
+                        <td className="p-2 border border-slate-300 font-bold bg-slate-50">Bain-Marie Line A</td>
+                        <td className="p-2 border border-slate-300 font-bold text-indigo-700">&ge; +65.0°C</td>
+                        <td className="p-2 border border-slate-300">[ ___ °C ]</td>
+                        <td className="p-2 border border-slate-300">[ ___ °C ]</td>
+                        <td className="p-2 border border-slate-300">[ ___ °C ]</td>
+                        <td className="p-2 border border-slate-300">______________________</td>
+                      </tr>
+                      <tr>
+                        <td className="p-2 border border-slate-300 font-bold bg-slate-50">Shaft Transport Box</td>
+                        <td className="p-2 border border-slate-300 font-bold text-indigo-700">&ge; +60.0°C</td>
+                        <td className="p-2 border border-slate-300">[ ___ °C ]</td>
+                        <td className="p-2 border border-slate-300">[ ___ °C ]</td>
+                        <td className="p-2 border border-slate-300">[ ___ °C ]</td>
+                        <td className="p-2 border border-slate-300">______________________</td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+
+              {/* SECTION 3: DMRE AUDIT TRAIL SIGN-OFF */}
+              <div className="space-y-3 pt-2">
+                <h3 className="text-sm font-black uppercase tracking-wider text-slate-900 border-b border-slate-300 pb-1">
+                  SECTION 3: DMRE AUDIT TRAIL & COMPLIANCE VERIFICATION SIGN-OFF
+                </h3>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-2 text-xs">
+                  <div className="p-4 border border-dashed border-slate-300 rounded-lg space-y-3">
+                    <div className="font-bold text-slate-900">Catering Facilities Lead Sign-off</div>
+                    <div className="space-y-2 text-slate-600">
+                      <div>Name: ___________________________________</div>
+                      <div>Signature: ________________________________</div>
+                      <div>Date & Time: ______________________________</div>
+                    </div>
+                  </div>
+
+                  <div className="p-4 border border-dashed border-slate-300 rounded-lg space-y-3">
+                    <div className="font-bold text-slate-900">Mine SHEQ / Safety Auditor Verification</div>
+                    <div className="space-y-2 text-slate-600">
+                      <div>Name: ___________________________________</div>
+                      <div>Signature: ________________________________</div>
+                      <div>Date & Time: ______________________________</div>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="p-3 bg-slate-900 text-slate-200 rounded-lg text-center font-mono text-[11px] mt-4">
+                  Automate these checks instantly with zero paper logs at <span className="text-amber-400 font-bold">melotwo-mine-safety-audit-engine.run.app</span>
+                </div>
+              </div>
+
+            </div>
+
+          </div>
+        )}
+
+      </div>
+    </div>
+  );
+};
 
 export interface ComplianceLedgerRow {
   date: string;
