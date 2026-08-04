@@ -7,6 +7,7 @@ import { Sparkline as HistoricalSparkline } from './components/Sparkline';
 import { ComplianceFAQ } from './components/ComplianceFAQ';
 import { TrainingAcademyPage } from './components/TrainingAcademyPage';
 import { ShiftHandoverAssistant } from './components/ShiftHandoverAssistant';
+import { KlaviyoOutreachCenter } from './components/KlaviyoOutreachCenter';
 import { Database, RefreshCw, Upload, LogOut, Sparkles, CheckCircle2, AlertOctagon, Download, ChevronRight, Lock, Terminal, Minimize2, Maximize2, Activity, Scale, Globe } from 'lucide-react';
 
 import { initializeApp } from 'firebase/app';
@@ -10830,6 +10831,12 @@ const App: React.FC = () => {
             console.error('Failed to sync handover to local storage:', err);
           }
         }}
+      />
+    );
+  } else if (currentPage === 'outreach') {
+    return (
+      <KlaviyoOutreachCenter
+        onBack={() => setCurrentPage('home')}
       />
     );
   }

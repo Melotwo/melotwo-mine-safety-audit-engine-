@@ -68,6 +68,15 @@ export const Navbar: React.FC<NavbarProps> = ({
           >
             SHEQ Academy
           </button>
+          <button
+            onClick={() => setPage('outreach')}
+            className={`text-sm font-bold transition-colors hover:text-amber-400 flex items-center space-x-1 ${
+              currentPage === 'outreach' ? 'text-amber-400' : 'text-slate-300'
+            }`}
+          >
+            <Icons.Sparkles className="w-3.5 h-3.5 text-amber-400" />
+            <span>Klaviyo Lead Gen</span>
+          </button>
 
           {isAuthReady && (
             <div>
