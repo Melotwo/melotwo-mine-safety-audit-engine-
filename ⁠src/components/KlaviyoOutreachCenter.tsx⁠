@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import * as Icons from './icons';
+import { Shield, Sparkles, CheckCircle } from 'lucide-react';
 
 interface KlaviyoOutreachCenterProps {
   onBack?: () => void;
@@ -289,7 +289,7 @@ export const KlaviyoOutreachCenter: React.FC<KlaviyoOutreachCenterProps> = ({ on
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-2xl gap-4">
           <div>
             <div className="flex items-center space-x-2 text-amber-400 text-xs font-mono font-bold tracking-wider uppercase mb-1">
-              <Icons.Shield className="w-4 h-4" />
+              <Shield className="w-4 h-4" />
               <span>MeloTwo Chief Growth & Lead Gen Hub</span>
             </div>
             <h1 className="text-2xl md:text-3xl font-black text-white tracking-tight">
@@ -322,7 +322,7 @@ export const KlaviyoOutreachCenter: React.FC<KlaviyoOutreachCenterProps> = ({ on
                 : 'border-transparent text-slate-400 hover:text-slate-200'
             }`}
           >
-            <Icons.Sparkles className="w-4 h-4" />
+            <Sparkles className="w-4 h-4" />
             <span>1. Klaviyo HTML Email Campaign (3 Stages)</span>
           </button>
           <button
@@ -333,7 +333,7 @@ export const KlaviyoOutreachCenter: React.FC<KlaviyoOutreachCenterProps> = ({ on
                 : 'border-transparent text-slate-400 hover:text-slate-200'
             }`}
           >
-            <Icons.CheckCircle className="w-4 h-4" />
+            <CheckCircle className="w-4 h-4" />
             <span>2. 1-Page SANS 10330 & DMRE Checklist PDF Document</span>
           </button>
         </div>
@@ -345,7 +345,7 @@ export const KlaviyoOutreachCenter: React.FC<KlaviyoOutreachCenterProps> = ({ on
             {/* Klaviyo Error Resolution Box */}
             <div className="bg-emerald-950/40 border border-emerald-800/80 rounded-2xl p-5 text-emerald-200 space-y-2 text-sm">
               <div className="flex items-center space-x-2 font-bold text-emerald-400 text-base">
-                <Icons.CheckCircle className="w-5 h-5 text-emerald-400" />
+                <CheckCircle className="w-5 h-5 text-emerald-400" />
                 <span>Klaviyo Import Error Fixed: Mandatory &#123;% unsubscribe %&#125; Included</span>
               </div>
               <p className="text-emerald-300 text-xs leading-relaxed">
@@ -392,7 +392,7 @@ export const KlaviyoOutreachCenter: React.FC<KlaviyoOutreachCenterProps> = ({ on
                 onClick={() => handleCopy(activeStage, getActiveCode())}
                 className="px-5 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-black text-xs transition shadow-lg shadow-amber-500/20 flex items-center space-x-2 cursor-pointer"
               >
-                <Icons.Sparkles className="w-4 h-4" />
+                <Sparkles className="w-4 h-4" />
                 <span>{copiedStage === activeStage ? '✓ HTML Copied for Klaviyo!' : `Copy Stage ${activeStage} Klaviyo HTML`}</span>
               </button>
             </div>
@@ -462,7 +462,7 @@ export const KlaviyoOutreachCenter: React.FC<KlaviyoOutreachCenterProps> = ({ on
                 onClick={() => window.print()}
                 className="px-5 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs transition flex items-center space-x-2"
               >
-                <Icons.Shield className="w-4 h-4" />
+                <Shield className="w-4 h-4" />
                 <span>Print / Save as PDF</span>
               </button>
             </div>
