@@ -52,6 +52,31 @@ export const Navbar: React.FC<NavbarProps> = ({
           >
             Inspector
           </button>
+          <button
+            onClick={() => setPage('handover')}
+            className={`text-sm font-medium transition-colors hover:text-indigo-400 ${
+              currentPage === 'handover' ? 'text-indigo-400' : 'text-slate-300'
+            }`}
+          >
+            Shift Handover
+          </button>
+          <button
+            onClick={() => setPage('academy')}
+            className={`text-sm font-medium transition-colors hover:text-indigo-400 ${
+              currentPage === 'academy' ? 'text-indigo-400' : 'text-slate-300'
+            }`}
+          >
+            SHEQ Academy
+          </button>
+          <button
+            onClick={() => setPage('outreach')}
+            className={`text-sm font-bold transition-colors hover:text-amber-400 flex items-center space-x-1 ${
+              currentPage === 'outreach' ? 'text-amber-400' : 'text-slate-300'
+            }`}
+          >
+            <Icons.Sparkles className="w-3.5 h-3.5 text-amber-400" />
+            <span>Klaviyo Lead Gen</span>
+          </button>
 
           {isAuthReady && (
             <div>
