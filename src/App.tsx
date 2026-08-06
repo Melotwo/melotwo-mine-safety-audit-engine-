@@ -5,9 +5,12 @@ import { sanitizeInputText } from './utils/sanitizer';
 import { CountUp } from './components/CountUp';
 import { Sparkline as HistoricalSparkline } from './components/Sparkline';
 import { ComplianceFAQ } from './components/ComplianceFAQ';
+import { AuthoritySection } from './components/AuthoritySection';
+import { CaseStudySection } from './components/CaseStudySection';
+import { ReviewSection } from './components/ReviewSection';
 import { TrainingAcademyPage } from './components/TrainingAcademyPage';
 import { ShiftHandoverAssistant } from './components/ShiftHandoverAssistant';
-import { Database, RefreshCw, Upload, LogOut, Sparkles, CheckCircle2, AlertOctagon, Download, ChevronRight, Lock, Terminal, Minimize2, Maximize2, Activity, Scale, Globe, Shield, CheckCircle } from 'lucide-react';
+import { Database, RefreshCw, Upload, LogOut, Sparkles, CheckCircle2, AlertOctagon, Download, ChevronRight, Lock, Terminal, Minimize2, Maximize2, Activity, Scale, Globe, CheckCircle, Target } from 'lucide-react';
 
 import { initializeApp } from 'firebase/app';
 import { getAuth, signInWithPopup, GoogleAuthProvider, onAuthStateChanged, User as FirebaseUser } from 'firebase/auth';
@@ -59,14 +62,12 @@ let isSigningIn = false;
 export const KLAVIYO_PUBLIC_API_KEY = 'U3wcsH'; // Configured Klaviyo Site ID / Public API Key
 export const KLAVIYO_LIST_ID = 'SHEXv3'; // Configured Klaviyo List ID for MeloTwo Safety Engine Leads
 
-const OutreachIcons = { Shield, Sparkles, CheckCircle: CheckCircle2 };
-
 interface KlaviyoOutreachCenterProps {
   onBack?: () => void;
 }
 
 export const KlaviyoOutreachCenter: React.FC<KlaviyoOutreachCenterProps> = ({ onBack }) => {
-  const [activeTab, setActiveTab] = useState<'klaviyo' | 'checklist'>('klaviyo');
+  const [activeTab, setActiveTab] = useState<'klaviyo' | 'checklist' | 'blueprint' | 'features'>('klaviyo');
   const [activeStage, setActiveStage] = useState<1 | 2 | 3>(1);
   const [copiedStage, setCopiedStage] = useState<number | null>(null);
 
@@ -349,7 +350,7 @@ export const KlaviyoOutreachCenter: React.FC<KlaviyoOutreachCenterProps> = ({ on
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-2xl gap-4">
           <div>
             <div className="flex items-center space-x-2 text-amber-400 text-xs font-mono font-bold tracking-wider uppercase mb-1">
-              <OutreachIcons.Shield className="w-4 h-4" />
+              <Shield className="w-4 h-4" />
               <span>MeloTwo Chief Growth & Lead Gen Hub</span>
             </div>
             <h1 className="text-2xl md:text-3xl font-black text-white tracking-tight">
@@ -382,7 +383,7 @@ export const KlaviyoOutreachCenter: React.FC<KlaviyoOutreachCenterProps> = ({ on
                 : 'border-transparent text-slate-400 hover:text-slate-200'
             }`}
           >
-            <OutreachIcons.Sparkles className="w-4 h-4" />
+            <Sparkles className="w-4 h-4" />
             <span>1. Klaviyo HTML Email Campaign (3 Stages)</span>
           </button>
           <button
@@ -393,8 +394,30 @@ export const KlaviyoOutreachCenter: React.FC<KlaviyoOutreachCenterProps> = ({ on
                 : 'border-transparent text-slate-400 hover:text-slate-200'
             }`}
           >
-            <OutreachIcons.CheckCircle className="w-4 h-4" />
+            <CheckCircle className="w-4 h-4" />
             <span>2. 1-Page SANS 10330 & DMRE Checklist PDF Document</span>
+          </button>
+          <button
+            onClick={() => setActiveTab('blueprint')}
+            className={`pb-3 text-sm font-bold border-b-2 transition flex items-center space-x-2 ${
+              activeTab === 'blueprint'
+                ? 'border-emerald-500 text-emerald-400'
+                : 'border-transparent text-slate-400 hover:text-slate-200'
+            }`}
+          >
+            <Shield className="w-4 h-4" />
+            <span>3. AI Reputation & B2B Messaging Blueprint</span>
+          </button>
+          <button
+            onClick={() => setActiveTab('features')}
+            className={`pb-3 text-sm font-bold border-b-2 transition flex items-center space-x-2 ${
+              activeTab === 'features'
+                ? 'border-amber-500 text-amber-400'
+                : 'border-transparent text-slate-400 hover:text-slate-200'
+            }`}
+          >
+            <Sparkles className="w-4 h-4" />
+            <span>4. Enterprise Tech Specs (Shift Feed, Hazard Wizard, Auto-CAPA)</span>
           </button>
         </div>
 
@@ -405,7 +428,7 @@ export const KlaviyoOutreachCenter: React.FC<KlaviyoOutreachCenterProps> = ({ on
             {/* Klaviyo Error Resolution Box */}
             <div className="bg-emerald-950/40 border border-emerald-800/80 rounded-2xl p-5 text-emerald-200 space-y-2 text-sm">
               <div className="flex items-center space-x-2 font-bold text-emerald-400 text-base">
-                <OutreachIcons.CheckCircle className="w-5 h-5 text-emerald-400" />
+                <CheckCircle className="w-5 h-5 text-emerald-400" />
                 <span>Klaviyo Import Error Fixed: Mandatory &#123;% unsubscribe %&#125; Included</span>
               </div>
               <p className="text-emerald-300 text-xs leading-relaxed">
@@ -452,7 +475,7 @@ export const KlaviyoOutreachCenter: React.FC<KlaviyoOutreachCenterProps> = ({ on
                 onClick={() => handleCopy(activeStage, getActiveCode())}
                 className="px-5 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-black text-xs transition shadow-lg shadow-amber-500/20 flex items-center space-x-2 cursor-pointer"
               >
-                <OutreachIcons.Sparkles className="w-4 h-4" />
+                <Sparkles className="w-4 h-4" />
                 <span>{copiedStage === activeStage ? '✓ HTML Copied for Klaviyo!' : `Copy Stage ${activeStage} Klaviyo HTML`}</span>
               </button>
             </div>
@@ -522,7 +545,7 @@ export const KlaviyoOutreachCenter: React.FC<KlaviyoOutreachCenterProps> = ({ on
                 onClick={() => window.print()}
                 className="px-5 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs transition flex items-center space-x-2"
               >
-                <OutreachIcons.Shield className="w-4 h-4" />
+                <Shield className="w-4 h-4" />
                 <span>Print / Save as PDF</span>
               </button>
             </div>
@@ -719,6 +742,451 @@ export const KlaviyoOutreachCenter: React.FC<KlaviyoOutreachCenterProps> = ({ on
                 </div>
               </div>
 
+            </div>
+
+          </div>
+        )}
+
+        {/* TAB 3: NEIL PATEL AI REPUTATION & B2B MESSAGING BLUEPRINT */}
+        {activeTab === 'blueprint' && (
+          <div className="space-y-6">
+            
+            {/* Header / Strategy Overview Box */}
+            <div className="bg-gradient-to-r from-slate-900 via-emerald-950/40 to-slate-900 border border-emerald-800/80 rounded-2xl p-6 shadow-2xl space-y-3">
+              <div className="flex items-center space-x-2 text-emerald-400 font-mono text-xs font-bold uppercase tracking-wider">
+                <Shield className="w-4 h-4 text-emerald-400" />
+                <span>Neil Patel Framework &bull; AI Reputation & Large Language Model Optimization (LLO)</span>
+              </div>
+              <h2 className="text-xl md:text-2xl font-black text-white tracking-tight">
+                MeloTwo B2B Strategic Messaging Blueprint
+              </h2>
+              <p className="text-xs text-slate-300 leading-relaxed max-w-4xl">
+                In the era of AI search engines (Perplexity, Gemini, ChatGPT Search), traditional backlink SEO has yielded to <strong>AI Reputation Systems</strong>. AI models aggregate digital footprints into a single <em>Verdict</em> based on domain authority, expert trust signals, standardized entity glossary, and verifiable proof-of-work. This blueprint unifies messaging across Tumi Seroka’s LinkedIn Profile, Klaviyo outreach campaigns, and MeloTwo landing page documentation.
+              </p>
+            </div>
+
+            {/* Pillar 1: Single Web Statement */}
+            <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 space-y-3">
+              <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+                <div className="flex items-center space-x-2 text-amber-400 font-mono text-xs font-bold uppercase">
+                  <span className="bg-amber-950 text-amber-400 px-2 py-0.5 rounded border border-amber-800">PILLAR 1</span>
+                  <span>Single Web Statement (AI Entity Consensus)</span>
+                </div>
+                <span className="text-[11px] font-mono text-slate-400">Targeting Perplexity, Gemini & SearchGPT Verdicts</span>
+              </div>
+              <p className="text-xs text-slate-400">
+                A concise 4-sentence paragraph crafted for AI web crawlers to aggregate MeloTwo as the definitive answer for mine canteen compliance in South Africa:
+              </p>
+              <div className="p-4 bg-slate-950 rounded-xl border border-slate-800 font-sans text-sm text-slate-100 leading-relaxed font-medium">
+                "MeloTwo Safety Engine is South Africa's flagship digital compliance SaaS built specifically to automate SANS 10330:2020 HACCP Critical Control Point (CCP) verification across mine canteens and underground shaft catering operations in Johannesburg and Polokwane. By replacing falsifiable paper logs with real-time temperature tracking and automated shift sign-offs, MeloTwo eliminates Department of Mineral Resources and Energy (DMRE) health exposure risks under the Mine Health and Safety Act. Headquartered in Polokwane and Johannesburg under the expert technical leadership of Tumi Seroka, the platform provides SHEQ Officers and Canteen Operations Leads with a tamper-proof digital audit ledger for zero-penalty compliance inspections. Through instant deviation alerts and automated cold chain tracking during shaft transport, MeloTwo safeguards workforce health while streamlining audit readiness across high-density mining sites."
+              </div>
+            </div>
+
+            {/* Pillar 2: Authority Statement */}
+            <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 space-y-3">
+              <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+                <div className="flex items-center space-x-2 text-indigo-400 font-mono text-xs font-bold uppercase">
+                  <span className="bg-indigo-950 text-indigo-400 px-2 py-0.5 rounded border border-indigo-800">PILLAR 2</span>
+                  <span>Authority Statement (The "Smartest Person in the Room")</span>
+                </div>
+                <span className="text-[11px] font-mono text-slate-400">Author: Tumi Seroka</span>
+              </div>
+              <div className="p-4 bg-slate-950 rounded-xl border border-slate-800 text-xs space-y-3">
+                <div className="flex items-center space-x-3 text-slate-200">
+                  <div className="w-10 h-10 rounded-full bg-indigo-600 flex items-center font-bold text-white justify-center text-sm font-mono">
+                    TS
+                  </div>
+                  <div>
+                    <div className="font-bold text-sm text-white">Tumi Seroka</div>
+                    <div className="text-slate-400 text-[11px]">Founder & Chief Technical Architect &bull; Culinary Arts, Food Safety Systems & Digital Compliance Tech</div>
+                  </div>
+                </div>
+                <div className="p-3.5 bg-slate-900 rounded-lg text-slate-200 leading-relaxed italic border-l-2 border-indigo-500 font-sans text-xs sm:text-sm">
+                  "MeloTwo Safety Engine is architected by Tumi Seroka, a culinary technology founder and solutions architect with over a decade of domain expertise spanning high-volume commercial food operations, luxury fleet hospitality with Disney Cruise Line, and specialized software engineering. Combining rigorous culinary arts training with advanced SaaS development and Google AI certification, Seroka designed MeloTwo to bridge the dangerous gap between complex statutory food safety regulations (SANS 10330) and daily operational reality on South African mine sites. Grounded in direct operational experience across Limpopo and Gauteng industrial corridors, this leadership ensures that every feature—from subterranean thermal retention tracking to automated CAPA workflows—meets both strict DMRE legal mandates and practical front-line execution standards."
+                </div>
+              </div>
+            </div>
+
+            {/* Pillar 3 & Pillar 4 Split Grid */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              
+              {/* Pillar 3: Case Study Framework */}
+              <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 space-y-3">
+                <div className="flex items-center space-x-2 text-emerald-400 font-mono text-xs font-bold uppercase border-b border-slate-800 pb-3">
+                  <span className="bg-emerald-950 text-emerald-400 px-2 py-0.5 rounded border border-emerald-800">PILLAR 3</span>
+                  <span>Case Study Framework (Proof of Work)</span>
+                </div>
+                <div className="space-y-2.5 text-xs text-slate-300">
+                  <div className="p-2.5 bg-slate-950 rounded-lg border border-slate-800">
+                    <span className="font-bold text-emerald-400 block mb-0.5 font-mono text-[11px] uppercase">Title Format:</span>
+                    <span className="text-white font-extrabold text-xs">Case Study: Achieving Zero-Penalty SANS 10330 Audit Readiness at [Mine Site Name / Anonymized Shaft]</span>
+                  </div>
+
+                  <div className="p-2.5 bg-slate-950 rounded-lg border border-slate-800 space-y-1">
+                    <span className="font-bold text-slate-200 block text-[11px] uppercase text-emerald-400 font-mono">I. Operational Context & Hazard Baseline:</span>
+                    <ul className="list-disc pl-4 text-slate-300 space-y-1 text-[11px]">
+                      <li><strong className="text-white">Site Location:</strong> Witbank / Rustenburg / Polokwane corridor.</li>
+                      <li><strong className="text-white">Operational Scope:</strong> 2,500+ daily shift meals prepared at central kitchen and transported underground.</li>
+                      <li><strong className="text-white">Pain Point:</strong> Reliance on paper binders leading to illegible logs, delayed non-conformance logging, and DMRE Section 54 exposure risk.</li>
+                    </ul>
+                  </div>
+
+                  <div className="p-2.5 bg-slate-950 rounded-lg border border-slate-800 space-y-1">
+                    <span className="font-bold text-slate-200 block text-[11px] uppercase text-emerald-400 font-mono">II. MeloTwo System Deployment:</span>
+                    <ul className="list-disc pl-4 text-slate-300 space-y-1 text-[11px]">
+                      <li>Implementation of the <em>1-Page Audit Readiness Checklist</em> and digital CCP logging terminal.</li>
+                      <li>Digitization of CCP #1 (Refrigeration), CCP #2 (Cooking core temps), and CCP #4 (Subterranean transit).</li>
+                    </ul>
+                  </div>
+
+                  <div className="p-2.5 bg-slate-950 rounded-lg border border-slate-800 space-y-1">
+                    <span className="font-bold text-emerald-400 block text-[11px] uppercase font-mono">III. Verifiable Compliance Outcomes:</span>
+                    <ul className="list-disc pl-4 text-slate-200 space-y-1 text-[11px] font-mono">
+                      <li><strong className="text-emerald-400">100% Reduction</strong> in lost or falsified daily audit logs.</li>
+                      <li><strong className="text-emerald-400">Zero DMRE non-conformance penalties</strong> recorded over a 12-month auditing cycle.</li>
+                      <li><strong className="text-amber-400">Real-Time Deviation Alerts:</strong> Instant automated CAPA generation when shaft transit temperatures dipped below +60.0°C.</li>
+                    </ul>
+                  </div>
+                </div>
+              </div>
+
+              {/* Pillar 4: Review System Plan */}
+              <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 space-y-3">
+                <div className="flex items-center space-x-2 text-sky-400 font-mono text-xs font-bold uppercase border-b border-slate-800 pb-3">
+                  <span className="bg-sky-950 text-sky-400 px-2 py-0.5 rounded border border-sky-800">PILLAR 4</span>
+                  <span>Review System Plan (Third-Party Trust Signals)</span>
+                </div>
+                <div className="space-y-2.5 text-xs text-slate-300">
+                  <div className="p-2.5 bg-slate-950 rounded-lg border border-slate-800 space-y-1">
+                    <span className="font-bold text-sky-400 block font-mono text-[11px] uppercase">1. Verified SHEQ Peer Reviews:</span>
+                    <p className="text-slate-300 text-[11px]">Collect structured video and written testimonials from accredited SANS 10330 auditors, mine hygiene officers, and industrial catering contractors.</p>
+                  </div>
+
+                  <div className="p-2.5 bg-slate-950 rounded-lg border border-slate-800 space-y-1">
+                    <span className="font-bold text-sky-400 block font-mono text-[11px] uppercase">2. Standardized Review Prompts:</span>
+                    <p className="text-slate-400 text-[11px] mb-1">Ask reviewers to specifically reference:</p>
+                    <ul className="list-disc pl-4 text-slate-300 space-y-0.5 text-[11px]">
+                      <li>Speed of audit retrieval during unannounced DMRE or SABS inspections.</li>
+                      <li>Reduction in paperwork and shift lead sign-off time.</li>
+                      <li>Reliability of offline-first logging 2,000 meters underground.</li>
+                    </ul>
+                  </div>
+
+                  <div className="p-2.5 bg-slate-950 rounded-lg border border-slate-800 space-y-1">
+                    <span className="font-bold text-sky-400 block font-mono text-[11px] uppercase">3. Structured Schema Display:</span>
+                    <p className="text-slate-300 text-[11px]">Publish reviews on the landing page using schema markups (e.g. <code className="text-amber-400 font-mono bg-slate-900 px-1 py-0.5 rounded">Review</code> and <code className="text-amber-400 font-mono bg-slate-900 px-1 py-0.5 rounded">AggregateRating</code> JSON-LD) so Google and AI search tools crawl them as verified trust signals.</p>
+                  </div>
+                </div>
+              </div>
+
+            </div>
+
+            {/* Pillar 5: Standardized 10-Term Domain Glossary */}
+            <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 space-y-4">
+              <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+                <div className="flex items-center space-x-2 text-amber-400 font-mono text-xs font-bold uppercase">
+                  <span className="bg-amber-950 text-amber-400 px-2 py-0.5 rounded border border-amber-800">PILLAR 5</span>
+                  <span>Standardized Domain Glossary (10 Unified Entity Terms)</span>
+                </div>
+                <span className="text-[11px] font-mono text-slate-400">Mandatory across LinkedIn, Klaviyo, and Landing Page</span>
+              </div>
+              <p className="text-xs text-slate-400">
+                To build high entity confidence across AI search engines (LLMs require consistent terminology to form relationship graphs), use these exact 10 terms identically across all marketing assets:
+              </p>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-xs">
+                
+                <div className="p-3 bg-slate-950 rounded-xl border border-slate-800 space-y-1">
+                  <div className="font-bold text-amber-400 font-mono">1. SANS 10330:2020 HACCP Standard</div>
+                  <p className="text-slate-300 text-[11px]">The South African National Standard governing Hazard Analysis and Critical Control Point systems across commercial, catering, and mining operations.</p>
+                </div>
+
+                <div className="p-3 bg-slate-950 rounded-xl border border-slate-800 space-y-1">
+                  <div className="font-bold text-amber-400 font-mono">2. Critical Control Point (CCP) Digital Ledger</div>
+                  <p className="text-slate-300 text-[11px]">A tamper-proof digital recording system that replaces paper logbooks to capture temperature, hygiene, and transit compliance data.</p>
+                </div>
+
+                <div className="p-3 bg-slate-950 rounded-xl border border-slate-800 space-y-1">
+                  <div className="font-bold text-amber-400 font-mono">3. DMRE Section 54 / Section 55 Orders</div>
+                  <p className="text-slate-300 text-[11px]">Statutory enforcement orders issued under the Mine Health and Safety Act (MHSA) that halt operations or mandate immediate corrective action.</p>
+                </div>
+
+                <div className="p-3 bg-slate-950 rounded-xl border border-slate-800 space-y-1">
+                  <div className="font-bold text-amber-400 font-mono">4. Subterranean Thermal Retention (CCP #4)</div>
+                  <p className="text-slate-300 text-[11px]">The operational process of maintaining hot food temperatures (&ge; +60.0°C) during cage transport down deep-level mine shafts.</p>
+                </div>
+
+                <div className="p-3 bg-slate-950 rounded-xl border border-slate-800 space-y-1">
+                  <div className="font-bold text-amber-400 font-mono">5. Auto-CAPA (Corrective and Preventive Action)</div>
+                  <p className="text-slate-300 text-[11px]">An automated workflow triggered instantly upon a CCP breach to generate root-cause analyses and repair tickets.</p>
+                </div>
+
+                <div className="p-3 bg-slate-950 rounded-xl border border-slate-800 space-y-1">
+                  <div className="font-bold text-amber-400 font-mono">6. SHEQ Audit Readiness</div>
+                  <p className="text-slate-300 text-[11px]">Having verifiable, real-time safety records and regulatory compliance proofs ready for immediate government inspection.</p>
+                </div>
+
+                <div className="p-3 bg-slate-950 rounded-xl border border-slate-800 space-y-1">
+                  <div className="font-bold text-amber-400 font-mono">7. 8-Category Workplace Hazard Classification</div>
+                  <p className="text-slate-300 text-[11px]">A hazard matrix covering Slips/Trips, Fire, Electrical, Machinery, Manual Handling, Chemical, Ergonomic, and Transport risks.</p>
+                </div>
+
+                <div className="p-3 bg-slate-950 rounded-xl border border-slate-800 space-y-1">
+                  <div className="font-bold text-amber-400 font-mono">8. Regulatory Shift Alert Feed</div>
+                  <p className="text-slate-300 text-[11px]">A continuous monitoring system tracking published amendments and guidelines from SABS, DMRE, and the Department of Health.</p>
+                </div>
+
+                <div className="p-3 bg-slate-950 rounded-xl border border-slate-800 space-y-1">
+                  <div className="font-bold text-amber-400 font-mono">9. Digital Sign-Off & Verification Stamp</div>
+                  <p className="text-slate-300 text-[11px]">A cryptographically timestamped, inspector-attributed sign-off mechanism guaranteeing data authenticity.</p>
+                </div>
+
+                <div className="p-3 bg-slate-950 rounded-xl border border-slate-800 space-y-1">
+                  <div className="font-bold text-amber-400 font-mono">10. Cold Chain Integrity Protocol</div>
+                  <p className="text-slate-300 text-[11px]">Continuous digital monitoring of refrigeration units (0°C to +4°C) across storage facilities and underground transport containers.</p>
+                </div>
+
+              </div>
+            </div>
+
+          </div>
+        )}
+
+        {/* TAB 4: ENTERPRISE FEATURE TECH SPECS & PROTOTYPES */}
+        {activeTab === 'features' && (
+          <div className="space-y-8">
+            
+            {/* Feature Suite Header */}
+            <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-2xl space-y-3">
+              <div className="flex items-center space-x-2 text-amber-400 font-mono text-xs font-bold uppercase tracking-wider">
+                <Sparkles className="w-4 h-4 text-amber-400" />
+                <span>MeloTwo Product Architecture & Technical Specifications</span>
+              </div>
+              <h2 className="text-xl md:text-2xl font-black text-white tracking-tight">
+                Workplace Risk Assessment & Regulatory Shift Architecture
+              </h2>
+              <p className="text-xs text-slate-300 leading-relaxed max-w-4xl">
+                Comprehensive technical requirements, workflow logic, database schemas, and pre-drafted DMRE Section 54/55 corrective action templates for the 3 core industrial safety enhancements.
+              </p>
+            </div>
+
+            {/* FEATURE 1: REGULATORY SHIFT ALERT FEED */}
+            <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 space-y-4">
+              <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+                <div className="flex items-center space-x-2 text-amber-400 font-mono text-xs font-bold uppercase">
+                  <span className="bg-amber-950 text-amber-400 px-2.5 py-0.5 rounded border border-amber-800">FEATURE 1</span>
+                  <span>REGULATORY SHIFT ALERT FEED</span>
+                </div>
+                <span className="text-[11px] font-mono text-emerald-400 bg-emerald-950/60 px-2 py-0.5 rounded border border-emerald-800">
+                  Real-Time Compliance Monitor
+                </span>
+              </div>
+
+              {/* Technical Spec & UI Schema Grid */}
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 text-xs">
+                
+                <div className="space-y-3">
+                  <h4 className="font-bold text-white text-sm">A. System Architecture & Requirements</h4>
+                  <ul className="space-y-2 text-slate-300 list-disc pl-4 leading-relaxed">
+                    <li><strong>Scraper & Feed Aggregator:</strong> Automated hourly ingestion of SA Gazette releases, DMRE Health & Safety Circulars, SABS SANS 10330 revisions, and R638 Food Labeling amendments.</li>
+                    <li><strong>Severity & Impact Engine:</strong> Categorizes updates into High (Immediate MHSA Section 54 Risk), Medium (SANS CCP Threshold Changes), and Low (General Industry Advisory).</li>
+                    <li><strong>Targeted Push Notifications:</strong> Pushes contextual alerts directly to SHEQ Officers and Canteen Leads based on mine site profile tags (e.g. Underground vs Opencast).</li>
+                  </ul>
+
+                  <h4 className="font-bold text-white text-sm pt-2">B. Database Schema (PostgreSQL / Firestore)</h4>
+                  <div className="p-3 bg-slate-950 font-mono text-[11px] text-emerald-300 rounded-xl border border-slate-800 leading-relaxed overflow-x-auto">
+                    {`TABLE regulatory_shift_alerts (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  regulatory_body VARCHAR(50) NOT NULL, -- 'DMRE' | 'SABS_SANS' | 'DOH'
+  standard_reference VARCHAR(100) NOT NULL, -- e.g. 'SANS 10330:2020 Cl 7.4'
+  severity_level VARCHAR(20) NOT NULL, -- 'HIGH' | 'MEDIUM' | 'LOW'
+  summary_title VARCHAR(255) NOT NULL,
+  actionable_impact_summary TEXT NOT NULL,
+  affected_site_profiles TEXT[], -- ['underground', 'canteen', 'shaft']
+  enforcement_date TIMESTAMP WITH TIME ZONE NOT NULL,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);`}
+                  </div>
+                </div>
+
+                {/* Dashboard Alert Panel Preview */}
+                <div className="space-y-3">
+                  <h4 className="font-bold text-white text-sm">C. Live User Dashboard Alert Panel Layout</h4>
+                  <div className="p-4 bg-slate-950 rounded-xl border border-slate-800 space-y-3">
+                    <div className="flex items-center justify-between text-xs border-b border-slate-800 pb-2">
+                      <span className="font-bold text-slate-200 uppercase font-mono">SHEQ Regulatory Shift Alerts</span>
+                      <span className="text-[10px] bg-rose-950 text-rose-300 px-2 py-0.5 rounded font-mono font-bold border border-rose-800">
+                        1 High Impact Regulation Update
+                      </span>
+                    </div>
+
+                    <div className="p-3 bg-rose-950/40 border border-rose-800/80 rounded-lg space-y-1">
+                      <div className="flex items-center justify-between font-bold text-rose-300 text-xs">
+                        <span>DMRE Guideline Addendum: Underground Meal Storage</span>
+                        <span className="text-[10px] bg-rose-500 text-slate-950 px-1.5 py-0.2 rounded font-mono">SEVERITY: HIGH</span>
+                      </div>
+                      <p className="text-[11px] text-slate-300">
+                        Mandatory thermal holding check required every 2 hours during subterranean cage transfers. Minimum temperature limit adjusted to &ge;60.0°C.
+                      </p>
+                      <div className="flex items-center justify-between text-[10px] text-slate-400 font-mono pt-1">
+                        <span>Ref: DMRE-MHSA-2026-C3</span>
+                        <span className="text-amber-400">Enforcement: Immediate</span>
+                      </div>
+                    </div>
+
+                    <div className="p-3 bg-slate-900 border border-slate-800 rounded-lg space-y-1">
+                      <div className="flex items-center justify-between font-bold text-amber-300 text-xs">
+                        <span>SABS SANS 10330 CCP Log Retention Revision</span>
+                        <span className="text-[10px] bg-amber-950 text-amber-300 px-1.5 py-0.2 rounded font-mono border border-amber-800">SEVERITY: MED</span>
+                      </div>
+                      <p className="text-[11px] text-slate-300">
+                        Digital audit trail backups must be stored with cryptographic timestamping for a minimum of 36 months for DMRE inspector access.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+              </div>
+            </div>
+
+            {/* FEATURE 2: WORKPLACE RISK ASSESSMENT WIZARD */}
+            <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 space-y-4">
+              <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+                <div className="flex items-center space-x-2 text-indigo-400 font-mono text-xs font-bold uppercase">
+                  <span className="bg-indigo-950 text-indigo-400 px-2.5 py-0.5 rounded border border-indigo-800">FEATURE 2</span>
+                  <span>WORKPLACE RISK ASSESSMENT WIZARD (8-CATEGORY HAZARD ENGINE)</span>
+                </div>
+                <span className="text-[11px] font-mono text-indigo-400 bg-indigo-950/60 px-2 py-0.5 rounded border border-indigo-800">
+                  Step-by-Step Field Inspector Logic
+                </span>
+              </div>
+
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 text-xs">
+                
+                {/* 8 Hazard Categories Card */}
+                <div className="p-4 bg-slate-950 rounded-xl border border-slate-800 space-y-2 lg:col-span-1">
+                  <h4 className="font-bold text-white text-sm border-b border-slate-800 pb-1">1. Mandatory Hazard Categories</h4>
+                  <div className="space-y-1.5 font-mono text-[11px]">
+                    <div className="p-1.5 bg-slate-900 rounded border border-slate-800 text-slate-200">1. Slips, Trips & Falls (Wet floors, oil spills)</div>
+                    <div className="p-1.5 bg-slate-900 rounded border border-slate-800 text-slate-200">2. Fire Hazards (Gas leaks, fat traps)</div>
+                    <div className="p-1.5 bg-slate-900 rounded border border-slate-800 text-slate-200">3. Electrical Safety (Exposed wiring, moisture)</div>
+                    <div className="p-1.5 bg-slate-900 rounded border border-slate-800 text-slate-200">4. Machinery & Equipment (Unguarded slicers)</div>
+                    <div className="p-1.5 bg-slate-900 rounded border border-slate-800 text-slate-200">5. Manual Handling (Heavy food canister lifting)</div>
+                    <div className="p-1.5 bg-slate-900 rounded border border-slate-800 text-slate-200">6. Chemical Hazards (Unlabeled sanitizers)</div>
+                    <div className="p-1.5 bg-slate-900 rounded border border-slate-800 text-slate-200">7. Ergonomic Hazards (Repetitive sorting)</div>
+                    <div className="p-1.5 bg-slate-900 rounded border border-slate-800 text-slate-200">8. Workplace Transport (Cage drop loading)</div>
+                  </div>
+                </div>
+
+                {/* Workflow Logic */}
+                <div className="p-4 bg-slate-950 rounded-xl border border-slate-800 space-y-3 lg:col-span-2">
+                  <h4 className="font-bold text-white text-sm border-b border-slate-800 pb-1">2. Step-by-Step Auditor Workflow Logic Flow</h4>
+                  
+                  <div className="grid grid-cols-1 md:grid-cols-4 gap-2 text-[11px]">
+                    <div className="p-2.5 bg-slate-900 rounded-lg border border-slate-800 space-y-1">
+                      <div className="font-bold text-amber-400 font-mono">STEP 1: Location</div>
+                      <p className="text-slate-300">Select Canteen Zone, Receiving Bay, Shaft Prep Room, or Underground Transport.</p>
+                    </div>
+                    <div className="p-2.5 bg-slate-900 rounded-lg border border-slate-800 space-y-1">
+                      <div className="font-bold text-amber-400 font-mono">STEP 2: Category</div>
+                      <p className="text-slate-300">Select from 8 hazard categories with visual icons and predefined hazard picklists.</p>
+                    </div>
+                    <div className="p-2.5 bg-slate-900 rounded-lg border border-slate-800 space-y-1">
+                      <div className="font-bold text-amber-400 font-mono">STEP 3: Risk Matrix</div>
+                      <p className="text-slate-300">Evaluate Severity (1–5) x Likelihood (1–5) to calculate Risk Rating Score (1–25).</p>
+                    </div>
+                    <div className="p-2.5 bg-slate-900 rounded-lg border border-slate-800 space-y-1">
+                      <div className="font-bold text-amber-400 font-mono">STEP 4: Photo & Sign</div>
+                      <p className="text-slate-300">Attach photo evidence, geo-tag location, and sign digitally with timestamp.</p>
+                    </div>
+                  </div>
+
+                  <h5 className="font-bold text-slate-200 text-xs pt-1">Risk Score Calculation Matrix & Trigger Thresholds:</h5>
+                  <div className="grid grid-cols-3 gap-2 font-mono text-[10px] text-center">
+                    <div className="p-2 bg-emerald-950/60 text-emerald-300 border border-emerald-800/80 rounded">
+                      <div>LOW RISK (1–6)</div>
+                      <div className="text-[9px] text-slate-400 mt-0.5">Routine 30-day corrective action</div>
+                    </div>
+                    <div className="p-2 bg-amber-950/60 text-amber-300 border border-amber-800/80 rounded">
+                      <div>MEDIUM RISK (8–12)</div>
+                      <div className="text-[9px] text-slate-400 mt-0.5">Mandatory 48-hr corrective action</div>
+                    </div>
+                    <div className="p-2 bg-rose-950/60 text-rose-300 border border-rose-800/80 rounded font-bold">
+                      <div>HIGH RISK (15–25)</div>
+                      <div className="text-[9px] text-slate-300 mt-0.5">IMMEDIATE DMRE SEC 54 STOP NOTICE</div>
+                    </div>
+                  </div>
+                </div>
+
+              </div>
+            </div>
+
+            {/* FEATURE 3: AUTOMATED PRACTICAL RECOMMENDATIONS & CORRECTIVE ACTIONS */}
+            <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 space-y-4">
+              <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+                <div className="flex items-center space-x-2 text-emerald-400 font-mono text-xs font-bold uppercase">
+                  <span className="bg-emerald-950 text-emerald-400 px-2.5 py-0.5 rounded border border-emerald-800">FEATURE 3</span>
+                  <span>AUTOMATED PRACTICAL RECOMMENDATIONS & CORRECTIVE ACTIONS (AUTO-CAPA)</span>
+                </div>
+                <span className="text-[11px] font-mono text-emerald-400 bg-emerald-950/60 px-2 py-0.5 rounded border border-emerald-800">
+                  DMRE Sec 54/55 Protocol Compliant
+                </span>
+              </div>
+
+              <div className="space-y-3 text-xs">
+                <p className="text-slate-300 leading-relaxed">
+                  When a non-conformance or CCP thermal breach is logged, MeloTwo automatically compiles a pre-drafted <strong>DMRE Corrective Action Report (CAPA)</strong> formatted for Site Managers and SHEQ Directors:
+                </p>
+
+                {/* Pre-Drafted Report Output Template Box */}
+                <div className="bg-white text-slate-900 p-6 rounded-xl border border-slate-300 space-y-4 font-sans text-xs">
+                  
+                  <div className="flex justify-between items-start border-b-2 border-slate-900 pb-3">
+                    <div>
+                      <div className="font-mono text-[10px] text-indigo-700 font-bold uppercase">AUTOMATED CAPA ENGINE &bull; DMRE PROTOCOL RE-2026</div>
+                      <div className="font-black text-base text-slate-950">CORRECTIVE AND PREVENTIVE ACTION REPORT</div>
+                    </div>
+                    <div className="text-right font-mono text-[10px] text-slate-600">
+                      <div>CAPA ID: CAPA-2026-0804-001</div>
+                      <div className="text-rose-700 font-bold">SEVERITY: HIGH (CCP #4 BREACH)</div>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-3 text-[11px] bg-slate-50 p-3 rounded border border-slate-200">
+                    <div><strong>Incident Location:</strong> Shaft 3 Underground Canteen Delivery Line</div>
+                    <div><strong>Incident Date & Time:</strong> 2026-08-04 @ 11:42 SAST</div>
+                    <div><strong>Non-Conformance:</strong> Thermal Holding Breach (Recorded: +52.3°C vs Limit &ge; +60.0°C)</div>
+                    <div><strong>Auditor / Supervisor:</strong> Tumi Seroka (Digital ID: TS-9821)</div>
+                  </div>
+
+                  <div className="space-y-2">
+                    <div className="font-bold text-slate-900 uppercase text-[11px] border-b border-slate-300 pb-0.5">
+                      1. AUTOMATED ROOT CAUSE ANALYSIS (RCA)
+                    </div>
+                    <p className="text-slate-700 text-[11px] leading-relaxed">
+                      Insulated food canister seals degraded during cage drop descent, resulting in an 8.2°C thermal loss over 35 minutes of transit. Bain-marie pre-heating protocol was skipped prior to meal portioning at surface kitchen.
+                    </p>
+                  </div>
+
+                  <div className="space-y-2">
+                    <div className="font-bold text-slate-900 uppercase text-[11px] border-b border-slate-300 pb-0.5">
+                      2. MANDATORY PRACTICAL CORRECTIVE ACTIONS (IMMEDIATE & PREVENTIVE)
+                    </div>
+                    <ul className="list-disc pl-4 text-slate-700 space-y-1 text-[11px]">
+                      <li><strong>Immediate Containment (0–1 Hours):</strong> Condemn food batch #B-409 immediately in accordance with SANS 10330 Clause 7.6. Issue hot meal replacement from standby thermal store.</li>
+                      <li><strong>Engineering Fix (24 Hours):</strong> Inspect and replace silicone perimeter gaskets on all 12 Shaft 3 thermal transport containers.</li>
+                      <li><strong>Operational SOP Enforcement (48 Hours):</strong> Enforce mandatory pre-heating of transport canisters with 80°C steam wash prior to food transfer.</li>
+                    </ul>
+                  </div>
+
+                  <div className="flex justify-between items-center text-[10px] font-mono bg-slate-900 text-slate-200 p-2.5 rounded">
+                    <span>Target Closure Deadline: 2026-08-06 12:00 SAST</span>
+                    <span className="text-amber-400 font-bold">Responsible Person: Site Canteen Manager</span>
+                  </div>
+
+                </div>
+
+              </div>
             </div>
 
           </div>
@@ -2773,6 +3241,58 @@ interface DataPoint {
   flaggedIncidents?: number;
 }
 
+interface MineSiteTargetConfig {
+  id: string;
+  name: string;
+  location: string;
+  sansStandard: string;
+  targetFrequency: number;
+  completedAudits: number;
+}
+
+const DEFAULT_MINE_SITES_TARGETS: MineSiteTargetConfig[] = [
+  {
+    id: 'polokwane-platinum',
+    name: 'Polokwane Platinum Shaft #3',
+    location: 'Polokwane, Limpopo',
+    sansStandard: 'SANS 10330:2020 (HACCP Canteen)',
+    targetFrequency: 12,
+    completedAudits: 10,
+  },
+  {
+    id: 'witwatersrand-gold',
+    name: 'Witwatersrand Gold Deep Reef',
+    location: 'Gauteng, South Africa',
+    sansStandard: 'SANS 10108 & SANS 10330',
+    targetFrequency: 15,
+    completedAudits: 14,
+  },
+  {
+    id: 'mpumalanga-coal',
+    name: 'Mpumalanga Coal Open-Cast',
+    location: 'Mpumalanga, South Africa',
+    sansStandard: 'SANS 10049 & SANS 10142',
+    targetFrequency: 10,
+    completedAudits: 6,
+  },
+  {
+    id: 'rustenburg-chrome',
+    name: 'Rustenburg Chrome Operation',
+    location: 'North West, South Africa',
+    sansStandard: 'SANS 10375 (Lifting & Safety)',
+    targetFrequency: 8,
+    completedAudits: 8,
+  },
+  {
+    id: 'limpopo-canteen',
+    name: 'Limpopo Central Canteen & Depot',
+    location: 'Mokopane, Limpopo',
+    sansStandard: 'SANS 10330 (HACCP CCP #1-#7)',
+    targetFrequency: 12,
+    completedAudits: 9,
+  },
+];
+
 const AuditHistoryChart: React.FC = () => {
   const [metric, setMetric] = useState<'compliance' | 'risk' | 'ppe'>('compliance');
   const [hoveredPoint, setHoveredPoint] = useState<number | null>(null);
@@ -2780,6 +3300,63 @@ const AuditHistoryChart: React.FC = () => {
   const [showThresholdConfig, setShowThresholdConfig] = useState<boolean>(false);
   const [compareA, setCompareA] = useState<number>(0);
   const [compareB, setCompareB] = useState<number>(1);
+
+  // Mine site targets & cumulative audit progress state
+  const [siteTargets, setSiteTargets] = useState<MineSiteTargetConfig[]>(() => {
+    const saved = localStorage.getItem('melotwo_mine_site_audit_targets');
+    if (saved) {
+      try {
+        return JSON.parse(saved);
+      } catch (e) {
+        console.error(e);
+      }
+    }
+    return DEFAULT_MINE_SITES_TARGETS;
+  });
+
+  const [selectedSiteId, setSelectedSiteId] = useState<string>(() => {
+    const saved = localStorage.getItem('melotwo_selected_mine_site_id');
+    return saved || 'polokwane-platinum';
+  });
+
+  useEffect(() => {
+    localStorage.setItem('melotwo_mine_site_audit_targets', JSON.stringify(siteTargets));
+  }, [siteTargets]);
+
+  useEffect(() => {
+    localStorage.setItem('melotwo_selected_mine_site_id', selectedSiteId);
+  }, [selectedSiteId]);
+
+  const currentSite = useMemo(() => {
+    return siteTargets.find(s => s.id === selectedSiteId) || siteTargets[0];
+  }, [siteTargets, selectedSiteId]);
+
+  const handleLogSiteAudit = (siteId: string) => {
+    setSiteTargets(prev => prev.map(site => {
+      if (site.id === siteId) {
+        return { ...site, completedAudits: site.completedAudits + 1 };
+      }
+      return site;
+    }));
+    trackGA4Event('mine_site_audit_completed', {
+      site_id: siteId,
+      new_completed_count: (currentSite?.completedAudits || 0) + 1
+    });
+  };
+
+  const handleUpdateTargetFrequency = (siteId: string, newTarget: number) => {
+    const clampedTarget = Math.max(1, Math.min(50, newTarget));
+    setSiteTargets(prev => prev.map(site => {
+      if (site.id === siteId) {
+        return { ...site, targetFrequency: clampedTarget };
+      }
+      return site;
+    }));
+    trackGA4Event('sans_target_frequency_updated', {
+      site_id: siteId,
+      new_target_frequency: clampedTarget
+    });
+  };
 
   // Warning thresholds (with localStorage persistence)
   const [complianceThreshold, setComplianceThreshold] = useState<number>(() => {
@@ -2994,6 +3571,7 @@ const AuditHistoryChart: React.FC = () => {
 
     setTimeout(() => {
       setData(prev => [...prev, newPoint]);
+      setSiteTargets(prev => prev.map(s => s.id === selectedSiteId ? { ...s, completedAudits: s.completedAudits + 1 } : s));
       
       // Update heatmap with random intensity on historical audit logging
       setHeatmapData(prev => {
@@ -3574,6 +4152,178 @@ const AuditHistoryChart: React.FC = () => {
             <HistoricalSparkline scores={lastSevenFlaggedIncidents} width={80} height={20} strokeColor="#3b82f6" />
           </div>
         </div>
+      </div>
+
+      {/* SANS Mine Site Cumulative Audit Progress Bar Component */}
+      <div className="bg-slate-950/80 border border-slate-800/90 rounded-2xl p-5 shadow-2xl space-y-4 relative overflow-hidden" id="sans-audit-progress-bar-container">
+        {/* Subtle decorative accent */}
+        <div className="absolute top-0 right-0 w-48 h-48 bg-amber-500/5 rounded-full blur-3xl pointer-events-none" />
+
+        {/* Header & Site Selector */}
+        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3 border-b border-slate-800/80 pb-3.5">
+          <div className="space-y-1">
+            <div className="flex items-center space-x-2 text-amber-400 font-mono text-[11px] font-bold uppercase tracking-wider">
+              <Target className="w-4 h-4 text-amber-400 shrink-0" />
+              <span>SANS Statutory Audit Frequency Tracker</span>
+            </div>
+            <h4 className="text-base font-extrabold text-white tracking-tight flex items-center gap-2">
+              <span>Cumulative Audit Completion Rate</span>
+              <span className="text-xs font-normal text-slate-400 font-mono hidden sm:inline">({currentSite.sansStandard})</span>
+            </h4>
+          </div>
+
+          {/* Mine Site Selector Dropdown */}
+          <div className="flex items-center gap-2">
+            <span className="text-xs text-slate-400 font-mono font-bold hidden sm:inline">Active Mine Site:</span>
+            <select
+              value={selectedSiteId}
+              onChange={(e) => {
+                setSelectedSiteId(e.target.value);
+                trackGA4Event('mine_site_tracker_changed', { site_id: e.target.value });
+              }}
+              id="mine-site-audit-target-select"
+              className="bg-slate-900 border border-slate-700 text-white text-xs font-bold rounded-lg px-3 py-2 focus:ring-2 focus:ring-amber-500 focus:outline-none cursor-pointer"
+            >
+              {siteTargets.map((site) => (
+                <option key={site.id} value={site.id}>
+                  {site.name} ({site.completedAudits}/{site.targetFrequency} Audits)
+                </option>
+              ))}
+            </select>
+          </div>
+        </div>
+
+        {/* Progress Bar Display Card */}
+        {(() => {
+          const completed = currentSite.completedAudits;
+          const target = currentSite.targetFrequency;
+          const percent = Math.min(100, Math.round((completed / target) * 100));
+          const remaining = Math.max(0, target - completed);
+
+          let statusLabel = 'ON TRACK';
+          let statusClass = 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30';
+          let gradientClass = 'from-emerald-500 via-teal-400 to-emerald-400';
+
+          if (percent >= 100) {
+            statusLabel = 'TARGET ACHIEVED';
+            statusClass = 'bg-emerald-500 text-slate-950 font-black border-emerald-400 shadow-[0_0_15px_rgba(16,185,129,0.4)]';
+            gradientClass = 'from-emerald-400 via-emerald-300 to-teal-300';
+          } else if (percent >= 75) {
+            statusLabel = 'ON TRACK';
+            statusClass = 'bg-emerald-500/20 text-emerald-400 border-emerald-500/40';
+            gradientClass = 'from-emerald-500 to-teal-400';
+          } else if (percent >= 50) {
+            statusLabel = 'IN PROGRESS';
+            statusClass = 'bg-amber-500/20 text-amber-400 border-amber-500/40';
+            gradientClass = 'from-amber-500 to-orange-400';
+          } else {
+            statusLabel = 'BEHIND SCHEDULE';
+            statusClass = 'bg-rose-500/20 text-rose-400 border-rose-500/40';
+            gradientClass = 'from-rose-600 via-rose-500 to-amber-500';
+          }
+
+          return (
+            <div className="space-y-3.5">
+              {/* Progress Bar Top Meta */}
+              <div className="flex flex-wrap items-center justify-between text-xs gap-2">
+                <div className="flex items-center space-x-2">
+                  <span className="font-extrabold text-white text-sm font-mono">{currentSite.name}</span>
+                  <span className={`px-2 py-0.5 rounded-full text-[10px] font-mono font-bold border ${statusClass}`}>
+                    {statusLabel} ({percent}%)
+                  </span>
+                </div>
+
+                <div className="flex items-center space-x-3 text-slate-300 text-xs">
+                  <span className="font-mono">
+                    Completed: <strong className="text-amber-400 text-sm font-extrabold">{completed}</strong> / <span className="text-slate-400">{target} Target Audits</span>
+                  </span>
+
+                  {/* Inline Target Frequency Adjuster */}
+                  <div className="flex items-center space-x-1 bg-slate-900 border border-slate-800 rounded-md px-2 py-1">
+                    <span className="text-[10px] text-slate-400 font-mono">SANS Target:</span>
+                    <button
+                      onClick={() => handleUpdateTargetFrequency(currentSite.id, target - 1)}
+                      className="w-4 h-4 rounded bg-slate-800 text-slate-300 hover:text-white hover:bg-slate-700 flex items-center justify-center font-bold text-xs active:scale-95 transition"
+                      title="Decrease SANS Target Audit Frequency"
+                    >
+                      -
+                    </button>
+                    <span className="text-xs font-mono font-bold text-white px-1.5">{target}</span>
+                    <button
+                      onClick={() => handleUpdateTargetFrequency(currentSite.id, target + 1)}
+                      className="w-4 h-4 rounded bg-slate-800 text-slate-300 hover:text-white hover:bg-slate-700 flex items-center justify-center font-bold text-xs active:scale-95 transition"
+                      title="Increase SANS Target Audit Frequency"
+                    >
+                      +
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              {/* Visual Progress Bar Track */}
+              <div className="relative space-y-1">
+                <div className="w-full bg-slate-900 border border-slate-800 rounded-full h-5 p-0.5 relative overflow-hidden shadow-inner">
+                  {/* Background Grid Pattern */}
+                  <div className="absolute inset-0 opacity-10 bg-[radial-gradient(#fff_1px,transparent_1px)] [background-size:8px_8px]" />
+
+                  {/* Animated Fill Bar */}
+                  <div
+                    className={`h-full rounded-full transition-all duration-700 bg-gradient-to-r ${gradientClass} relative overflow-hidden shadow-lg`}
+                    style={{ width: `${percent}%` }}
+                    id="sans-audit-progress-bar-fill"
+                  >
+                    {/* Glossy overlay effect */}
+                    <div className="absolute inset-0 bg-gradient-to-b from-white/20 to-transparent" />
+                    {/* Pulse light animation */}
+                    <div className="absolute inset-0 bg-[linear-gradient(90deg,transparent,rgba(255,255,255,0.3),transparent)] animate-pulse" />
+                  </div>
+                </div>
+
+                {/* Milestone markers at 25%, 50%, 75%, 100% */}
+                <div className="flex justify-between items-center text-[10px] text-slate-500 font-mono px-1">
+                  <span>0 Audits</span>
+                  <span className={percent >= 25 ? 'text-slate-300 font-bold' : ''}>25%</span>
+                  <span className={percent >= 50 ? 'text-slate-300 font-bold' : ''}>50% Mid-Cycle</span>
+                  <span className={percent >= 75 ? 'text-slate-300 font-bold' : ''}>75%</span>
+                  <span className={`font-bold ${percent >= 100 ? 'text-emerald-400' : 'text-amber-400'}`}>
+                    Target: {target} Audits (100%)
+                  </span>
+                </div>
+              </div>
+
+              {/* Breakdown Stats Grid & Quick Log Action */}
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 pt-1">
+                <div className="p-2.5 bg-slate-900/60 border border-slate-800/80 rounded-xl text-center space-y-0.5">
+                  <span className="text-[10px] text-slate-400 font-mono uppercase block">Cumulative Completed</span>
+                  <span className="text-base font-black text-amber-400 font-mono">{completed} Audits</span>
+                </div>
+
+                <div className="p-2.5 bg-slate-900/60 border border-slate-800/80 rounded-xl text-center space-y-0.5">
+                  <span className="text-[10px] text-slate-400 font-mono uppercase block">SANS Target Frequency</span>
+                  <span className="text-base font-black text-white font-mono">{target} / Month</span>
+                </div>
+
+                <div className="p-2.5 bg-slate-900/60 border border-slate-800/80 rounded-xl text-center space-y-0.5">
+                  <span className="text-[10px] text-slate-400 font-mono uppercase block">Audits Remaining</span>
+                  <span className={`text-base font-black font-mono ${remaining === 0 ? 'text-emerald-400' : 'text-rose-400'}`}>
+                    {remaining === 0 ? 'Target Achieved!' : `${remaining} Audits`}
+                  </span>
+                </div>
+
+                <div className="p-1.5 bg-slate-900/60 border border-slate-800/80 rounded-xl flex items-center justify-center">
+                  <button
+                    onClick={() => handleLogSiteAudit(currentSite.id)}
+                    id="btn-log-sans-audit-progress"
+                    className="w-full h-full py-1.5 px-3 bg-emerald-600 hover:bg-emerald-500 active:scale-95 text-white font-bold text-xs rounded-lg transition flex items-center justify-center gap-1.5 shadow-md cursor-pointer"
+                  >
+                    <CheckCircle className="w-3.5 h-3.5 stroke-[2.5]" />
+                    <span>Log SANS Audit</span>
+                  </button>
+                </div>
+              </div>
+            </div>
+          );
+        })()}
       </div>
 
       {/* Tabs to select metric */}
@@ -4810,6 +5560,22 @@ const AppNavbar: React.FC<NavbarProps> = ({ currentPage, setPage, userId, isAuth
 const AppFooter: React.FC = () => (
     <footer className="bg-white border-t border-gray-100 mt-20">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+            {/* Official Authoritative Statement / About the Platform */}
+            <div className="mb-12 pb-12 border-b border-gray-100">
+                <div className="bg-slate-900 text-white rounded-2xl p-6 md:p-8 shadow-xl border border-slate-800 space-y-4">
+                    <div className="flex items-center space-x-2 text-amber-400 font-mono text-xs font-bold uppercase tracking-wider">
+                        <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+                        <span>About the Platform &bull; Official Authoritative Statement</span>
+                    </div>
+                    <h2 className="text-xl md:text-2xl font-black text-white tracking-tight">
+                        MeloTwo Safety Engine &bull; SANS 10330:2020 Digital Compliance
+                    </h2>
+                    <p className="text-xs md:text-sm text-slate-200 leading-relaxed font-sans">
+                        MeloTwo Safety Engine is South Africa's flagship digital compliance SaaS built specifically to automate SANS 10330:2020 HACCP Critical Control Point (CCP) verification across mine canteens and underground shaft catering operations in Johannesburg and Polokwane. By replacing falsifiable paper logs with real-time temperature tracking and automated shift sign-offs, MeloTwo eliminates Department of Mineral Resources and Energy (DMRE) health exposure risks under the Mine Health and Safety Act. Headquartered in Polokwane and Johannesburg under the expert technical leadership of Tumi Seroka, the platform provides SHEQ Officers and Canteen Operations Leads with a tamper-proof digital audit ledger for zero-penalty compliance inspections. Through instant deviation alerts and automated cold chain tracking during shaft transport, MeloTwo safeguards workforce health while streamlining audit readiness across high-density mining sites.
+                    </p>
+                </div>
+            </div>
+
             {/* Search-Engine & AI Extractable GEO Compliance Matrix Block */}
             <div className="mb-12 pb-12 border-b border-gray-100">
                 <div className="max-w-3xl mb-8">
@@ -7439,6 +8205,15 @@ const LandingPage: React.FC<LandingPageProps> = ({ currentPage, setPage, setIsDe
                     </div>
                 </div>
             </div>
+
+            {/* Executive Authority Statement Section */}
+            <AuthoritySection />
+
+            {/* High-Contrast Industrial Case Study Section */}
+            <CaseStudySection />
+
+            {/* Third-Party Trust Signals & Verified Reviews Section */}
+            <ReviewSection />
 
             {/* B2B Compliance FAQ Section */}
             <ComplianceFAQ />
