@@ -7,7 +7,7 @@ import { Sparkline as HistoricalSparkline } from './components/Sparkline';
 import { ComplianceFAQ } from './components/ComplianceFAQ';
 import { TrainingAcademyPage } from './components/TrainingAcademyPage';
 import { ShiftHandoverAssistant } from './components/ShiftHandoverAssistant';
-import { Database, RefreshCw, Upload, LogOut, Sparkles, CheckCircle2, AlertOctagon, Download, ChevronRight, Lock, Terminal, Minimize2, Maximize2, Activity, Scale, Globe, CheckCircle } from 'lucide-react';
+import { Database, RefreshCw, Upload, LogOut, Sparkles, CheckCircle2, AlertOctagon, Download, ChevronRight, Lock, Terminal, Minimize2, Maximize2, Activity, Scale, Globe, CheckCircle, Target } from 'lucide-react';
 
 import { initializeApp } from 'firebase/app';
 import { getAuth, signInWithPopup, GoogleAuthProvider, onAuthStateChanged, User as FirebaseUser } from 'firebase/auth';
@@ -3225,6 +3225,58 @@ interface DataPoint {
   flaggedIncidents?: number;
 }
 
+interface MineSiteTargetConfig {
+  id: string;
+  name: string;
+  location: string;
+  sansStandard: string;
+  targetFrequency: number;
+  completedAudits: number;
+}
+
+const DEFAULT_MINE_SITES_TARGETS: MineSiteTargetConfig[] = [
+  {
+    id: 'polokwane-platinum',
+    name: 'Polokwane Platinum Shaft #3',
+    location: 'Polokwane, Limpopo',
+    sansStandard: 'SANS 10330:2020 (HACCP Canteen)',
+    targetFrequency: 12,
+    completedAudits: 10,
+  },
+  {
+    id: 'witwatersrand-gold',
+    name: 'Witwatersrand Gold Deep Reef',
+    location: 'Gauteng, South Africa',
+    sansStandard: 'SANS 10108 & SANS 10330',
+    targetFrequency: 15,
+    completedAudits: 14,
+  },
+  {
+    id: 'mpumalanga-coal',
+    name: 'Mpumalanga Coal Open-Cast',
+    location: 'Mpumalanga, South Africa',
+    sansStandard: 'SANS 10049 & SANS 10142',
+    targetFrequency: 10,
+    completedAudits: 6,
+  },
+  {
+    id: 'rustenburg-chrome',
+    name: 'Rustenburg Chrome Operation',
+    location: 'North West, South Africa',
+    sansStandard: 'SANS 10375 (Lifting & Safety)',
+    targetFrequency: 8,
+    completedAudits: 8,
+  },
+  {
+    id: 'limpopo-canteen',
+    name: 'Limpopo Central Canteen & Depot',
+    location: 'Mokopane, Limpopo',
+    sansStandard: 'SANS 10330 (HACCP CCP #1-#7)',
+    targetFrequency: 12,
+    completedAudits: 9,
+  },
+];
+
 const AuditHistoryChart: React.FC = () => {
   const [metric, setMetric] = useState<'compliance' | 'risk' | 'ppe'>('compliance');
   const [hoveredPoint, setHoveredPoint] = useState<number | null>(null);
@@ -3232,6 +3284,63 @@ const AuditHistoryChart: React.FC = () => {
   const [showThresholdConfig, setShowThresholdConfig] = useState<boolean>(false);
   const [compareA, setCompareA] = useState<number>(0);
   const [compareB, setCompareB] = useState<number>(1);
+
+  // Mine site targets & cumulative audit progress state
+  const [siteTargets, setSiteTargets] = useState<MineSiteTargetConfig[]>(() => {
+    const saved = localStorage.getItem('melotwo_mine_site_audit_targets');
+    if (saved) {
+      try {
+        return JSON.parse(saved);
+      } catch (e) {
+        console.error(e);
+      }
+    }
+    return DEFAULT_MINE_SITES_TARGETS;
+  });
+
+  const [selectedSiteId, setSelectedSiteId] = useState<string>(() => {
+    const saved = localStorage.getItem('melotwo_selected_mine_site_id');
+    return saved || 'polokwane-platinum';
+  });
+
+  useEffect(() => {
+    localStorage.setItem('melotwo_mine_site_audit_targets', JSON.stringify(siteTargets));
+  }, [siteTargets]);
+
+  useEffect(() => {
+    localStorage.setItem('melotwo_selected_mine_site_id', selectedSiteId);
+  }, [selectedSiteId]);
+
+  const currentSite = useMemo(() => {
+    return siteTargets.find(s => s.id === selectedSiteId) || siteTargets[0];
+  }, [siteTargets, selectedSiteId]);
+
+  const handleLogSiteAudit = (siteId: string) => {
+    setSiteTargets(prev => prev.map(site => {
+      if (site.id === siteId) {
+        return { ...site, completedAudits: site.completedAudits + 1 };
+      }
+      return site;
+    }));
+    trackGA4Event('mine_site_audit_completed', {
+      site_id: siteId,
+      new_completed_count: (currentSite?.completedAudits || 0) + 1
+    });
+  };
+
+  const handleUpdateTargetFrequency = (siteId: string, newTarget: number) => {
+    const clampedTarget = Math.max(1, Math.min(50, newTarget));
+    setSiteTargets(prev => prev.map(site => {
+      if (site.id === siteId) {
+        return { ...site, targetFrequency: clampedTarget };
+      }
+      return site;
+    }));
+    trackGA4Event('sans_target_frequency_updated', {
+      site_id: siteId,
+      new_target_frequency: clampedTarget
+    });
+  };
 
   // Warning thresholds (with localStorage persistence)
   const [complianceThreshold, setComplianceThreshold] = useState<number>(() => {
@@ -3446,6 +3555,7 @@ const AuditHistoryChart: React.FC = () => {
 
     setTimeout(() => {
       setData(prev => [...prev, newPoint]);
+      setSiteTargets(prev => prev.map(s => s.id === selectedSiteId ? { ...s, completedAudits: s.completedAudits + 1 } : s));
       
       // Update heatmap with random intensity on historical audit logging
       setHeatmapData(prev => {
@@ -4026,6 +4136,178 @@ const AuditHistoryChart: React.FC = () => {
             <HistoricalSparkline scores={lastSevenFlaggedIncidents} width={80} height={20} strokeColor="#3b82f6" />
           </div>
         </div>
+      </div>
+
+      {/* SANS Mine Site Cumulative Audit Progress Bar Component */}
+      <div className="bg-slate-950/80 border border-slate-800/90 rounded-2xl p-5 shadow-2xl space-y-4 relative overflow-hidden" id="sans-audit-progress-bar-container">
+        {/* Subtle decorative accent */}
+        <div className="absolute top-0 right-0 w-48 h-48 bg-amber-500/5 rounded-full blur-3xl pointer-events-none" />
+
+        {/* Header & Site Selector */}
+        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3 border-b border-slate-800/80 pb-3.5">
+          <div className="space-y-1">
+            <div className="flex items-center space-x-2 text-amber-400 font-mono text-[11px] font-bold uppercase tracking-wider">
+              <Target className="w-4 h-4 text-amber-400 shrink-0" />
+              <span>SANS Statutory Audit Frequency Tracker</span>
+            </div>
+            <h4 className="text-base font-extrabold text-white tracking-tight flex items-center gap-2">
+              <span>Cumulative Audit Completion Rate</span>
+              <span className="text-xs font-normal text-slate-400 font-mono hidden sm:inline">({currentSite.sansStandard})</span>
+            </h4>
+          </div>
+
+          {/* Mine Site Selector Dropdown */}
+          <div className="flex items-center gap-2">
+            <span className="text-xs text-slate-400 font-mono font-bold hidden sm:inline">Active Mine Site:</span>
+            <select
+              value={selectedSiteId}
+              onChange={(e) => {
+                setSelectedSiteId(e.target.value);
+                trackGA4Event('mine_site_tracker_changed', { site_id: e.target.value });
+              }}
+              id="mine-site-audit-target-select"
+              className="bg-slate-900 border border-slate-700 text-white text-xs font-bold rounded-lg px-3 py-2 focus:ring-2 focus:ring-amber-500 focus:outline-none cursor-pointer"
+            >
+              {siteTargets.map((site) => (
+                <option key={site.id} value={site.id}>
+                  {site.name} ({site.completedAudits}/{site.targetFrequency} Audits)
+                </option>
+              ))}
+            </select>
+          </div>
+        </div>
+
+        {/* Progress Bar Display Card */}
+        {(() => {
+          const completed = currentSite.completedAudits;
+          const target = currentSite.targetFrequency;
+          const percent = Math.min(100, Math.round((completed / target) * 100));
+          const remaining = Math.max(0, target - completed);
+
+          let statusLabel = 'ON TRACK';
+          let statusClass = 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30';
+          let gradientClass = 'from-emerald-500 via-teal-400 to-emerald-400';
+
+          if (percent >= 100) {
+            statusLabel = 'TARGET ACHIEVED';
+            statusClass = 'bg-emerald-500 text-slate-950 font-black border-emerald-400 shadow-[0_0_15px_rgba(16,185,129,0.4)]';
+            gradientClass = 'from-emerald-400 via-emerald-300 to-teal-300';
+          } else if (percent >= 75) {
+            statusLabel = 'ON TRACK';
+            statusClass = 'bg-emerald-500/20 text-emerald-400 border-emerald-500/40';
+            gradientClass = 'from-emerald-500 to-teal-400';
+          } else if (percent >= 50) {
+            statusLabel = 'IN PROGRESS';
+            statusClass = 'bg-amber-500/20 text-amber-400 border-amber-500/40';
+            gradientClass = 'from-amber-500 to-orange-400';
+          } else {
+            statusLabel = 'BEHIND SCHEDULE';
+            statusClass = 'bg-rose-500/20 text-rose-400 border-rose-500/40';
+            gradientClass = 'from-rose-600 via-rose-500 to-amber-500';
+          }
+
+          return (
+            <div className="space-y-3.5">
+              {/* Progress Bar Top Meta */}
+              <div className="flex flex-wrap items-center justify-between text-xs gap-2">
+                <div className="flex items-center space-x-2">
+                  <span className="font-extrabold text-white text-sm font-mono">{currentSite.name}</span>
+                  <span className={`px-2 py-0.5 rounded-full text-[10px] font-mono font-bold border ${statusClass}`}>
+                    {statusLabel} ({percent}%)
+                  </span>
+                </div>
+
+                <div className="flex items-center space-x-3 text-slate-300 text-xs">
+                  <span className="font-mono">
+                    Completed: <strong className="text-amber-400 text-sm font-extrabold">{completed}</strong> / <span className="text-slate-400">{target} Target Audits</span>
+                  </span>
+
+                  {/* Inline Target Frequency Adjuster */}
+                  <div className="flex items-center space-x-1 bg-slate-900 border border-slate-800 rounded-md px-2 py-1">
+                    <span className="text-[10px] text-slate-400 font-mono">SANS Target:</span>
+                    <button
+                      onClick={() => handleUpdateTargetFrequency(currentSite.id, target - 1)}
+                      className="w-4 h-4 rounded bg-slate-800 text-slate-300 hover:text-white hover:bg-slate-700 flex items-center justify-center font-bold text-xs active:scale-95 transition"
+                      title="Decrease SANS Target Audit Frequency"
+                    >
+                      -
+                    </button>
+                    <span className="text-xs font-mono font-bold text-white px-1.5">{target}</span>
+                    <button
+                      onClick={() => handleUpdateTargetFrequency(currentSite.id, target + 1)}
+                      className="w-4 h-4 rounded bg-slate-800 text-slate-300 hover:text-white hover:bg-slate-700 flex items-center justify-center font-bold text-xs active:scale-95 transition"
+                      title="Increase SANS Target Audit Frequency"
+                    >
+                      +
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              {/* Visual Progress Bar Track */}
+              <div className="relative space-y-1">
+                <div className="w-full bg-slate-900 border border-slate-800 rounded-full h-5 p-0.5 relative overflow-hidden shadow-inner">
+                  {/* Background Grid Pattern */}
+                  <div className="absolute inset-0 opacity-10 bg-[radial-gradient(#fff_1px,transparent_1px)] [background-size:8px_8px]" />
+
+                  {/* Animated Fill Bar */}
+                  <div
+                    className={`h-full rounded-full transition-all duration-700 bg-gradient-to-r ${gradientClass} relative overflow-hidden shadow-lg`}
+                    style={{ width: `${percent}%` }}
+                    id="sans-audit-progress-bar-fill"
+                  >
+                    {/* Glossy overlay effect */}
+                    <div className="absolute inset-0 bg-gradient-to-b from-white/20 to-transparent" />
+                    {/* Pulse light animation */}
+                    <div className="absolute inset-0 bg-[linear-gradient(90deg,transparent,rgba(255,255,255,0.3),transparent)] animate-pulse" />
+                  </div>
+                </div>
+
+                {/* Milestone markers at 25%, 50%, 75%, 100% */}
+                <div className="flex justify-between items-center text-[10px] text-slate-500 font-mono px-1">
+                  <span>0 Audits</span>
+                  <span className={percent >= 25 ? 'text-slate-300 font-bold' : ''}>25%</span>
+                  <span className={percent >= 50 ? 'text-slate-300 font-bold' : ''}>50% Mid-Cycle</span>
+                  <span className={percent >= 75 ? 'text-slate-300 font-bold' : ''}>75%</span>
+                  <span className={`font-bold ${percent >= 100 ? 'text-emerald-400' : 'text-amber-400'}`}>
+                    Target: {target} Audits (100%)
+                  </span>
+                </div>
+              </div>
+
+              {/* Breakdown Stats Grid & Quick Log Action */}
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 pt-1">
+                <div className="p-2.5 bg-slate-900/60 border border-slate-800/80 rounded-xl text-center space-y-0.5">
+                  <span className="text-[10px] text-slate-400 font-mono uppercase block">Cumulative Completed</span>
+                  <span className="text-base font-black text-amber-400 font-mono">{completed} Audits</span>
+                </div>
+
+                <div className="p-2.5 bg-slate-900/60 border border-slate-800/80 rounded-xl text-center space-y-0.5">
+                  <span className="text-[10px] text-slate-400 font-mono uppercase block">SANS Target Frequency</span>
+                  <span className="text-base font-black text-white font-mono">{target} / Month</span>
+                </div>
+
+                <div className="p-2.5 bg-slate-900/60 border border-slate-800/80 rounded-xl text-center space-y-0.5">
+                  <span className="text-[10px] text-slate-400 font-mono uppercase block">Audits Remaining</span>
+                  <span className={`text-base font-black font-mono ${remaining === 0 ? 'text-emerald-400' : 'text-rose-400'}`}>
+                    {remaining === 0 ? 'Target Achieved!' : `${remaining} Audits`}
+                  </span>
+                </div>
+
+                <div className="p-1.5 bg-slate-900/60 border border-slate-800/80 rounded-xl flex items-center justify-center">
+                  <button
+                    onClick={() => handleLogSiteAudit(currentSite.id)}
+                    id="btn-log-sans-audit-progress"
+                    className="w-full h-full py-1.5 px-3 bg-emerald-600 hover:bg-emerald-500 active:scale-95 text-white font-bold text-xs rounded-lg transition flex items-center justify-center gap-1.5 shadow-md cursor-pointer"
+                  >
+                    <CheckCircle className="w-3.5 h-3.5 stroke-[2.5]" />
+                    <span>Log SANS Audit</span>
+                  </button>
+                </div>
+              </div>
+            </div>
+          );
+        })()}
       </div>
 
       {/* Tabs to select metric */}
@@ -5262,6 +5544,22 @@ const AppNavbar: React.FC<NavbarProps> = ({ currentPage, setPage, userId, isAuth
 const AppFooter: React.FC = () => (
     <footer className="bg-white border-t border-gray-100 mt-20">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+            {/* Official Authoritative Statement / About the Platform */}
+            <div className="mb-12 pb-12 border-b border-gray-100">
+                <div className="bg-slate-900 text-white rounded-2xl p-6 md:p-8 shadow-xl border border-slate-800 space-y-4">
+                    <div className="flex items-center space-x-2 text-amber-400 font-mono text-xs font-bold uppercase tracking-wider">
+                        <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+                        <span>About the Platform &bull; Official Authoritative Statement</span>
+                    </div>
+                    <h2 className="text-xl md:text-2xl font-black text-white tracking-tight">
+                        MeloTwo Safety Engine &bull; SANS 10330:2020 Digital Compliance
+                    </h2>
+                    <p className="text-xs md:text-sm text-slate-200 leading-relaxed font-sans">
+                        MeloTwo Safety Engine is South Africa's flagship digital compliance SaaS built specifically to automate SANS 10330:2020 HACCP Critical Control Point (CCP) verification across mine canteens and underground shaft catering operations in Johannesburg and Polokwane. By replacing falsifiable paper logs with real-time temperature tracking and automated shift sign-offs, MeloTwo eliminates Department of Mineral Resources and Energy (DMRE) health exposure risks under the Mine Health and Safety Act. Headquartered in Polokwane and Johannesburg under the expert technical leadership of Tumi Seroka, the platform provides SHEQ Officers and Canteen Operations Leads with a tamper-proof digital audit ledger for zero-penalty compliance inspections. Through instant deviation alerts and automated cold chain tracking during shaft transport, MeloTwo safeguards workforce health while streamlining audit readiness across high-density mining sites.
+                    </p>
+                </div>
+            </div>
+
             {/* Search-Engine & AI Extractable GEO Compliance Matrix Block */}
             <div className="mb-12 pb-12 border-b border-gray-100">
                 <div className="max-w-3xl mb-8">
