@@ -5,6 +5,9 @@ import { sanitizeInputText } from './utils/sanitizer';
 import { CountUp } from './components/CountUp';
 import { Sparkline as HistoricalSparkline } from './components/Sparkline';
 import { ComplianceFAQ } from './components/ComplianceFAQ';
+import { AuthoritySection } from './components/AuthoritySection';
+import { CaseStudySection } from './components/CaseStudySection';
+import { ReviewSection } from './components/ReviewSection';
 import { TrainingAcademyPage } from './components/TrainingAcademyPage';
 import { ShiftHandoverAssistant } from './components/ShiftHandoverAssistant';
 import { Database, RefreshCw, Upload, LogOut, Sparkles, CheckCircle2, AlertOctagon, Download, ChevronRight, Lock, Terminal, Minimize2, Maximize2, Activity, Scale, Globe, CheckCircle, Target } from 'lucide-react';
@@ -8202,6 +8205,15 @@ const LandingPage: React.FC<LandingPageProps> = ({ currentPage, setPage, setIsDe
                     </div>
                 </div>
             </div>
+
+            {/* Executive Authority Statement Section */}
+            <AuthoritySection />
+
+            {/* High-Contrast Industrial Case Study Section */}
+            <CaseStudySection />
+
+            {/* Third-Party Trust Signals & Verified Reviews Section */}
+            <ReviewSection />
 
             {/* B2B Compliance FAQ Section */}
             <ComplianceFAQ />
