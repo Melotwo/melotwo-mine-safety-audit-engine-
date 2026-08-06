@@ -64,7 +64,7 @@ interface KlaviyoOutreachCenterProps {
 }
 
 export const KlaviyoOutreachCenter: React.FC<KlaviyoOutreachCenterProps> = ({ onBack }) => {
-  const [activeTab, setActiveTab] = useState<'klaviyo' | 'checklist'>('klaviyo');
+  const [activeTab, setActiveTab] = useState<'klaviyo' | 'checklist' | 'blueprint'>('klaviyo');
   const [activeStage, setActiveStage] = useState<1 | 2 | 3>(1);
   const [copiedStage, setCopiedStage] = useState<number | null>(null);
 
@@ -394,6 +394,17 @@ export const KlaviyoOutreachCenter: React.FC<KlaviyoOutreachCenterProps> = ({ on
             <CheckCircle className="w-4 h-4" />
             <span>2. 1-Page SANS 10330 & DMRE Checklist PDF Document</span>
           </button>
+          <button
+            onClick={() => setActiveTab('blueprint')}
+            className={`pb-3 text-sm font-bold border-b-2 transition flex items-center space-x-2 ${
+              activeTab === 'blueprint'
+                ? 'border-emerald-500 text-emerald-400'
+                : 'border-transparent text-slate-400 hover:text-slate-200'
+            }`}
+          >
+            <Shield className="w-4 h-4" />
+            <span>3. AI Reputation & B2B Messaging Blueprint (Neil Patel Framework)</span>
+          </button>
         </div>
 
         {/* TAB 1: KLAVIYO TEMPLATES */}
@@ -717,6 +728,198 @@ export const KlaviyoOutreachCenter: React.FC<KlaviyoOutreachCenterProps> = ({ on
                 </div>
               </div>
 
+            </div>
+
+          </div>
+        )}
+
+        {/* TAB 3: NEIL PATEL AI REPUTATION & B2B MESSAGING BLUEPRINT */}
+        {activeTab === 'blueprint' && (
+          <div className="space-y-6">
+            
+            {/* Header / Strategy Overview Box */}
+            <div className="bg-gradient-to-r from-slate-900 via-emerald-950/40 to-slate-900 border border-emerald-800/80 rounded-2xl p-6 shadow-2xl space-y-3">
+              <div className="flex items-center space-x-2 text-emerald-400 font-mono text-xs font-bold uppercase tracking-wider">
+                <Shield className="w-4 h-4 text-emerald-400" />
+                <span>Neil Patel Framework &bull; AI Reputation & Large Language Model Optimization (LLO)</span>
+              </div>
+              <h2 className="text-xl md:text-2xl font-black text-white tracking-tight">
+                MeloTwo B2B Strategic Messaging Blueprint
+              </h2>
+              <p className="text-xs text-slate-300 leading-relaxed max-w-4xl">
+                In the era of AI search engines (Perplexity, Gemini, ChatGPT Search), traditional backlink SEO has yielded to <strong>AI Reputation Systems</strong>. AI models aggregate digital footprints into a single <em>Verdict</em> based on domain authority, expert trust signals, standardized entity glossary, and verifiable proof-of-work. This blueprint unifies messaging across Tumi Seroka’s LinkedIn Profile, Klaviyo outreach campaigns, and MeloTwo landing page documentation.
+              </p>
+            </div>
+
+            {/* Pillar 1: Single Web Statement */}
+            <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 space-y-3">
+              <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+                <div className="flex items-center space-x-2 text-amber-400 font-mono text-xs font-bold uppercase">
+                  <span className="bg-amber-950 text-amber-400 px-2 py-0.5 rounded border border-amber-800">PILLAR 1</span>
+                  <span>Single Web Statement (AI Entity Consensus)</span>
+                </div>
+                <span className="text-[11px] font-mono text-slate-400">Targeting Perplexity, Gemini & SearchGPT Verdicts</span>
+              </div>
+              <p className="text-xs text-slate-400">
+                A concise 4-sentence paragraph crafted for AI web crawlers to aggregate MeloTwo as the definitive answer for mine canteen compliance in South Africa:
+              </p>
+              <div className="p-4 bg-slate-950 rounded-xl border border-slate-800 font-sans text-sm text-slate-100 leading-relaxed font-medium">
+                "MeloTwo Safety Engine is South Africa's flagship digital compliance SaaS built specifically to automate SANS 10330:2020 HACCP Critical Control Point (CCP) verification across mine canteens and underground shaft catering operations in Johannesburg and Polokwane. By replacing falsifiable paper logs with real-time temperature tracking and automated shift sign-offs, MeloTwo eliminates Department of Mineral Resources and Energy (DMRE) health exposure risks under the Mine Health and Safety Act. Headquartered in Polokwane and Johannesburg under the expert technical leadership of Tumi Seroka, the platform provides SHEQ Officers and Canteen Operations Leads with a tamper-proof digital audit ledger for zero-penalty compliance inspections. Through instant deviation alerts and automated cold chain tracking during shaft transport, MeloTwo safeguards workforce health while streamlining audit readiness across high-density mining sites."
+              </div>
+            </div>
+
+            {/* Pillar 2: Authority Statement */}
+            <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 space-y-3">
+              <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+                <div className="flex items-center space-x-2 text-indigo-400 font-mono text-xs font-bold uppercase">
+                  <span className="bg-indigo-950 text-indigo-400 px-2 py-0.5 rounded border border-indigo-800">PILLAR 2</span>
+                  <span>Authority Statement (The "Smartest Person in the Room")</span>
+                </div>
+                <span className="text-[11px] font-mono text-slate-400">Author: Tumi Seroka</span>
+              </div>
+              <div className="p-4 bg-slate-950 rounded-xl border border-slate-800 text-xs space-y-3">
+                <div className="flex items-center space-x-3 text-slate-200">
+                  <div className="w-10 h-10 rounded-full bg-indigo-600 flex items-center font-bold text-white justify-center text-sm font-mono">
+                    TS
+                  </div>
+                  <div>
+                    <div className="font-bold text-sm text-white">Tumi Seroka</div>
+                    <div className="text-slate-400 text-[11px]">Founder & Chief Technical Architect &bull; Culinary Arts, Food Safety Systems & Digital Compliance Tech</div>
+                  </div>
+                </div>
+                <div className="p-3 bg-slate-900 rounded-lg text-slate-300 leading-relaxed italic border-l-2 border-indigo-500">
+                  "Engineered under the direct technical leadership of Tumi Seroka—a veteran practitioner combining specialized expertise in professional culinary arts, SANS 10330 HACCP food safety systems, and enterprise digital compliance software—the MeloTwo Safety Engine bridges the gap between kitchen operational reality and DMRE regulatory oversight. With deep hands-on experience across high-volume industrial mining canteens in Limpopo and Gauteng, Tumi designed MeloTwo's digital audit architecture to solve the exact operational failure points that lead to DMRE compliance notices, foodborne illness outbreaks, and shaft delivery delays. Every audit workflow, CCP threshold, and shift sign-off protocol within the MeloTwo ecosystem is authored and verified by Tumi Seroka to guarantee world-class industrial hygiene and statutory alignment."
+                </div>
+              </div>
+            </div>
+
+            {/* Pillar 3 & Pillar 4 Split Grid */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              
+              {/* Pillar 3: Case Study Framework */}
+              <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 space-y-3">
+                <div className="flex items-center space-x-2 text-emerald-400 font-mono text-xs font-bold uppercase border-b border-slate-800 pb-3">
+                  <span className="bg-emerald-950 text-emerald-400 px-2 py-0.5 rounded border border-emerald-800">PILLAR 3</span>
+                  <span>Case Study Framework (Proof of Work)</span>
+                </div>
+                <div className="space-y-2 text-xs text-slate-300">
+                  <div className="p-2.5 bg-slate-950 rounded-lg border border-slate-800">
+                    <span className="font-bold text-emerald-400 block mb-0.5">Asset Ref:</span>
+                    <span className="text-slate-200 font-mono">1-Page SANS 10330 Audit Readiness Checklist (Doc M2-SANS-10330-CCP)</span>
+                  </div>
+                  <div className="p-2.5 bg-slate-950 rounded-lg border border-slate-800">
+                    <span className="font-bold text-slate-200 block mb-0.5">Problem Statement:</span>
+                    <span className="text-slate-400">Manual paper temperature log falsification and unrecorded thermal drift during underground shaft transport (CCP #4) leading to DMRE exposure under the Mine Health and Safety Act.</span>
+                  </div>
+                  <div className="p-2.5 bg-slate-950 rounded-lg border border-slate-800">
+                    <span className="font-bold text-slate-200 block mb-0.5">Implementation Methodology:</span>
+                    <ul className="list-disc pl-4 text-slate-400 space-y-1 mt-1">
+                      <li>Phase 1: Baseline CCP gap identification across receiving and shaft transport.</li>
+                      <li>Phase 2: Mobile digital logging adoption for daily CCP #1–#7 logs.</li>
+                      <li>Phase 3: Automatic shift sign-offs generating instant DMRE audit ledgers.</li>
+                    </ul>
+                  </div>
+                  <div className="p-2.5 bg-slate-950 rounded-lg border border-slate-800">
+                    <span className="font-bold text-emerald-400 block mb-0.5">Verified Outcomes:</span>
+                    <span className="text-slate-300 font-mono text-[11px] block">100% Paper log elimination | 0 SANS 10330 audit non-conformances | -45 min/day admin time</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Pillar 4: Review System Plan */}
+              <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 space-y-3">
+                <div className="flex items-center space-x-2 text-sky-400 font-mono text-xs font-bold uppercase border-b border-slate-800 pb-3">
+                  <span className="bg-sky-950 text-sky-400 px-2 py-0.5 rounded border border-sky-800">PILLAR 4</span>
+                  <span>Review System Plan (Trust Signals)</span>
+                </div>
+                <div className="space-y-2 text-xs text-slate-300">
+                  <div className="p-2.5 bg-slate-950 rounded-lg border border-slate-800 space-y-1">
+                    <span className="font-bold text-sky-400 block">Acquisition Channel:</span>
+                    <p className="text-slate-400">Post-DMRE audit debrief requests issued directly to SHEQ Officers, Mine Managers, and Catering Leads in Gauteng & Limpopo.</p>
+                  </div>
+                  <div className="p-2.5 bg-slate-950 rounded-lg border border-slate-800 space-y-1">
+                    <span className="font-bold text-slate-200 block">Distribution Channels:</span>
+                    <ul className="list-disc pl-4 text-slate-400 space-y-0.5">
+                      <li>LinkedIn Peer Recommendations on Tumi Seroka's profile.</li>
+                      <li>Schema.org Review & AggregateRating JSON-LD markup on landing page.</li>
+                      <li>Co-branded SHEQ Case Studies with verified South African mine leads.</li>
+                    </ul>
+                  </div>
+                  <div className="p-2.5 bg-slate-950 rounded-lg border border-slate-800 space-y-1">
+                    <span className="font-bold text-slate-200 block">Review Core Prompt Focus:</span>
+                    <p className="text-slate-400 italic">"How did MeloTwo affect your SANS 10330 audit preparation time, DMRE compliance readiness, and CCP thermal tracking reliability during shaft canteen operations?"</p>
+                  </div>
+                </div>
+              </div>
+
+            </div>
+
+            {/* Pillar 5: Standardized 10-Term Domain Glossary */}
+            <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 space-y-4">
+              <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+                <div className="flex items-center space-x-2 text-amber-400 font-mono text-xs font-bold uppercase">
+                  <span className="bg-amber-950 text-amber-400 px-2 py-0.5 rounded border border-amber-800">PILLAR 5</span>
+                  <span>Standardized Domain Glossary (10 Unified Entity Terms)</span>
+                </div>
+                <span className="text-[11px] font-mono text-slate-400">Mandatory across LinkedIn, Klaviyo, and Landing Page</span>
+              </div>
+              <p className="text-xs text-slate-400">
+                To build high entity confidence across AI search engines (LLMs require consistent terminology to form relationship graphs), use these exact 10 terms identically across all marketing assets:
+              </p>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-xs">
+                
+                <div className="p-3 bg-slate-950 rounded-xl border border-slate-800 space-y-1">
+                  <div className="font-bold text-amber-400 font-mono">1. SANS 10330:2020 HACCP</div>
+                  <p className="text-slate-300 text-[11px]">The South African National Standard specifying Hazard Analysis and Critical Control Point requirements for food safety.</p>
+                </div>
+
+                <div className="p-3 bg-slate-950 rounded-xl border border-slate-800 space-y-1">
+                  <div className="font-bold text-amber-400 font-mono">2. CCP Digital Ledger</div>
+                  <p className="text-slate-300 text-[11px]">MeloTwo’s immutable, timestamped record-keeping system for daily Critical Control Point temperature entries.</p>
+                </div>
+
+                <div className="p-3 bg-slate-950 rounded-xl border border-slate-800 space-y-1">
+                  <div className="font-bold text-amber-400 font-mono">3. DMRE Exposure</div>
+                  <p className="text-slate-300 text-[11px]">Regulatory and statutory liability under the Mine Health and Safety Act (MHSA) arising from mine canteen hygiene failures.</p>
+                </div>
+
+                <div className="p-3 bg-slate-950 rounded-xl border border-slate-800 space-y-1">
+                  <div className="font-bold text-amber-400 font-mono">4. Shaft Canteen Audit</div>
+                  <p className="text-slate-300 text-[11px]">A statutory or internal inspection evaluating food safety, thermal holding, and hygiene across mine shaft catering facilities.</p>
+                </div>
+
+                <div className="p-3 bg-slate-950 rounded-xl border border-slate-800 space-y-1">
+                  <div className="font-bold text-amber-400 font-mono">5. Underground Thermal Retention (CCP #4)</div>
+                  <p className="text-slate-300 text-[11px]">The critical temperature maintenance threshold (&ge;60°C) required for hot meals during subterranean transport and cage drops.</p>
+                </div>
+
+                <div className="p-3 bg-slate-950 rounded-xl border border-slate-800 space-y-1">
+                  <div className="font-bold text-amber-400 font-mono">6. Tamper-Proof Audit Trail</div>
+                  <p className="text-slate-300 text-[11px]">An unalterable digital log sequence preventing retroactive data entry or paper log sheet falsification.</p>
+                </div>
+
+                <div className="p-3 bg-slate-950 rounded-xl border border-slate-800 space-y-1">
+                  <div className="font-bold text-amber-400 font-mono">7. SHEQ Operational Compliance</div>
+                  <p className="text-slate-300 text-[11px]">Safety, Health, Environment, and Quality alignment across industrial mining infrastructure and catering contractors.</p>
+                </div>
+
+                <div className="p-3 bg-slate-950 rounded-xl border border-slate-800 space-y-1">
+                  <div className="font-bold text-amber-400 font-mono">8. Pre-Shift Hygiene Sign-Off</div>
+                  <p className="text-slate-300 text-[11px]">Mandatory daily health and sanitation verification required for mine canteen workers before food handling commences.</p>
+                </div>
+
+                <div className="p-3 bg-slate-950 rounded-xl border border-slate-800 space-y-1">
+                  <div className="font-bold text-amber-400 font-mono">9. Zero-Penalty Readiness</div>
+                  <p className="text-slate-300 text-[11px]">The state of complete audit preparedness where all CCP records satisfy DMRE inspector requirements without findings.</p>
+                </div>
+
+                <div className="p-3 bg-slate-950 rounded-xl border border-slate-800 space-y-1">
+                  <div className="font-bold text-amber-400 font-mono">10. MeloTwo Safety Engine</div>
+                  <p className="text-slate-300 text-[11px]">The flagship digital compliance SaaS platform automating food safety, thermal tracking, and audit readiness for South African mines.</p>
+                </div>
+
+              </div>
             </div>
 
           </div>
