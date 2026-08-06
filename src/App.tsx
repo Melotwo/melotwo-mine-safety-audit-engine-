@@ -64,7 +64,7 @@ interface KlaviyoOutreachCenterProps {
 }
 
 export const KlaviyoOutreachCenter: React.FC<KlaviyoOutreachCenterProps> = ({ onBack }) => {
-  const [activeTab, setActiveTab] = useState<'klaviyo' | 'checklist' | 'blueprint'>('klaviyo');
+  const [activeTab, setActiveTab] = useState<'klaviyo' | 'checklist' | 'blueprint' | 'features'>('klaviyo');
   const [activeStage, setActiveStage] = useState<1 | 2 | 3>(1);
   const [copiedStage, setCopiedStage] = useState<number | null>(null);
 
@@ -403,7 +403,18 @@ export const KlaviyoOutreachCenter: React.FC<KlaviyoOutreachCenterProps> = ({ on
             }`}
           >
             <Shield className="w-4 h-4" />
-            <span>3. AI Reputation & B2B Messaging Blueprint (Neil Patel Framework)</span>
+            <span>3. AI Reputation & B2B Messaging Blueprint</span>
+          </button>
+          <button
+            onClick={() => setActiveTab('features')}
+            className={`pb-3 text-sm font-bold border-b-2 transition flex items-center space-x-2 ${
+              activeTab === 'features'
+                ? 'border-amber-500 text-amber-400'
+                : 'border-transparent text-slate-400 hover:text-slate-200'
+            }`}
+          >
+            <Sparkles className="w-4 h-4" />
+            <span>4. Enterprise Tech Specs (Shift Feed, Hazard Wizard, Auto-CAPA)</span>
           </button>
         </div>
 
@@ -917,6 +928,246 @@ export const KlaviyoOutreachCenter: React.FC<KlaviyoOutreachCenterProps> = ({ on
                 <div className="p-3 bg-slate-950 rounded-xl border border-slate-800 space-y-1">
                   <div className="font-bold text-amber-400 font-mono">10. MeloTwo Safety Engine</div>
                   <p className="text-slate-300 text-[11px]">The flagship digital compliance SaaS platform automating food safety, thermal tracking, and audit readiness for South African mines.</p>
+                </div>
+
+              </div>
+            </div>
+
+          </div>
+        )}
+
+        {/* TAB 4: ENTERPRISE FEATURE TECH SPECS & PROTOTYPES */}
+        {activeTab === 'features' && (
+          <div className="space-y-8">
+            
+            {/* Feature Suite Header */}
+            <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-2xl space-y-3">
+              <div className="flex items-center space-x-2 text-amber-400 font-mono text-xs font-bold uppercase tracking-wider">
+                <Sparkles className="w-4 h-4 text-amber-400" />
+                <span>MeloTwo Product Architecture & Technical Specifications</span>
+              </div>
+              <h2 className="text-xl md:text-2xl font-black text-white tracking-tight">
+                Workplace Risk Assessment & Regulatory Shift Architecture
+              </h2>
+              <p className="text-xs text-slate-300 leading-relaxed max-w-4xl">
+                Comprehensive technical requirements, workflow logic, database schemas, and pre-drafted DMRE Section 54/55 corrective action templates for the 3 core industrial safety enhancements.
+              </p>
+            </div>
+
+            {/* FEATURE 1: REGULATORY SHIFT ALERT FEED */}
+            <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 space-y-4">
+              <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+                <div className="flex items-center space-x-2 text-amber-400 font-mono text-xs font-bold uppercase">
+                  <span className="bg-amber-950 text-amber-400 px-2.5 py-0.5 rounded border border-amber-800">FEATURE 1</span>
+                  <span>REGULATORY SHIFT ALERT FEED</span>
+                </div>
+                <span className="text-[11px] font-mono text-emerald-400 bg-emerald-950/60 px-2 py-0.5 rounded border border-emerald-800">
+                  Real-Time Compliance Monitor
+                </span>
+              </div>
+
+              {/* Technical Spec & UI Schema Grid */}
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 text-xs">
+                
+                <div className="space-y-3">
+                  <h4 className="font-bold text-white text-sm">A. System Architecture & Requirements</h4>
+                  <ul className="space-y-2 text-slate-300 list-disc pl-4 leading-relaxed">
+                    <li><strong>Scraper & Feed Aggregator:</strong> Automated hourly ingestion of SA Gazette releases, DMRE Health & Safety Circulars, SABS SANS 10330 revisions, and R638 Food Labeling amendments.</li>
+                    <li><strong>Severity & Impact Engine:</strong> Categorizes updates into High (Immediate MHSA Section 54 Risk), Medium (SANS CCP Threshold Changes), and Low (General Industry Advisory).</li>
+                    <li><strong>Targeted Push Notifications:</strong> Pushes contextual alerts directly to SHEQ Officers and Canteen Leads based on mine site profile tags (e.g. Underground vs Opencast).</li>
+                  </ul>
+
+                  <h4 className="font-bold text-white text-sm pt-2">B. Database Schema (PostgreSQL / Firestore)</h4>
+                  <div className="p-3 bg-slate-950 font-mono text-[11px] text-emerald-300 rounded-xl border border-slate-800 leading-relaxed overflow-x-auto">
+                    {`TABLE regulatory_shift_alerts (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  regulatory_body VARCHAR(50) NOT NULL, -- 'DMRE' | 'SABS_SANS' | 'DOH'
+  standard_reference VARCHAR(100) NOT NULL, -- e.g. 'SANS 10330:2020 Cl 7.4'
+  severity_level VARCHAR(20) NOT NULL, -- 'HIGH' | 'MEDIUM' | 'LOW'
+  summary_title VARCHAR(255) NOT NULL,
+  actionable_impact_summary TEXT NOT NULL,
+  affected_site_profiles TEXT[], -- ['underground', 'canteen', 'shaft']
+  enforcement_date TIMESTAMP WITH TIME ZONE NOT NULL,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);`}
+                  </div>
+                </div>
+
+                {/* Dashboard Alert Panel Preview */}
+                <div className="space-y-3">
+                  <h4 className="font-bold text-white text-sm">C. Live User Dashboard Alert Panel Layout</h4>
+                  <div className="p-4 bg-slate-950 rounded-xl border border-slate-800 space-y-3">
+                    <div className="flex items-center justify-between text-xs border-b border-slate-800 pb-2">
+                      <span className="font-bold text-slate-200 uppercase font-mono">SHEQ Regulatory Shift Alerts</span>
+                      <span className="text-[10px] bg-rose-950 text-rose-300 px-2 py-0.5 rounded font-mono font-bold border border-rose-800">
+                        1 High Impact Regulation Update
+                      </span>
+                    </div>
+
+                    <div className="p-3 bg-rose-950/40 border border-rose-800/80 rounded-lg space-y-1">
+                      <div className="flex items-center justify-between font-bold text-rose-300 text-xs">
+                        <span>DMRE Guideline Addendum: Underground Meal Storage</span>
+                        <span className="text-[10px] bg-rose-500 text-slate-950 px-1.5 py-0.2 rounded font-mono">SEVERITY: HIGH</span>
+                      </div>
+                      <p className="text-[11px] text-slate-300">
+                        Mandatory thermal holding check required every 2 hours during subterranean cage transfers. Minimum temperature limit adjusted to &ge;60.0°C.
+                      </p>
+                      <div className="flex items-center justify-between text-[10px] text-slate-400 font-mono pt-1">
+                        <span>Ref: DMRE-MHSA-2026-C3</span>
+                        <span className="text-amber-400">Enforcement: Immediate</span>
+                      </div>
+                    </div>
+
+                    <div className="p-3 bg-slate-900 border border-slate-800 rounded-lg space-y-1">
+                      <div className="flex items-center justify-between font-bold text-amber-300 text-xs">
+                        <span>SABS SANS 10330 CCP Log Retention Revision</span>
+                        <span className="text-[10px] bg-amber-950 text-amber-300 px-1.5 py-0.2 rounded font-mono border border-amber-800">SEVERITY: MED</span>
+                      </div>
+                      <p className="text-[11px] text-slate-300">
+                        Digital audit trail backups must be stored with cryptographic timestamping for a minimum of 36 months for DMRE inspector access.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+              </div>
+            </div>
+
+            {/* FEATURE 2: WORKPLACE RISK ASSESSMENT WIZARD */}
+            <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 space-y-4">
+              <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+                <div className="flex items-center space-x-2 text-indigo-400 font-mono text-xs font-bold uppercase">
+                  <span className="bg-indigo-950 text-indigo-400 px-2.5 py-0.5 rounded border border-indigo-800">FEATURE 2</span>
+                  <span>WORKPLACE RISK ASSESSMENT WIZARD (8-CATEGORY HAZARD ENGINE)</span>
+                </div>
+                <span className="text-[11px] font-mono text-indigo-400 bg-indigo-950/60 px-2 py-0.5 rounded border border-indigo-800">
+                  Step-by-Step Field Inspector Logic
+                </span>
+              </div>
+
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 text-xs">
+                
+                {/* 8 Hazard Categories Card */}
+                <div className="p-4 bg-slate-950 rounded-xl border border-slate-800 space-y-2 lg:col-span-1">
+                  <h4 className="font-bold text-white text-sm border-b border-slate-800 pb-1">1. Mandatory Hazard Categories</h4>
+                  <div className="space-y-1.5 font-mono text-[11px]">
+                    <div className="p-1.5 bg-slate-900 rounded border border-slate-800 text-slate-200">1. Slips, Trips & Falls (Wet floors, oil spills)</div>
+                    <div className="p-1.5 bg-slate-900 rounded border border-slate-800 text-slate-200">2. Fire Hazards (Gas leaks, fat traps)</div>
+                    <div className="p-1.5 bg-slate-900 rounded border border-slate-800 text-slate-200">3. Electrical Safety (Exposed wiring, moisture)</div>
+                    <div className="p-1.5 bg-slate-900 rounded border border-slate-800 text-slate-200">4. Machinery & Equipment (Unguarded slicers)</div>
+                    <div className="p-1.5 bg-slate-900 rounded border border-slate-800 text-slate-200">5. Manual Handling (Heavy food canister lifting)</div>
+                    <div className="p-1.5 bg-slate-900 rounded border border-slate-800 text-slate-200">6. Chemical Hazards (Unlabeled sanitizers)</div>
+                    <div className="p-1.5 bg-slate-900 rounded border border-slate-800 text-slate-200">7. Ergonomic Hazards (Repetitive sorting)</div>
+                    <div className="p-1.5 bg-slate-900 rounded border border-slate-800 text-slate-200">8. Workplace Transport (Cage drop loading)</div>
+                  </div>
+                </div>
+
+                {/* Workflow Logic */}
+                <div className="p-4 bg-slate-950 rounded-xl border border-slate-800 space-y-3 lg:col-span-2">
+                  <h4 className="font-bold text-white text-sm border-b border-slate-800 pb-1">2. Step-by-Step Auditor Workflow Logic Flow</h4>
+                  
+                  <div className="grid grid-cols-1 md:grid-cols-4 gap-2 text-[11px]">
+                    <div className="p-2.5 bg-slate-900 rounded-lg border border-slate-800 space-y-1">
+                      <div className="font-bold text-amber-400 font-mono">STEP 1: Location</div>
+                      <p className="text-slate-300">Select Canteen Zone, Receiving Bay, Shaft Prep Room, or Underground Transport.</p>
+                    </div>
+                    <div className="p-2.5 bg-slate-900 rounded-lg border border-slate-800 space-y-1">
+                      <div className="font-bold text-amber-400 font-mono">STEP 2: Category</div>
+                      <p className="text-slate-300">Select from 8 hazard categories with visual icons and predefined hazard picklists.</p>
+                    </div>
+                    <div className="p-2.5 bg-slate-900 rounded-lg border border-slate-800 space-y-1">
+                      <div className="font-bold text-amber-400 font-mono">STEP 3: Risk Matrix</div>
+                      <p className="text-slate-300">Evaluate Severity (1–5) x Likelihood (1–5) to calculate Risk Rating Score (1–25).</p>
+                    </div>
+                    <div className="p-2.5 bg-slate-900 rounded-lg border border-slate-800 space-y-1">
+                      <div className="font-bold text-amber-400 font-mono">STEP 4: Photo & Sign</div>
+                      <p className="text-slate-300">Attach photo evidence, geo-tag location, and sign digitally with timestamp.</p>
+                    </div>
+                  </div>
+
+                  <h5 className="font-bold text-slate-200 text-xs pt-1">Risk Score Calculation Matrix & Trigger Thresholds:</h5>
+                  <div className="grid grid-cols-3 gap-2 font-mono text-[10px] text-center">
+                    <div className="p-2 bg-emerald-950/60 text-emerald-300 border border-emerald-800/80 rounded">
+                      <div>LOW RISK (1–6)</div>
+                      <div className="text-[9px] text-slate-400 mt-0.5">Routine 30-day corrective action</div>
+                    </div>
+                    <div className="p-2 bg-amber-950/60 text-amber-300 border border-amber-800/80 rounded">
+                      <div>MEDIUM RISK (8–12)</div>
+                      <div className="text-[9px] text-slate-400 mt-0.5">Mandatory 48-hr corrective action</div>
+                    </div>
+                    <div className="p-2 bg-rose-950/60 text-rose-300 border border-rose-800/80 rounded font-bold">
+                      <div>HIGH RISK (15–25)</div>
+                      <div className="text-[9px] text-slate-300 mt-0.5">IMMEDIATE DMRE SEC 54 STOP NOTICE</div>
+                    </div>
+                  </div>
+                </div>
+
+              </div>
+            </div>
+
+            {/* FEATURE 3: AUTOMATED PRACTICAL RECOMMENDATIONS & CORRECTIVE ACTIONS */}
+            <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 space-y-4">
+              <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+                <div className="flex items-center space-x-2 text-emerald-400 font-mono text-xs font-bold uppercase">
+                  <span className="bg-emerald-950 text-emerald-400 px-2.5 py-0.5 rounded border border-emerald-800">FEATURE 3</span>
+                  <span>AUTOMATED PRACTICAL RECOMMENDATIONS & CORRECTIVE ACTIONS (AUTO-CAPA)</span>
+                </div>
+                <span className="text-[11px] font-mono text-emerald-400 bg-emerald-950/60 px-2 py-0.5 rounded border border-emerald-800">
+                  DMRE Sec 54/55 Protocol Compliant
+                </span>
+              </div>
+
+              <div className="space-y-3 text-xs">
+                <p className="text-slate-300 leading-relaxed">
+                  When a non-conformance or CCP thermal breach is logged, MeloTwo automatically compiles a pre-drafted <strong>DMRE Corrective Action Report (CAPA)</strong> formatted for Site Managers and SHEQ Directors:
+                </p>
+
+                {/* Pre-Drafted Report Output Template Box */}
+                <div className="bg-white text-slate-900 p-6 rounded-xl border border-slate-300 space-y-4 font-sans text-xs">
+                  
+                  <div className="flex justify-between items-start border-b-2 border-slate-900 pb-3">
+                    <div>
+                      <div className="font-mono text-[10px] text-indigo-700 font-bold uppercase">AUTOMATED CAPA ENGINE &bull; DMRE PROTOCOL RE-2026</div>
+                      <div className="font-black text-base text-slate-950">CORRECTIVE AND PREVENTIVE ACTION REPORT</div>
+                    </div>
+                    <div className="text-right font-mono text-[10px] text-slate-600">
+                      <div>CAPA ID: CAPA-2026-0804-001</div>
+                      <div className="text-rose-700 font-bold">SEVERITY: HIGH (CCP #4 BREACH)</div>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-3 text-[11px] bg-slate-50 p-3 rounded border border-slate-200">
+                    <div><strong>Incident Location:</strong> Shaft 3 Underground Canteen Delivery Line</div>
+                    <div><strong>Incident Date & Time:</strong> 2026-08-04 @ 11:42 SAST</div>
+                    <div><strong>Non-Conformance:</strong> Thermal Holding Breach (Recorded: +52.3°C vs Limit &ge; +60.0°C)</div>
+                    <div><strong>Auditor / Supervisor:</strong> Tumi Seroka (Digital ID: TS-9821)</div>
+                  </div>
+
+                  <div className="space-y-2">
+                    <div className="font-bold text-slate-900 uppercase text-[11px] border-b border-slate-300 pb-0.5">
+                      1. AUTOMATED ROOT CAUSE ANALYSIS (RCA)
+                    </div>
+                    <p className="text-slate-700 text-[11px] leading-relaxed">
+                      Insulated food canister seals degraded during cage drop descent, resulting in an 8.2°C thermal loss over 35 minutes of transit. Bain-marie pre-heating protocol was skipped prior to meal portioning at surface kitchen.
+                    </p>
+                  </div>
+
+                  <div className="space-y-2">
+                    <div className="font-bold text-slate-900 uppercase text-[11px] border-b border-slate-300 pb-0.5">
+                      2. MANDATORY PRACTICAL CORRECTIVE ACTIONS (IMMEDIATE & PREVENTIVE)
+                    </div>
+                    <ul className="list-disc pl-4 text-slate-700 space-y-1 text-[11px]">
+                      <li><strong>Immediate Containment (0–1 Hours):</strong> Condemn food batch #B-409 immediately in accordance with SANS 10330 Clause 7.6. Issue hot meal replacement from standby thermal store.</li>
+                      <li><strong>Engineering Fix (24 Hours):</strong> Inspect and replace silicone perimeter gaskets on all 12 Shaft 3 thermal transport containers.</li>
+                      <li><strong>Operational SOP Enforcement (48 Hours):</strong> Enforce mandatory pre-heating of transport canisters with 80°C steam wash prior to food transfer.</li>
+                    </ul>
+                  </div>
+
+                  <div className="flex justify-between items-center text-[10px] font-mono bg-slate-900 text-slate-200 p-2.5 rounded">
+                    <span>Target Closure Deadline: 2026-08-06 12:00 SAST</span>
+                    <span className="text-amber-400 font-bold">Responsible Person: Site Canteen Manager</span>
+                  </div>
+
                 </div>
 
               </div>
