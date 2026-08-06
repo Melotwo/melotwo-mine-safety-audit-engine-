@@ -11,6 +11,7 @@ import { ReviewSection } from './components/ReviewSection';
 import { TrainingAcademyPage } from './components/TrainingAcademyPage';
 import { ShiftHandoverAssistant } from './components/ShiftHandoverAssistant';
 import { RegulatoryShiftAlertFeed } from './components/RegulatoryShiftAlertFeed';
+import { WorkplaceHazardMatrix, HazardStatus } from './components/WorkplaceHazardMatrix';
 import { Database, RefreshCw, Upload, LogOut, Sparkles, CheckCircle2, AlertOctagon, Download, ChevronRight, Lock, Terminal, Minimize2, Maximize2, Activity, Scale, Globe, CheckCircle, Target } from 'lucide-react';
 
 import { initializeApp } from 'firebase/app';
@@ -8546,6 +8547,10 @@ export const SafetyInspectorPage: React.FC<SafetyInspectorPageProps> = ({ setPag
     const [parsedStatus, setParsedStatus] = useState('Action Required');
     const [parsedNotes, setParsedNotes] = useState('');
 
+    // Workplace Hazard Matrix State Sync
+    const [matrixCriticalCount, setMatrixCriticalCount] = useState<number>(0);
+    const [matrixScorePenalty, setMatrixScorePenalty] = useState<number>(0);
+
     // Sector-specific profile states
     const [selectedSector, setSelectedSector] = useState<string>(() => {
         return localStorage.getItem('melotwo_inspector_active_sector') || 'mining';
@@ -9959,22 +9964,22 @@ Safety index and terminal clearance verified. The audit record status has been u
     }, [ledgerLogs, selectedSector, activeProfile]);
 
     const criticalHazards = useMemo(() => {
-        // Core hazards from ledger logs + active unchecked checklist items
+        // Core hazards from ledger logs + active unchecked checklist items + hazard matrix flagged items
         const ledgerHazards = ledgerLogs.filter(log => 
             log.auditStatus === 'Critical Warning' || 
             log.auditStatus === 'Action Required' || 
             log.severityLevel === 'High'
         ).length;
         
-        return ledgerHazards + uncheckedCount;
-    }, [ledgerLogs, uncheckedCount]);
+        return ledgerHazards + uncheckedCount + matrixCriticalCount;
+    }, [ledgerLogs, uncheckedCount, matrixCriticalCount]);
 
     const averageSafetyIndex = useMemo(() => {
         let baseScore = activeProfile.baseSafetyIndex;
         
         // Checklist adds to or subtracts from safety index
         const checklistMod = (checkedCount - uncheckedCount) * 3.5;
-        let finalScore = baseScore + checklistMod;
+        let finalScore = baseScore + checklistMod - matrixScorePenalty;
         
         // Adjust for live ledger logs (negative impact for Warnings)
         if (ledgerLogs.length > 0) {
@@ -9986,8 +9991,8 @@ Safety index and terminal clearance verified. The audit record status has been u
             finalScore -= totalPenalties;
         }
 
-        return Math.max(45, Math.min(100, Math.round(finalScore * 10) / 10));
-    }, [ledgerLogs, selectedSector, checkedCount, uncheckedCount, activeProfile]);
+        return Math.max(30, Math.min(100, Math.round(finalScore * 10) / 10));
+    }, [ledgerLogs, selectedSector, checkedCount, uncheckedCount, activeProfile, matrixScorePenalty]);
 
     const activeOperators = useMemo(() => {
         const baseOps = selectedSector === 'mining' ? 2 : selectedSector === 'electrical' ? 1 : selectedSector === 'catering' ? 1 : 2;
@@ -10689,6 +10694,17 @@ Safety index and terminal clearance verified. The audit record status has been u
                                 </div>
                             </div>
                         )}
+
+                        {/* Digital Workplace Risk Assessment Matrix */}
+                        <WorkplaceHazardMatrix
+                            onHazardStateChange={(_states, criticalCount, penalty) => {
+                                setMatrixCriticalCount(criticalCount);
+                                setMatrixScorePenalty(penalty);
+                            }}
+                            onApplyCorrectiveActions={(actionsSummary) => {
+                                setParsedNotes(prev => prev ? `${prev}\n\n${actionsSummary}` : actionsSummary);
+                            }}
+                        />
 
                         {/* SANS Compliance Standards Checklist Card */}
                         <div className="bg-slate-900 border border-slate-800 rounded-3xl p-6 backdrop-blur-xl flex flex-col gap-4">
