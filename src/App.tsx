@@ -10,6 +10,7 @@ import { CaseStudySection } from './components/CaseStudySection';
 import { ReviewSection } from './components/ReviewSection';
 import { TrainingAcademyPage } from './components/TrainingAcademyPage';
 import { ShiftHandoverAssistant } from './components/ShiftHandoverAssistant';
+import { RegulatoryShiftAlertFeed } from './components/RegulatoryShiftAlertFeed';
 import { Database, RefreshCw, Upload, LogOut, Sparkles, CheckCircle2, AlertOctagon, Download, ChevronRight, Lock, Terminal, Minimize2, Maximize2, Activity, Scale, Globe, CheckCircle, Target } from 'lucide-react';
 
 import { initializeApp } from 'firebase/app';
@@ -10164,6 +10165,14 @@ Safety index and terminal clearance verified. The audit record status has been u
                         </div>
                     </div>
                 </div>
+
+                {/* Regulatory Shift Alert Feed Banner */}
+                <RegulatoryShiftAlertFeed
+                    selectedSector={selectedSector}
+                    onApplyDirective={(directiveText) => {
+                        setParsedNotes((prev) => prev ? `${prev}\n\n[REGULATORY SHIFT DIRECTIVE]: ${directiveText}` : `[REGULATORY SHIFT DIRECTIVE]: ${directiveText}`);
+                    }}
+                />
 
                 {/* Enterprise Auditing Profile Selector */}
                 <div className="bg-slate-900 border border-slate-800/85 rounded-2xl p-5 backdrop-blur-xl">
