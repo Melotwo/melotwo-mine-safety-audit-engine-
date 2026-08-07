@@ -1,23 +1,18 @@
-import React, { useState, useEffect, useMemo, useRef } from 'react';
-import { jsPDF } from 'jspdf';
-import { ComplianceTrendChart, DailyComplianceData } from './components/ComplianceTrendChart';
-import { sanitizeInputText } from './utils/sanitizer';
-import { CountUp } from './components/CountUp';
-import { Sparkline as HistoricalSparkline } from './components/Sparkline';
+import React, { useState, useEffect, useRef } from 'react';
+import { MineCompliancePanel } from './components/MineCompliancePanel';
+import { AuditReport } from './components/AuditReport';
+import { AuditForm } from './components/AuditForm';
+import { ComplianceTrendChart } from './components/ComplianceTrendChart';
 import { ComplianceFAQ } from './components/ComplianceFAQ';
-import { AuthoritySection } from './components/AuthoritySection';
 import { CaseStudySection } from './components/CaseStudySection';
 import { ReviewSection } from './components/ReviewSection';
+import { AuthoritySection } from './components/AuthoritySection';
+import { Footer } from './components/Footer';
 import { TrainingAcademyPage } from './components/TrainingAcademyPage';
 import { ShiftHandoverAssistant } from './components/ShiftHandoverAssistant';
 import { RegulatoryShiftAlertFeed } from './components/RegulatoryShiftAlertFeed';
 import { WorkplaceHazardMatrix } from './components/WorkplaceHazardMatrix';
 import { Database, RefreshCw, Upload, LogOut, Sparkles, CheckCircle2, AlertOctagon, Download, ChevronRight, Lock, Terminal, Minimize2, Maximize2, Activity, Scale, Globe, CheckCircle, Target } from 'lucide-react';
-
-import { initializeApp } from 'firebase/app';
-import { getAuth, signInWithPopup, GoogleAuthProvider, onAuthStateChanged, User as FirebaseUser } from 'firebase/auth';
-import { getFirestore, doc, setDoc } from 'firebase/firestore';
-import firebaseConfig from '../firebase-applet-config.json';
 
 import { ErrorBoundary } from './components/ErrorBoundary';
 
