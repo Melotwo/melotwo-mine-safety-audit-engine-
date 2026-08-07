@@ -113,7 +113,7 @@ export const HAZARD_CATEGORIES: HazardCategoryItem[] = [
   }
 ];
 
-interface WorkplaceHazardMatrixProps {
+export interface WorkplaceHazardMatrixProps {
   onHazardStateChange?: (states: Record<string, HazardStatus>, criticalCount: number, penalty: number) => void;
   onApplyCorrectiveActions?: (actionsSummary: string) => void;
 }
