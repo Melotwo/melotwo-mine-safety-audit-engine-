@@ -11,7 +11,7 @@ import { ReviewSection } from './components/ReviewSection';
 import { TrainingAcademyPage } from './components/TrainingAcademyPage';
 import { ShiftHandoverAssistant } from './components/ShiftHandoverAssistant';
 import { RegulatoryShiftAlertFeed } from './components/RegulatoryShiftAlertFeed';
-import { WorkplaceHazardMatrix } from './components/WorkplaceHazardMatrix';
+import { WorkplaceHazardMatrix } from './components';
 import { Database, RefreshCw, Upload, LogOut, Sparkles, CheckCircle2, AlertOctagon, Download, ChevronRight, Lock, Terminal, Minimize2, Maximize2, Activity, Scale, Globe, CheckCircle, Target } from 'lucide-react';
 
 import { initializeApp } from 'firebase/app';
