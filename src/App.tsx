@@ -30,6 +30,8 @@ const finalConfig = hasValidConfig ? firebaseConfig : {
 
 const app = initializeApp(finalConfig);
 
+const app = initializeApp(finalConfig);
+
 let _auth: any = null;
 let _db: any = null;
 
