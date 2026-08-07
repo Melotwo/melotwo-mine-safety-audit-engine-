@@ -1,7 +1,8 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { MineCompliancePanel } from './components/MineCompliancePanel';
-import { AuditReport } from './components/AuditReport';
-import { AuditForm } from './components/AuditForm';
+import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
+import { initializeApp } from 'firebase/app';
+import { getAuth, signInWithPopup, GoogleAuthProvider, onAuthStateChanged, User as FirebaseUser } from 'firebase/auth';
+import { getFirestore, doc, setDoc } from 'firebase/firestore';
+import firebaseConfig from '../firebase-applet-config.json';
 import { ComplianceTrendChart } from './components/ComplianceTrendChart';
 import { ComplianceFAQ } from './components/ComplianceFAQ';
 import { CaseStudySection } from './components/CaseStudySection';
