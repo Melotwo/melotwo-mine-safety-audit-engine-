@@ -3,6 +3,8 @@ import { initializeApp } from 'firebase/app';
 import { getAuth, signInWithPopup, GoogleAuthProvider, onAuthStateChanged, User as FirebaseUser } from 'firebase/auth';
 import { getFirestore, doc, setDoc } from 'firebase/firestore';
 import firebaseConfig from '../firebase-applet-config.json';
+import { CountUp } from './components/CountUp';
+import { Sparkline as HistoricalSparkline } from './components/Sparkline';
 import { ComplianceTrendChart } from './components/ComplianceTrendChart';
 import { ComplianceFAQ } from './components/ComplianceFAQ';
 import { CaseStudySection } from './components/CaseStudySection';
