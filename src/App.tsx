@@ -11119,7 +11119,7 @@ Safety index and terminal clearance verified. The audit record status has been u
                 <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start w-full">
                     
                     {/* Left Operations: Document Parser & Parameters reviewer (6 Cols) */}
-                    <div className="lg:col-span-6 flex flex-col gap-6 w-full">
+                    <div className="lg:col-span-6 flex flex-col gap-6 w-full min-w-0">
                         
                         {/* Terminal Document & AI Vision Scanner */}
                         <div className="bg-slate-900 border border-slate-800 rounded-3xl p-6 backdrop-blur-xl flex flex-col gap-5">
@@ -11534,8 +11534,8 @@ Safety index and terminal clearance verified. The audit record status has been u
 
                             {/* Dropdown & Cards Selection Bar */}
                             <div className="space-y-3">
-                                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 bg-slate-950/70 p-3 rounded-2xl border border-slate-800">
-                                    <label htmlFor="auditing-terminal-site-dropdown" className="text-xs font-bold text-slate-300 uppercase font-mono tracking-wider flex items-center gap-2">
+                                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 bg-slate-950/70 p-3 rounded-2xl border border-slate-800 w-full max-w-full overflow-hidden truncate">
+                                    <label htmlFor="auditing-terminal-site-dropdown" className="text-xs font-bold text-slate-300 uppercase font-mono tracking-wider flex items-center gap-2 shrink-0">
                                         <Truck className="w-4 h-4 text-amber-400 shrink-0" />
                                         <span>Operational Unit Selector:</span>
                                     </label>
@@ -11543,7 +11543,7 @@ Safety index and terminal clearance verified. The audit record status has been u
                                         id="auditing-terminal-site-dropdown"
                                         value={selectedSiteId}
                                         onChange={(e) => handleSelectSite(e.target.value)}
-                                        className="bg-slate-900 border border-amber-500/40 text-amber-300 text-xs font-extrabold rounded-xl px-3.5 py-2 focus:ring-2 focus:ring-amber-500 focus:outline-none cursor-pointer shadow-inner w-full sm:w-auto"
+                                        className="bg-slate-900 border border-amber-500/40 text-amber-300 text-xs font-extrabold rounded-xl px-3.5 py-2 focus:ring-2 focus:ring-amber-500 focus:outline-none cursor-pointer shadow-inner w-full max-w-full overflow-hidden truncate"
                                     >
                                         {DEFAULT_MINE_SITES_TARGETS.map(site => (
                                             <option key={site.id} value={site.id} className="bg-slate-900 text-white font-medium">
@@ -12320,7 +12320,7 @@ Safety index and terminal clearance verified. The audit record status has been u
                     </div>
 
                     {/* Right Operations: Charts, Red-Team Assessments (6 Cols) */}
-                    <div className="lg:col-span-6 flex flex-col gap-6 w-full">
+                    <div className="lg:col-span-6 flex flex-col gap-6 w-full min-w-0">
 
                         {/* Red Team Operational Analytics Widget */}
                         <AuditHistoryChart />
