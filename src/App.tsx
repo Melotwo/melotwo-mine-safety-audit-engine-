@@ -14,7 +14,7 @@ import { Footer } from './components/Footer';
 import { TrainingAcademyPage } from './components/TrainingAcademyPage';
 import { ShiftHandoverAssistant } from './components/ShiftHandoverAssistant';
 import { RegulatoryShiftAlertFeed } from './components/RegulatoryShiftAlertFeed';
-import { Database, RefreshCw, Upload, LogOut, Sparkles, CheckCircle2, AlertOctagon, Download, ChevronRight, Lock, Terminal, Minimize2, Maximize2, Activity, Scale, Globe, CheckCircle, Target, ShieldAlert, ArrowRight, Check, Truck, Info, RotateCcw, Sliders, XCircle, Building2, MapPin } from 'lucide-react';
+import { Database, RefreshCw, Upload, LogOut, Sparkles, CheckCircle2, AlertOctagon, Download, ChevronRight, Lock, Terminal, Minimize2, Maximize2, Activity, Scale, Globe, CheckCircle, Target, ShieldAlert, ArrowRight, Check, Truck, Info, RotateCcw, Sliders, XCircle, Building2, MapPin, ChevronDown, ChevronUp, EyeOff, Filter, Layers } from 'lucide-react';
 import jsPDF from 'jspdf';
 
 import { ErrorBoundary } from './components/ErrorBoundary';
@@ -8571,8 +8571,20 @@ export const WorkplaceHazardMatrix: React.FC<WorkplaceHazardMatrixProps> = ({
   });
 
   const [copiedNotification, setCopiedNotification] = useState(false);
+  const [selectedCategoryTab, setSelectedCategoryTab] = useState<'all' | 'high_risk' | 'flagged' | 'elec_mech' | 'transport' | 'env_fire'>('all');
+  const [isMatrixCollapsed, setIsMatrixCollapsed] = useState(false);
+  const [isAlertMinimized, setIsAlertMinimized] = useState(false);
 
   const flaggedHazards = HAZARD_CATEGORIES.filter(h => hazardStates[h.id] && hazardStates[h.id] !== 'pass');
+
+  const filteredCategories = HAZARD_CATEGORIES.filter(h => {
+    if (selectedCategoryTab === 'high_risk') return h.isHighRisk;
+    if (selectedCategoryTab === 'flagged') return hazardStates[h.id] && hazardStates[h.id] !== 'pass';
+    if (selectedCategoryTab === 'elec_mech') return h.id === 'electrical' || h.id === 'machinery_guarding';
+    if (selectedCategoryTab === 'transport') return h.id === 'transport' || h.id === 'slips_trips';
+    if (selectedCategoryTab === 'env_fire') return h.id === 'fire_thermal' || h.id === 'chemical' || h.id === 'ergonomic' || h.id === 'manual_handling';
+    return true; // 'all'
+  });
 
   const criticalCount = flaggedHazards.length;
 
@@ -8682,7 +8694,7 @@ export const WorkplaceHazardMatrix: React.FC<WorkplaceHazardMatrixProps> = ({
           </p>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 flex-wrap">
           {flaggedHazards.length > 0 ? (
             <span className="text-[10px] font-mono font-bold bg-rose-500/15 border border-rose-500/30 text-rose-300 px-2.5 py-1 rounded-lg flex items-center gap-1.5 animate-pulse">
               <AlertTriangle className="w-3.5 h-3.5 text-rose-400" />
@@ -8710,118 +8722,200 @@ export const WorkplaceHazardMatrix: React.FC<WorkplaceHazardMatrixProps> = ({
             <RotateCcw className="w-3 h-3" />
             Reset
           </button>
+          <button
+            onClick={() => setIsMatrixCollapsed(!isMatrixCollapsed)}
+            className="text-[9px] font-bold text-slate-300 hover:text-white bg-slate-950 hover:bg-slate-800 border border-slate-800 rounded-lg px-2.5 py-1 transition-all cursor-pointer flex items-center gap-1"
+            title={isMatrixCollapsed ? "Expand Hazard Cards" : "Collapse Hazard Cards"}
+          >
+            {isMatrixCollapsed ? <ChevronDown className="w-3.5 h-3.5 text-amber-400" /> : <ChevronUp className="w-3.5 h-3.5 text-amber-400" />}
+            <span>{isMatrixCollapsed ? 'Expand Cards' : 'Collapse Section'}</span>
+          </button>
         </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-        {HAZARD_CATEGORIES.map(h => {
-          const status = hazardStates[h.id] || 'pass';
-
-          return (
-            <div
-              key={h.id}
-              className={`p-3.5 rounded-2xl border transition-all flex flex-col justify-between gap-2.5 ${
-                status === 'critical'
-                  ? 'bg-rose-950/20 border-rose-500/40 shadow-lg shadow-rose-950/20'
-                  : status === 'risk_detected'
-                  ? 'bg-amber-950/20 border-amber-500/35 shadow-md shadow-amber-950/10'
-                  : 'bg-slate-950/50 border-slate-800/80 hover:border-slate-700'
+      {/* Category Filter Tabs */}
+      {!isMatrixCollapsed && (
+        <div className="flex items-center gap-1.5 overflow-x-auto pb-1 font-mono text-[10px] border-b border-slate-800/60 scrollbar-thin">
+          <span className="text-slate-500 font-bold uppercase text-[9px] mr-1 flex items-center gap-1 shrink-0">
+            <Filter className="w-3 h-3 text-amber-500" />
+            Filter:
+          </span>
+          <button
+            onClick={() => setSelectedCategoryTab('all')}
+            className={`px-2.5 py-1 rounded-lg font-bold border transition-all cursor-pointer shrink-0 ${
+              selectedCategoryTab === 'all'
+                ? 'bg-amber-500 text-slate-950 border-amber-400 font-extrabold shadow-sm'
+                : 'bg-slate-950 border-slate-800 text-slate-400 hover:text-white'
+            }`}
+          >
+            All Categories ({HAZARD_CATEGORIES.length})
+          </button>
+          <button
+            onClick={() => setSelectedCategoryTab('high_risk')}
+            className={`px-2.5 py-1 rounded-lg font-bold border transition-all cursor-pointer shrink-0 ${
+              selectedCategoryTab === 'high_risk'
+                ? 'bg-amber-500 text-slate-950 border-amber-400 font-extrabold shadow-sm'
+                : 'bg-slate-950 border-slate-800 text-slate-400 hover:text-white'
+            }`}
+          >
+            High Risk (5)
+          </button>
+          {flaggedHazards.length > 0 && (
+            <button
+              onClick={() => setSelectedCategoryTab('flagged')}
+              className={`px-2.5 py-1 rounded-lg font-bold border transition-all cursor-pointer shrink-0 ${
+                selectedCategoryTab === 'flagged'
+                  ? 'bg-rose-500 text-slate-950 border-rose-400 font-extrabold shadow-sm'
+                  : 'bg-rose-500/10 border-rose-500/30 text-rose-300 hover:text-rose-200'
               }`}
             >
-              <div className="flex flex-wrap items-center justify-between gap-2 w-full max-w-full overflow-hidden">
-                <div className="flex items-start gap-2.5 min-w-0 flex-1">
-                  <div className={`p-2 rounded-xl mt-0.5 border shrink-0 ${
-                    status === 'critical'
-                      ? 'bg-rose-500/20 border-rose-500/40 text-rose-300'
-                      : status === 'risk_detected'
-                      ? 'bg-amber-500/20 border-amber-500/40 text-amber-300'
-                      : 'bg-slate-900 border-slate-800 text-slate-400'
-                  }`}>
-                    {getCategoryIcon(h.iconName)}
-                  </div>
-                  <div className="min-w-0 max-w-full break-words overflow-hidden flex-1">
-                    <div className="flex flex-wrap items-center gap-1.5">
-                      <span className="text-[10px] font-mono font-bold text-slate-400 bg-slate-900 px-1.5 py-0.5 rounded border border-slate-800 shrink-0">
-                        {h.code}
-                      </span>
-                      {h.isHighRisk && (
-                        <span className="text-[9px] font-mono font-bold text-amber-400 bg-amber-500/10 px-1.5 py-0.5 rounded border border-amber-500/20 shrink-0">
-                          HIGH-RISK
-                        </span>
-                      )}
-                      <span className="text-[9px] font-mono font-bold text-slate-400 bg-slate-900/80 px-1.5 py-0.5 rounded border border-slate-800/80 shrink-0">
-                        {h.standardRef}
-                      </span>
-                    </div>
-                    <h4 className="text-xs font-bold text-white leading-snug mt-1 break-words max-w-full overflow-hidden">
-                      {h.name}
-                    </h4>
-                    <p className="text-[11px] text-slate-400 leading-normal mt-0.5 break-words max-w-full overflow-hidden">
-                      {h.defaultDescription}
-                    </p>
-                  </div>
-                </div>
-                <span className={`text-[10px] font-mono font-bold px-2 py-0.5 rounded border shrink-0 self-start ${
+              Flagged ({flaggedHazards.length})
+            </button>
+          )}
+          <button
+            onClick={() => setSelectedCategoryTab('elec_mech')}
+            className={`px-2.5 py-1 rounded-lg font-bold border transition-all cursor-pointer shrink-0 ${
+              selectedCategoryTab === 'elec_mech'
+                ? 'bg-amber-500 text-slate-950 border-amber-400 font-extrabold shadow-sm'
+                : 'bg-slate-950 border-slate-800 text-slate-400 hover:text-white'
+            }`}
+          >
+            Electrical &amp; Machinery
+          </button>
+          <button
+            onClick={() => setSelectedCategoryTab('transport')}
+            className={`px-2.5 py-1 rounded-lg font-bold border transition-all cursor-pointer shrink-0 ${
+              selectedCategoryTab === 'transport'
+                ? 'bg-amber-500 text-slate-950 border-amber-400 font-extrabold shadow-sm'
+                : 'bg-slate-950 border-slate-800 text-slate-400 hover:text-white'
+            }`}
+          >
+            Transport &amp; Mobile Eq
+          </button>
+          <button
+            onClick={() => setSelectedCategoryTab('env_fire')}
+            className={`px-2.5 py-1 rounded-lg font-bold border transition-all cursor-pointer shrink-0 ${
+              selectedCategoryTab === 'env_fire'
+                ? 'bg-amber-500 text-slate-950 border-amber-400 font-extrabold shadow-sm'
+                : 'bg-slate-950 border-slate-800 text-slate-400 hover:text-white'
+            }`}
+          >
+            Fire, Chemical &amp; Ergo
+          </button>
+        </div>
+      )}
+
+      {!isMatrixCollapsed && (
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+          {filteredCategories.map(h => {
+            const status = hazardStates[h.id] || 'pass';
+
+            return (
+              <div
+                key={h.id}
+                className={`p-3.5 rounded-2xl border transition-all flex flex-col justify-between gap-2.5 ${
                   status === 'critical'
-                    ? 'bg-rose-500/20 text-rose-300 border-rose-500/40'
+                    ? 'bg-rose-950/20 border-rose-500/40 shadow-lg shadow-rose-950/20'
                     : status === 'risk_detected'
-                    ? 'bg-amber-500/20 text-amber-300 border-amber-500/40'
-                    : 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20'
-                }`}>
-                  {status === 'critical' ? '[CRITICAL FLAG]' : status === 'risk_detected' ? '[RISK DETECTED]' : '[PASS]'}
-                </span>
-              </div>
-
-              <div className="flex items-center gap-1.5 pt-1 border-t border-slate-800/60 font-mono text-[10px]">
-                <button
-                  type="button"
-                  onClick={() => handleSetStatus(h.id, 'pass')}
-                  className={`flex-1 py-1 px-2 rounded-lg font-bold border transition-all cursor-pointer flex items-center justify-center gap-1 ${
-                    status === 'pass'
-                      ? 'bg-emerald-500/20 border-emerald-500/50 text-emerald-300 shadow-sm'
-                      : 'bg-slate-900 border-slate-800 text-slate-400 hover:text-white hover:bg-slate-800'
-                  }`}
-                  id={`btn-hazard-pass-${h.id}`}
-                >
-                  <CheckCircle2 className="w-3 h-3 text-emerald-400" />
-                  Pass
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => handleSetStatus(h.id, 'risk_detected')}
-                  className={`flex-1 py-1 px-2 rounded-lg font-bold border transition-all cursor-pointer flex items-center justify-center gap-1 ${
-                    status === 'risk_detected'
-                      ? 'bg-amber-500/25 border-amber-500/60 text-amber-200 shadow-sm'
-                      : 'bg-slate-900 border-slate-800 text-slate-400 hover:text-amber-300 hover:bg-slate-800'
-                  }`}
-                  id={`btn-hazard-risk-${h.id}`}
-                >
-                  <AlertTriangle className="w-3 h-3 text-amber-400" />
-                  Risk Detected
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => handleSetStatus(h.id, 'critical')}
-                  className={`flex-1 py-1 px-2 rounded-lg font-bold border transition-all cursor-pointer flex items-center justify-center gap-1 ${
+                    ? 'bg-amber-950/20 border-amber-500/35 shadow-md shadow-amber-950/10'
+                    : 'bg-slate-950/50 border-slate-800/80 hover:border-slate-700'
+                }`}
+              >
+                <div className="flex flex-wrap items-center justify-between gap-2 w-full max-w-full overflow-hidden">
+                  <div className="flex items-start gap-2.5 min-w-0 flex-1">
+                    <div className={`p-2 rounded-xl mt-0.5 border shrink-0 ${
+                      status === 'critical'
+                        ? 'bg-rose-500/20 border-rose-500/40 text-rose-300'
+                        : status === 'risk_detected'
+                        ? 'bg-amber-500/20 border-amber-500/40 text-amber-300'
+                        : 'bg-slate-900 border-slate-800 text-slate-400'
+                    }`}>
+                      {getCategoryIcon(h.iconName)}
+                    </div>
+                    <div className="min-w-0 max-w-full break-words overflow-hidden flex-1">
+                      <div className="flex flex-wrap items-center gap-1.5">
+                        <span className="text-[10px] font-mono font-bold text-slate-400 bg-slate-900 px-1.5 py-0.5 rounded border border-slate-800 shrink-0">
+                          {h.code}
+                        </span>
+                        {h.isHighRisk && (
+                          <span className="text-[9px] font-mono font-bold text-amber-400 bg-amber-500/10 px-1.5 py-0.5 rounded border border-amber-500/20 shrink-0">
+                            HIGH-RISK
+                          </span>
+                        )}
+                        <span className="text-[9px] font-mono font-bold text-slate-400 bg-slate-900/80 px-1.5 py-0.5 rounded border border-slate-800/80 shrink-0">
+                          {h.standardRef}
+                        </span>
+                      </div>
+                      <h4 className="text-xs font-bold text-white leading-snug mt-1 break-words max-w-full overflow-hidden">
+                        {h.name}
+                      </h4>
+                      <p className="text-[11px] text-slate-400 leading-normal mt-0.5 break-words max-w-full overflow-hidden">
+                        {h.defaultDescription}
+                      </p>
+                    </div>
+                  </div>
+                  <span className={`text-[10px] font-mono font-bold px-2 py-0.5 rounded border shrink-0 self-start ${
                     status === 'critical'
-                      ? 'bg-rose-500/30 border-rose-500/70 text-rose-200 shadow-sm'
-                      : 'bg-slate-900 border-slate-800 text-slate-400 hover:text-rose-300 hover:bg-slate-800'
-                  }`}
-                  id={`btn-hazard-critical-${h.id}`}
-                >
-                  <AlertOctagon className="w-3 h-3 text-rose-400" />
-                  Critical Flag
-                </button>
+                      ? 'bg-rose-500/20 text-rose-300 border-rose-500/40'
+                      : status === 'risk_detected'
+                      ? 'bg-amber-500/20 text-amber-300 border-amber-500/40'
+                      : 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20'
+                  }`}>
+                    {status === 'critical' ? '[CRITICAL FLAG]' : status === 'risk_detected' ? '[RISK DETECTED]' : '[PASS]'}
+                  </span>
+                </div>
+
+                <div className="flex items-center gap-1.5 pt-1 border-t border-slate-800/60 font-mono text-[10px]">
+                  <button
+                    type="button"
+                    onClick={() => handleSetStatus(h.id, 'pass')}
+                    className={`flex-1 py-1 px-2 rounded-lg font-bold border transition-all cursor-pointer flex items-center justify-center gap-1 ${
+                      status === 'pass'
+                        ? 'bg-emerald-500/20 border-emerald-500/50 text-emerald-300 shadow-sm'
+                        : 'bg-slate-900 border-slate-800 text-slate-400 hover:text-white hover:bg-slate-800'
+                    }`}
+                    id={`btn-hazard-pass-${h.id}`}
+                  >
+                    <CheckCircle2 className="w-3 h-3 text-emerald-400" />
+                    Pass
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => handleSetStatus(h.id, 'risk_detected')}
+                    className={`flex-1 py-1 px-2 rounded-lg font-bold border transition-all cursor-pointer flex items-center justify-center gap-1 ${
+                      status === 'risk_detected'
+                        ? 'bg-amber-500/25 border-amber-500/60 text-amber-200 shadow-sm'
+                        : 'bg-slate-900 border-slate-800 text-slate-400 hover:text-amber-300 hover:bg-slate-800'
+                    }`}
+                    id={`btn-hazard-risk-${h.id}`}
+                  >
+                    <AlertTriangle className="w-3 h-3 text-amber-400" />
+                    Risk Detected
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => handleSetStatus(h.id, 'critical')}
+                    className={`flex-1 py-1 px-2 rounded-lg font-bold border transition-all cursor-pointer flex items-center justify-center gap-1 ${
+                      status === 'critical'
+                        ? 'bg-rose-500/30 border-rose-500/70 text-rose-200 shadow-sm'
+                        : 'bg-slate-900 border-slate-800 text-slate-400 hover:text-rose-300 hover:bg-slate-800'
+                    }`}
+                    id={`btn-hazard-critical-${h.id}`}
+                  >
+                    <AlertOctagon className="w-3 h-3 text-rose-400" />
+                    Critical Flag
+                  </button>
+                </div>
               </div>
-            </div>
-          );
-        })}
-      </div>
+            );
+          })}
+        </div>
+      )}
 
       {flaggedHazards.length > 0 && (
-        <div className="bg-gradient-to-r from-rose-950/40 via-amber-950/30 to-slate-950 border border-rose-500/40 rounded-2xl p-4 md:p-5 text-white space-y-3.5 shadow-xl animate-fadeIn max-w-full overflow-hidden">
+        <div className="bg-gradient-to-r from-rose-950/40 via-amber-950/30 to-slate-950 border border-rose-500/40 rounded-2xl p-4 md:p-5 text-white space-y-3 shadow-xl animate-fadeIn max-w-full overflow-hidden">
           <div className="flex flex-wrap items-center justify-between gap-2.5 w-full">
             <div className="flex items-center gap-2.5 min-w-0 flex-1">
               <div className="p-2 bg-rose-500/20 border border-rose-500/40 rounded-xl text-rose-400 shrink-0">
@@ -8837,51 +8931,55 @@ export const WorkplaceHazardMatrix: React.FC<WorkplaceHazardMatrixProps> = ({
               </div>
             </div>
 
-            <span className="text-[10px] font-mono text-rose-300 bg-rose-950/60 border border-rose-800 px-2.5 py-1 rounded-lg shrink-0">
-              SAFETY INDEX PENALTY: -{scorePenalty}%
-            </span>
-          </div>
-
-          <div className="space-y-2 bg-slate-950/80 p-3 rounded-xl border border-slate-800/80 text-xs max-w-full overflow-hidden">
-            {flaggedHazards.map(h => (
-              <div key={h.id} className="flex flex-wrap items-start gap-2 text-slate-200 min-w-0 max-w-full overflow-hidden">
-                <span className={`text-[10px] font-mono font-bold px-1.5 py-0.5 rounded shrink-0 mt-0.5 border ${
-                  hazardStates[h.id] === 'critical' 
-                    ? 'bg-rose-500/20 border-rose-500/40 text-rose-300'
-                    : 'bg-amber-500/20 border-amber-500/40 text-amber-300'
-                }`}>
-                  {h.code}
-                </span>
-                <div className="min-w-0 max-w-full break-words overflow-hidden flex-1">
-                  <span className="font-bold text-white">{h.name}: </span>
-                  <span className="text-slate-300 break-words">{h.mitigationAction}</span>
-                </div>
-              </div>
-            ))}
-          </div>
-
-          {onApplyCorrectiveActions && (
-            <div className="flex justify-end pt-1">
+            <div className="flex items-center gap-2">
+              <span className="text-[10px] font-mono text-rose-300 bg-rose-950/60 border border-rose-800 px-2.5 py-1 rounded-lg shrink-0">
+                SAFETY INDEX PENALTY: -{scorePenalty}%
+              </span>
               <button
-                type="button"
-                onClick={handleApplyActions}
-                className="inline-flex items-center gap-2 text-xs font-bold px-4 py-2.5 bg-rose-500 hover:bg-rose-400 text-slate-950 rounded-xl transition-all cursor-pointer shadow-lg shadow-rose-950/40"
-                id="btn-apply-corrective-actions"
-                title="Append these corrective directives into the active inspection notes"
+                onClick={() => setIsAlertMinimized(!isAlertMinimized)}
+                className="p-1 text-xs text-rose-300 hover:text-white bg-rose-950/80 border border-rose-800 rounded-lg transition-all cursor-pointer"
+                title={isAlertMinimized ? "Expand Warning Details" : "Minimize / Collapse Alert"}
               >
-                {copiedNotification ? (
-                  <>
-                    <Check className="w-4 h-4" />
-                    <span>Corrective Actions Appended!</span>
-                  </>
-                ) : (
-                  <>
-                    <ArrowRight className="w-4 h-4" />
-                    <span>Apply Corrective Directives to Audit Report</span>
-                  </>
-                )}
+                {isAlertMinimized ? <Eye className="w-3.5 h-3.5 text-rose-300" /> : <EyeOff className="w-3.5 h-3.5 text-rose-300" />}
               </button>
             </div>
+          </div>
+
+          {!isAlertMinimized && (
+            <>
+              <div className="space-y-2 bg-slate-950/80 p-3 rounded-xl border border-slate-800/80 text-xs max-w-full overflow-hidden">
+                {flaggedHazards.map(h => (
+                  <div key={h.id} className="flex flex-wrap items-start gap-2 text-slate-200 min-w-0 max-w-full overflow-hidden">
+                    <span className={`text-[10px] font-mono font-bold px-1.5 py-0.5 rounded shrink-0 mt-0.5 border ${
+                      hazardStates[h.id] === 'critical' 
+                        ? 'bg-rose-500/20 border-rose-500/40 text-rose-300'
+                        : 'bg-amber-500/20 border-amber-500/40 text-amber-300'
+                    }`}>
+                      {h.code}
+                    </span>
+                    <div className="min-w-0 max-w-full break-words overflow-hidden flex-1">
+                      <span className="font-bold text-white">{h.name}: </span>
+                      <span className="text-slate-300 break-words">{h.mitigationAction}</span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              {onApplyCorrectiveActions && (
+                <div className="flex justify-end pt-1">
+                  <button
+                    type="button"
+                    onClick={handleApplyActions}
+                    className="inline-flex items-center gap-2 text-xs font-bold px-4 py-2.5 bg-rose-500 hover:bg-rose-400 text-slate-950 rounded-xl transition-all cursor-pointer shadow-lg shadow-rose-950/40"
+                    id="btn-apply-corrective-actions"
+                    title="Append these corrective directives into the active inspection notes"
+                  >
+                    <Zap className="w-3.5 h-3.5 fill-current" />
+                    <span>{copiedNotification ? 'Directives Applied!' : 'Apply Directives to Audit Notes'}</span>
+                  </button>
+                </div>
+              )}
+            </>
           )}
         </div>
       )}
@@ -9623,6 +9721,7 @@ export const SafetyInspectorPage: React.FC<SafetyInspectorPageProps> = ({ setPag
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [showIsoCrossMap, setShowIsoCrossMap] = useState<boolean>(false);
+    const [isChecklistCollapsed, setIsChecklistCollapsed] = useState<boolean>(false);
 
     const [selectedRcaLog, setSelectedRcaLog] = useState<any | null>(null);
     const [selectedRcaLog2, setSelectedRcaLog2] = useState<any | null>(null);
@@ -11782,19 +11881,24 @@ Safety index and terminal clearance verified. The audit record status has been u
                             }}
                         />
 
-                        {/* SANS Compliance Standards Checklist Card */}
+                        {/* SANS Compliance Standards Checklist Card (Collapsible Accordion) */}
                         <div className="bg-slate-900 border border-slate-800 rounded-3xl p-6 backdrop-blur-xl flex flex-col gap-4">
-                            <div className="flex items-center justify-between border-b border-slate-800/80 pb-3">
+                            <div className="flex flex-col sm:flex-row sm:items-center justify-between border-b border-slate-800/80 pb-3 gap-3">
                                 <div>
-                                    <h3 className="text-sm font-bold text-white uppercase tracking-wider flex items-center gap-2">
-                                        <CheckCircle2 className="w-4 h-4 text-amber-500" />
-                                        SANS Sector Checklist
-                                    </h3>
+                                    <div className="flex items-center gap-2">
+                                        <h3 className="text-sm font-bold text-white uppercase tracking-wider flex items-center gap-2">
+                                            <CheckCircle2 className="w-4 h-4 text-amber-500" />
+                                            SANS Sector Checklist
+                                        </h3>
+                                        <span className="text-[10px] font-mono font-bold bg-amber-500/10 border border-amber-500/20 text-amber-400 px-2 py-0.5 rounded">
+                                            {activeChecklist.filter(c => c.checked).length} / {activeChecklist.length} PASSED
+                                        </span>
+                                    </div>
                                     <p className="text-[10px] text-slate-400 mt-0.5 font-mono">
                                         Mandatory standards under {activeProfile.standard}
                                     </p>
                                 </div>
-                                <div className="flex gap-2">
+                                <div className="flex flex-wrap items-center gap-2">
                                     <button
                                         onClick={handleExportSectorChecklistPDF}
                                         id="btn-export-sector-checklist-pdf"
@@ -11826,51 +11930,61 @@ Safety index and terminal clearance verified. The audit record status has been u
                                     >
                                         Reset
                                     </button>
+                                    <button
+                                        onClick={() => setIsChecklistCollapsed(!isChecklistCollapsed)}
+                                        className="text-[9px] font-bold text-slate-300 hover:text-white bg-slate-950 hover:bg-slate-800 border border-slate-800 rounded-lg px-2.5 py-1 transition-all cursor-pointer flex items-center gap-1"
+                                        title={isChecklistCollapsed ? "Expand Checklist" : "Collapse Checklist"}
+                                    >
+                                        {isChecklistCollapsed ? <ChevronDown className="w-3.5 h-3.5 text-amber-400" /> : <ChevronUp className="w-3.5 h-3.5 text-amber-400" />}
+                                        <span>{isChecklistCollapsed ? 'Expand' : 'Collapse'}</span>
+                                    </button>
                                 </div>
                             </div>
 
-                            <div className="flex flex-col gap-2.5">
-                                {activeChecklist.map((item) => (
-                                    <div
-                                        key={item.id}
-                                        onClick={() => {
-                                            setSectorChecklists(prev => ({
-                                                ...prev,
-                                                [selectedSector]: prev[selectedSector].map(chk =>
-                                                    chk.id === item.id ? { ...chk, checked: !chk.checked } : chk
-                                                )
-                                            }));
-                                        }}
-                                        className={`flex items-start gap-3 p-3 rounded-xl border transition-all cursor-pointer select-none ${
-                                            item.checked
-                                                ? 'bg-emerald-500/5 border-emerald-500/25 text-slate-300'
-                                                : 'bg-slate-950/40 border-slate-800/80 text-slate-400 hover:border-slate-800'
-                                        }`}
-                                    >
-                                        <div className={`mt-0.5 w-4 h-4 rounded border flex items-center justify-center transition-colors ${
-                                            item.checked
-                                                ? 'bg-emerald-500 border-emerald-600 text-slate-950'
-                                                : 'border-slate-700 bg-slate-900 group-hover:border-slate-500'
-                                        }`}>
-                                            {item.checked && (
-                                                <svg className="w-3 h-3 stroke-[3]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                                    <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-                                                </svg>
-                                            )}
-                                        </div>
-                                        <div className="flex-1 flex justify-between items-center gap-4">
-                                            <span className="text-xs leading-snug">{item.text}</span>
-                                            <span className={`text-[9px] font-mono font-bold tracking-wider uppercase px-2 py-0.5 rounded border whitespace-nowrap ${
+                            {!isChecklistCollapsed && (
+                                <div className="flex flex-col gap-2.5">
+                                    {activeChecklist.map((item) => (
+                                        <div
+                                            key={item.id}
+                                            onClick={() => {
+                                                setSectorChecklists(prev => ({
+                                                    ...prev,
+                                                    [selectedSector]: prev[selectedSector].map(chk =>
+                                                        chk.id === item.id ? { ...chk, checked: !chk.checked } : chk
+                                                    )
+                                                }));
+                                            }}
+                                            className={`flex items-start gap-3 p-3 rounded-xl border transition-all cursor-pointer select-none ${
                                                 item.checked
-                                                    ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400'
-                                                    : 'bg-amber-500/10 border-amber-500/20 text-amber-400'
+                                                    ? 'bg-emerald-500/5 border-emerald-500/25 text-slate-300'
+                                                    : 'bg-slate-950/40 border-slate-800/80 text-slate-400 hover:border-slate-800'
+                                            }`}
+                                        >
+                                            <div className={`mt-0.5 w-4 h-4 rounded border flex items-center justify-center transition-colors ${
+                                                item.checked
+                                                    ? 'bg-emerald-500 border-emerald-600 text-slate-950'
+                                                    : 'border-slate-700 bg-slate-900 group-hover:border-slate-500'
                                             }`}>
-                                                {item.checked ? 'SANS MET' : 'CRITICAL REQ'}
-                                            </span>
+                                                {item.checked && (
+                                                    <svg className="w-3 h-3 stroke-[3]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                        <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                                                    </svg>
+                                                )}
+                                            </div>
+                                            <div className="flex-1 flex justify-between items-center gap-4">
+                                                <span className="text-xs leading-snug">{item.text}</span>
+                                                <span className={`text-[9px] font-mono font-bold tracking-wider uppercase px-2 py-0.5 rounded border whitespace-nowrap ${
+                                                    item.checked
+                                                        ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400'
+                                                        : 'bg-amber-500/10 border-amber-500/20 text-amber-400'
+                                                }`}>
+                                                    {item.checked ? 'SANS MET' : 'CRITICAL REQ'}
+                                                </span>
+                                            </div>
                                         </div>
-                                    </div>
-                                ))}
-                            </div>
+                                    ))}
+                                </div>
+                            )}
                         </div>
 
                         {/* Editable Reviewed Parameters Panel */}
