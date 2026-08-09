@@ -5787,11 +5787,32 @@ interface PricingTierConfig {
 }
 
 export const MELOTWO_PRICING_MATRIX: Record<'professional' | 'enterprise' | 'full_site' | 'audit', PricingTierConfig> = {
+    audit: {
+        id: 'audit',
+        name: '30-Day Section 54 Readiness Sprint',
+        tagline: 'High-impact 30-day site readiness sprint and statutory Section 54 audit pass.',
+        basePrice: 50000,
+        billingType: 'one-off',
+        insuranceOffsetRate: 'Protects directors and Section 3.1(a) duty-bearers from personal liability during official regulatory reviews.',
+        auditTrailDefensibility: 'Complete snapshot audit reports structured to meet DMRE & SANS inspectorial standards.',
+        features: [
+            '30-Day rapid statutory site readiness audit sprint (R50,000 - R150,000 / site)',
+            'Comprehensive single-event compliance pass & DMRE Section 54/55 risk gap assessment',
+            'Instant PDF report compiles with certified digital inspector & manager signatures',
+            'Post-audit compliance checklist & structured CAPA roadmap output'
+        ],
+        calculatePrice: ({ activeModulesCount = 1 }) => {
+            const basePrice = 50000;
+            const additionalModules = Math.max(0, activeModulesCount - 1);
+            const calculated = basePrice + (additionalModules * 20000);
+            return Math.min(150000, Math.max(50000, calculated));
+        }
+    },
     professional: {
         id: 'professional',
-        name: 'Site Professional Tier',
-        tagline: 'Ideal for single-operation SHEQ compliance managers requiring airtight, defensible reporting.',
-        basePrice: 4999,
+        name: 'Compliance Site Tier',
+        tagline: 'Entry-tier monthly compliance site subscription for single-operation MHSA & SANS audit workflows.',
+        basePrice: 15000,
         billingType: 'monthly',
         insuranceOffsetRate: 'Up to 15% reduction in liability premiums by demonstrating active daily risk-mitigation logs.',
         auditTrailDefensibility: 'Cryptographically hashed inspector entries with permanent metadata, eliminating regulatory sign-off friction.',
@@ -5801,82 +5822,64 @@ export const MELOTWO_PRICING_MATRIX: Record<'professional' | 'enterprise' | 'ful
             'Full compliance telemetry with 1-click PDF export pipelines',
             'Offline-first data caching with automatic Cloud synchronization'
         ],
-        calculatePrice: ({ activeModulesCount }) => {
-            return 4999 + (activeModulesCount * 1500);
+        calculatePrice: ({ activeModulesCount = 1 }) => {
+            const calculated = 15000 + (activeModulesCount * 2000);
+            return Math.min(25000, Math.max(15000, calculated));
         }
     },
     enterprise: {
         id: 'enterprise',
-        name: 'Industrial Enterprise Tier',
-        tagline: 'Engineered for multi-shaft mine operations, high-risk industrial plants, and group SHEQ executives.',
-        basePrice: 25000,
+        name: 'Operational Assurance Tier',
+        tagline: 'Includes HACCP mess hall food safety, offline mobile workflows, and multi-shaft risk analytics.',
+        basePrice: 35000,
         billingType: 'monthly',
         insuranceOffsetRate: 'Corporate insurance premium mitigation underwritten by continuous real-time SANS adherence data.',
         auditTrailDefensibility: 'Full multi-site legal defensibility. Automated, chain-of-custody tracking of all safety infractions.',
         features: [
+            'Includes SANS 10049 & SANS 10330 HACCP canteen food safety workflows',
+            'Robust offline mobile inspection capture with automated cloud re-sync',
             'Continuous multi-shaft auditing & cross-site safety comparison dashboards',
-            'R25,000/mo minimum floor with dynamic scale factor integration',
             'Dedicated SHEQ Integration Engineer support & custom API reporting webhooks',
-            'Legal-grade compliance SLAs with automated regulatory notification pings',
-            'Comprehensive material degradation & PPE oxidation simulation engines'
+            'Legal-grade compliance SLAs with automated regulatory notification pings'
         ],
-        calculatePrice: ({ numSites, activeModulesCount }) => {
-            const baseFloor = 25000;
+        calculatePrice: ({ numSites = '1', activeModulesCount = 3 }) => {
+            const baseFloor = 35000;
             let siteMultiplier = 1.0;
-            if (numSites === '2-5') siteMultiplier = 1.5;
-            if (numSites === '5+') siteMultiplier = 2.2;
+            if (numSites === '2-5') siteMultiplier = 1.25;
+            if (numSites === '5+') siteMultiplier = 1.5;
             
-            const calculated = (baseFloor + (activeModulesCount * 3000)) * siteMultiplier;
-            return Math.max(baseFloor, calculated);
+            const calculated = (baseFloor + (activeModulesCount * 4000)) * siteMultiplier;
+            return Math.min(60000, Math.max(35000, calculated));
         }
     },
     full_site: {
         id: 'full_site',
-        name: 'Full Site Enterprise License',
-        tagline: 'Custom annual site licensing for large mining operations, multi-shaft complexes & contractor safety governance.',
-        basePrice: 180000,
+        name: 'Enterprise Group Contract',
+        tagline: 'Master annual enterprise contract for multi-shaft mining groups (3–10 sites) & contractor governance.',
+        basePrice: 900000,
         billingType: 'annual',
         insuranceOffsetRate: 'Up to 30% reduction in underground mining risk premiums underwritten by continuous real-time SANS adherence logs.',
         auditTrailDefensibility: 'Full executive & legal board defensibility. Automated chain-of-custody tracking across all shafts & contractor companies.',
         features: [
-            'Unrestricted annual multi-shaft & terminal safety telemetry logs',
+            'Enterprise Group coverage for 3–10 mining sites & multi-shaft complexes (R900k - R2.5m/yr)',
             'Contractor Ecosystem Passport tracking with digital ID & biometric verifications',
             'Full SANS & ISO multi-module coverage (SANS 10330, SANS 10142-1, SANS 10049, SANS 10108, SANS 10375, ISO 42001)',
             '24/7 Priority SHEQ Integration Engineer SLA with emergency inspectorial response'
         ],
         calculatePrice: ({ numShafts = 4, contractorPassportsEnabled = true, contractorSeatsTier = '150', activeModulesCount = 3 }) => {
-            const basePrice = 180000;
-            const shaftExtra = Math.max(0, numShafts - 1) * 15000;
+            const basePrice = 900000;
+            const shaftExtra = Math.max(0, numShafts - 1) * 150000;
             let contractorCost = 0;
             if (contractorPassportsEnabled) {
-                if (contractorSeatsTier === '50') contractorCost = 25000;
-                else if (contractorSeatsTier === '150') contractorCost = 45000;
-                else if (contractorSeatsTier === '500') contractorCost = 85000;
-                else if (contractorSeatsTier === 'unlimited') contractorCost = 135000;
-                else contractorCost = 45000;
+                if (contractorSeatsTier === '50') contractorCost = 100000;
+                else if (contractorSeatsTier === '150') contractorCost = 200000;
+                else if (contractorSeatsTier === '500') contractorCost = 350000;
+                else if (contractorSeatsTier === 'unlimited') contractorCost = 500000;
+                else contractorCost = 200000;
             }
-            const sansCost = activeModulesCount * 20000;
-            return basePrice + shaftExtra + contractorCost + sansCost;
-        }
-    },
-    audit: {
-        id: 'audit',
-        name: 'High-Stakes Audit Tier',
-        tagline: 'Single-event standalone project license for annual regulatory passes or independent audits.',
-        basePrice: 20000,
-        billingType: 'one-off',
-        insuranceOffsetRate: 'Protects directors from personal liability during official regulatory reviews by presenting certified reports.',
-        auditTrailDefensibility: 'Complete snapshot audit reports structured to meet the most rigorous government inspectorial standards.',
-        features: [
-            'Comprehensive single-event compliance pass (e.g. SANS 10330 annual audit)',
-            'Full access to specialized auditing tools for 30 consecutive calendar days',
-            'Instant PDF report compiles with high-fidelity digital inspector signatures',
-            'Post-audit compliance checklist & corrective-action roadmap output'
-        ],
-        calculatePrice: ({ activeModulesCount }) => {
-            const basePrice = 20000;
-            const additionalModules = Math.max(0, activeModulesCount - 1);
-            return basePrice + (additionalModules * 10000);
+            const sansCost = activeModulesCount * 100000;
+            const calculated = basePrice + shaftExtra + contractorCost + sansCost;
+            return Math.min(2500000, Math.max(900000, calculated));
         }
     }
 };
@@ -6023,34 +6026,34 @@ const EnterpriseDemoModal: React.FC<EnterpriseDemoModalProps> = ({ isOpen, onClo
             doc.setTextColor(51, 65, 85);
 
             if (selectedTier === 'full_site') {
-                doc.text('MeloTwo Full Site Enterprise License Base (Annual)', 15, currentY);
-                doc.text('R180,000.00', 115, currentY);
-                doc.text('Annual Site Base', 145, currentY);
-                doc.text('R180,000.00', 175, currentY);
+                doc.text('MeloTwo Enterprise Group Contract Base (Annual)', 15, currentY);
+                doc.text('R900,000.00', 115, currentY);
+                doc.text('Annual Group Base', 145, currentY);
+                doc.text('R900,000.00', 175, currentY);
                 currentY += 7;
 
                 if (numShafts > 1) {
                     const extraShafts = numShafts - 1;
-                    const extraCost = extraShafts * 15000;
-                    doc.text(`Active Mine Shafts / Terminals (${numShafts} shafts)`, 15, currentY);
-                    doc.text('R15,000.00 / shaft', 115, currentY);
-                    doc.text(`+${extraShafts} shaft(s)`, 145, currentY);
+                    const extraCost = extraShafts * 150000;
+                    doc.text(`Active Mine Shafts / Complexes (${numShafts} shafts)`, 15, currentY);
+                    doc.text('R150,000.00 / site', 115, currentY);
+                    doc.text(`+${extraShafts} site(s)`, 145, currentY);
                     doc.text(`R${extraCost.toFixed(2)}`, 175, currentY);
                     currentY += 7;
                 }
 
                 const activeCount = [sans10330, sans10142, sans10049, sans10108, sans10375, iso42001].filter(Boolean).length;
                 if (activeCount > 0) {
-                    const sansTotal = activeCount * 20000;
+                    const sansTotal = activeCount * 100000;
                     doc.text(`Full SANS Multi-Module Coverage (${activeCount} selected)`, 15, currentY);
-                    doc.text('R20,000.00 / mod', 115, currentY);
+                    doc.text('R100,000.00 / mod', 115, currentY);
                     doc.text('Annual Module Rate', 145, currentY);
                     doc.text(`R${sansTotal.toFixed(2)}`, 175, currentY);
                     currentY += 7;
                 }
 
                 if (contractorPassportsEnabled) {
-                    const cCost = contractorSeatsTier === '50' ? 25000 : contractorSeatsTier === '150' ? 45000 : contractorSeatsTier === '500' ? 85000 : 135000;
+                    const cCost = contractorSeatsTier === '50' ? 100000 : contractorSeatsTier === '150' ? 200000 : contractorSeatsTier === '500' ? 350000 : 500000;
                     doc.text(`Contractor Ecosystem Passports (${contractorSeatsTier} seats)`, 15, currentY);
                     doc.text('Annual Seat Tier', 115, currentY);
                     doc.text(`${contractorSeatsTier} seats`, 145, currentY);
@@ -6058,10 +6061,10 @@ const EnterpriseDemoModal: React.FC<EnterpriseDemoModalProps> = ({ isOpen, onClo
                     currentY += 7;
                 }
             } else if (selectedTier === 'professional') {
-                doc.text('MeloTwo Site Professional Base Platform Subscription', 15, currentY);
-                doc.text('R4,999.00', 115, currentY);
-                doc.text('Monthly Flat', 145, currentY);
-                doc.text('R4,999.00', 175, currentY);
+                doc.text('MeloTwo Compliance Site Base Subscription (Monthly)', 15, currentY);
+                doc.text('R15,000.00', 115, currentY);
+                doc.text('Monthly Base', 145, currentY);
+                doc.text('R15,000.00', 175, currentY);
                 currentY += 7;
 
                 const activeModules = [
@@ -6075,29 +6078,29 @@ const EnterpriseDemoModal: React.FC<EnterpriseDemoModalProps> = ({ isOpen, onClo
 
                 activeModules.forEach(modName => {
                     doc.text(`${modName} Integration`, 15, currentY);
-                    doc.text('R1,500.00', 115, currentY);
-                    doc.text('Flat Module Add-on', 145, currentY);
-                    doc.text('R1,500.00', 175, currentY);
+                    doc.text('R2,000.00', 115, currentY);
+                    doc.text('Module Add-on', 145, currentY);
+                    doc.text('R2,000.00', 175, currentY);
                     currentY += 7;
                 });
             } else if (selectedTier === 'enterprise') {
-                doc.text('MeloTwo Industrial Enterprise Base Platform Floor', 15, currentY);
-                doc.text('R25,000.00', 115, currentY);
-                doc.text('Enterprise Floor', 145, currentY);
-                doc.text('R25,000.00', 175, currentY);
+                doc.text('MeloTwo Operational Assurance Base Subscription (Monthly)', 15, currentY);
+                doc.text('R35,000.00', 115, currentY);
+                doc.text('Monthly Base', 145, currentY);
+                doc.text('R35,000.00', 175, currentY);
                 currentY += 7;
 
                 const activeCount = [sans10330, sans10142, sans10049, sans10108, sans10375, iso42001].filter(Boolean).length;
                 if (activeCount > 0) {
-                    doc.text(`Active SANS Modules (${activeCount} selected)`, 15, currentY);
-                    doc.text('R3,000.00 / mod', 115, currentY);
-                    doc.text('Enterprise Rate', 145, currentY);
-                    doc.text(`R${(activeCount * 3000).toFixed(2)}`, 175, currentY);
+                    doc.text(`Active SANS & HACCP Modules (${activeCount} selected)`, 15, currentY);
+                    doc.text('R4,000.00 / mod', 115, currentY);
+                    doc.text('Assurance Rate', 145, currentY);
+                    doc.text(`R${(activeCount * 4000).toFixed(2)}`, 175, currentY);
                     currentY += 7;
                 }
 
                 if (numSites !== '1') {
-                    const scaleFactor = numSites === '2-5' ? 1.5 : 2.2;
+                    const scaleFactor = numSites === '2-5' ? 1.25 : 1.5;
                     doc.text(`Multi-Site Scaling Factor (${numSites} sites)`, 15, currentY);
                     doc.text('Site Multiplier', 115, currentY);
                     doc.text(`${scaleFactor}x factor`, 145, currentY);
@@ -6105,18 +6108,18 @@ const EnterpriseDemoModal: React.FC<EnterpriseDemoModalProps> = ({ isOpen, onClo
                     currentY += 7;
                 }
             } else {
-                doc.text('MeloTwo High-Stakes Audit Project License', 15, currentY);
-                doc.text('R20,000.00', 115, currentY);
-                doc.text('One-off Pass', 145, currentY);
-                doc.text('R20,000.00', 175, currentY);
+                doc.text('MeloTwo 30-Day Section 54 Readiness Sprint', 15, currentY);
+                doc.text('R50,000.00', 115, currentY);
+                doc.text('One-off Sprint', 145, currentY);
+                doc.text('R50,000.00', 175, currentY);
                 currentY += 7;
 
                 const activeCount = [sans10330, sans10142, sans10049, sans10108, sans10375, iso42001].filter(Boolean).length;
                 if (activeCount > 1) {
-                    doc.text(`Additional SANS Module Auditing Pass`, 15, currentY);
-                    doc.text('R10,000.00', 115, currentY);
+                    doc.text(`Additional SANS Module Audit Scope`, 15, currentY);
+                    doc.text('R20,000.00', 115, currentY);
                     doc.text(`x${activeCount - 1} Module(s)`, 145, currentY);
-                    doc.text(`R${((activeCount - 1) * 10000).toFixed(2)}`, 175, currentY);
+                    doc.text(`R${((activeCount - 1) * 20000).toFixed(2)}`, 175, currentY);
                     currentY += 7;
                 }
             }
@@ -6318,7 +6321,7 @@ const EnterpriseDemoModal: React.FC<EnterpriseDemoModalProps> = ({ isOpen, onClo
                                                     </span>
                                                 </div>
                                                 <span className="text-[10px] font-black font-mono mt-2 block border-t border-current/20 pt-1 text-right">
-                                                    {t === 'full_site' ? 'R180,000/yr' : t === 'enterprise' ? 'R25,000/mo' : t === 'professional' ? 'R4,999/mo' : 'R20,000'}
+                                                    {t === 'full_site' ? 'R900k - R2.5m/yr' : t === 'enterprise' ? 'R35k - R60k/mo' : t === 'professional' ? 'R15k - R25k/mo' : 'R50k - R150k'}
                                                 </span>
                                             </button>
                                         );
@@ -6561,10 +6564,10 @@ const EnterpriseDemoModal: React.FC<EnterpriseDemoModalProps> = ({ isOpen, onClo
                                         <div>
                                             <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mb-2">
                                                 {[
-                                                    { key: '50', label: '50 Seats', price: '+R25,000/yr' },
-                                                    { key: '150', label: '150 Seats', price: '+R45,000/yr' },
-                                                    { key: '500', label: '500 Seats', price: '+R85,000/yr' },
-                                                    { key: 'unlimited', label: 'Unlimited', price: '+R135,000/yr' }
+                                                    { key: '50', label: '50 Seats', price: '+R100,000/yr' },
+                                                    { key: '150', label: '150 Seats', price: '+R200,000/yr' },
+                                                    { key: '500', label: '500 Seats', price: '+R350,000/yr' },
+                                                    { key: 'unlimited', label: 'Unlimited', price: '+R500,000/yr' }
                                                 ].map((cOpt) => (
                                                     <button
                                                         key={cOpt.key}
@@ -6674,19 +6677,19 @@ const EnterpriseDemoModal: React.FC<EnterpriseDemoModalProps> = ({ isOpen, onClo
                                             <div className="flex justify-between items-center text-xs text-slate-300">
                                                 <span className="text-slate-400">Active Shafts/Terminals ({numShafts} shafts):</span>
                                                 <span className="font-bold font-mono text-indigo-400">
-                                                    +{(Math.max(0, numShafts - 1) * 15000).toLocaleString('en-ZA')}
+                                                    +{(Math.max(0, numShafts - 1) * 150000).toLocaleString('en-ZA')}
                                                 </span>
                                             </div>
                                             <div className="flex justify-between items-center text-xs text-slate-300">
                                                 <span className="text-slate-400">SANS Multi-Module Coverage ({[sans10330, sans10142, sans10049, sans10108, sans10375, iso42001].filter(Boolean).length} selected):</span>
                                                 <span className="font-bold font-mono text-amber-400">
-                                                    +{([sans10330, sans10142, sans10049, sans10108, sans10375, iso42001].filter(Boolean).length * 20000).toLocaleString('en-ZA')}
+                                                    +{([sans10330, sans10142, sans10049, sans10108, sans10375, iso42001].filter(Boolean).length * 100000).toLocaleString('en-ZA')}
                                                 </span>
                                             </div>
                                             <div className="flex justify-between items-center text-xs text-slate-300">
                                                 <span className="text-slate-400">Contractor Passports ({contractorPassportsEnabled ? `${contractorSeatsTier} seats` : 'Disabled'}):</span>
                                                 <span className="font-bold font-mono text-emerald-400">
-                                                    +{contractorPassportsEnabled ? (contractorSeatsTier === '50' ? 25000 : contractorSeatsTier === '150' ? 45000 : contractorSeatsTier === '500' ? 85000 : 135000).toLocaleString('en-ZA') : 0}
+                                                    +{contractorPassportsEnabled ? (contractorSeatsTier === '50' ? 100000 : contractorSeatsTier === '150' ? 200000 : contractorSeatsTier === '500' ? 350000 : 500000) : 0}
                                                 </span>
                                             </div>
                                         </>
@@ -6694,9 +6697,9 @@ const EnterpriseDemoModal: React.FC<EnterpriseDemoModalProps> = ({ isOpen, onClo
 
                                     {selectedTier === 'professional' && (
                                         <div className="flex justify-between items-center text-xs text-slate-300">
-                                            <span className="text-slate-400">SANS Modules (R1,500/mod):</span>
+                                            <span className="text-slate-400">SANS Modules (R2,000/mod):</span>
                                             <span className="font-bold font-mono text-amber-400">
-                                                +{([sans10330, sans10142, sans10049, sans10108, sans10375, iso42001].filter(Boolean).length * 1500).toLocaleString('en-ZA')}
+                                                +{([sans10330, sans10142, sans10049, sans10108, sans10375, iso42001].filter(Boolean).length * 2000).toLocaleString('en-ZA')}
                                             </span>
                                         </div>
                                     )}
@@ -7782,7 +7785,87 @@ const LandingPage: React.FC<LandingPageProps> = ({ currentPage, setPage, setIsDe
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 max-w-7xl mx-auto items-stretch">
-                    {/* Tier 1: Site Professional Tier */}
+                    {/* Tier Entry Offer: 30-Day Section 54 Readiness Sprint */}
+                    <div className="bg-white border-2 border-slate-100 rounded-3xl p-6 shadow-xl flex flex-col justify-between hover:border-teal-500/40 hover:shadow-2xl transition-all duration-300 relative overflow-hidden group">
+                        <div className="absolute top-0 right-0 w-24 h-24 bg-teal-50 rounded-bl-full -z-10 transition-transform group-hover:scale-110"></div>
+                        
+                        <div>
+                            <div className="flex justify-between items-start mb-4">
+                                <div>
+                                    <span className="text-[9px] font-bold text-teal-600 uppercase tracking-widest font-mono bg-teal-50 px-2 py-0.5 rounded">
+                                        Entry Offer
+                                    </span>
+                                    <h3 className="text-lg font-black text-slate-900 mt-2">
+                                        30-Day Section 54 Readiness Sprint
+                                    </h3>
+                                </div>
+                            </div>
+                            
+                            <div className="mb-3 flex items-baseline">
+                                <span className="text-2xl font-black text-slate-900">R50k – R150k</span>
+                            </div>
+                            <span className="text-[9px] font-bold text-teal-600 bg-teal-50 border border-teal-100 px-2 py-0.5 rounded block w-fit mb-4 font-mono">
+                                One-time site audit & risk assessment
+                            </span>
+
+                            <p className="text-xs text-gray-500 mb-4 leading-relaxed">
+                                Rapid 30-day statutory site audit pass and DMRE Section 54/55 gap remediation roadmap.
+                            </p>
+
+                            <div className="h-px bg-slate-100 mb-4"></div>
+
+                            {/* Risk Adjustments & Corporate Protections */}
+                            <div className="space-y-3 mb-4">
+                                <div>
+                                    <span className="text-[9px] font-bold text-slate-400 uppercase tracking-wider block">Duty-Bearer Defense</span>
+                                    <p className="text-[11px] text-slate-600 mt-0.5 leading-relaxed font-sans font-medium">
+                                        Protects Section 3.1(a) Mine Managers during official regulatory reviews.
+                                    </p>
+                                </div>
+                                <div>
+                                    <span className="text-[9px] font-bold text-slate-400 uppercase tracking-wider block">Audit Output</span>
+                                    <p className="text-[11px] text-slate-600 mt-0.5 leading-relaxed font-sans font-medium">
+                                        Certified PDF audit report compiled with inspector and manager signatures.
+                                    </p>
+                                </div>
+                            </div>
+
+                            <div className="h-px bg-slate-100 mb-4"></div>
+
+                            <ul className="space-y-2.5 mb-6">
+                                <li className="flex items-start gap-2">
+                                    <div className="w-4 h-4 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
+                                        <svg className="w-2.5 h-2.5 stroke-[3]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                            <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
+                                        </svg>
+                                    </div>
+                                    <span className="text-xs text-slate-600">30-Day rapid statutory site readiness</span>
+                                </li>
+                                <li className="flex items-start gap-2">
+                                    <div className="w-4 h-4 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
+                                        <svg className="w-2.5 h-2.5 stroke-[3]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                            <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
+                                        </svg>
+                                    </div>
+                                    <span className="text-xs text-slate-600">Structured CAPA & remediations</span>
+                                </li>
+                            </ul>
+                        </div>
+
+                        <button
+                            type="button"
+                            onClick={() => {
+                                if (setDemoModalTier) setDemoModalTier('audit');
+                                setIsDemoModalOpen(true);
+                                trackGA4Event('pricing_tier_clicked', { tier: 'audit' });
+                            }}
+                            className="w-full py-3 px-3 bg-slate-900 hover:bg-slate-800 text-white font-black text-xs uppercase tracking-wider rounded-xl transition cursor-pointer text-center"
+                        >
+                            Configure Sprint Pass
+                        </button>
+                    </div>
+
+                    {/* Tier 1: Compliance Site */}
                     <div className="bg-white border-2 border-slate-100 rounded-3xl p-6 shadow-xl flex flex-col justify-between hover:border-indigo-500/40 hover:shadow-2xl transition-all duration-300 relative overflow-hidden group">
                         <div className="absolute top-0 right-0 w-24 h-24 bg-indigo-50 rounded-bl-full -z-10 transition-transform group-hover:scale-110"></div>
                         
@@ -7790,24 +7873,24 @@ const LandingPage: React.FC<LandingPageProps> = ({ currentPage, setPage, setIsDe
                             <div className="flex justify-between items-start mb-4">
                                 <div>
                                     <span className="text-[9px] font-bold text-indigo-600 uppercase tracking-widest font-mono bg-indigo-50 px-2 py-0.5 rounded">
-                                        Professional
+                                        Tier 1
                                     </span>
                                     <h3 className="text-lg font-black text-slate-900 mt-2">
-                                        Site Professional
+                                        Compliance Site
                                     </h3>
                                 </div>
                             </div>
                             
                             <div className="mb-3 flex items-baseline">
-                                <span className="text-2xl font-black text-slate-900">R4,999</span>
-                                <span className="text-xs font-bold text-gray-400 ml-1 font-mono">/ month</span>
+                                <span className="text-2xl font-black text-slate-900">R15k – R25k</span>
+                                <span className="text-xs font-bold text-gray-400 ml-1 font-mono">/ site / mo</span>
                             </div>
                             <span className="text-[9px] font-bold text-indigo-600 bg-indigo-50 border border-indigo-100 px-2 py-0.5 rounded block w-fit mb-4 font-mono">
-                                + R1,500 /mo per SANS module
+                                Monthly Single-Site Subscription
                             </span>
 
                             <p className="text-xs text-gray-500 mb-4 leading-relaxed">
-                                Engineered for single-operation SHEQ compliance managers needing daily risk logs.
+                                Entry-tier monthly compliance site subscription for MHSA & SANS audit workflows.
                             </p>
 
                             <div className="h-px bg-slate-100 mb-4"></div>
@@ -7817,13 +7900,13 @@ const LandingPage: React.FC<LandingPageProps> = ({ currentPage, setPage, setIsDe
                                 <div>
                                     <span className="text-[9px] font-bold text-slate-400 uppercase tracking-wider block">Insurance Offset</span>
                                     <p className="text-[11px] text-slate-600 mt-0.5 leading-relaxed font-sans font-medium">
-                                        Up to 15% reduction in liability premiums with daily logs.
+                                        Up to 15% liability premium reduction with daily logs.
                                     </p>
                                 </div>
                                 <div>
                                     <span className="text-[9px] font-bold text-slate-400 uppercase tracking-wider block">Audit Defensibility</span>
                                     <p className="text-[11px] text-slate-600 mt-0.5 leading-relaxed font-sans font-medium">
-                                        Hashed entry logs with metadata and offline sync.
+                                        Hashed entries with permanent metadata and offline sync.
                                     </p>
                                 </div>
                             </div>
@@ -7845,7 +7928,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ currentPage, setPage, setIsDe
                                             <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
                                         </svg>
                                     </div>
-                                    <span className="text-xs text-slate-600">1-click verified PDF downloads</span>
+                                    <span className="text-xs text-slate-600">1-click verified PDF exports</span>
                                 </li>
                             </ul>
                         </div>
@@ -7859,11 +7942,11 @@ const LandingPage: React.FC<LandingPageProps> = ({ currentPage, setPage, setIsDe
                             }}
                             className="w-full py-3 px-3 bg-slate-900 hover:bg-slate-800 text-white font-black text-xs uppercase tracking-wider rounded-xl transition cursor-pointer text-center"
                         >
-                            Calculate Cost
+                            Calculate Site Cost
                         </button>
                     </div>
 
-                    {/* Tier 2: Industrial Enterprise Tier */}
+                    {/* Tier 2: Operational Assurance */}
                     <div className="bg-slate-900 border-2 border-slate-800 rounded-3xl p-6 shadow-xl flex flex-col justify-between hover:border-amber-500/50 hover:shadow-2xl transition-all duration-300 relative overflow-hidden group">
                         <div className="absolute top-0 inset-x-0 h-1 bg-amber-500"></div>
                         <div className="absolute top-0 right-0 w-24 h-24 bg-amber-500/5 rounded-bl-full -z-10 transition-transform group-hover:scale-110"></div>
@@ -7872,23 +7955,24 @@ const LandingPage: React.FC<LandingPageProps> = ({ currentPage, setPage, setIsDe
                             <div className="flex justify-between items-start mb-4">
                                 <div>
                                     <span className="text-[9px] font-bold text-amber-400 uppercase tracking-widest font-mono bg-amber-500/10 px-2 py-0.5 rounded">
-                                        Monthly Enterprise
+                                        Tier 2
                                     </span>
                                     <h3 className="text-lg font-black text-white mt-2">
-                                        Industrial Enterprise
+                                        Operational Assurance
                                     </h3>
                                 </div>
                             </div>
                             
                             <div className="mb-3 flex items-baseline">
-                                <span className="text-xl font-black text-amber-400">Custom Multi-Shaft</span>
+                                <span className="text-2xl font-black text-amber-400">R35k – R60k</span>
+                                <span className="text-xs font-bold text-slate-400 ml-1 font-mono">/ site / mo</span>
                             </div>
                             <span className="text-[9px] font-bold text-amber-400 bg-amber-500/10 border border-amber-500/20 px-2 py-0.5 rounded block w-fit mb-4 font-mono">
-                                Floor minimum: R25,000 / mo
+                                Includes HACCP & Offline Capture
                             </span>
 
                             <p className="text-xs text-slate-400 mb-4 leading-relaxed">
-                                For multi-shaft mining operations & regional SHEQ group executives.
+                                Complete site assurance including canteen HACCP food safety, offline mobile capture, and multi-shaft analytics.
                             </p>
 
                             <div className="h-px bg-slate-800 mb-4"></div>
@@ -7896,15 +7980,15 @@ const LandingPage: React.FC<LandingPageProps> = ({ currentPage, setPage, setIsDe
                             {/* Risk Adjustments & Corporate Protections */}
                             <div className="space-y-3 mb-4">
                                 <div>
-                                    <span className="text-[9px] font-bold text-slate-500 uppercase tracking-wider block">Insurance Offset</span>
+                                    <span className="text-[9px] font-bold text-slate-500 uppercase tracking-wider block">HACCP & Canteen Safety</span>
                                     <p className="text-[11px] text-slate-300 mt-0.5 leading-relaxed font-sans font-medium">
-                                        Underwritten by continuous real-time SANS adherence logs.
+                                        Includes SANS 10049 & SANS 10330 mess hall compliance tracking.
                                     </p>
                                 </div>
                                 <div>
-                                    <span className="text-[9px] font-bold text-slate-500 uppercase tracking-wider block">Audit Defensibility</span>
+                                    <span className="text-[9px] font-bold text-slate-500 uppercase tracking-wider block">Offline Workflow</span>
                                     <p className="text-[11px] text-slate-300 mt-0.5 leading-relaxed font-sans font-medium">
-                                        Multi-site legal defensibility with chain-of-custody tracking.
+                                        Underground offline mobile capture with background cloud sync.
                                     </p>
                                 </div>
                             </div>
@@ -7940,11 +8024,11 @@ const LandingPage: React.FC<LandingPageProps> = ({ currentPage, setPage, setIsDe
                             }}
                             className="w-full py-3 px-3 bg-amber-500 hover:bg-amber-600 text-slate-950 font-black text-xs uppercase tracking-wider rounded-xl transition cursor-pointer text-center"
                         >
-                            Estimate Enterprise
+                            Estimate Assurance Cost
                         </button>
                     </div>
 
-                    {/* Tier 3: Full Site Enterprise License Tier (NEW) */}
+                    {/* Tier 3: Enterprise Group */}
                     <div className="bg-slate-950 border-2 border-amber-500/60 rounded-3xl p-6 shadow-2xl flex flex-col justify-between hover:border-amber-400 hover:shadow-2xl transition-all duration-300 relative overflow-hidden group">
                         <div className="absolute top-0 inset-x-0 h-1.5 bg-gradient-to-r from-amber-500 via-amber-400 to-amber-500"></div>
                         <div className="absolute -top-12 -right-12 w-28 h-28 bg-amber-500/10 rounded-full blur-xl"></div>
@@ -7953,24 +8037,24 @@ const LandingPage: React.FC<LandingPageProps> = ({ currentPage, setPage, setIsDe
                             <div className="flex justify-between items-start mb-4">
                                 <div>
                                     <span className="text-[9px] font-black text-slate-950 uppercase tracking-widest font-mono bg-amber-400 px-2 py-0.5 rounded shadow-sm">
-                                        Full Mining Site
+                                        Tier 3 Enterprise
                                     </span>
                                     <h3 className="text-lg font-black text-white mt-2">
-                                        Full Site Enterprise License
+                                        Enterprise Group
                                     </h3>
                                 </div>
                             </div>
                             
                             <div className="mb-3 flex items-baseline">
-                                <span className="text-2xl font-black text-amber-400">R180,000</span>
+                                <span className="text-xl font-black text-amber-400">R900k – R2.5m</span>
                                 <span className="text-xs font-bold text-slate-400 ml-1 font-mono">/ year</span>
                             </div>
                             <span className="text-[9px] font-bold text-amber-300 bg-amber-500/20 border border-amber-500/30 px-2 py-0.5 rounded block w-fit mb-4 font-mono">
-                                Annual Base + Shaft & Contractor Options
+                                Master Group Contract (3–10 sites)
                             </span>
 
                             <p className="text-xs text-slate-300 mb-4 leading-relaxed">
-                                Complete annual site licensing for large mining operations, deep-reef shaft complexes & contractor ecosystems.
+                                Master enterprise group contract for multi-site mining complexes & contractor ecosystems.
                             </p>
 
                             <div className="h-px bg-slate-800 mb-4"></div>
@@ -7978,15 +8062,15 @@ const LandingPage: React.FC<LandingPageProps> = ({ currentPage, setPage, setIsDe
                             {/* Risk Adjustments & Corporate Protections */}
                             <div className="space-y-3 mb-4">
                                 <div>
-                                    <span className="text-[9px] font-bold text-amber-400 uppercase tracking-wider block">Multi-Module Coverage</span>
+                                    <span className="text-[9px] font-bold text-amber-400 uppercase tracking-wider block">Multi-Site Scale</span>
                                     <p className="text-[11px] text-slate-300 mt-0.5 leading-relaxed font-sans font-medium">
-                                        Includes SANS 10330, SANS 10142-1, SANS 10049, SANS 10108, SANS 10375 / EN 362, and ISO/IEC 42001 modules.
+                                        Covers 3 to 10 mining sites & complex multi-shaft operations.
                                     </p>
                                 </div>
                                 <div>
-                                    <span className="text-[9px] font-bold text-amber-400 uppercase tracking-wider block">Contractor Passports</span>
+                                    <span className="text-[9px] font-bold text-amber-400 uppercase tracking-wider block">Contractor Ecosystem</span>
                                     <p className="text-[11px] text-slate-300 mt-0.5 leading-relaxed font-sans font-medium">
-                                        Optional add-on seats for contractor ecosystem compliance passes.
+                                        Digital contractor passports & gate clearance verifications.
                                     </p>
                                 </div>
                             </div>
@@ -8000,7 +8084,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ currentPage, setPage, setIsDe
                                             <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
                                         </svg>
                                     </div>
-                                    <span className="text-xs text-white font-medium">Base 1 shaft + multi-shaft sync (+R15k/yr/shaft)</span>
+                                    <span className="text-xs text-white font-medium">Full SANS & ISO multi-module suite</span>
                                 </li>
                                 <li className="flex items-start gap-2">
                                     <div className="w-4 h-4 bg-amber-400 text-slate-950 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
@@ -8008,7 +8092,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ currentPage, setPage, setIsDe
                                             <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
                                         </svg>
                                     </div>
-                                    <span className="text-xs text-white font-medium">Instant formal ZAR PDF quotation & SLA sync</span>
+                                    <span className="text-xs text-white font-medium">24/7 Priority Integration Engineer SLA</span>
                                 </li>
                             </ul>
                         </div>
@@ -8022,88 +8106,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ currentPage, setPage, setIsDe
                             }}
                             className="w-full py-3.5 px-3 bg-amber-400 hover:bg-amber-500 text-slate-950 font-black text-xs uppercase tracking-wider rounded-xl transition cursor-pointer text-center shadow-lg shadow-amber-500/20"
                         >
-                            Calculate Full Site Quote
-                        </button>
-                    </div>
-
-                    {/* Tier 4: High-Stakes Audit Tier */}
-                    <div className="bg-white border-2 border-slate-100 rounded-3xl p-6 shadow-xl flex flex-col justify-between hover:border-teal-500/40 hover:shadow-2xl transition-all duration-300 relative overflow-hidden group">
-                        <div className="absolute top-0 right-0 w-24 h-24 bg-teal-50 rounded-bl-full -z-10 transition-transform group-hover:scale-110"></div>
-                        
-                        <div>
-                            <div className="flex justify-between items-start mb-4">
-                                <div>
-                                    <span className="text-[9px] font-bold text-teal-600 uppercase tracking-widest font-mono bg-teal-50 px-2 py-0.5 rounded">
-                                        Project License
-                                    </span>
-                                    <h3 className="text-lg font-black text-slate-900 mt-2">
-                                        High-Stakes Audit
-                                    </h3>
-                                </div>
-                            </div>
-                            
-                            <div className="mb-3 flex items-baseline">
-                                <span className="text-2xl font-black text-slate-900">R20,000</span>
-                                <span className="text-xs font-bold text-gray-400 ml-1 font-mono">/ event pass</span>
-                            </div>
-                            <span className="text-[9px] font-bold text-teal-600 bg-teal-50 border border-teal-100 px-2 py-0.5 rounded block w-fit mb-4 font-mono">
-                                + R10,000 per extra module pass
-                            </span>
-
-                            <p className="text-xs text-gray-500 mb-4 leading-relaxed">
-                                Single-event project license for annual regulatory compliance passes or audits.
-                            </p>
-
-                            <div className="h-px bg-slate-100 mb-4"></div>
-
-                            {/* Risk Adjustments & Corporate Protections */}
-                            <div className="space-y-3 mb-4">
-                                <div>
-                                    <span className="text-[9px] font-bold text-slate-400 uppercase tracking-wider block">Insurance Offset</span>
-                                    <p className="text-[11px] text-slate-600 mt-0.5 leading-relaxed font-sans font-medium">
-                                        Protects directors from personal liability during official reviews.
-                                    </p>
-                                </div>
-                                <div>
-                                    <span className="text-[9px] font-bold text-slate-400 uppercase tracking-wider block">Audit Defensibility</span>
-                                    <p className="text-[11px] text-slate-600 mt-0.5 leading-relaxed font-sans font-medium">
-                                        Snapshot reports structured to meet inspectorial standards.
-                                    </p>
-                                </div>
-                            </div>
-
-                            <div className="h-px bg-slate-100 mb-4"></div>
-
-                            <ul className="space-y-2.5 mb-6">
-                                <li className="flex items-start gap-2">
-                                    <div className="w-4 h-4 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
-                                        <svg className="w-2.5 h-2.5 stroke-[3]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                            <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
-                                        </svg>
-                                    </div>
-                                    <span className="text-xs text-slate-600">Single-event compliance pass</span>
-                                </li>
-                                <li className="flex items-start gap-2">
-                                    <div className="w-4 h-4 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
-                                        <svg className="w-2.5 h-2.5 stroke-[3]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                            <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
-                                        </svg>
-                                    </div>
-                                    <span className="text-xs text-slate-600">30-day platform auditing tool access</span>
-                                </li>
-                            </ul>
-                        </div>
-
-                        <button
-                            type="button"
-                            onClick={() => {
-                                if (setDemoModalTier) setDemoModalTier('audit');
-                                setIsDemoModalOpen(true);
-                                trackGA4Event('pricing_tier_clicked', { tier: 'audit' });
-                            }}
-                            className="w-full py-3 px-3 bg-slate-900 hover:bg-slate-800 text-white font-black text-xs uppercase tracking-wider rounded-xl transition cursor-pointer text-center"
-                        >
-                            Configure Audit Pass
+                            Configure Group Contract
                         </button>
                     </div>
                 </div>
@@ -8638,7 +8641,7 @@ export const WorkplaceHazardMatrix: React.FC<WorkplaceHazardMatrixProps> = ({
     if (!onApplyCorrectiveActions || flaggedHazards.length === 0) return;
 
     const summaryLines = flaggedHazards.map(h => {
-      const statusLabel = hazardStates[h.id] === 'critical' ? 'CRITICAL FLAG 🚨' : 'RISK DETECTED ⚠️';
+      const statusLabel = hazardStates[h.id] === 'critical' ? '[CRITICAL FLAG]' : '[RISK DETECTED]';
       return `• [${h.code} - ${h.name}] (${statusLabel}): ${h.mitigationAction}`;
     });
 
@@ -8725,9 +8728,9 @@ export const WorkplaceHazardMatrix: React.FC<WorkplaceHazardMatrixProps> = ({
                   : 'bg-slate-950/50 border-slate-800/80 hover:border-slate-700'
               }`}
             >
-              <div className="flex items-start justify-between gap-2">
-                <div className="flex items-start gap-2.5">
-                  <div className={`p-2 rounded-xl mt-0.5 border ${
+              <div className="flex flex-wrap items-center justify-between gap-2 w-full max-w-full overflow-hidden">
+                <div className="flex items-start gap-2.5 min-w-0 flex-1">
+                  <div className={`p-2 rounded-xl mt-0.5 border shrink-0 ${
                     status === 'critical'
                       ? 'bg-rose-500/20 border-rose-500/40 text-rose-300'
                       : status === 'risk_detected'
@@ -8736,25 +8739,37 @@ export const WorkplaceHazardMatrix: React.FC<WorkplaceHazardMatrixProps> = ({
                   }`}>
                     {getCategoryIcon(h.iconName)}
                   </div>
-                  <div>
-                    <div className="flex items-center gap-1.5 flex-wrap">
-                      <span className="text-[10px] font-mono font-bold text-slate-400 bg-slate-900 px-1.5 py-0.5 rounded border border-slate-800">
+                  <div className="min-w-0 max-w-full break-words overflow-hidden flex-1">
+                    <div className="flex flex-wrap items-center gap-1.5">
+                      <span className="text-[10px] font-mono font-bold text-slate-400 bg-slate-900 px-1.5 py-0.5 rounded border border-slate-800 shrink-0">
                         {h.code}
                       </span>
                       {h.isHighRisk && (
-                        <span className="text-[9px] font-mono font-bold text-amber-400 bg-amber-500/10 px-1.5 py-0.5 rounded border border-amber-500/20">
+                        <span className="text-[9px] font-mono font-bold text-amber-400 bg-amber-500/10 px-1.5 py-0.5 rounded border border-amber-500/20 shrink-0">
                           HIGH-RISK
                         </span>
                       )}
+                      <span className="text-[9px] font-mono font-bold text-slate-400 bg-slate-900/80 px-1.5 py-0.5 rounded border border-slate-800/80 shrink-0">
+                        {h.standardRef}
+                      </span>
                     </div>
-                    <h4 className="text-xs font-bold text-white leading-snug mt-1">
+                    <h4 className="text-xs font-bold text-white leading-snug mt-1 break-words max-w-full overflow-hidden">
                       {h.name}
                     </h4>
-                    <p className="text-[11px] text-slate-400 leading-normal mt-0.5">
+                    <p className="text-[11px] text-slate-400 leading-normal mt-0.5 break-words max-w-full overflow-hidden">
                       {h.defaultDescription}
                     </p>
                   </div>
                 </div>
+                <span className={`text-[10px] font-mono font-bold px-2 py-0.5 rounded border shrink-0 self-start ${
+                  status === 'critical'
+                    ? 'bg-rose-500/20 text-rose-300 border-rose-500/40'
+                    : status === 'risk_detected'
+                    ? 'bg-amber-500/20 text-amber-300 border-amber-500/40'
+                    : 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20'
+                }`}>
+                  {status === 'critical' ? '[CRITICAL FLAG]' : status === 'risk_detected' ? '[RISK DETECTED]' : '[PASS]'}
+                </span>
               </div>
 
               <div className="flex items-center gap-1.5 pt-1 border-t border-slate-800/60 font-mono text-[10px]">
@@ -8806,17 +8821,17 @@ export const WorkplaceHazardMatrix: React.FC<WorkplaceHazardMatrixProps> = ({
       </div>
 
       {flaggedHazards.length > 0 && (
-        <div className="bg-gradient-to-r from-rose-950/40 via-amber-950/30 to-slate-950 border border-rose-500/40 rounded-2xl p-4 md:p-5 text-white space-y-3.5 shadow-xl animate-fadeIn">
-          <div className="flex items-start justify-between gap-3">
-            <div className="flex items-center gap-2.5">
-              <div className="p-2 bg-rose-500/20 border border-rose-500/40 rounded-xl text-rose-400">
+        <div className="bg-gradient-to-r from-rose-950/40 via-amber-950/30 to-slate-950 border border-rose-500/40 rounded-2xl p-4 md:p-5 text-white space-y-3.5 shadow-xl animate-fadeIn max-w-full overflow-hidden">
+          <div className="flex flex-wrap items-center justify-between gap-2.5 w-full">
+            <div className="flex items-center gap-2.5 min-w-0 flex-1">
+              <div className="p-2 bg-rose-500/20 border border-rose-500/40 rounded-xl text-rose-400 shrink-0">
                 <AlertOctagon className="w-5 h-5 animate-pulse" />
               </div>
-              <div>
-                <span className="text-[10px] font-mono font-bold tracking-wider text-rose-400 uppercase bg-rose-500/10 px-2 py-0.5 rounded border border-rose-500/30">
+              <div className="min-w-0 max-w-full break-words overflow-hidden">
+                <span className="text-[10px] font-mono font-bold tracking-wider text-rose-400 uppercase bg-rose-500/10 px-2 py-0.5 rounded border border-rose-500/30 inline-block">
                   STATUTORY WARNING DIRECTIVE
                 </span>
-                <h4 className="text-sm font-bold text-white mt-0.5">
+                <h4 className="text-sm font-bold text-white mt-0.5 break-words max-w-full overflow-hidden">
                   Immediate Corrective Action Required ({flaggedHazards.length} Risk Category Flagged)
                 </h4>
               </div>
@@ -8827,9 +8842,9 @@ export const WorkplaceHazardMatrix: React.FC<WorkplaceHazardMatrixProps> = ({
             </span>
           </div>
 
-          <div className="space-y-2 bg-slate-950/80 p-3 rounded-xl border border-slate-800/80 text-xs">
+          <div className="space-y-2 bg-slate-950/80 p-3 rounded-xl border border-slate-800/80 text-xs max-w-full overflow-hidden">
             {flaggedHazards.map(h => (
-              <div key={h.id} className="flex items-start gap-2 text-slate-200">
+              <div key={h.id} className="flex flex-wrap items-start gap-2 text-slate-200 min-w-0 max-w-full overflow-hidden">
                 <span className={`text-[10px] font-mono font-bold px-1.5 py-0.5 rounded shrink-0 mt-0.5 border ${
                   hazardStates[h.id] === 'critical' 
                     ? 'bg-rose-500/20 border-rose-500/40 text-rose-300'
@@ -8837,9 +8852,9 @@ export const WorkplaceHazardMatrix: React.FC<WorkplaceHazardMatrixProps> = ({
                 }`}>
                   {h.code}
                 </span>
-                <div>
+                <div className="min-w-0 max-w-full break-words overflow-hidden flex-1">
                   <span className="font-bold text-white">{h.name}: </span>
-                  <span className="text-slate-300">{h.mitigationAction}</span>
+                  <span className="text-slate-300 break-words">{h.mitigationAction}</span>
                 </div>
               </div>
             ))}
@@ -9154,12 +9169,13 @@ export const handleExportDmreCapaPdf = (
             docPdf.setFontSize(9.5);
             docPdf.setFont('helvetica', 'bold');
             docPdf.setTextColor(254, 202, 202);
-            docPdf.text(`🚨 STATUTORY OVERDUE ALERT: HIGH-PRIORITY COMPLIANCE RISK INJECTED`, 18, yPos + 8);
+            docPdf.text(`[OVERDUE ALERT] STATUTORY HIGH-PRIORITY COMPLIANCE RISK INJECTED`, 18, yPos + 8);
 
             docPdf.setFontSize(8.5);
             docPdf.setFont('helvetica', 'normal');
             docPdf.setTextColor(254, 226, 226);
-            docPdf.text(`Statutory SANS Audit for ${activeSiteName} is OVERDUE by ${overdueDays} DAYS (${activeStandard}). High risk of DMRE Section 54 Stop-Work Order.`, 18, yPos + 15);
+            const overdueMsg = docPdf.splitTextToSize(`Statutory SANS Audit for ${activeSiteName} is OVERDUE by ${overdueDays} DAYS (${activeStandard}). High risk of DMRE Section 54 Stop-Work Order.`, 174);
+            docPdf.text(overdueMsg, 18, yPos + 15);
 
             yPos += 24;
         }
@@ -9206,14 +9222,16 @@ export const handleExportDmreCapaPdf = (
                 docPdf.setLineWidth(0.5);
                 docPdf.roundedRect(12, yPos, 186, 28, 3, 3, 'FD');
 
-                docPdf.setFontSize(9);
+                const statusText = isCritical ? '[STATUS: CRITICAL]' : '[STATUS: RISK DETECTED]';
                 docPdf.setFont('helvetica', 'bold');
-                docPdf.setTextColor(255, 255, 255);
-                docPdf.text(`${idx + 1}. [${h.code}] ${h.name.toUpperCase()} - ${h.standardRef}`, 18, yPos + 7);
+                docPdf.setFontSize(8.5);
+                docPdf.setTextColor(isCritical ? 252 : 251, isCritical ? 165 : 191, isCritical ? 165 : 36);
+                docPdf.text(statusText, 192, yPos + 7, { align: 'right' });
 
                 docPdf.setFontSize(9);
-                docPdf.setTextColor(isCritical ? 252 : 251, isCritical ? 165 : 191, isCritical ? 165 : 36);
-                docPdf.text(`STATUS: ${isCritical ? 'CRITICAL FLAG 🚨' : 'RISK DETECTED ⚠️'}`, 130, yPos + 7);
+                docPdf.setTextColor(255, 255, 255);
+                const titleText = docPdf.splitTextToSize(`${idx + 1}. [${h.code}] ${h.name.toUpperCase()} - ${h.standardRef}`, 120)[0];
+                docPdf.text(titleText, 18, yPos + 7);
 
                 docPdf.setFontSize(8.5);
                 docPdf.setFont('helvetica', 'normal');
@@ -9283,8 +9301,8 @@ export const handleExportDmreCapaPdf = (
         docPdf.setFontSize(8);
         docPdf.setFont('helvetica', 'bold');
         docPdf.setTextColor(148, 163, 184);
-        docPdf.text('Lead Certified SHEQ Inspector Signature', 18, yPos + 20);
-        docPdf.text('DMRE Site Operations Manager Sign-off', 120, yPos + 20);
+        docPdf.text('Inspector / Auditor (Log & Evidence Capture)', 18, yPos + 20);
+        docPdf.text('Section 3.1(a) Mine Manager / GCC Engineer (Duty-Bearer CAPA Sign-off)', 115, yPos + 20);
 
         docPdf.setFontSize(7);
         docPdf.setFont('helvetica', 'normal');
@@ -10567,20 +10585,20 @@ Safety index and terminal clearance verified. The audit record status has been u
             color = 'text-amber-400 bg-amber-500/10 border-amber-500/20';
         }
 
-        const reportText = `### 📋 COGNITIVE COMPLIANCE AUDIT DRAFT REPORT
+        const reportText = `### [REPORT] COGNITIVE COMPLIANCE AUDIT DRAFT REPORT
 
 **SANS Standard Matched:** ${matchedStandard}
 **Severity Level:** ${severityLevel}
 
-#### 🔍 Scenario Summary & Diagnostic Vector
+#### Scenario Summary & Diagnostic Vector
 *Scenario:* ${scenarioText.trim()}
 
-#### 🚨 Immediate Corrective Action Directives
+#### Immediate Corrective Action Directives
 1. **Physical Isolation:** Isolate non-compliant hardware, distribution kiosks, or affected work zones under Tag-Out Protocol S-12 immediately.
 2. **Access Control Lockout:** Restrict unauthorized personnel access until a certified inspector completes physical testing and clearance.
 3. **Safety Verification:** Issue an immediate corrective work order to replace compromised fasteners, damaged seals, or expired protective equipment.
 
-#### 🛠️ Recommended Maintenance Protocol
+#### Recommended Maintenance Protocol
 - Perform mandatory torque and integrity testing on all structural enclosures and protective barriers.
 - Calibrate environmental sensor probes and verify auxiliary backup systems under active shift load.
 - Record final remediation telemetry and sign off in the central MeloTwo digital audit ledger within 24 hours.`;
@@ -11701,14 +11719,14 @@ Safety index and terminal clearance verified. The audit record status has been u
                                     <div className={`bg-slate-900 border rounded-3xl p-6 backdrop-blur-xl shadow-2xl flex flex-col justify-between space-y-3 relative overflow-hidden ${
                                         isStatutoryOverdue ? 'border-rose-500/60 bg-rose-950/20 shadow-rose-500/10' : 'border-slate-800'
                                     }`}>
-                                        <div className="flex items-center justify-between border-b border-slate-800 pb-3">
-                                            <div className="flex items-center gap-2 text-xs font-bold uppercase font-mono tracking-wider">
+                                        <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-800 pb-3 w-full">
+                                            <div className="flex items-center gap-2 text-xs font-bold uppercase font-mono tracking-wider shrink-0">
                                                 <Clock className={`w-4 h-4 ${isStatutoryOverdue ? 'text-rose-400 animate-bounce' : 'text-amber-400'}`} />
                                                 <span className={isStatutoryOverdue ? 'text-rose-300' : 'text-slate-200'}>
                                                     Statutory Frequency Badge
                                                 </span>
                                             </div>
-                                            <span className={`text-[10px] font-bold font-mono px-2 py-0.5 rounded-full border ${
+                                            <span className={`text-[10px] font-bold font-mono px-2 py-0.5 rounded-full border shrink-0 ${
                                                 isStatutoryOverdue
                                                     ? 'bg-rose-500/20 text-rose-300 border-rose-500/40 uppercase font-black tracking-widest'
                                                     : 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30'
@@ -11717,13 +11735,13 @@ Safety index and terminal clearance verified. The audit record status has been u
                                             </span>
                                         </div>
 
-                                        <div className="space-y-2 my-1">
-                                            <h4 className="text-sm font-extrabold text-white leading-snug">
+                                        <div className="space-y-2 my-1 max-w-full break-words overflow-hidden">
+                                            <h4 className="text-sm font-extrabold text-white leading-snug break-words">
                                                 {activeSite.statutoryInspectionTitle}
                                             </h4>
-                                            <p className="text-xs text-slate-400 font-mono">
+                                            <p className="text-xs text-slate-400 font-mono break-words">
                                                 {isStatutoryOverdue
-                                                    ? `🚨 Statutory SANS inspection for ${activeSite.name} is OVERDUE by ${overdueDays} days. High probability of DMRE Section 54 Stop-Work Order.`
+                                                    ? `[OVERDUE ALERT] Statutory SANS inspection for ${activeSite.name} is OVERDUE by ${overdueDays} days. High probability of DMRE Section 54 Stop-Work Order.`
                                                     : `Next scheduled statutory review due in ${activeSite.nextInspectionDaysDue} days under ${activeSite.sansStandard}.`
                                                 }
                                             </p>
