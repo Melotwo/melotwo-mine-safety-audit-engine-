@@ -3250,6 +3250,8 @@ export interface MineSiteTargetConfig {
   sectorId: string;
   targetFrequency: number;
   completedAudits: number;
+  nextInspectionDaysDue: number; // Positive = days remaining, Negative = overdue days
+  statutoryInspectionTitle: string;
   hazardPreset?: Record<string, HazardStatus>;
 }
 
@@ -3263,6 +3265,8 @@ export const DEFAULT_MINE_SITES_TARGETS: MineSiteTargetConfig[] = [
     sectorId: 'mining',
     targetFrequency: 12,
     completedAudits: 10,
+    nextInspectionDaysDue: 12,
+    statutoryInspectionTitle: 'SANS 10108 Annual Underground Shaft Inspection Due in 12 Days',
     hazardPreset: {
       electrical: 'risk_detected',
       thermal: 'critical',
@@ -3280,6 +3284,8 @@ export const DEFAULT_MINE_SITES_TARGETS: MineSiteTargetConfig[] = [
     sectorId: 'sheq',
     targetFrequency: 15,
     completedAudits: 13,
+    nextInspectionDaysDue: -3,
+    statutoryInspectionTitle: 'SANS 10142-1 Surface Power & PDS Audit OVERDUE by 3 Days',
     hazardPreset: {
       transport: 'critical',
       noise_vibration: 'risk_detected',
@@ -3296,6 +3302,8 @@ export const DEFAULT_MINE_SITES_TARGETS: MineSiteTargetConfig[] = [
     sectorId: 'catering',
     targetFrequency: 10,
     completedAudits: 8,
+    nextInspectionDaysDue: 5,
+    statutoryInspectionTitle: 'SANS 10375 Lifting & Beneficiation Plant Audit Due in 5 Days',
     hazardPreset: {
       gas_chemical: 'critical',
       thermal: 'risk_detected',
@@ -3312,6 +3320,8 @@ export const DEFAULT_MINE_SITES_TARGETS: MineSiteTargetConfig[] = [
     sectorId: 'electrical',
     targetFrequency: 14,
     completedAudits: 12,
+    nextInspectionDaysDue: -1,
+    statutoryInspectionTitle: 'SANS 10142-1 High Voltage Substation Audit OVERDUE by 1 Day',
     hazardPreset: {
       electrical: 'critical',
       thermal: 'risk_detected',
@@ -9090,7 +9100,69 @@ export const handleExportDmreCapaPdf = (
             return st === 'critical' || st === 'risk_detected';
         });
 
+        // Read active site target config
+        const selectedSiteId = localStorage.getItem('melotwo_selected_mine_site_id') || 'polokwane-platinum';
+        const siteConfig = DEFAULT_MINE_SITES_TARGETS.find(s => s.id === selectedSiteId) || DEFAULT_MINE_SITES_TARGETS[0];
+        const isOverdue = siteConfig.nextInspectionDaysDue < 0;
+        const overdueDays = Math.abs(siteConfig.nextInspectionDaysDue);
+
+        // Calculate live compliance score
+        let hazardPenalty = 0;
+        HAZARD_CATEGORIES.forEach(h => {
+            const st = hazardStates[h.id];
+            if (st === 'critical') hazardPenalty += 15;
+            else if (st === 'risk_detected') hazardPenalty += 7.5;
+        });
+
+        const statutoryPenalty = isOverdue ? 15 : 0;
+        const complianceScore = Math.max(0, Math.min(100, Math.round((100 - hazardPenalty - statutoryPenalty) * 10) / 10));
+
+        let scoreStatusLabel = "Compliant / DMRE Low Risk";
+        if (complianceScore < 65) {
+            scoreStatusLabel = "Critical Non-Compliance / Statutory Audit Failure Risk";
+        } else if (complianceScore < 85) {
+            scoreStatusLabel = "Action Required / CAPA Pending";
+        }
+
         let yPos = 98;
+
+        // Compliance Score Box in PDF
+        docPdf.setFillColor(complianceScore >= 85 ? 6 : (complianceScore >= 65 ? 69 : 88), complianceScore >= 85 ? 78 : (complianceScore >= 65 ? 45 : 18), complianceScore >= 85 ? 59 : (complianceScore >= 65 ? 10 : 18));
+        docPdf.setDrawColor(complianceScore >= 85 ? 16 : (complianceScore >= 65 ? 245 : 244), complianceScore >= 85 ? 185 : (complianceScore >= 65 ? 158 : 63), complianceScore >= 85 ? 129 : (complianceScore >= 65 ? 11 : 94));
+        docPdf.setLineWidth(0.6);
+        docPdf.roundedRect(12, yPos, 186, 20, 3, 3, 'FD');
+
+        docPdf.setFontSize(9.5);
+        docPdf.setFont('helvetica', 'bold');
+        docPdf.setTextColor(complianceScore >= 85 ? 52 : (complianceScore >= 65 ? 251 : 252), complianceScore >= 85 ? 211 : (complianceScore >= 65 ? 191 : 165), complianceScore >= 85 ? 153 : (complianceScore >= 65 ? 36 : 165));
+        docPdf.text(`LIVE AUDIT COMPLIANCE SCORE: ${complianceScore}% — STATUS: ${scoreStatusLabel.toUpperCase()}`, 18, yPos + 8);
+
+        docPdf.setFontSize(8);
+        docPdf.setFont('helvetica', 'normal');
+        docPdf.setTextColor(226, 232, 240);
+        docPdf.text(`Calculated score based on Workplace Hazard Matrix findings and SANS statutory frequency benchmarks.`, 18, yPos + 15);
+
+        yPos += 24;
+
+        // If Statutory Overdue, inject high-priority alert block
+        if (isOverdue) {
+            docPdf.setFillColor(127, 29, 29);
+            docPdf.setDrawColor(239, 68, 68);
+            docPdf.setLineWidth(0.8);
+            docPdf.roundedRect(12, yPos, 186, 20, 3, 3, 'FD');
+
+            docPdf.setFontSize(9.5);
+            docPdf.setFont('helvetica', 'bold');
+            docPdf.setTextColor(254, 202, 202);
+            docPdf.text(`🚨 STATUTORY OVERDUE ALERT: HIGH-PRIORITY COMPLIANCE RISK INJECTED`, 18, yPos + 8);
+
+            docPdf.setFontSize(8.5);
+            docPdf.setFont('helvetica', 'normal');
+            docPdf.setTextColor(254, 226, 226);
+            docPdf.text(`Statutory SANS Audit for ${activeSiteName} is OVERDUE by ${overdueDays} DAYS (${activeStandard}). High risk of DMRE Section 54 Stop-Work Order.`, 18, yPos + 15);
+
+            yPos += 24;
+        }
 
         // Section Title
         docPdf.setFillColor(30, 41, 59);
@@ -11484,6 +11556,7 @@ Safety index and terminal clearance verified. The audit record status has been u
                                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
                                     {DEFAULT_MINE_SITES_TARGETS.map(site => {
                                         const isActive = selectedSiteId === site.id;
+                                        const isOverdue = site.nextInspectionDaysDue < 0;
                                         return (
                                             <button
                                                 key={site.id}
@@ -11514,12 +11587,171 @@ Safety index and terminal clearance verified. The audit record status has been u
                                                 <span className="text-[10px] text-slate-400 font-mono mt-1.5 truncate">
                                                     {site.sansStandard}
                                                 </span>
+                                                <div className="flex items-center justify-between w-full mt-2 pt-2 border-t border-slate-800/60">
+                                                    <span className={`text-[10px] font-mono font-bold flex items-center gap-1 ${
+                                                        isOverdue ? 'text-rose-400 font-black' : 'text-slate-400'
+                                                    }`}>
+                                                        <Clock className="w-3 h-3 shrink-0" />
+                                                        <span>{isOverdue ? `OVERDUE (${Math.abs(site.nextInspectionDaysDue)}d)` : `Due in ${site.nextInspectionDaysDue}d`}</span>
+                                                    </span>
+                                                </div>
                                             </button>
                                         );
                                     })}
                                 </div>
                             </div>
                         </div>
+
+                        {/* Feature 5: Real-Time Audit Compliance Score & Statutory Audit Frequency Warning Badge */}
+                        {(() => {
+                            const isStatutoryOverdue = activeSite.nextInspectionDaysDue < 0;
+                            const overdueDays = Math.abs(activeSite.nextInspectionDaysDue);
+                            const statutoryPenalty = isStatutoryOverdue ? 15 : 0;
+                            const rawScore = 100 - matrixScorePenalty - statutoryPenalty;
+                            const complianceScore = Math.max(0, Math.min(100, Math.round(rawScore * 10) / 10));
+
+                            let scoreStatusLabel = "Compliant / DMRE Low Risk";
+                            let scoreBadgeStyle = "bg-emerald-500/20 text-emerald-300 border-emerald-500/50 shadow-emerald-500/10";
+                            let scoreProgressColor = "from-emerald-500 to-teal-400";
+                            let scoreIcon = <CheckCircle2 className="w-5 h-5 text-emerald-400 shrink-0" />;
+
+                            if (complianceScore < 65) {
+                                scoreStatusLabel = "Critical Non-Compliance / Statutory Audit Failure Risk";
+                                scoreBadgeStyle = "bg-rose-500/25 text-rose-300 border-rose-500/60 shadow-rose-500/20 animate-pulse";
+                                scoreProgressColor = "from-rose-600 via-rose-500 to-amber-500";
+                                scoreIcon = <ShieldAlert className="w-5 h-5 text-rose-400 shrink-0" />;
+                            } else if (complianceScore < 85) {
+                                scoreStatusLabel = "Action Required / CAPA Pending";
+                                scoreBadgeStyle = "bg-amber-500/20 text-amber-300 border-amber-500/50 shadow-amber-500/10";
+                                scoreProgressColor = "from-amber-500 to-orange-400";
+                                scoreIcon = <AlertOctagon className="w-5 h-5 text-amber-400 shrink-0" />;
+                            }
+
+                            return (
+                                <div className="grid grid-cols-1 lg:grid-cols-3 gap-4" id="realtime-compliance-score-section">
+                                    {/* Dynamic Compliance Score Gauge Card */}
+                                    <div className="lg:col-span-2 bg-slate-900 border border-slate-800 rounded-3xl p-6 backdrop-blur-xl shadow-2xl space-y-4 relative overflow-hidden">
+                                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-800/80 pb-3.5">
+                                            <div className="flex items-center gap-3">
+                                                <div className="p-2.5 bg-amber-500/10 border border-amber-500/30 rounded-2xl text-amber-400 shrink-0">
+                                                    <Target className="w-5 h-5" />
+                                                </div>
+                                                <div>
+                                                    <span className="text-[10px] font-bold text-amber-400 font-mono uppercase tracking-widest block">
+                                                        Live Statutory Assessment
+                                                    </span>
+                                                    <h3 className="text-base font-extrabold text-white tracking-tight flex items-center gap-2">
+                                                        <span>Real-Time Audit Compliance Score</span>
+                                                    </h3>
+                                                </div>
+                                            </div>
+                                            <div className={`flex items-center gap-2 px-3 py-1.5 rounded-2xl border text-xs font-bold font-mono ${scoreBadgeStyle}`}>
+                                                {scoreIcon}
+                                                <span>{scoreStatusLabel}</span>
+                                            </div>
+                                        </div>
+
+                                        <div className="grid grid-cols-1 md:grid-cols-12 gap-4 items-center">
+                                            {/* Big Numeric Gauge Meter */}
+                                            <div className="md:col-span-5 flex flex-col items-center justify-center p-4 bg-slate-950/80 border border-slate-800/90 rounded-2xl relative text-center">
+                                                <span className="text-[10px] text-slate-400 font-mono uppercase tracking-widest font-bold mb-1">
+                                                    Live Score Gauge
+                                                </span>
+                                                <div className="relative flex items-center justify-center my-1">
+                                                    <span className="text-4xl sm:text-5xl font-black font-mono tracking-tight text-white">
+                                                        {complianceScore}%
+                                                    </span>
+                                                </div>
+                                                <div className="w-full bg-slate-900 h-2.5 rounded-full overflow-hidden border border-slate-800 mt-2">
+                                                    <div
+                                                        className={`h-full bg-gradient-to-r ${scoreProgressColor} transition-all duration-500`}
+                                                        style={{ width: `${complianceScore}%` }}
+                                                    />
+                                                </div>
+                                                <span className="text-[10px] text-slate-500 font-mono mt-2">
+                                                    100% Base - Hazard Penalties &amp; Statutory Factors
+                                                </span>
+                                            </div>
+
+                                            {/* Score Breakdown Parameters */}
+                                            <div className="md:col-span-7 space-y-2 text-xs font-mono">
+                                                <div className="flex items-center justify-between p-2.5 bg-slate-950/50 rounded-xl border border-slate-800/60">
+                                                    <span className="text-slate-400">Workplace Hazard Matrix Penalty:</span>
+                                                    <span className={`font-bold ${matrixScorePenalty > 0 ? 'text-amber-400' : 'text-emerald-400'}`}>
+                                                        -{matrixScorePenalty}%
+                                                    </span>
+                                                </div>
+                                                <div className="flex items-center justify-between p-2.5 bg-slate-950/50 rounded-xl border border-slate-800/60">
+                                                    <span className="text-slate-400">Statutory Frequency Status:</span>
+                                                    <span className={`font-bold ${isStatutoryOverdue ? 'text-rose-400' : 'text-emerald-400'}`}>
+                                                        {isStatutoryOverdue ? 'OVERDUE (-15%)' : 'ON SCHEDULE (0%)'}
+                                                    </span>
+                                                </div>
+                                                <div className="flex items-center justify-between p-2.5 bg-slate-950/50 rounded-xl border border-slate-800/60">
+                                                    <span className="text-slate-400">Active Standard Benchmark:</span>
+                                                    <span className="text-amber-300 font-bold truncate max-w-[180px]">
+                                                        {activeSite.sansStandard}
+                                                    </span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    {/* Statutory Audit Frequency Warning Badge Card */}
+                                    <div className={`bg-slate-900 border rounded-3xl p-6 backdrop-blur-xl shadow-2xl flex flex-col justify-between space-y-3 relative overflow-hidden ${
+                                        isStatutoryOverdue ? 'border-rose-500/60 bg-rose-950/20 shadow-rose-500/10' : 'border-slate-800'
+                                    }`}>
+                                        <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+                                            <div className="flex items-center gap-2 text-xs font-bold uppercase font-mono tracking-wider">
+                                                <Clock className={`w-4 h-4 ${isStatutoryOverdue ? 'text-rose-400 animate-bounce' : 'text-amber-400'}`} />
+                                                <span className={isStatutoryOverdue ? 'text-rose-300' : 'text-slate-200'}>
+                                                    Statutory Frequency Badge
+                                                </span>
+                                            </div>
+                                            <span className={`text-[10px] font-bold font-mono px-2 py-0.5 rounded-full border ${
+                                                isStatutoryOverdue
+                                                    ? 'bg-rose-500/20 text-rose-300 border-rose-500/40 uppercase font-black tracking-widest'
+                                                    : 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30'
+                                            }`}>
+                                                {isStatutoryOverdue ? 'STATUTORY OVERDUE' : 'ON SCHEDULE'}
+                                            </span>
+                                        </div>
+
+                                        <div className="space-y-2 my-1">
+                                            <h4 className="text-sm font-extrabold text-white leading-snug">
+                                                {activeSite.statutoryInspectionTitle}
+                                            </h4>
+                                            <p className="text-xs text-slate-400 font-mono">
+                                                {isStatutoryOverdue
+                                                    ? `🚨 Statutory SANS inspection for ${activeSite.name} is OVERDUE by ${overdueDays} days. High probability of DMRE Section 54 Stop-Work Order.`
+                                                    : `Next scheduled statutory review due in ${activeSite.nextInspectionDaysDue} days under ${activeSite.sansStandard}.`
+                                                }
+                                            </p>
+                                        </div>
+
+                                        {isStatutoryOverdue && (
+                                            <div className="p-3 bg-rose-500/10 border border-rose-500/30 rounded-2xl text-[11px] font-mono text-rose-200 flex items-start gap-2">
+                                                <ShieldAlert className="w-4 h-4 text-rose-400 shrink-0 mt-0.5" />
+                                                <span>Risk Line injected automatically into generated DMRE CAPA PDF report.</span>
+                                            </div>
+                                        )}
+
+                                        <button
+                                            type="button"
+                                            onClick={() => handleExportDmreCapaPdf(activeSite.name, activeSite.company, activeSite.sansStandard)}
+                                            className={`w-full py-2.5 px-4 rounded-xl font-extrabold text-xs flex items-center justify-center gap-2 transition-all cursor-pointer border ${
+                                                isStatutoryOverdue
+                                                    ? 'bg-rose-500 hover:bg-rose-400 text-slate-950 border-rose-400 shadow-lg shadow-rose-500/20'
+                                                    : 'bg-amber-500 hover:bg-amber-400 text-slate-950 border-amber-400'
+                                            }`}
+                                        >
+                                            <Download className="w-4 h-4 stroke-[2.5]" />
+                                            <span>Export DMRE CAPA PDF (Includes Risk Line)</span>
+                                        </button>
+                                    </div>
+                                </div>
+                            );
+                        })()}
 
                         {/* Digital Workplace Risk Assessment Matrix */}
                         <WorkplaceHazardMatrix
