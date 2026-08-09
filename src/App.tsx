@@ -14,7 +14,7 @@ import { Footer } from './components/Footer';
 import { TrainingAcademyPage } from './components/TrainingAcademyPage';
 import { ShiftHandoverAssistant } from './components/ShiftHandoverAssistant';
 import { RegulatoryShiftAlertFeed } from './components/RegulatoryShiftAlertFeed';
-import { Database, RefreshCw, Upload, LogOut, Sparkles, CheckCircle2, AlertOctagon, Download, ChevronRight, Lock, Terminal, Minimize2, Maximize2, Activity, Scale, Globe, CheckCircle, Target, ShieldAlert, ArrowRight, Check, Truck, Info, RotateCcw, Sliders, XCircle } from 'lucide-react';
+import { Database, RefreshCw, Upload, LogOut, Sparkles, CheckCircle2, AlertOctagon, Download, ChevronRight, Lock, Terminal, Minimize2, Maximize2, Activity, Scale, Globe, CheckCircle, Target, ShieldAlert, ArrowRight, Check, Truck, Info, RotateCcw, Sliders, XCircle, Building2, MapPin } from 'lucide-react';
 import jsPDF from 'jspdf';
 
 import { ErrorBoundary } from './components/ErrorBoundary';
@@ -3241,56 +3241,84 @@ interface DataPoint {
   flaggedIncidents?: number;
 }
 
-interface MineSiteTargetConfig {
+export interface MineSiteTargetConfig {
   id: string;
   name: string;
   location: string;
   sansStandard: string;
+  company: string;
+  sectorId: string;
   targetFrequency: number;
   completedAudits: number;
+  hazardPreset?: Record<string, HazardStatus>;
 }
 
-const DEFAULT_MINE_SITES_TARGETS: MineSiteTargetConfig[] = [
+export const DEFAULT_MINE_SITES_TARGETS: MineSiteTargetConfig[] = [
   {
     id: 'polokwane-platinum',
-    name: 'Polokwane Platinum Shaft #3',
+    name: 'Polokwane Platinum Shaft #3 (Underground Deep-Reef)',
     location: 'Polokwane, Limpopo',
-    sansStandard: 'SANS 10330:2020 (HACCP Canteen)',
+    sansStandard: 'SANS 10330:2020 & SANS 10108',
+    company: 'Anglo American Platinum / Polokwane Shaft #3',
+    sectorId: 'mining',
     targetFrequency: 12,
     completedAudits: 10,
+    hazardPreset: {
+      electrical: 'risk_detected',
+      thermal: 'critical',
+      mechanical: 'pass',
+      gas_chemical: 'risk_detected',
+      transport: 'risk_detected'
+    }
   },
   {
-    id: 'witwatersrand-gold',
-    name: 'Witwatersrand Gold Deep Reef',
-    location: 'Gauteng, South Africa',
-    sansStandard: 'SANS 10108 & SANS 10330',
+    id: 'mogalakwena-openpit',
+    name: 'Mogalakwena Open Pit (Surface Mining Ops)',
+    location: 'Mokopane, Waterberg',
+    sansStandard: 'SANS 10049 & SANS 10142-1',
+    company: 'Mogalakwena Mining Complex',
+    sectorId: 'sheq',
     targetFrequency: 15,
-    completedAudits: 14,
+    completedAudits: 13,
+    hazardPreset: {
+      transport: 'critical',
+      noise_vibration: 'risk_detected',
+      mechanical: 'risk_detected',
+      electrical: 'pass'
+    }
   },
   {
-    id: 'mpumalanga-coal',
-    name: 'Mpumalanga Coal Open-Cast',
-    location: 'Mpumalanga, South Africa',
-    sansStandard: 'SANS 10049 & SANS 10142',
+    id: 'thabazimbi-processing',
+    name: 'Thabazimbi Processing Plant & Beneficiation',
+    location: 'Thabazimbi, Waterberg',
+    sansStandard: 'SANS 10375 & SANS 10228',
+    company: 'Thabazimbi Industrial Beneficiation Plant',
+    sectorId: 'catering',
     targetFrequency: 10,
-    completedAudits: 6,
-  },
-  {
-    id: 'rustenburg-chrome',
-    name: 'Rustenburg Chrome Operation',
-    location: 'North West, South Africa',
-    sansStandard: 'SANS 10375 (Lifting & Safety)',
-    targetFrequency: 8,
     completedAudits: 8,
+    hazardPreset: {
+      gas_chemical: 'critical',
+      thermal: 'risk_detected',
+      ppe_hygiene: 'risk_detected',
+      mechanical: 'pass'
+    }
   },
   {
-    id: 'limpopo-canteen',
-    name: 'Limpopo Central Canteen & Depot',
-    location: 'Mokopane, Limpopo',
-    sansStandard: 'SANS 10330 (HACCP CCP #1-#7)',
-    targetFrequency: 12,
-    completedAudits: 9,
-  },
+    id: 'eskom-grid-substation',
+    name: 'Eskom Distribution Grid Substation Sub-6',
+    location: 'Polokwane / Limpopo Grid System',
+    sansStandard: 'SANS 10142-1 & SANS 10287',
+    company: 'Eskom Distribution Grid Systems',
+    sectorId: 'electrical',
+    targetFrequency: 14,
+    completedAudits: 12,
+    hazardPreset: {
+      electrical: 'critical',
+      thermal: 'risk_detected',
+      ergonomic: 'pass',
+      mechanical: 'pass'
+    }
+  }
 ];
 
 const AuditHistoryChart: React.FC = () => {
@@ -3325,6 +3353,21 @@ const AuditHistoryChart: React.FC = () => {
 
   useEffect(() => {
     localStorage.setItem('melotwo_selected_mine_site_id', selectedSiteId);
+  }, [selectedSiteId]);
+
+  useEffect(() => {
+    const handleSync = () => {
+      const saved = localStorage.getItem('melotwo_selected_mine_site_id');
+      if (saved && saved !== selectedSiteId) {
+        setSelectedSiteId(saved);
+      }
+    };
+    window.addEventListener('storage', handleSync);
+    window.addEventListener('melotwo_site_changed', handleSync);
+    return () => {
+      window.removeEventListener('storage', handleSync);
+      window.removeEventListener('melotwo_site_changed', handleSync);
+    };
   }, [selectedSiteId]);
 
   const currentSite = useMemo(() => {
@@ -4178,8 +4221,11 @@ const AuditHistoryChart: React.FC = () => {
             <select
               value={selectedSiteId}
               onChange={(e) => {
-                setSelectedSiteId(e.target.value);
-                trackGA4Event('mine_site_tracker_changed', { site_id: e.target.value });
+                const newId = e.target.value;
+                setSelectedSiteId(newId);
+                localStorage.setItem('melotwo_selected_mine_site_id', newId);
+                window.dispatchEvent(new Event('melotwo_site_changed'));
+                trackGA4Event('mine_site_tracker_changed', { site_id: newId });
               }}
               id="mine-site-audit-target-select"
               className="bg-slate-900 border border-slate-700 text-white text-xs font-bold rounded-lg px-3 py-2 focus:ring-2 focus:ring-amber-500 focus:outline-none cursor-pointer"
@@ -8536,6 +8582,25 @@ export const WorkplaceHazardMatrix: React.FC<WorkplaceHazardMatrixProps> = ({
     }
   }, [hazardStates, criticalCount, scorePenalty]);
 
+  useEffect(() => {
+    const handleSiteSync = () => {
+      try {
+        const saved = localStorage.getItem('melotwo_hazard_matrix_states');
+        if (saved) {
+          setHazardStates(JSON.parse(saved));
+        }
+      } catch (e) {
+        console.error(e);
+      }
+    };
+    window.addEventListener('melotwo_site_changed', handleSiteSync);
+    window.addEventListener('storage', handleSiteSync);
+    return () => {
+      window.removeEventListener('melotwo_site_changed', handleSiteSync);
+      window.removeEventListener('storage', handleSiteSync);
+    };
+  }, []);
+
   const handleSetStatus = (id: string, status: HazardStatus) => {
     setHazardStates(prev => ({
       ...prev,
@@ -9175,6 +9240,43 @@ export const SafetyInspectorPage: React.FC<SafetyInspectorPageProps> = ({ setPag
     // Workplace Hazard Matrix State Sync
     const [matrixCriticalCount, setMatrixCriticalCount] = useState<number>(0);
     const [matrixScorePenalty, setMatrixScorePenalty] = useState<number>(0);
+
+    // Multi-Site & Shaft Selection State
+    const [selectedSiteId, setSelectedSiteId] = useState<string>(() => {
+        return localStorage.getItem('melotwo_selected_mine_site_id') || 'polokwane-platinum';
+    });
+
+    useEffect(() => {
+        const handleSiteSync = () => {
+            const saved = localStorage.getItem('melotwo_selected_mine_site_id');
+            if (saved) setSelectedSiteId(saved);
+        };
+        window.addEventListener('storage', handleSiteSync);
+        window.addEventListener('melotwo_site_changed', handleSiteSync);
+        return () => {
+            window.removeEventListener('storage', handleSiteSync);
+            window.removeEventListener('melotwo_site_changed', handleSiteSync);
+        };
+    }, []);
+
+    const activeSite = useMemo(() => {
+        return DEFAULT_MINE_SITES_TARGETS.find(s => s.id === selectedSiteId) || DEFAULT_MINE_SITES_TARGETS[0];
+    }, [selectedSiteId]);
+
+    const handleSelectSite = (siteId: string) => {
+        const site = DEFAULT_MINE_SITES_TARGETS.find(s => s.id === siteId);
+        if (!site) return;
+        setSelectedSiteId(site.id);
+        localStorage.setItem('melotwo_selected_mine_site_id', site.id);
+        if (site.sectorId) {
+            setSelectedSector(site.sectorId);
+            localStorage.setItem('melotwo_inspector_active_sector', site.sectorId);
+        }
+        if (site.hazardPreset) {
+            localStorage.setItem('melotwo_hazard_matrix_states', JSON.stringify(site.hazardPreset));
+        }
+        window.dispatchEvent(new Event('melotwo_site_changed'));
+    };
 
     // Sector-specific profile states
     const [selectedSector, setSelectedSector] = useState<string>(() => {
@@ -11319,6 +11421,105 @@ Safety index and terminal clearance verified. The audit record status has been u
                                 </div>
                             </div>
                         )}
+
+                        {/* Active Operational Shaft / Site Selection Bar */}
+                        <div className="bg-slate-900 border border-amber-500/30 rounded-3xl p-6 backdrop-blur-xl shadow-2xl space-y-4" id="auditing-terminal-site-selector-bar">
+                            <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 border-b border-slate-800 pb-4">
+                                <div className="flex items-center gap-3">
+                                    <div className="p-2.5 bg-amber-500/10 border border-amber-500/30 rounded-2xl text-amber-400 shrink-0">
+                                        <Building2 className="w-5 h-5" />
+                                    </div>
+                                    <div>
+                                        <span className="text-[10px] font-bold text-amber-400 font-mono uppercase tracking-widest block">
+                                            Dynamic Shaft &amp; Facility Context
+                                        </span>
+                                        <h3 className="text-base font-extrabold text-white tracking-tight flex items-center gap-2">
+                                            <span>Active Operational Shaft / Site</span>
+                                            <span className="text-xs font-normal text-amber-400/90 font-mono hidden sm:inline">({activeSite.location})</span>
+                                        </h3>
+                                    </div>
+                                </div>
+                                <div className="flex flex-wrap items-center gap-2">
+                                    <div className="flex items-center gap-1.5 bg-slate-950 border border-slate-800 px-3 py-1.5 rounded-xl text-xs font-mono text-slate-300">
+                                        <MapPin className="w-3.5 h-3.5 text-amber-400 shrink-0" />
+                                        <span>{activeSite.location}</span>
+                                    </div>
+                                    <div className="flex items-center gap-1.5 bg-slate-950 border border-slate-800 px-3 py-1.5 rounded-xl text-xs font-mono text-amber-400 font-bold">
+                                        <Target className="w-3.5 h-3.5 text-amber-400 shrink-0" />
+                                        <span>{activeSite.completedAudits}/{activeSite.targetFrequency} SANS Audits</span>
+                                    </div>
+                                    <button
+                                        type="button"
+                                        onClick={() => handleExportDmreCapaPdf(activeSite.name, activeSite.company, activeSite.sansStandard)}
+                                        className="bg-amber-500 hover:bg-amber-400 text-slate-950 font-black text-xs px-3.5 py-1.5 rounded-xl transition-all shadow-md flex items-center gap-1.5 cursor-pointer border border-amber-400"
+                                        title="Export DMRE CAPA Audit Report (PDF)"
+                                    >
+                                        <Download className="w-3.5 h-3.5 stroke-[2.5]" />
+                                        <span>Export DMRE CAPA PDF</span>
+                                    </button>
+                                </div>
+                            </div>
+
+                            {/* Dropdown & Cards Selection Bar */}
+                            <div className="space-y-3">
+                                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 bg-slate-950/70 p-3 rounded-2xl border border-slate-800">
+                                    <label htmlFor="auditing-terminal-site-dropdown" className="text-xs font-bold text-slate-300 uppercase font-mono tracking-wider flex items-center gap-2">
+                                        <Truck className="w-4 h-4 text-amber-400 shrink-0" />
+                                        <span>Operational Unit Selector:</span>
+                                    </label>
+                                    <select
+                                        id="auditing-terminal-site-dropdown"
+                                        value={selectedSiteId}
+                                        onChange={(e) => handleSelectSite(e.target.value)}
+                                        className="bg-slate-900 border border-amber-500/40 text-amber-300 text-xs font-extrabold rounded-xl px-3.5 py-2 focus:ring-2 focus:ring-amber-500 focus:outline-none cursor-pointer shadow-inner w-full sm:w-auto"
+                                    >
+                                        {DEFAULT_MINE_SITES_TARGETS.map(site => (
+                                            <option key={site.id} value={site.id} className="bg-slate-900 text-white font-medium">
+                                                {site.name} — ({site.location})
+                                            </option>
+                                        ))}
+                                    </select>
+                                </div>
+
+                                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+                                    {DEFAULT_MINE_SITES_TARGETS.map(site => {
+                                        const isActive = selectedSiteId === site.id;
+                                        return (
+                                            <button
+                                                key={site.id}
+                                                type="button"
+                                                onClick={() => handleSelectSite(site.id)}
+                                                className={`flex flex-col text-left p-3.5 rounded-2xl border transition-all cursor-pointer relative overflow-hidden ${
+                                                    isActive
+                                                        ? 'bg-amber-500/15 border-amber-500 text-white shadow-xl shadow-amber-500/10 ring-1 ring-amber-500/50'
+                                                        : 'bg-slate-950 border-slate-800/80 hover:border-slate-700 hover:bg-slate-900 text-slate-400'
+                                                }`}
+                                            >
+                                                {isActive && (
+                                                    <div className="absolute top-0 right-0 w-3 h-3 bg-amber-400 rounded-bl-lg shadow-sm" />
+                                                )}
+                                                <div className="flex items-center justify-between w-full mb-1">
+                                                    <span className={`text-[9px] font-black uppercase tracking-wider px-2 py-0.5 rounded border ${
+                                                        isActive ? 'bg-amber-500/20 text-amber-300 border-amber-500/40' : 'bg-slate-900 text-slate-500 border-slate-800'
+                                                    }`}>
+                                                        {site.sectorId.toUpperCase()}
+                                                    </span>
+                                                    <span className="text-[10px] text-slate-400 font-mono font-bold">
+                                                        {site.completedAudits}/{site.targetFrequency} Audits
+                                                    </span>
+                                                </div>
+                                                <span className="text-xs font-bold text-slate-100 leading-snug line-clamp-2 mt-1">
+                                                    {site.name}
+                                                </span>
+                                                <span className="text-[10px] text-slate-400 font-mono mt-1.5 truncate">
+                                                    {site.sansStandard}
+                                                </span>
+                                            </button>
+                                        );
+                                    })}
+                                </div>
+                            </div>
+                        </div>
 
                         {/* Digital Workplace Risk Assessment Matrix */}
                         <WorkplaceHazardMatrix
