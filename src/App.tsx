@@ -15,6 +15,7 @@ import { TrainingAcademyPage } from './components/TrainingAcademyPage';
 import { ShiftHandoverAssistant } from './components/ShiftHandoverAssistant';
 import { RegulatoryShiftAlertFeed } from './components/RegulatoryShiftAlertFeed';
 import { Database, RefreshCw, Upload, LogOut, Sparkles, CheckCircle2, AlertOctagon, Download, ChevronRight, Lock, Terminal, Minimize2, Maximize2, Activity, Scale, Globe, CheckCircle, Target, ShieldAlert, ArrowRight, Check, Truck, Info, RotateCcw, Sliders, XCircle } from 'lucide-react';
+import jsPDF from 'jspdf';
 
 import { ErrorBoundary } from './components/ErrorBoundary';
 
@@ -4171,8 +4172,8 @@ const AuditHistoryChart: React.FC = () => {
             </h4>
           </div>
 
-          {/* Mine Site Selector Dropdown */}
-          <div className="flex items-center gap-2">
+          {/* Mine Site Selector Dropdown & DMRE CAPA PDF Export Trigger */}
+          <div className="flex flex-wrap items-center gap-2">
             <span className="text-xs text-slate-400 font-mono font-bold hidden sm:inline">Active Mine Site:</span>
             <select
               value={selectedSiteId}
@@ -4189,6 +4190,16 @@ const AuditHistoryChart: React.FC = () => {
                 </option>
               ))}
             </select>
+            <button
+              type="button"
+              onClick={() => handleExportDmreCapaPdf(currentSite.name, currentSite.location, currentSite.sansStandard)}
+              id="btn-export-dmre-capa-pdf"
+              className="bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 font-black text-xs rounded-lg px-3 py-2 shadow-lg hover:shadow-amber-500/20 transition-all flex items-center gap-1.5 cursor-pointer border border-amber-400 shrink-0"
+              title="Export SANS & DMRE Statutory Audit Findings & CAPA Report (PDF)"
+            >
+              <Download className="w-4 h-4 text-slate-950 stroke-[2.5]" />
+              <span className="uppercase tracking-wider font-extrabold">Export DMRE CAPA Audit Report (PDF)</span>
+            </button>
           </div>
         </div>
 
@@ -8937,6 +8948,219 @@ export const SECTOR_PROFILES: Record<string, {
     }
 };
 
+export const handleExportDmreCapaPdf = (
+    customSiteName?: string,
+    customCompany?: string,
+    customStandard?: string
+) => {
+    try {
+        const docPdf = new jsPDF({
+            orientation: 'portrait',
+            unit: 'mm',
+            format: 'a4'
+        });
+
+        const pageW = docPdf.internal.pageSize.getWidth();
+        const pageH = docPdf.internal.pageSize.getHeight();
+
+        // 1. Dark Executive Header Canvas Background
+        docPdf.setFillColor(15, 23, 42); // slate-900
+        docPdf.rect(0, 0, pageW, pageH, 'F');
+
+        // 2. Main Title Banner Container
+        docPdf.setFillColor(30, 41, 59); // slate-800
+        docPdf.setDrawColor(245, 158, 11); // amber-500
+        docPdf.setLineWidth(0.8);
+        docPdf.roundedRect(12, 12, 186, 38, 3, 3, 'FD');
+
+        docPdf.setFont('helvetica', 'bold');
+        docPdf.setFontSize(12);
+        docPdf.setTextColor(245, 158, 11);
+        docPdf.text('SANS & DMRE STATUTORY AUDIT FINDINGS & CAPA PROTOCOL', 18, 22);
+
+        docPdf.setFontSize(10);
+        docPdf.setTextColor(255, 255, 255);
+        docPdf.text('MELO TWO INDUSTRIAL SAFETY & COMPLIANCE ENGINE', 18, 30);
+
+        docPdf.setFontSize(8);
+        docPdf.setFont('helvetica', 'normal');
+        docPdf.setTextColor(148, 163, 184);
+        docPdf.text('Authorized Statutory Corrective Action Plan under DMRE MHSA & SANS 10330:2020', 18, 38);
+        docPdf.text('Document Ref: SANS-DMRE-CAPA-2026 / Confidential Statutory Inspection Audit', 18, 44);
+
+        // 3. Metadata Box
+        const savedSector = localStorage.getItem('melotwo_inspector_active_sector') || 'mining';
+        const profile = SECTOR_PROFILES[savedSector] || SECTOR_PROFILES.mining;
+        const activeSiteName = customSiteName || profile.name;
+        const activeCompany = customCompany || profile.company;
+        const activeStandard = customStandard || profile.standard;
+        const inspectorId = localStorage.getItem('melotwo_active_inspector_id') || 'INS-8924';
+        const timestamp = new Date().toLocaleString('en-ZA', { dateStyle: 'full', timeStyle: 'medium' });
+
+        docPdf.setFillColor(2, 6, 23); // slate-950
+        docPdf.setDrawColor(51, 65, 85); // slate-700
+        docPdf.setLineWidth(0.5);
+        docPdf.roundedRect(12, 54, 186, 38, 3, 3, 'FD');
+
+        docPdf.setFontSize(9);
+        docPdf.setFont('helvetica', 'bold');
+        docPdf.setTextColor(248, 250, 252);
+
+        docPdf.text(`Active Business Profile: ${activeSiteName} (${activeCompany})`, 18, 62);
+        docPdf.text(`Selected Statutory Standard: ${activeStandard}`, 18, 70);
+        docPdf.text(`Certified Inspector ID: ${inspectorId}`, 18, 78);
+        docPdf.text(`Audit Generation Timestamp: ${timestamp}`, 18, 86);
+
+        // 4. Read active hazard matrix states
+        let hazardStates: Record<string, string> = {};
+        try {
+            const saved = localStorage.getItem('melotwo_hazard_matrix_states');
+            if (saved) hazardStates = JSON.parse(saved);
+        } catch (e) {
+            console.error('Failed to parse hazard matrix states for PDF', e);
+        }
+
+        const flaggedHazards = HAZARD_CATEGORIES.filter(h => {
+            const st = hazardStates[h.id];
+            return st === 'critical' || st === 'risk_detected';
+        });
+
+        let yPos = 98;
+
+        // Section Title
+        docPdf.setFillColor(30, 41, 59);
+        docPdf.roundedRect(12, yPos, 186, 10, 2, 2, 'F');
+        docPdf.setFontSize(10);
+        docPdf.setFont('helvetica', 'bold');
+        docPdf.setTextColor(245, 158, 11);
+        docPdf.text(`STATUTORY HAZARD FINDINGS & CAPA PROTOCOLS (${flaggedHazards.length} FLAGGED RISKS)`, 18, yPos + 7);
+
+        yPos += 16;
+
+        if (flaggedHazards.length === 0) {
+            docPdf.setFillColor(6, 78, 59);
+            docPdf.setDrawColor(16, 185, 129);
+            docPdf.setLineWidth(0.5);
+            docPdf.roundedRect(12, yPos, 186, 24, 3, 3, 'FD');
+
+            docPdf.setFontSize(9);
+            docPdf.setFont('helvetica', 'bold');
+            docPdf.setTextColor(52, 211, 153);
+            docPdf.text('STATUS: ALL 8 WORKPLACE HAZARD CATEGORIES SATISFIED - NO ACTIVE RISKS DETECTED', 18, yPos + 10);
+
+            docPdf.setFont('helvetica', 'normal');
+            docPdf.setTextColor(226, 232, 240);
+            docPdf.text('All electrical, mechanical, thermal, GHS chemical, and transport parameters fully comply with SANS standards.', 18, yPos + 18);
+            yPos += 30;
+        } else {
+            flaggedHazards.forEach((h, idx) => {
+                const st = hazardStates[h.id];
+                const isCritical = st === 'critical';
+
+                if (yPos + 32 > 270) {
+                    docPdf.addPage();
+                    docPdf.setFillColor(15, 23, 42);
+                    docPdf.rect(0, 0, pageW, pageH, 'F');
+                    yPos = 20;
+                }
+
+                docPdf.setFillColor(isCritical ? 69 : 45, isCritical ? 10 : 30, isCritical ? 10 : 15);
+                docPdf.setDrawColor(isCritical ? 244 : 245, isCritical ? 63 : 158, isCritical ? 94 : 11);
+                docPdf.setLineWidth(0.5);
+                docPdf.roundedRect(12, yPos, 186, 28, 3, 3, 'FD');
+
+                docPdf.setFontSize(9);
+                docPdf.setFont('helvetica', 'bold');
+                docPdf.setTextColor(255, 255, 255);
+                docPdf.text(`${idx + 1}. [${h.code}] ${h.name.toUpperCase()} - ${h.standardRef}`, 18, yPos + 7);
+
+                docPdf.setFontSize(9);
+                docPdf.setTextColor(isCritical ? 252 : 251, isCritical ? 165 : 191, isCritical ? 165 : 36);
+                docPdf.text(`STATUS: ${isCritical ? 'CRITICAL FLAG 🚨' : 'RISK DETECTED ⚠️'}`, 130, yPos + 7);
+
+                docPdf.setFontSize(8.5);
+                docPdf.setFont('helvetica', 'normal');
+                docPdf.setTextColor(226, 232, 240);
+
+                const protocolLines = docPdf.splitTextToSize(`DMRE Corrective Protocol: ${h.mitigationAction}`, 174);
+                docPdf.text(protocolLines, 18, yPos + 15);
+
+                yPos += 34;
+            });
+        }
+
+        // 5. Practical Recommendations & Governance
+        if (yPos + 48 > 270) {
+            docPdf.addPage();
+            docPdf.setFillColor(15, 23, 42);
+            docPdf.rect(0, 0, pageW, pageH, 'F');
+            yPos = 20;
+        }
+
+        docPdf.setFillColor(30, 41, 59);
+        docPdf.roundedRect(12, yPos, 186, 10, 2, 2, 'F');
+        docPdf.setFontSize(10);
+        docPdf.setFont('helvetica', 'bold');
+        docPdf.setTextColor(245, 158, 11);
+        docPdf.text('PRACTICAL RECOMMENDATIONS & DMRE STEP 5 AUTOMATION PROTOCOL', 18, yPos + 7);
+
+        yPos += 14;
+
+        const recommendations = [
+            '• Step 1 Isolation Protocol: Immediately enforce LOTO on uncalibrated sensors, thermal drift points & DB sub-panels.',
+            '• Step 2 Mechanical Guarding: Fit heavy steel mesh guards to exposed conveyor nip points & test trip-wire response (<0.5s).',
+            '• Step 3 Environmental & Gas Testing: Conduct daily methane concentrations checks (<1.0% v/v) & test Ex-d enclosure seals.',
+            '• Step 4 PDS Radar & Transport Safety: Verify haulage vehicle radar proximity detection & hydraulic brake holding pressure.',
+            '• Step 5 Statutory Sign-off & Audit Log: Transmit digital CAPA directives to DMRE regional inspectorate within 24 hours.'
+        ];
+
+        docPdf.setFontSize(8.5);
+        docPdf.setFont('helvetica', 'normal');
+        docPdf.setTextColor(203, 213, 225);
+
+        recommendations.forEach(rec => {
+            if (yPos + 6 > 270) {
+                docPdf.addPage();
+                docPdf.setFillColor(15, 23, 42);
+                docPdf.rect(0, 0, pageW, pageH, 'F');
+                yPos = 20;
+            }
+            docPdf.text(rec, 18, yPos);
+            yPos += 6;
+        });
+
+        // 6. Signature Block
+        yPos += 10;
+        if (yPos + 35 > 270) {
+            docPdf.addPage();
+            docPdf.setFillColor(15, 23, 42);
+            docPdf.rect(0, 0, pageW, pageH, 'F');
+            yPos = 20;
+        }
+
+        docPdf.setDrawColor(100, 116, 139);
+        docPdf.setLineWidth(0.5);
+        docPdf.line(18, yPos + 15, 88, yPos + 15);
+        docPdf.line(120, yPos + 15, 190, yPos + 15);
+
+        docPdf.setFontSize(8);
+        docPdf.setFont('helvetica', 'bold');
+        docPdf.setTextColor(148, 163, 184);
+        docPdf.text('Lead Certified SHEQ Inspector Signature', 18, yPos + 20);
+        docPdf.text('DMRE Site Operations Manager Sign-off', 120, yPos + 20);
+
+        docPdf.setFontSize(7);
+        docPdf.setFont('helvetica', 'normal');
+        docPdf.setTextColor(100, 116, 139);
+        docPdf.text('MeloTwo Safety Engine • Automated DMRE CAPA Audit Report • Confidential Statutory Document', 18, 288);
+
+        docPdf.save(`DMRE_CAPA_Audit_Report_${savedSector}_${Date.now()}.pdf`);
+    } catch (err) {
+        console.error('PDF export error:', err);
+        window.print();
+    }
+};
+
 export const SafetyInspectorPage: React.FC<SafetyInspectorPageProps> = ({ setPage }) => {
     // Editable review fields (Declared at the top for use in applySectorDefaults)
     const [parsedDate, setParsedDate] = useState(() => new Date().toISOString().split('T')[0]);
@@ -11642,9 +11866,18 @@ Safety index and terminal clearance verified. The audit record status has been u
                                         <button
                                             type="button"
                                             onClick={handleDownloadTerminalPDF}
-                                            className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-amber-500 hover:bg-amber-600 text-slate-950 font-black text-[10px] uppercase tracking-wider rounded-lg transition-colors cursor-pointer"
+                                            className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 hover:text-white font-bold text-[10px] uppercase tracking-wider rounded-lg transition-colors cursor-pointer border border-slate-700"
                                         >
-                                            <Download className="w-3.5 h-3.5" /> Export Draft PDF
+                                            <Download className="w-3.5 h-3.5 text-amber-400" /> Export Draft PDF
+                                        </button>
+                                        <button
+                                            type="button"
+                                            onClick={() => handleExportDmreCapaPdf(activeProfile.name, activeProfile.company, activeProfile.standard)}
+                                            id="btn-terminal-export-dmre-capa-pdf"
+                                            className="inline-flex items-center gap-1.5 px-3.5 py-1.5 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 font-black text-[10px] uppercase tracking-wider rounded-lg transition-colors cursor-pointer shadow-md border border-amber-400"
+                                            title="Export SANS & DMRE Statutory Audit Findings & CAPA Report (PDF)"
+                                        >
+                                            <Download className="w-3.5 h-3.5 text-slate-950 stroke-[2.5]" /> Export DMRE CAPA Audit Report (PDF)
                                         </button>
                                     </div>
                                 </div>
