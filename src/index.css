@@ -45,3 +45,19 @@ body {
 .animate-fade-in-up {
   animation: fade-in-up 0.3s ease-out forwards;
 }
+
+/* Print CSS rules for DMRE Audit Reports */
+@media print {
+  body {
+    background-color: #ffffff !important;
+    color: #0f172a !important;
+  }
+  header, nav, button, footer, .no-print {
+    display: none !important;
+  }
+  .printable-report {
+    display: block !important;
+    width: 100% !important;
+    color: #000000 !important;
+  }
+}
