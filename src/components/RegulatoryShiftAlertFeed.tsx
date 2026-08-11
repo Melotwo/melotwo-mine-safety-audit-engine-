@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { ShieldAlert, AlertTriangle, CheckCircle2, Info, ChevronDown, ChevronUp, FileText, Sparkles, Clock, ArrowRight, ShieldCheck, Zap, Activity, Check } from 'lucide-react';
+import { ShieldAlert, AlertTriangle, CheckCircle2, Info, ChevronDown, ChevronUp, FileText, Sparkles, Clock, ArrowRight, ShieldCheck, Zap, Activity, Check, XCircle } from 'lucide-react';
 
 export interface RegulatoryAlert {
   id: string;
