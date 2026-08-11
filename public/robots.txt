@@ -1,0 +1,10 @@
+# MeloTwo Safety Engine Robots Configuration
+User-agent: *
+Allow: /
+Disallow: /api/
+
+# Search Engine Sitemaps
+Sitemap: https://melotwo.com/sitemap.xml
+
+# Search Engine Indexing Host
+Host: https://melotwo.com
