@@ -772,6 +772,69 @@ The JSON object must have exactly these keys:
   }
 });
 
+// IndexNow API Endpoint - trigger instant submission to Bing and IndexNow engines
+app.all(['/api/seo/indexnow', '/api/indexnow'], async (req, res) => {
+  try {
+    const host = 'melotwo.com';
+    const key = 'd38e21a4f3b7405e81c7e999c0a1b2c3';
+    const keyLocation = 'https://melotwo.com/d38e21a4f3b7405e81c7e999c0a1b2c3.txt';
+    const urlList = req.body?.urlList || [
+      'https://melotwo.com/',
+      'https://melotwo.com/solutions',
+      'https://melotwo.com/inspector',
+      'https://melotwo.com/academy',
+      'https://melotwo.com/handover',
+      'https://melotwo.com/outreach'
+    ];
+
+    const payload = {
+      host,
+      key,
+      keyLocation,
+      urlList
+    };
+
+    // Forward to IndexNow API (Bing / IndexNow protocol)
+    const indexNowResponse = await fetch('https://api.indexnow.org/indexnow', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json; charset=utf-8' },
+      body: JSON.stringify(payload)
+    });
+
+    const status = indexNowResponse.status;
+    res.json({
+      success: status === 200 || status === 202,
+      statusCode: status,
+      message: status === 200 ? 'IndexNow submitted successfully' : status === 202 ? 'IndexNow request accepted' : `IndexNow returned status ${status}`,
+      submittedUrls: urlList,
+      payload
+    });
+  } catch (err: any) {
+    res.status(500).json({ error: err.message || 'Failed to trigger IndexNow protocol' });
+  }
+});
+
+// Explicit Static Routes for Webmaster Tools & IndexNow Verification
+app.get('/robots.txt', (req, res) => {
+  res.type('text/plain');
+  res.sendFile(path.join(process.cwd(), 'public', 'robots.txt'));
+});
+
+app.get('/sitemap.xml', (req, res) => {
+  res.type('application/xml');
+  res.sendFile(path.join(process.cwd(), 'public', 'sitemap.xml'));
+});
+
+app.get('/BingSiteAuth.xml', (req, res) => {
+  res.type('application/xml');
+  res.sendFile(path.join(process.cwd(), 'public', 'BingSiteAuth.xml'));
+});
+
+app.get(['/d38e21a4f3b7405e81c7e999c0a1b2c3.txt', '/indexnow-key.txt'], (req, res) => {
+  res.type('text/plain');
+  res.sendFile(path.join(process.cwd(), 'public', 'd38e21a4f3b7405e81c7e999c0a1b2c3.txt'));
+});
+
 // Configure Vite middleware or static serving
 async function setupServer() {
   if (process.env.NODE_ENV !== 'production') {
