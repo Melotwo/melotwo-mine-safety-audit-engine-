@@ -12,3 +12,9 @@ export interface AuditRecord {
   status: string;
   standard: string;
 }
+
+export interface DailyComplianceData {
+  date: string;
+  complianceScore: number;
+  flaggedIncidents: number;
+}
