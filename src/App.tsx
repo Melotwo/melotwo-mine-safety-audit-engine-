@@ -8574,6 +8574,7 @@ export const WorkplaceHazardMatrix: React.FC<WorkplaceHazardMatrixProps> = ({
   const [selectedCategoryTab, setSelectedCategoryTab] = useState<'all' | 'high_risk' | 'flagged' | 'elec_mech' | 'transport' | 'env_fire'>('all');
   const [isMatrixCollapsed, setIsMatrixCollapsed] = useState(true);
   const [isAlertMinimized, setIsAlertMinimized] = useState(false);
+  const [isBannerDismissed, setIsBannerDismissed] = useState(false);
 
   const flaggedHazards = HAZARD_CATEGORIES.filter(h => hazardStates[h.id] && hazardStates[h.id] !== 'pass');
 
@@ -8914,7 +8915,7 @@ export const WorkplaceHazardMatrix: React.FC<WorkplaceHazardMatrixProps> = ({
         </div>
       )}
 
-      {flaggedHazards.length > 0 && (
+      {flaggedHazards.length > 0 && !isBannerDismissed && (
         <div className="bg-gradient-to-r from-rose-950/40 via-amber-950/30 to-slate-950 border border-rose-500/40 rounded-2xl p-4 md:p-5 text-white space-y-3 shadow-xl animate-fadeIn max-w-full overflow-hidden">
           <div className="flex flex-wrap items-center justify-between gap-2.5 w-full">
             <div className="flex items-center gap-2.5 min-w-0 flex-1">
@@ -8940,7 +8941,14 @@ export const WorkplaceHazardMatrix: React.FC<WorkplaceHazardMatrixProps> = ({
                 className="p-1 text-xs text-rose-300 hover:text-white bg-rose-950/80 border border-rose-800 rounded-lg transition-all cursor-pointer"
                 title={isAlertMinimized ? "Expand Warning Details" : "Minimize / Collapse Alert"}
               >
-                {isAlertMinimized ? <Eye className="w-3.5 h-3.5 text-rose-300" /> : <EyeOff className="w-3.5 h-3.5 text-rose-300" />}
+                {isAlertMinimized ? <ChevronDown className="w-3.5 h-3.5 text-rose-300" /> : <ChevronUp className="w-3.5 h-3.5 text-rose-300" />}
+              </button>
+              <button
+                onClick={() => setIsBannerDismissed(true)}
+                className="p-1 text-xs text-rose-300 hover:text-white bg-rose-950/80 border border-rose-800 rounded-lg transition-all cursor-pointer"
+                title="Dismiss Warning Banner"
+              >
+                <XCircle className="w-3.5 h-3.5 text-rose-300 hover:text-rose-100" />
               </button>
             </div>
           </div>
@@ -9248,7 +9256,7 @@ export const handleExportDmreCapaPdf = (
         docPdf.setFontSize(9.5);
         docPdf.setFont('helvetica', 'bold');
         docPdf.setTextColor(complianceScore >= 85 ? 52 : (complianceScore >= 65 ? 251 : 252), complianceScore >= 85 ? 211 : (complianceScore >= 65 ? 191 : 165), complianceScore >= 85 ? 153 : (complianceScore >= 65 ? 36 : 165));
-        docPdf.text(`LIVE AUDIT COMPLIANCE SCORE: ${complianceScore}% — STATUS: ${scoreStatusLabel.toUpperCase()}`, 18, yPos + 8);
+        docPdf.text(`LIVE AUDIT COMPLIANCE SCORE: ${complianceScore}% - STATUS: ${scoreStatusLabel.toUpperCase()}`, 18, yPos + 8);
 
         docPdf.setFontSize(8);
         docPdf.setFont('helvetica', 'normal');
@@ -9382,30 +9390,64 @@ export const handleExportDmreCapaPdf = (
             yPos += 6;
         });
 
-        // 6. Signature Block
-        yPos += 10;
-        if (yPos + 35 > 270) {
+        // 6. Explicit Dual Signature & Statutory Duty-Bearer Sign-off Schema
+        yPos += 8;
+        if (yPos + 48 > 270) {
             docPdf.addPage();
             docPdf.setFillColor(15, 23, 42);
             docPdf.rect(0, 0, pageW, pageH, 'F');
             yPos = 20;
         }
 
-        docPdf.setDrawColor(100, 116, 139);
+        // Frame Container Box
+        docPdf.setFillColor(30, 41, 59);
+        docPdf.setDrawColor(71, 85, 105);
         docPdf.setLineWidth(0.5);
-        docPdf.line(18, yPos + 15, 88, yPos + 15);
-        docPdf.line(120, yPos + 15, 190, yPos + 15);
+        docPdf.roundedRect(12, yPos, 186, 42, 3, 3, 'FD');
+
+        docPdf.setFontSize(9);
+        docPdf.setFont('helvetica', 'bold');
+        docPdf.setTextColor(245, 158, 11);
+        docPdf.text('STATUTORY DUAL CAPA SIGN-OFF & LEGAL RESPONSIBILITY ASSIGNMENT', 18, yPos + 7);
+
+        // Box 1: Field Inspector / Safety Officer Signature Block
+        docPdf.setFillColor(15, 23, 42);
+        docPdf.setDrawColor(51, 65, 85);
+        docPdf.roundedRect(16, yPos + 11, 86, 27, 2, 2, 'FD');
 
         docPdf.setFontSize(8);
         docPdf.setFont('helvetica', 'bold');
+        docPdf.setTextColor(255, 255, 255);
+        docPdf.text('1. FIELD INSPECTOR / SAFETY OFFICER', 20, yPos + 16);
+
+        docPdf.setFont('helvetica', 'normal');
+        docPdf.setFontSize(7.5);
         docPdf.setTextColor(148, 163, 184);
-        docPdf.text('Inspector / Auditor (Log & Evidence Capture)', 18, yPos + 20);
-        docPdf.text('Section 3.1(a) Mine Manager / GCC Engineer (Duty-Bearer CAPA Sign-off)', 115, yPos + 20);
+        docPdf.text('Name & ID: ______________________', 20, yPos + 22);
+        docPdf.text('Signature: _______________________', 20, yPos + 27);
+        docPdf.text(`Date & Time: ${timestamp.split(',')[0]}`, 20, yPos + 32);
+
+        // Box 2: Section 3.1(a) Mine Manager / GCC Engineer Statutory Block
+        docPdf.setFillColor(15, 23, 42);
+        docPdf.setDrawColor(245, 158, 11); // Amber border for duty-bearer
+        docPdf.roundedRect(108, yPos + 11, 86, 27, 2, 2, 'FD');
+
+        docPdf.setFontSize(8);
+        docPdf.setFont('helvetica', 'bold');
+        docPdf.setTextColor(245, 158, 11);
+        docPdf.text('2. SEC 3.1(a) MINE MANAGER / GCC ENGINEER', 112, yPos + 16);
+
+        docPdf.setFont('helvetica', 'normal');
+        docPdf.setFontSize(7.5);
+        docPdf.setTextColor(148, 163, 184);
+        docPdf.text('Statutory Duty-Bearer: _______________', 112, yPos + 22);
+        docPdf.text('CAPA Authorization Signature: ________', 112, yPos + 27);
+        docPdf.text('DMRE Approval Stamp: [ OFFICIAL STAMP ]', 112, yPos + 32);
 
         docPdf.setFontSize(7);
         docPdf.setFont('helvetica', 'normal');
         docPdf.setTextColor(100, 116, 139);
-        docPdf.text('MeloTwo Safety Engine • Automated DMRE CAPA Audit Report • Confidential Statutory Document', 18, 288);
+        docPdf.text('MeloTwo Safety Engine - Automated DMRE CAPA Audit Report - Confidential Statutory Document', 18, 288);
 
         docPdf.save(`DMRE_CAPA_Audit_Report_${savedSector}_${Date.now()}.pdf`);
     } catch (err) {
