@@ -16,6 +16,8 @@ import { ShiftHandoverAssistant } from './components/ShiftHandoverAssistant';
 import { RegulatoryShiftAlertFeed } from './components/RegulatoryShiftAlertFeed';
 import { Database, RefreshCw, Upload, LogOut, Sparkles, CheckCircle2, AlertOctagon, Download, ChevronRight, Lock, Terminal, Minimize2, Maximize2, Activity, Scale, Globe, CheckCircle, Target, ShieldAlert, ArrowRight, Check, Truck, Info, RotateCcw, Sliders, XCircle, Building2, MapPin, ChevronDown, ChevronUp, EyeOff, Filter, Layers } from 'lucide-react';
 import jsPDF from 'jspdf';
+import { sanitizeInputText } from './utils/sanitizer';
+import { DailyComplianceData } from './types';
 
 import { ErrorBoundary } from './components/ErrorBoundary';
 
