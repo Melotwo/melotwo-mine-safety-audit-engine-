@@ -504,7 +504,7 @@ Each object in the array must have exactly these fields:
     }
 
     // Fallback: Client/Server local hybrid semantic similarity search
-    const queryTerms = lowerQuery.split(/\s+/).filter(t => t.length > 2);
+    const queryTerms = lowerQuery.split(/\s+/).filter((t: string) => t.length > 2);
     const expandedTerms = new Set<string>([...queryTerms]);
 
     // Expand search query with synonyms
