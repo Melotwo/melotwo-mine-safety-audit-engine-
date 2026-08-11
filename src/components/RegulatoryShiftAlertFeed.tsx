@@ -166,6 +166,8 @@ export const RegulatoryShiftAlertFeed: React.FC<RegulatoryShiftAlertFeedProps> =
   const [expandedDetailsId, setExpandedDetailsId] = useState<string | null>(null);
   const [currentAlertIndex, setCurrentAlertIndex] = useState(0);
   const [copiedNotification, setCopiedNotification] = useState(false);
+  const [isMinimized, setIsMinimized] = useState(false);
+  const [isDismissed, setIsDismissed] = useState(false);
 
   // Sector alerts
   const alerts = REGULATORY_SHIFTS_DATA[selectedSector] || REGULATORY_SHIFTS_DATA.mining;
@@ -176,6 +178,10 @@ export const RegulatoryShiftAlertFeed: React.FC<RegulatoryShiftAlertFeedProps> =
     setCurrentAlertIndex(0);
     setExpandedDetailsId(null);
   }, [selectedSector]);
+
+  if (isDismissed) {
+    return null;
+  }
 
   const isAcknowledged = !!acknowledgedIds[currentAlert.id];
 
@@ -257,11 +263,29 @@ export const RegulatoryShiftAlertFeed: React.FC<RegulatoryShiftAlertFeedProps> =
           <span className="text-[10px] text-slate-400 bg-slate-950 px-2 py-0.5 rounded border border-slate-800 hidden sm:inline-block">
             {currentAlert.effectiveDate}
           </span>
+
+          <div className="flex items-center gap-1.5 ml-1 border-l border-slate-800 pl-2">
+            <button
+              onClick={() => setIsMinimized(!isMinimized)}
+              className="p-1 text-slate-400 hover:text-white bg-slate-950 border border-slate-800 rounded-lg transition-all cursor-pointer"
+              title={isMinimized ? "Expand Warning Banner" : "Minimize / Collapse Alert"}
+            >
+              {isMinimized ? <ChevronDown className="w-3.5 h-3.5 text-amber-400" /> : <ChevronUp className="w-3.5 h-3.5 text-amber-400" />}
+            </button>
+            <button
+              onClick={() => setIsDismissed(true)}
+              className="p-1 text-slate-400 hover:text-white bg-slate-950 border border-slate-800 rounded-lg transition-all cursor-pointer"
+              title="Dismiss Regulatory Alert Banner"
+            >
+              <XCircle className="w-3.5 h-3.5 text-slate-400 hover:text-rose-400" />
+            </button>
+          </div>
         </div>
       </div>
 
       {/* Main Alert Banner Content */}
-      <div className="pt-3.5">
+      {!isMinimized && (
+        <div className="pt-3.5">
         <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
           <div className="flex-1 space-y-1">
             <div className="flex items-start gap-2">
@@ -379,6 +403,7 @@ export const RegulatoryShiftAlertFeed: React.FC<RegulatoryShiftAlertFeedProps> =
           </div>
         )}
       </div>
+      )}
     </div>
   );
 };
