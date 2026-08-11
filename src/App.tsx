@@ -8572,7 +8572,7 @@ export const WorkplaceHazardMatrix: React.FC<WorkplaceHazardMatrixProps> = ({
 
   const [copiedNotification, setCopiedNotification] = useState(false);
   const [selectedCategoryTab, setSelectedCategoryTab] = useState<'all' | 'high_risk' | 'flagged' | 'elec_mech' | 'transport' | 'env_fire'>('all');
-  const [isMatrixCollapsed, setIsMatrixCollapsed] = useState(false);
+  const [isMatrixCollapsed, setIsMatrixCollapsed] = useState(true);
   const [isAlertMinimized, setIsAlertMinimized] = useState(false);
 
   const flaggedHazards = HAZARD_CATEGORIES.filter(h => hazardStates[h.id] && hazardStates[h.id] !== 'pass');
@@ -9721,7 +9721,7 @@ export const SafetyInspectorPage: React.FC<SafetyInspectorPageProps> = ({ setPag
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [showIsoCrossMap, setShowIsoCrossMap] = useState<boolean>(false);
-    const [isChecklistCollapsed, setIsChecklistCollapsed] = useState<boolean>(false);
+    const [isChecklistCollapsed, setIsChecklistCollapsed] = useState<boolean>(true);
 
     const [selectedRcaLog, setSelectedRcaLog] = useState<any | null>(null);
     const [selectedRcaLog2, setSelectedRcaLog2] = useState<any | null>(null);
@@ -10993,33 +10993,33 @@ Safety index and terminal clearance verified. The audit record status has been u
 
                     {/* Google OAuth Profile & Sync State Controls */}
                     <div className="flex flex-wrap items-center gap-3">
-                        {/* UI View Mode Switcher: Inspector View vs Manager View */}
-                        <div className="flex items-center gap-1 bg-slate-950 p-1 rounded-2xl border border-slate-800 shadow-inner">
+                        {/* UI View Mode Switcher: Field Inspector View vs Mine Manager / Duty-Bearer View */}
+                        <div className="flex items-center gap-1 bg-slate-950 p-1.5 rounded-2xl border border-slate-800 shadow-inner">
                             <button
                                 type="button"
                                 onClick={() => setViewMode('inspector')}
-                                className={`px-3 py-1.5 rounded-xl text-[10px] font-bold uppercase tracking-wider transition-all cursor-pointer flex items-center gap-1.5 ${
+                                className={`px-3.5 py-2 rounded-xl text-[10px] font-bold uppercase tracking-wider transition-all cursor-pointer flex items-center gap-1.5 ${
                                     viewMode === 'inspector'
-                                        ? 'bg-amber-500 text-slate-950 font-black shadow-md'
-                                        : 'text-slate-400 hover:text-slate-200'
+                                        ? 'bg-amber-500 text-slate-950 font-black shadow-lg shadow-amber-500/10'
+                                        : 'text-slate-400 hover:text-slate-200 hover:bg-slate-900'
                                 }`}
-                                title="Inspector View: Show full granular prompt engineering console & system directives"
+                                title="Field Inspector View: Fast field logging, photo capture, hazard Pass/Critical tagging, and SANS sector checklist"
                             >
                                 <Shield className="w-3.5 h-3.5" />
-                                <span>Inspector View</span>
+                                <span>Field Inspector View</span>
                             </button>
                             <button
                                 type="button"
                                 onClick={() => setViewMode('manager')}
-                                className={`px-3 py-1.5 rounded-xl text-[10px] font-bold uppercase tracking-wider transition-all cursor-pointer flex items-center gap-1.5 ${
+                                className={`px-3.5 py-2 rounded-xl text-[10px] font-bold uppercase tracking-wider transition-all cursor-pointer flex items-center gap-1.5 ${
                                     viewMode === 'manager'
-                                        ? 'bg-indigo-600 text-white font-black shadow-md'
-                                        : 'text-slate-400 hover:text-slate-200'
+                                        ? 'bg-indigo-600 text-white font-black shadow-lg shadow-indigo-600/20'
+                                        : 'text-slate-400 hover:text-slate-200 hover:bg-slate-900'
                                 }`}
-                                title="Manager View: Hide granular prompt engineering console to reduce UI clutter"
+                                title="Mine Manager / Duty-Bearer View: High-level risk heatmaps, CAPA sign-offs, statutory risk penalties, and DMRE report generation"
                             >
                                 <Briefcase className="w-3.5 h-3.5" />
-                                <span>Manager View</span>
+                                <span>Mine Manager / Duty-Bearer View</span>
                             </button>
                         </div>
 
@@ -11177,60 +11177,62 @@ Safety index and terminal clearance verified. The audit record status has been u
                     </div>
                 </div>
 
-                {/* Metric Cards Bento Grid */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
-                    {/* Card 1: Total Audits */}
-                    <div className="bg-slate-900 border border-slate-800/80 rounded-2xl p-5 hover:border-slate-700 transition-all flex items-center justify-between">
-                        <div>
-                            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Total Audits Synced</span>
-                            <span className="text-3xl font-black text-white mt-1 block">
-                                <CountUp end={totalAudits} />
-                            </span>
+                {/* Metric Cards Bento Grid (Mine Manager / Duty-Bearer View Only) */}
+                {viewMode === 'manager' && (
+                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 animate-fade-in">
+                        {/* Card 1: Total Audits */}
+                        <div className="bg-slate-900 border border-slate-800/80 rounded-2xl p-5 hover:border-slate-700 transition-all flex items-center justify-between">
+                            <div>
+                                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Total Audits Synced</span>
+                                <span className="text-3xl font-black text-white mt-1 block">
+                                    <CountUp end={totalAudits} />
+                                </span>
+                            </div>
+                            <div className="w-12 h-12 bg-indigo-500/10 border border-indigo-500/20 rounded-xl flex items-center justify-center text-indigo-400">
+                                <Database className="w-6 h-6" />
+                            </div>
                         </div>
-                        <div className="w-12 h-12 bg-indigo-500/10 border border-indigo-500/20 rounded-xl flex items-center justify-center text-indigo-400">
-                            <Database className="w-6 h-6" />
-                        </div>
-                    </div>
 
-                    {/* Card 2: Critical Hazards */}
-                    <div className="bg-slate-900 border border-slate-800/80 rounded-2xl p-5 hover:border-slate-700 transition-all flex items-center justify-between">
-                        <div>
-                            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Critical Hazards</span>
-                            <span className="text-3xl font-black text-rose-400 mt-1 block">
-                                <CountUp end={criticalHazards} />
-                            </span>
+                        {/* Card 2: Critical Hazards */}
+                        <div className="bg-slate-900 border border-slate-800/80 rounded-2xl p-5 hover:border-slate-700 transition-all flex items-center justify-between">
+                            <div>
+                                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Critical Hazards</span>
+                                <span className="text-3xl font-black text-rose-400 mt-1 block">
+                                    <CountUp end={criticalHazards} />
+                                </span>
+                            </div>
+                            <div className="w-12 h-12 bg-rose-500/10 border border-rose-500/20 rounded-xl flex items-center justify-center text-rose-400">
+                                <Flame className="w-6 h-6 animate-pulse" />
+                            </div>
                         </div>
-                        <div className="w-12 h-12 bg-rose-500/10 border border-rose-500/20 rounded-xl flex items-center justify-center text-rose-400">
-                            <Flame className="w-6 h-6 animate-pulse" />
-                        </div>
-                    </div>
 
-                    {/* Card 3: Safety Index */}
-                    <div className="bg-slate-900 border border-slate-800/80 rounded-2xl p-5 hover:border-slate-700 transition-all flex items-center justify-between">
-                        <div>
-                            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Site Safety Index</span>
-                            <span className="text-3xl font-black text-amber-500 mt-1 block">
-                                {averageSafetyIndex}%
-                            </span>
+                        {/* Card 3: Safety Index */}
+                        <div className="bg-slate-900 border border-slate-800/80 rounded-2xl p-5 hover:border-slate-700 transition-all flex items-center justify-between">
+                            <div>
+                                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Site Safety Index</span>
+                                <span className="text-3xl font-black text-amber-500 mt-1 block">
+                                    {averageSafetyIndex}%
+                                </span>
+                            </div>
+                            <div className="w-12 h-12 bg-amber-500/10 border border-amber-500/20 rounded-xl flex items-center justify-center text-amber-500">
+                                <Shield className="w-6 h-6" />
+                            </div>
                         </div>
-                        <div className="w-12 h-12 bg-amber-500/10 border border-amber-500/20 rounded-xl flex items-center justify-center text-amber-500">
-                            <Shield className="w-6 h-6" />
-                        </div>
-                    </div>
 
-                    {/* Card 4: Active Operators */}
-                    <div className="bg-slate-900 border border-slate-800/80 rounded-2xl p-5 hover:border-slate-700 transition-all flex items-center justify-between">
-                        <div>
-                            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Active Operators</span>
-                            <span className="text-3xl font-black text-white mt-1 block">
-                                <CountUp end={activeOperators} />
-                            </span>
-                        </div>
-                        <div className="w-12 h-12 bg-emerald-500/10 border border-emerald-500/20 rounded-xl flex items-center justify-center text-emerald-400">
-                            <User className="w-6 h-6" />
+                        {/* Card 4: Active Operators */}
+                        <div className="bg-slate-900 border border-slate-800/80 rounded-2xl p-5 hover:border-slate-700 transition-all flex items-center justify-between">
+                            <div>
+                                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Active Operators</span>
+                                <span className="text-3xl font-black text-white mt-1 block">
+                                    <CountUp end={activeOperators} />
+                                </span>
+                            </div>
+                            <div className="w-12 h-12 bg-emerald-500/10 border border-emerald-500/20 rounded-xl flex items-center justify-center text-emerald-400">
+                                <User className="w-6 h-6" />
+                            </div>
                         </div>
                     </div>
-                </div>
+                )}
 
                 {/* Main Operations Bento Grid */}
                 <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start w-full">
@@ -11238,8 +11240,10 @@ Safety index and terminal clearance verified. The audit record status has been u
                     {/* Left Operations: Document Parser & Parameters reviewer (6 Cols) */}
                     <div className="lg:col-span-6 flex flex-col gap-6 w-full min-w-0">
                         
-                        {/* Terminal Document & AI Vision Scanner */}
-                        <div className="bg-slate-900 border border-slate-800 rounded-3xl p-6 backdrop-blur-xl flex flex-col gap-5">
+                        {/* Terminal Document & AI Vision Scanner (Field Inspector View Only) */}
+                        {viewMode === 'inspector' && (
+                            <>
+                                <div className="bg-slate-900 border border-slate-800 rounded-3xl p-6 backdrop-blur-xl flex flex-col gap-5">
                             <div className="flex flex-col sm:flex-row sm:items-center justify-between border-b border-slate-800/80 pb-3 gap-3">
                                 <h3 className="text-sm font-bold text-white uppercase tracking-wider flex items-center gap-2">
                                     <Cpu className="w-4 h-4 text-amber-500" />
@@ -11610,6 +11614,8 @@ Safety index and terminal clearance verified. The audit record status has been u
                                 </div>
                             </div>
                         )}
+                            </>
+                        )}
 
                         {/* Active Operational Shaft / Site Selection Bar */}
                         <div className="bg-slate-900 border border-amber-500/30 rounded-3xl p-6 backdrop-blur-xl shadow-2xl space-y-4" id="auditing-terminal-site-selector-bar">
@@ -11719,8 +11725,8 @@ Safety index and terminal clearance verified. The audit record status has been u
                             </div>
                         </div>
 
-                        {/* Feature 5: Real-Time Audit Compliance Score & Statutory Audit Frequency Warning Badge */}
-                        {(() => {
+                        {/* Feature 5: Real-Time Audit Compliance Score & Statutory Audit Frequency Warning Badge (Mine Manager View) */}
+                        {viewMode === 'manager' && (() => {
                             const isStatutoryOverdue = activeSite.nextInspectionDaysDue < 0;
                             const overdueDays = Math.abs(activeSite.nextInspectionDaysDue);
                             const statutoryPenalty = isStatutoryOverdue ? 15 : 0;
@@ -11745,7 +11751,7 @@ Safety index and terminal clearance verified. The audit record status has been u
                             }
 
                             return (
-                                <div className="grid grid-cols-1 lg:grid-cols-3 gap-4" id="realtime-compliance-score-section">
+                                <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 animate-fade-in" id="realtime-compliance-score-section">
                                     {/* Dynamic Compliance Score Gauge Card */}
                                     <div className="lg:col-span-2 bg-slate-900 border border-slate-800 rounded-3xl p-6 backdrop-blur-xl shadow-2xl space-y-4 relative overflow-hidden">
                                         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-800/80 pb-3.5">
@@ -11870,16 +11876,19 @@ Safety index and terminal clearance verified. The audit record status has been u
                             );
                         })()}
 
-                        {/* Digital Workplace Risk Assessment Matrix */}
-                        <WorkplaceHazardMatrix
-                            onHazardStateChange={(_states, criticalCount, penalty) => {
-                                setMatrixCriticalCount(criticalCount);
-                                setMatrixScorePenalty(penalty);
-                            }}
-                            onApplyCorrectiveActions={(actionsSummary) => {
-                                setParsedNotes(prev => prev ? `${prev}\n\n${actionsSummary}` : actionsSummary);
-                            }}
-                        />
+                        {/* Field Inspector Data Entry Suite (Inspector View Only) */}
+                        {viewMode === 'inspector' && (
+                            <>
+                                {/* Digital Workplace Risk Assessment Matrix */}
+                                <WorkplaceHazardMatrix
+                                    onHazardStateChange={(_states, criticalCount, penalty) => {
+                                        setMatrixCriticalCount(criticalCount);
+                                        setMatrixScorePenalty(penalty);
+                                    }}
+                                    onApplyCorrectiveActions={(actionsSummary) => {
+                                        setParsedNotes(prev => prev ? `${prev}\n\n${actionsSummary}` : actionsSummary);
+                                    }}
+                                />
 
                         {/* SANS Compliance Standards Checklist Card (Collapsible Accordion) */}
                         <div className="bg-slate-900 border border-slate-800 rounded-3xl p-6 backdrop-blur-xl flex flex-col gap-4">
@@ -12448,6 +12457,8 @@ Safety index and terminal clearance verified. The audit record status has been u
                                 </div>
                             )}
                         </div>
+                            </>
+                        )}
 
                     </div>
 
