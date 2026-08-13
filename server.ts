@@ -772,6 +772,30 @@ The JSON object must have exactly these keys:
   }
 });
 
+// Offline Sync API endpoint - processes field logs submitted from IndexedDB when network connectivity is restored
+app.post('/api/audit/sync', (req, res) => {
+  try {
+    const isOfflineSync = req.headers['x-melotwo-offline-sync'] === 'true';
+    const syncTimestamp = req.headers['x-melotwo-sync-timestamp'] || Date.now().toString();
+    const payload = req.body || {};
+
+    console.log(`[OfflineSync Server] Received ${isOfflineSync ? 'OFFLINE SYNCED' : 'DIRECT'} audit log payload:`, {
+      timestamp: syncTimestamp,
+      payload
+    });
+
+    res.json({
+      success: true,
+      status: 'LOG_RECORDED',
+      syncTimestamp: Number(syncTimestamp),
+      processedAt: Date.now(),
+      receiptId: `M2-SYNC-${Date.now()}-${Math.floor(Math.random() * 10000)}`
+    });
+  } catch (err: any) {
+    res.status(500).json({ success: false, error: err.message || 'Failed to process offline sync payload' });
+  }
+});
+
 // IndexNow API Endpoint - trigger instant submission to Bing and IndexNow engines
 app.all(['/api/seo/indexnow', '/api/indexnow'], async (req, res) => {
   try {
