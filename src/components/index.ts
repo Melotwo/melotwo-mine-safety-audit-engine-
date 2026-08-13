@@ -7,3 +7,4 @@ export * from './ComplianceFAQ';
 export * from './AuthoritySection';
 export * from './CaseStudySection';
 export * from './ReviewSection';
+export * from './CalculateSiteCostModal';
