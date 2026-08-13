@@ -8,6 +8,7 @@ interface NavbarProps {
   userId?: string | null;
   isAuthReady?: boolean;
   onGetStarted?: () => void;
+  onOpenCostCalculator?: () => void;
 }
 
 export const Navbar: React.FC<NavbarProps> = ({
@@ -15,7 +16,8 @@ export const Navbar: React.FC<NavbarProps> = ({
   setPage,
   userId,
   isAuthReady,
-  onGetStarted
+  onGetStarted,
+  onOpenCostCalculator
 }) => {
   return (
     <nav className="bg-slate-900 border-b border-slate-800 px-6 py-4 text-white">
@@ -27,7 +29,7 @@ export const Navbar: React.FC<NavbarProps> = ({
           </span>
         </div>
         
-        <div className="flex items-center space-x-6">
+        <div className="flex items-center space-x-4 md:space-x-6">
           <button
             onClick={() => setPage('home')}
             className={`text-sm font-medium transition-colors hover:text-indigo-400 ${
@@ -78,6 +80,17 @@ export const Navbar: React.FC<NavbarProps> = ({
             <span>Klaviyo Lead Gen</span>
           </button>
 
+          {onOpenCostCalculator && (
+            <button
+              onClick={onOpenCostCalculator}
+              className="text-xs font-bold text-cyan-300 bg-cyan-950/60 border border-cyan-500/40 hover:bg-cyan-900/60 px-3 py-1.5 rounded-lg transition-all flex items-center gap-1.5 shadow-sm"
+              title="Calculate Site Cost for SMBs or Enterprise"
+            >
+              <Icons.Shield className="w-3.5 h-3.5 text-cyan-400" />
+              <span>Calculate Cost</span>
+            </button>
+          )}
+
           {isAuthReady && (
             <div>
               {userId ? (
@@ -100,3 +113,4 @@ export const Navbar: React.FC<NavbarProps> = ({
     </nav>
   );
 };
+
