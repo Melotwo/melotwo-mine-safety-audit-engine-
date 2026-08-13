@@ -9,6 +9,7 @@ interface NavbarProps {
   isAuthReady?: boolean;
   onGetStarted?: () => void;
   onOpenCostCalculator?: () => void;
+  onOpenTenderWizard?: () => void;
 }
 
 export const Navbar: React.FC<NavbarProps> = ({
@@ -17,7 +18,8 @@ export const Navbar: React.FC<NavbarProps> = ({
   userId,
   isAuthReady,
   onGetStarted,
-  onOpenCostCalculator
+  onOpenCostCalculator,
+  onOpenTenderWizard
 }) => {
   return (
     <nav className="bg-slate-900 border-b border-slate-800 px-6 py-4 text-white">
@@ -79,6 +81,17 @@ export const Navbar: React.FC<NavbarProps> = ({
             <Icons.Sparkles className="w-3.5 h-3.5 text-amber-400" />
             <span>Klaviyo Lead Gen</span>
           </button>
+
+          {onOpenTenderWizard && (
+            <button
+              onClick={onOpenTenderWizard}
+              className="text-xs font-bold text-amber-300 bg-amber-950/60 border border-amber-500/40 hover:bg-amber-900/60 px-3 py-1.5 rounded-lg transition-all flex items-center gap-1.5 shadow-sm"
+              title="Generate Tender-Ready Safety File (Once-off R750)"
+            >
+              <Icons.FileSpreadsheet className="w-3.5 h-3.5 text-amber-400" />
+              <span>Tender Safety File</span>
+            </button>
+          )}
 
           {onOpenCostCalculator && (
             <button
