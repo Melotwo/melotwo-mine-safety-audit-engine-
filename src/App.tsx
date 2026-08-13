@@ -18,6 +18,7 @@ import { Database, RefreshCw, Upload, LogOut, Sparkles, CheckCircle2, AlertOctag
 import jsPDF from 'jspdf';
 import { sanitizeInputText } from './utils/sanitizer';
 import { DailyComplianceData } from './types';
+import { useOnlineStatus } from './utils/offlineSync';
 
 import { ErrorBoundary } from './components/ErrorBoundary';
 
@@ -9751,6 +9752,8 @@ export const SafetyInspectorPage: React.FC<SafetyInspectorPageProps> = ({ setPag
     }, []);
 
     // Core states
+    const { isOnline, pendingCount, isSyncing, syncNow: triggerOfflineSync } = useOnlineStatus();
+
     const [viewMode, setViewMode] = useState<'inspector' | 'manager'>(() => {
         return (localStorage.getItem('melotwo_ui_view_mode') as 'inspector' | 'manager') || 'inspector';
     });
@@ -11125,6 +11128,40 @@ Safety index and terminal clearance verified. The audit record status has been u
                                     className="p-1 text-slate-400 hover:text-white hover:bg-slate-800 rounded transition-colors ml-1 cursor-pointer"
                                 >
                                     <RefreshCw className="w-3 h-3" />
+                                </button>
+                            )}
+                        </div>
+
+                        {/* Standalone IndexedDB Offline Sync Status Badge */}
+                        <div className={`flex items-center gap-2 border rounded-xl p-1.5 px-3 transition-colors ${
+                            !isOnline
+                                ? 'bg-amber-950/40 border-amber-500/40 text-amber-300'
+                                : pendingCount > 0
+                                ? 'bg-indigo-950/40 border-indigo-500/40 text-indigo-300'
+                                : 'bg-slate-950 border-slate-800 text-slate-400'
+                        }`}>
+                            <span className={`w-2 h-2 rounded-full ${
+                                !isOnline ? 'bg-amber-500 animate-ping' :
+                                isSyncing ? 'bg-indigo-400 animate-spin' :
+                                pendingCount > 0 ? 'bg-amber-400 animate-pulse' : 'bg-emerald-500'
+                            }`} />
+                            <span className="text-[10px] font-mono uppercase font-bold tracking-wider">
+                                {!isOnline
+                                    ? `Offline (${pendingCount} Pending)`
+                                    : isSyncing
+                                    ? 'Syncing Queue...'
+                                    : pendingCount > 0
+                                    ? `${pendingCount} Pending Sync`
+                                    : 'Engine Online'}
+                            </span>
+                            {isOnline && pendingCount > 0 && (
+                                <button
+                                    onClick={() => triggerOfflineSync()}
+                                    disabled={isSyncing}
+                                    title="Sync Pending Offline Logs Now"
+                                    className="p-1 text-slate-300 hover:text-white hover:bg-slate-800 rounded transition-colors ml-1 cursor-pointer disabled:opacity-50"
+                                >
+                                    <RefreshCw className={`w-3 h-3 ${isSyncing ? 'animate-spin' : ''}`} />
                                 </button>
                             )}
                         </div>
