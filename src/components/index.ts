@@ -9,3 +9,8 @@ export * from './CaseStudySection';
 export * from './ReviewSection';
 export * from './CalculateSiteCostModal';
 export * from './TenderFileWizard';
+export * from './Navbar';
+export * from './Footer';
+export * from './ErrorBoundary';
+export * from './CountUp';
+export * from './Sparkline';
