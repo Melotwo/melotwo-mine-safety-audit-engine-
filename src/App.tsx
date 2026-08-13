@@ -16,8 +16,7 @@ import { ShiftHandoverAssistant } from './components/ShiftHandoverAssistant';
 import { RegulatoryShiftAlertFeed } from './components/RegulatoryShiftAlertFeed';
 import { CalculateSiteCostModal } from './components/CalculateSiteCostModal';
 import { TenderFileWizard } from './components/TenderFileWizard';
-import { Navbar } from './components/Navbar';
-import { Database, RefreshCw, Upload, LogOut, Sparkles, CheckCircle2, AlertOctagon, Download, ChevronRight, Lock, Terminal, Minimize2, Maximize2, Activity, Scale, Globe, CheckCircle, Target, ShieldAlert, ArrowRight, Check, Truck, Info, RotateCcw, Sliders, XCircle, Building2, MapPin, ChevronDown, ChevronUp, EyeOff, Filter, Layers } from 'lucide-react';
+import { Database, RefreshCw, Upload, LogOut, Sparkles, CheckCircle2, AlertOctagon, Download, ChevronRight, Lock, Terminal, Minimize2, Maximize2, Activity, Scale, Globe, CheckCircle, Target, ShieldAlert, ArrowRight, Check, Truck, Info, RotateCcw, Sliders, XCircle, Building2, MapPin, ChevronDown, ChevronUp, EyeOff, Filter, Layers, FileSpreadsheet } from 'lucide-react';
 import jsPDF from 'jspdf';
 import { sanitizeInputText } from './utils/sanitizer';
 import { DailyComplianceData } from './types';
@@ -5549,40 +5548,52 @@ const PromptMetricsDashboard: React.FC = () => {
 interface NavbarProps {
     currentPage: Page;
     setPage: (page: Page) => void;
-    userId: string | null;
-    isAuthReady: boolean;
-    onGetStarted: () => void;
+    userId?: string | null;
+    isAuthReady?: boolean;
+    onGetStarted?: () => void;
+    onOpenCostCalculator?: () => void;
+    onOpenTenderWizard?: () => void;
 }
 
-const AppNavbar: React.FC<NavbarProps> = ({ currentPage, setPage, userId, isAuthReady, onGetStarted }) => {
+const AppNavbar: React.FC<NavbarProps> = ({ 
+    currentPage, 
+    setPage, 
+    userId, 
+    isAuthReady, 
+    onGetStarted,
+    onOpenCostCalculator,
+    onOpenTenderWizard
+}) => {
     const navItems: { name: string; page: Page }[] = [
-        { name: 'Home', page: 'home' },
+        { name: 'Dashboard', page: 'home' },
         { name: 'Solutions', page: 'solutions' },
         { name: 'Auditing Terminal', page: 'inspector' },
+        { name: 'Shift Handover', page: 'handover' },
         { name: 'SHEQ Academy', page: 'academy' },
+        { name: 'Klaviyo Lead Gen', page: 'outreach' },
     ];
 
     return (
-        <header className="sticky top-0 z-40 bg-white/80 backdrop-blur-md border-b border-gray-100 shadow-sm transition-all">
+        <header className="sticky top-0 z-40 bg-slate-900/95 backdrop-blur-md border-b border-slate-800 shadow-md text-white transition-all">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
-                <button onClick={() => setPage('home')} className="flex items-center space-x-2 shrink-0 cursor-pointer" aria-label="Go to homepage">
+                <button onClick={() => setPage('home')} className="flex items-center space-x-3 shrink-0 cursor-pointer" aria-label="Go to homepage">
                     <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-amber-500 to-indigo-600 flex items-center justify-center shadow-md">
                         <Shield className="w-5 h-5 text-white" />
                     </div>
-                    <span className="text-lg font-black tracking-tight text-gray-900 font-sans">
-                        MeloTwo <span className="text-amber-500 font-extrabold text-xs px-2 py-0.5 rounded-full bg-amber-50/80 border border-amber-200">SHEQ</span>
+                    <span className="text-lg font-black tracking-tight text-white font-sans">
+                        MeloTwo <span className="text-amber-400 font-extrabold text-xs px-2 py-0.5 rounded-full bg-amber-950/80 border border-amber-600/60">MINE SAFETY</span>
                     </span>
                 </button>
 
-                <nav className="hidden md:flex space-x-1">
+                <nav className="hidden lg:flex items-center space-x-1">
                     {navItems.map((item) => (
                         <button
                             key={item.page}
                             onClick={() => setPage(item.page)}
-                            className={`px-4 py-2 rounded-xl text-xs font-bold transition cursor-pointer ${
+                            className={`px-3 py-1.5 rounded-xl text-xs font-bold transition cursor-pointer ${
                                 currentPage === item.page
-                                    ? 'bg-indigo-50 text-indigo-700 font-extrabold'
-                                    : 'text-gray-500 hover:text-gray-900 hover:bg-gray-50'
+                                    ? 'bg-indigo-600 text-white font-extrabold shadow-sm'
+                                    : 'text-slate-300 hover:text-white hover:bg-slate-800'
                             }`}
                         >
                             {item.name}
@@ -5590,39 +5601,71 @@ const AppNavbar: React.FC<NavbarProps> = ({ currentPage, setPage, userId, isAuth
                     ))}
                 </nav>
 
-                <div className="flex items-center space-x-3">
-                    {isAuthReady ? (
-                        <div className="inline-flex items-center px-3 py-1.5 bg-gray-50 border border-gray-100 rounded-xl text-xs font-bold text-gray-600 font-mono">
-                            <span className="w-2 h-2 rounded-full bg-green-500 mr-2 animate-pulse"></span>
-                            <span>ID: {userId?.substring(0, 8)}</span>
-                        </div>
-                    ) : (
-                         <div className="h-9 w-32 bg-gray-100 animate-pulse rounded-full"></div>
+                <div className="flex items-center space-x-2 sm:space-x-3">
+                    {onOpenTenderWizard && (
+                        <button
+                            onClick={onOpenTenderWizard}
+                            className="hidden sm:inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold text-amber-300 bg-amber-950/70 border border-amber-500/50 hover:bg-amber-900/70 rounded-xl transition shadow-sm cursor-pointer"
+                            title="Generate Tender-Ready Safety File (Once-off R750)"
+                        >
+                            <FileSpreadsheet className="w-3.5 h-3.5 text-amber-400" />
+                            <span>Tender Safety File</span>
+                        </button>
                     )}
-                    
-                    <button 
-                        onClick={onGetStarted}
-                        className="hidden sm:inline-flex items-center justify-center px-4 py-2 text-sm font-medium text-white bg-indigo-600 border border-transparent rounded-lg shadow-sm hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 cursor-pointer"
-                    >
-                        Get Started
-                    </button>
+
+                    {onOpenCostCalculator && (
+                        <button
+                            onClick={onOpenCostCalculator}
+                            className="hidden md:inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold text-cyan-300 bg-cyan-950/70 border border-cyan-500/50 hover:bg-cyan-900/70 rounded-xl transition shadow-sm cursor-pointer"
+                            title="Calculate Site Cost for SMBs or Enterprise"
+                        >
+                            <Shield className="w-3.5 h-3.5 text-cyan-400" />
+                            <span>Calculate Cost</span>
+                        </button>
+                    )}
+
+                    {isAuthReady ? (
+                        userId ? (
+                            <div className="inline-flex items-center px-3 py-1.5 bg-slate-800 border border-slate-700 rounded-xl text-xs font-bold text-emerald-400 font-mono">
+                                <span className="w-2 h-2 rounded-full bg-emerald-400 mr-2 animate-pulse"></span>
+                                <span>ID: {userId?.substring(0, 8)}</span>
+                            </div>
+                        ) : (
+                            <button 
+                                onClick={onGetStarted}
+                                className="inline-flex items-center justify-center px-3.5 py-1.5 text-xs font-bold text-white bg-indigo-600 border border-transparent rounded-xl shadow-md hover:bg-indigo-500 focus:outline-none cursor-pointer transition"
+                            >
+                                Get Started
+                            </button>
+                        )
+                    ) : (
+                         <div className="h-8 w-24 bg-slate-800 animate-pulse rounded-xl"></div>
+                    )}
                 </div>
             </div>
             {/* Small screen navigation list */}
-            <div className="md:hidden border-t border-gray-100 bg-white/95 flex justify-around py-2 shadow-inner">
+            <div className="lg:hidden border-t border-slate-800 bg-slate-900 px-2 py-2 flex flex-wrap gap-1.5 justify-around shadow-inner">
                 {navItems.map((item) => (
                     <button
                         key={item.page}
                         onClick={() => setPage(item.page)}
-                        className={`px-3 py-1.5 rounded-lg text-xs font-bold transition cursor-pointer ${
+                        className={`px-2.5 py-1 rounded-lg text-xs font-bold transition cursor-pointer ${
                             currentPage === item.page
-                                ? 'bg-indigo-50 text-indigo-700'
-                                : 'text-gray-500 hover:text-gray-900'
+                                ? 'bg-indigo-600 text-white'
+                                : 'text-slate-400 hover:text-white'
                         }`}
                     >
                         {item.name}
                     </button>
                 ))}
+                {onOpenTenderWizard && (
+                    <button
+                        onClick={onOpenTenderWizard}
+                        className="px-2.5 py-1 rounded-lg text-xs font-bold text-amber-300 bg-amber-950 border border-amber-600/60 transition cursor-pointer"
+                    >
+                        Tender File (R750)
+                    </button>
+                )}
             </div>
         </header>
     );
@@ -13612,7 +13655,7 @@ const App: React.FC = () => {
         <ErrorBoundary fallbackTitle="MeloTwo Session Isolated">
             <div className="flex flex-col min-h-screen bg-gray-50 font-sans relative">
                 <ErrorBoundary fallbackTitle="Navigation Bar Recovering...">
-                    <Navbar 
+                    <AppNavbar 
                         currentPage={currentPage} 
                         setPage={setCurrentPage} 
                         userId={userId} 
