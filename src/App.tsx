@@ -14,6 +14,7 @@ import { Footer } from './components/Footer';
 import { TrainingAcademyPage } from './components/TrainingAcademyPage';
 import { ShiftHandoverAssistant } from './components/ShiftHandoverAssistant';
 import { RegulatoryShiftAlertFeed } from './components/RegulatoryShiftAlertFeed';
+import { CalculateSiteCostModal } from './components/CalculateSiteCostModal';
 import { Database, RefreshCw, Upload, LogOut, Sparkles, CheckCircle2, AlertOctagon, Download, ChevronRight, Lock, Terminal, Minimize2, Maximize2, Activity, Scale, Globe, CheckCircle, Target, ShieldAlert, ArrowRight, Check, Truck, Info, RotateCcw, Sliders, XCircle, Building2, MapPin, ChevronDown, ChevronUp, EyeOff, Filter, Layers } from 'lucide-react';
 import jsPDF from 'jspdf';
 import { sanitizeInputText } from './utils/sanitizer';
@@ -13502,6 +13503,7 @@ const App: React.FC = () => {
     const [userId, setUserId] = useState<string | null>(null);
     const [isAuthReady, setIsAuthReady] = useState(false);
     const [isDemoModalOpen, setIsDemoModalOpen] = useState(false);
+    const [isCostModalOpen, setIsCostModalOpen] = useState(false);
     const [demoModalTier, setDemoModalTier] = useState<'professional' | 'enterprise' | 'full_site' | 'audit'>('professional');
 
     useEffect(() => {
@@ -13612,6 +13614,7 @@ const App: React.FC = () => {
                         setPage={setCurrentPage} 
                         userId={userId} 
                         isAuthReady={isAuthReady} 
+                        onOpenCostCalculator={() => setIsCostModalOpen(true)}
                         onGetStarted={() => {
                             setDemoModalTier('professional');
                             setIsDemoModalOpen(true);
@@ -13633,6 +13636,18 @@ const App: React.FC = () => {
                         isOpen={isDemoModalOpen} 
                         onClose={() => setIsDemoModalOpen(false)} 
                         initialTier={demoModalTier}
+                    />
+                </ErrorBoundary>
+
+                <ErrorBoundary fallbackTitle="Cost Calculator Recovering...">
+                    <CalculateSiteCostModal
+                        isOpen={isCostModalOpen}
+                        onClose={() => setIsCostModalOpen(false)}
+                        onStartTrial={() => {
+                            setIsCostModalOpen(false);
+                            setDemoModalTier('professional');
+                            setIsDemoModalOpen(true);
+                        }}
                     />
                 </ErrorBoundary>
             </div>
