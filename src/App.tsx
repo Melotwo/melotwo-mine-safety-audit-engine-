@@ -15,6 +15,8 @@ import { TrainingAcademyPage } from './components/TrainingAcademyPage';
 import { ShiftHandoverAssistant } from './components/ShiftHandoverAssistant';
 import { RegulatoryShiftAlertFeed } from './components/RegulatoryShiftAlertFeed';
 import { CalculateSiteCostModal } from './components/CalculateSiteCostModal';
+import { TenderFileWizard } from './components/TenderFileWizard';
+import { Navbar } from './components/Navbar';
 import { Database, RefreshCw, Upload, LogOut, Sparkles, CheckCircle2, AlertOctagon, Download, ChevronRight, Lock, Terminal, Minimize2, Maximize2, Activity, Scale, Globe, CheckCircle, Target, ShieldAlert, ArrowRight, Check, Truck, Info, RotateCcw, Sliders, XCircle, Building2, MapPin, ChevronDown, ChevronUp, EyeOff, Filter, Layers } from 'lucide-react';
 import jsPDF from 'jspdf';
 import { sanitizeInputText } from './utils/sanitizer';
@@ -13504,6 +13506,7 @@ const App: React.FC = () => {
     const [isAuthReady, setIsAuthReady] = useState(false);
     const [isDemoModalOpen, setIsDemoModalOpen] = useState(false);
     const [isCostModalOpen, setIsCostModalOpen] = useState(false);
+    const [isTenderWizardOpen, setIsTenderWizardOpen] = useState(false);
     const [demoModalTier, setDemoModalTier] = useState<'professional' | 'enterprise' | 'full_site' | 'audit'>('professional');
 
     useEffect(() => {
@@ -13609,12 +13612,13 @@ const App: React.FC = () => {
         <ErrorBoundary fallbackTitle="MeloTwo Session Isolated">
             <div className="flex flex-col min-h-screen bg-gray-50 font-sans relative">
                 <ErrorBoundary fallbackTitle="Navigation Bar Recovering...">
-                    <AppNavbar 
+                    <Navbar 
                         currentPage={currentPage} 
                         setPage={setCurrentPage} 
                         userId={userId} 
                         isAuthReady={isAuthReady} 
                         onOpenCostCalculator={() => setIsCostModalOpen(true)}
+                        onOpenTenderWizard={() => setIsTenderWizardOpen(true)}
                         onGetStarted={() => {
                             setDemoModalTier('professional');
                             setIsDemoModalOpen(true);
@@ -13648,6 +13652,13 @@ const App: React.FC = () => {
                             setDemoModalTier('professional');
                             setIsDemoModalOpen(true);
                         }}
+                    />
+                </ErrorBoundary>
+
+                <ErrorBoundary fallbackTitle="Tender Safety File Recovering...">
+                    <TenderFileWizard
+                        isOpen={isTenderWizardOpen}
+                        onClose={() => setIsTenderWizardOpen(false)}
                     />
                 </ErrorBoundary>
             </div>
