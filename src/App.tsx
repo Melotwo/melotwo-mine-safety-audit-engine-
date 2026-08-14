@@ -16,6 +16,8 @@ import { ShiftHandoverAssistant } from './components/ShiftHandoverAssistant';
 import { RegulatoryShiftAlertFeed } from './components/RegulatoryShiftAlertFeed';
 import { CalculateSiteCostModal } from './components/CalculateSiteCostModal';
 import { TenderFileWizard } from './components/TenderFileWizard';
+import { WhatsAppChatButton } from './components/WhatsAppChatButton';
+import { LinkedInToastNotification } from './components/LinkedInToastNotification';
 import { Database, RefreshCw, Upload, LogOut, Sparkles, CheckCircle2, AlertOctagon, Download, ChevronRight, Lock, Terminal, Minimize2, Maximize2, Activity, Scale, Globe, CheckCircle, Target, ShieldAlert, ArrowRight, Check, Truck, Info, RotateCcw, Sliders, XCircle, Building2, MapPin, ChevronDown, ChevronUp, EyeOff, Filter, Layers, FileSpreadsheet } from 'lucide-react';
 import jsPDF from 'jspdf';
 import { sanitizeInputText } from './utils/sanitizer';
@@ -5635,6 +5637,8 @@ const AppNavbar: React.FC<NavbarProps> = ({
                             <span>Calculate Cost</span>
                         </button>
                     )}
+
+                    <WhatsAppChatButton variant="nav" />
 
                     {isAuthReady ? (
                         userId ? (
@@ -13568,6 +13572,7 @@ const App: React.FC = () => {
     const [isCostModalOpen, setIsCostModalOpen] = useState(false);
     const [isTenderWizardOpen, setIsTenderWizardOpen] = useState(false);
     const [demoModalTier, setDemoModalTier] = useState<'professional' | 'enterprise' | 'full_site' | 'audit'>('professional');
+    const [showLinkedInToast, setShowLinkedInToast] = useState(false);
     const [isAdmin, setIsAdmin] = useState<boolean>(() => {
         if (typeof window !== 'undefined') {
             const params = new URLSearchParams(window.location.search);
@@ -13583,6 +13588,13 @@ const App: React.FC = () => {
             : 'session_' + Math.random().toString(36).substring(2, 15) + '_' + Date.now();
         setUserId(generatedId);
         setIsAuthReady(true);
+
+        // Display LinkedIn Notification Toast shortly after page load with 4s auto-dismiss
+        const toastTimer = setTimeout(() => {
+            setShowLinkedInToast(true);
+        }, 1200);
+
+        return () => clearTimeout(toastTimer);
     }, []);
 
     useEffect(() => {
@@ -13750,6 +13762,16 @@ const App: React.FC = () => {
                         onClose={() => setIsTenderWizardOpen(false)}
                     />
                 </ErrorBoundary>
+
+                {/* Masked WhatsApp Direct Chat Widget (Floating) */}
+                <WhatsAppChatButton variant="floating" />
+
+                {/* LinkedIn Activity Toast Notification with 4-Second Auto-Dismiss */}
+                <LinkedInToastNotification
+                    showLinkedInToast={showLinkedInToast}
+                    setShowLinkedInToast={setShowLinkedInToast}
+                    autoDismissDuration={4000}
+                />
             </div>
         </ErrorBoundary>
     );
