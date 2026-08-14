@@ -1,6 +1,7 @@
 import React from 'react';
 import * as Icons from './icons';
 import { Page } from '../types';
+import { WhatsAppChatButton } from './WhatsAppChatButton';
 
 interface NavbarProps {
   currentPage: Page;
@@ -109,6 +110,8 @@ export const Navbar: React.FC<NavbarProps> = ({
               <span>Calculate Cost</span>
             </button>
           )}
+
+          <WhatsAppChatButton variant="nav" />
 
           {isAuthReady && (
             <div>
