@@ -14,3 +14,5 @@ export * from './Footer';
 export * from './ErrorBoundary';
 export * from './CountUp';
 export * from './Sparkline';
+export * from './WhatsAppChatButton';
+export * from './LinkedInToastNotification';
