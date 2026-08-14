@@ -5550,6 +5550,7 @@ interface NavbarProps {
     setPage: (page: Page) => void;
     userId?: string | null;
     isAuthReady?: boolean;
+    isAdmin?: boolean;
     onGetStarted?: () => void;
     onOpenCostCalculator?: () => void;
     onOpenTenderWizard?: () => void;
@@ -5560,17 +5561,18 @@ const AppNavbar: React.FC<NavbarProps> = ({
     setPage, 
     userId, 
     isAuthReady, 
+    isAdmin = false,
     onGetStarted,
     onOpenCostCalculator,
     onOpenTenderWizard
 }) => {
-    const navItems: { name: string; page: Page }[] = [
+    const navItems: { name: string; page: Page; isAdminOnly?: boolean }[] = [
         { name: 'Dashboard', page: 'home' },
         { name: 'Solutions', page: 'solutions' },
         { name: 'Auditing Terminal', page: 'inspector' },
         { name: 'Shift Handover', page: 'handover' },
         { name: 'SHEQ Academy', page: 'academy' },
-        { name: 'Klaviyo Lead Gen', page: 'outreach' },
+        ...(isAdmin ? [{ name: 'Klaviyo Lead Gen', page: 'outreach' as Page, isAdminOnly: true }] : [])
     ];
 
     return (
@@ -5590,13 +5592,23 @@ const AppNavbar: React.FC<NavbarProps> = ({
                         <button
                             key={item.page}
                             onClick={() => setPage(item.page)}
-                            className={`px-3 py-1.5 rounded-xl text-xs font-bold transition cursor-pointer ${
+                            className={`px-3 py-1.5 rounded-xl text-xs font-bold transition cursor-pointer flex items-center gap-1.5 ${
                                 currentPage === item.page
-                                    ? 'bg-indigo-600 text-white font-extrabold shadow-sm'
+                                    ? item.isAdminOnly
+                                        ? 'bg-amber-500/20 text-amber-300 border border-amber-500/40 font-extrabold shadow-sm'
+                                        : 'bg-indigo-600 text-white font-extrabold shadow-sm'
+                                    : item.isAdminOnly
+                                    ? 'text-amber-400 hover:text-amber-300 hover:bg-amber-950/40'
                                     : 'text-slate-300 hover:text-white hover:bg-slate-800'
                             }`}
                         >
-                            {item.name}
+                            {item.isAdminOnly && <Sparkles className="w-3.5 h-3.5 text-amber-400" />}
+                            <span>{item.name}</span>
+                            {item.isAdminOnly && (
+                                <span className="text-[9px] bg-amber-500 text-slate-950 px-1 py-0.2 rounded font-black uppercase">
+                                    ADMIN
+                                </span>
+                            )}
                         </button>
                     ))}
                 </nav>
@@ -5649,13 +5661,18 @@ const AppNavbar: React.FC<NavbarProps> = ({
                     <button
                         key={item.page}
                         onClick={() => setPage(item.page)}
-                        className={`px-2.5 py-1 rounded-lg text-xs font-bold transition cursor-pointer ${
+                        className={`px-2.5 py-1 rounded-lg text-xs font-bold transition cursor-pointer flex items-center gap-1 ${
                             currentPage === item.page
-                                ? 'bg-indigo-600 text-white'
+                                ? item.isAdminOnly
+                                    ? 'bg-amber-500/20 text-amber-300 border border-amber-500/40'
+                                    : 'bg-indigo-600 text-white'
+                                : item.isAdminOnly
+                                ? 'text-amber-400 hover:text-amber-300'
                                 : 'text-slate-400 hover:text-white'
                         }`}
                     >
-                        {item.name}
+                        {item.isAdminOnly && <Sparkles className="w-3 h-3 text-amber-400" />}
+                        <span>{item.name}</span>
                     </button>
                 ))}
                 {onOpenTenderWizard && (
@@ -13551,6 +13568,13 @@ const App: React.FC = () => {
     const [isCostModalOpen, setIsCostModalOpen] = useState(false);
     const [isTenderWizardOpen, setIsTenderWizardOpen] = useState(false);
     const [demoModalTier, setDemoModalTier] = useState<'professional' | 'enterprise' | 'full_site' | 'audit'>('professional');
+    const [isAdmin, setIsAdmin] = useState<boolean>(() => {
+        if (typeof window !== 'undefined') {
+            const params = new URLSearchParams(window.location.search);
+            return params.get('admin') === 'true';
+        }
+        return false;
+    });
 
     useEffect(() => {
         // Run with standard local session ID with fallback for non-secure contexts
@@ -13642,13 +13666,34 @@ const App: React.FC = () => {
       />
     );
   } else if (currentPage === 'outreach') {
+    if (!isAdmin) {
+      return (
+        <div className="max-w-2xl mx-auto my-12 p-8 bg-slate-900 border border-slate-800 rounded-2xl text-center space-y-4 shadow-xl">
+          <div className="w-12 h-12 rounded-xl bg-amber-500/20 text-amber-400 mx-auto flex items-center justify-center">
+            <Lock className="w-6 h-6" />
+          </div>
+          <h2 className="text-xl font-bold text-white tracking-tight">Administrative Route Restricted</h2>
+          <p className="text-sm text-slate-300 leading-relaxed max-w-lg mx-auto">
+            The Klaviyo B2B Outreach & Lead Gen engine is restricted to authorized administrators. To access this portal, please add <code className="bg-slate-950 text-amber-300 px-2 py-1 rounded font-mono text-xs border border-slate-700">?admin=true</code> to the URL query string.
+          </p>
+          <div className="pt-3">
+            <button
+              onClick={() => setCurrentPage('home')}
+              className="px-5 py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold uppercase tracking-wider rounded-xl transition shadow-lg cursor-pointer"
+            >
+              Return to Dashboard
+            </button>
+          </div>
+        </div>
+      );
+    }
     return (
       <KlaviyoOutreachCenter
         onBack={() => setCurrentPage('home')}
       />
     );
   }
-}, [currentPage, setCurrentPage, setIsDemoModalOpen, setDemoModalTier]);
+}, [currentPage, setCurrentPage, setIsDemoModalOpen, setDemoModalTier, isAdmin]);
 
 
     return (
@@ -13660,6 +13705,7 @@ const App: React.FC = () => {
                         setPage={setCurrentPage} 
                         userId={userId} 
                         isAuthReady={isAuthReady} 
+                        isAdmin={isAdmin}
                         onOpenCostCalculator={() => setIsCostModalOpen(true)}
                         onOpenTenderWizard={() => setIsTenderWizardOpen(true)}
                         onGetStarted={() => {
