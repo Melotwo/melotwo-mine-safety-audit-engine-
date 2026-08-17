@@ -22,8 +22,12 @@ export const WhatsAppChatButton: React.FC<WhatsAppChatButtonProps> = ({
   label = 'Chat on WhatsApp',
   subLabel = 'Typically replies in 5m'
 }) => {
+  // Use prop or environment variable, falling back to default South African business contact number
   const rawNumber = phoneNumber || import.meta.env.VITE_WHATSAPP_NUMBER || '27824509182';
+  
+  // Clean phone number: remove all non-digits, leading +, brackets, dashes, and spaces
   const sanitizedNumber = rawNumber.replace(/\D/g, '');
+  
   const encodedText = encodeURIComponent(message);
   const whatsappUrl = `https://wa.me/${sanitizedNumber}?text=${encodedText}`;
 
@@ -32,6 +36,7 @@ export const WhatsAppChatButton: React.FC<WhatsAppChatButtonProps> = ({
     window.open(whatsappUrl, '_blank', 'noopener,noreferrer');
   };
 
+  // 1. Navigation Bar Variant
   if (variant === 'nav') {
     return (
       <a
@@ -49,6 +54,7 @@ export const WhatsAppChatButton: React.FC<WhatsAppChatButtonProps> = ({
     );
   }
 
+  // 2. Compact Icon/Pill Variant
   if (variant === 'compact') {
     return (
       <a
@@ -65,6 +71,7 @@ export const WhatsAppChatButton: React.FC<WhatsAppChatButtonProps> = ({
     );
   }
 
+  // 3. Regular In-Page Button Variant
   if (variant === 'button') {
     return (
       <a
@@ -81,11 +88,13 @@ export const WhatsAppChatButton: React.FC<WhatsAppChatButtonProps> = ({
     );
   }
 
+  // 4. Default: Floating Bottom-Right Action Button with Pulse Aura
   return (
     <div 
       id="floating-whatsapp-widget" 
       className={`fixed bottom-6 right-6 z-50 flex items-center group ${className}`}
     >
+      {/* Expanding Tooltip Pill on Desktop Hover */}
       <div className="hidden sm:flex flex-col items-end mr-3 opacity-0 group-hover:opacity-100 transition-all duration-300 transform translate-x-2 group-hover:translate-x-0 pointer-events-none">
         <div className="bg-slate-900/95 backdrop-blur-md border border-emerald-500/30 text-white px-3.5 py-1.5 rounded-xl shadow-xl flex flex-col items-end text-right">
           <span className="text-xs font-bold text-emerald-400 flex items-center gap-1.5">
@@ -96,6 +105,7 @@ export const WhatsAppChatButton: React.FC<WhatsAppChatButtonProps> = ({
         </div>
       </div>
 
+      {/* Main Floating Trigger Button */}
       <a
         href={whatsappUrl}
         onClick={handleOpenWhatsApp}
@@ -105,8 +115,12 @@ export const WhatsAppChatButton: React.FC<WhatsAppChatButtonProps> = ({
         aria-label="Open WhatsApp conversation with MeloTwo SHEQ specialist"
         title="Direct WhatsApp Support"
       >
+        {/* Ambient Ring Glow */}
         <span className="absolute -inset-1 rounded-full bg-emerald-500/30 animate-pulse blur-sm -z-10"></span>
+        
         <MessageCircle className="w-7 h-7 fill-white/15 drop-shadow-md" />
+
+        {/* Live Online Badge */}
         <span className="absolute top-1 right-1 w-3.5 h-3.5 bg-emerald-400 border-2 border-slate-900 rounded-full"></span>
       </a>
     </div>
