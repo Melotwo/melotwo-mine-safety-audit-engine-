@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { ExternalLink, X, CheckCircle, Bell } from 'lucide-react';
+import { ExternalLink, X } from 'lucide-react';
 
 export interface LinkedInToastNotificationProps {
   showLinkedInToast: boolean;
@@ -9,14 +9,8 @@ export interface LinkedInToastNotificationProps {
   author?: string;
   subtitle?: string;
   url?: string;
-  avatarUrl?: string;
 }
 
-/**
- * LinkedInToastNotification displays social proof and thought-leadership alerts.
- * Implements a strict 4-second auto-dismiss cleanup with useEffect so the overlay
- * never gets stuck on mobile or iPad viewport orientations.
- */
 export const LinkedInToastNotification: React.FC<LinkedInToastNotificationProps> = ({
   showLinkedInToast,
   setShowLinkedInToast,
@@ -24,12 +18,10 @@ export const LinkedInToastNotification: React.FC<LinkedInToastNotificationProps>
   title = 'Published 2026 SANS 10330 Mine Compliance Protocol Blueprint',
   author = 'Tumi Seroka (Lead SHEQ Auditor)',
   subtitle = 'View full case study and audit methodology on LinkedIn',
-  url = 'https://www.linkedin.com/in/tumiseroka/',
-  avatarUrl
+  url = 'https://www.linkedin.com/in/tumiseroka/'
 }) => {
   const [progress, setProgress] = useState(100);
 
-  // 4-Second Auto-Dismiss Cleanup using useEffect as specified in requirements
   useEffect(() => {
     if (showLinkedInToast) {
       const timer = setTimeout(() => {
@@ -40,7 +32,6 @@ export const LinkedInToastNotification: React.FC<LinkedInToastNotificationProps>
     }
   }, [showLinkedInToast, setShowLinkedInToast, autoDismissDuration]);
 
-  // Subtle progress bar animation
   useEffect(() => {
     if (!showLinkedInToast) {
       setProgress(100);
@@ -62,9 +53,8 @@ export const LinkedInToastNotification: React.FC<LinkedInToastNotificationProps>
     <aside 
       aria-label="LinkedIn activity alert"
       id="linkedin-notification-toast"
-      className="fixed bottom-6 left-6 z-50 max-w-sm w-[calc(100vw-3rem)] sm:w-96 bg-slate-900/95 backdrop-blur-xl border border-slate-700/80 rounded-2xl shadow-2xl overflow-hidden transition-all duration-300 transform translate-y-0 opacity-100"
+      className="fixed bottom-6 left-6 z-50 max-w-sm w-[calc(100vw-3rem)] sm:w-96 bg-slate-900/95 backdrop-blur-xl border border-slate-700/80 rounded-2xl shadow-2xl overflow-hidden transition-all duration-300"
     >
-      {/* 4-second Progress Indicator Line */}
       <div className="w-full bg-slate-800 h-1">
         <div 
           className="bg-gradient-to-r from-blue-500 to-indigo-500 h-full transition-all duration-75 ease-linear"
@@ -73,21 +63,15 @@ export const LinkedInToastNotification: React.FC<LinkedInToastNotificationProps>
       </div>
 
       <div className="p-3.5 sm:p-4 flex items-start gap-3">
-        {/* LinkedIn Icon / Avatar */}
         <div className="relative shrink-0 mt-0.5">
           <div className="w-10 h-10 rounded-xl bg-blue-600/20 border border-blue-500/40 flex items-center justify-center text-blue-400 font-bold">
-            <svg 
-              className="w-5 h-5 fill-current text-blue-400" 
-              viewBox="0 0 24 24"
-              aria-hidden="true"
-            >
+            <svg className="w-5 h-5 fill-current text-blue-400" viewBox="0 0 24 24" aria-hidden="true">
               <path d="M19 3a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h14m-.5 15.5v-5.3a3.26 3.26 0 0 0-3.26-3.26c-.85 0-1.84.52-2.28 1.3v-1.11h-2.79v8.37h2.79v-4.93c0-.77.62-1.4 1.39-1.4a1.4 1.4 0 0 1 1.4 1.4v4.93h2.75M6.46 10.9v8.37H9.2V10.9H6.46M7.83 6.2a1.64 1.64 0 0 0-1.64 1.63c0 .91.73 1.64 1.64 1.64s1.63-.73 1.63-1.64c0-.9-.72-1.63-1.63-1.63Z" />
             </svg>
           </div>
           <span className="absolute -top-1 -right-1 w-3 h-3 bg-emerald-400 border-2 border-slate-900 rounded-full"></span>
         </div>
 
-        {/* Content */}
         <div className="flex-1 min-w-0 pr-1">
           <div className="flex items-center gap-1.5 mb-0.5">
             <span className="text-[10px] font-bold uppercase tracking-wider text-blue-400 font-mono">
@@ -119,7 +103,6 @@ export const LinkedInToastNotification: React.FC<LinkedInToastNotificationProps>
           </div>
         </div>
 
-        {/* Manual Dismiss Button */}
         <button
           type="button"
           onClick={() => setShowLinkedInToast(false)}
