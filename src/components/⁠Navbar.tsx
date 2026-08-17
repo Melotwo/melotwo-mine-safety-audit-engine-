@@ -82,6 +82,7 @@ export const Navbar: React.FC<NavbarProps> = ({
             SHEQ Academy
           </button>
 
+          {/* Protected Admin Route Link - Only visible when isAdmin is active */}
           {isAdmin && (
             <button
               onClick={() => setPage('outreach')}
