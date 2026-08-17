@@ -5581,9 +5581,11 @@ const AppNavbar: React.FC<NavbarProps> = ({
         <header className="sticky top-0 z-40 bg-slate-900/95 backdrop-blur-md border-b border-slate-800 shadow-md text-white transition-all">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
                 <button onClick={() => setPage('home')} className="flex items-center space-x-3 shrink-0 cursor-pointer" aria-label="Go to homepage">
-                    <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-amber-500 to-indigo-600 flex items-center justify-center shadow-md">
-                        <Shield className="w-5 h-5 text-white" />
-                    </div>
+                    <img
+                        src="/apple-touch-icon.png"
+                        alt="MeloTwo App Logo"
+                        className="w-8 h-8 rounded-lg object-cover shadow-md ring-1 ring-cyan-400/40"
+                    />
                     <span className="text-lg font-black tracking-tight text-white font-sans">
                         MeloTwo <span className="text-amber-400 font-extrabold text-xs px-2 py-0.5 rounded-full bg-amber-950/80 border border-amber-600/60">MINE SAFETY</span>
                     </span>
