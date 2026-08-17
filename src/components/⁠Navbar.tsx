@@ -25,58 +25,56 @@ export const Navbar: React.FC<NavbarProps> = ({
   onOpenTenderWizard
 }) => {
   return (
-    <header className="sticky top-0 z-40 bg-slate-900/95 backdrop-blur-md border-b border-slate-800 shadow-md text-white transition-all">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
-        <button
-          onClick={() => setPage('home')}
-          className="flex items-center space-x-3 cursor-pointer group"
-          aria-label="Go to homepage"
-        >
-          <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-amber-500 to-indigo-600 flex items-center justify-center shadow-md group-hover:scale-105 transition-transform">
-            <Icons.Shield className="w-5 h-5 text-white" />
-          </div>
-          <span className="text-lg font-black tracking-tight text-white font-sans">
-            MeloTwo
+    <nav className="bg-slate-900 border-b border-slate-800 px-6 py-4 text-white">
+      <div className="flex justify-between items-center mx-auto max-w-7xl">
+        <div className="flex items-center space-x-3 cursor-pointer" onClick={() => setPage('home')}>
+          <img
+            src="/apple-touch-icon.png"
+            alt="MeloTwo Logo"
+            className="w-8 h-8 rounded-lg object-cover shadow-sm ring-1 ring-cyan-500/30"
+          />
+          <span className="text-xl font-bold tracking-tight bg-gradient-to-r from-indigo-400 to-cyan-400 bg-clip-text text-transparent">
+            Melotwo Safety Engine
           </span>
-        </button>
-
-        <nav className="hidden md:flex items-center space-x-6">
+        </div>
+        
+        <div className="flex items-center space-x-4 md:space-x-6">
           <button
             onClick={() => setPage('home')}
-            className={`text-sm font-bold transition-colors hover:text-amber-400 ${
-              currentPage === 'home' ? 'text-amber-400' : 'text-slate-300'
+            className={`text-sm font-medium transition-colors hover:text-indigo-400 ${
+              currentPage === 'home' ? 'text-indigo-400' : 'text-slate-300'
             }`}
           >
             Dashboard
           </button>
           <button
             onClick={() => setPage('solutions')}
-            className={`text-sm font-bold transition-colors hover:text-amber-400 ${
-              currentPage === 'solutions' ? 'text-amber-400' : 'text-slate-300'
+            className={`text-sm font-medium transition-colors hover:text-indigo-400 ${
+              currentPage === 'solutions' ? 'text-indigo-400' : 'text-slate-300'
             }`}
           >
             Solutions
           </button>
           <button
             onClick={() => setPage('inspector')}
-            className={`text-sm font-bold transition-colors hover:text-amber-400 ${
-              currentPage === 'inspector' ? 'text-amber-400' : 'text-slate-300'
+            className={`text-sm font-medium transition-colors hover:text-indigo-400 ${
+              currentPage === 'inspector' ? 'text-indigo-400' : 'text-slate-300'
             }`}
           >
-            Auditing Terminal
+            Inspector
           </button>
           <button
             onClick={() => setPage('handover')}
-            className={`text-sm font-bold transition-colors hover:text-amber-400 ${
-              currentPage === 'handover' ? 'text-amber-400' : 'text-slate-300'
+            className={`text-sm font-medium transition-colors hover:text-indigo-400 ${
+              currentPage === 'handover' ? 'text-indigo-400' : 'text-slate-300'
             }`}
           >
             Shift Handover
           </button>
           <button
             onClick={() => setPage('academy')}
-            className={`text-sm font-bold transition-colors hover:text-amber-400 ${
-              currentPage === 'academy' ? 'text-amber-400' : 'text-slate-300'
+            className={`text-sm font-medium transition-colors hover:text-indigo-400 ${
+              currentPage === 'academy' ? 'text-indigo-400' : 'text-slate-300'
             }`}
           >
             SHEQ Academy
@@ -98,7 +96,8 @@ export const Navbar: React.FC<NavbarProps> = ({
           {onOpenTenderWizard && (
             <button
               onClick={onOpenTenderWizard}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold text-amber-300 bg-amber-950/70 border border-amber-500/50 hover:bg-amber-900/70 rounded-xl transition shadow-sm cursor-pointer"
+              className="text-xs font-bold text-amber-300 bg-amber-950/60 border border-amber-500/40 hover:bg-amber-900/60 px-3 py-1.5 rounded-lg transition-all flex items-center gap-1.5 shadow-sm"
+              title="Generate Tender-Ready Safety File (Once-off R750)"
             >
               <Icons.FileSpreadsheet className="w-3.5 h-3.5 text-amber-400" />
               <span>Tender Safety File</span>
@@ -108,7 +107,8 @@ export const Navbar: React.FC<NavbarProps> = ({
           {onOpenCostCalculator && (
             <button
               onClick={onOpenCostCalculator}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold text-cyan-300 bg-cyan-950/70 border border-cyan-500/50 hover:bg-cyan-900/70 rounded-xl transition shadow-sm cursor-pointer"
+              className="text-xs font-bold text-cyan-300 bg-cyan-950/60 border border-cyan-500/40 hover:bg-cyan-900/60 px-3 py-1.5 rounded-lg transition-all flex items-center gap-1.5 shadow-sm"
+              title="Calculate Site Cost for SMBs or Enterprise"
             >
               <Icons.Shield className="w-3.5 h-3.5 text-cyan-400" />
               <span>Calculate Cost</span>
@@ -120,22 +120,23 @@ export const Navbar: React.FC<NavbarProps> = ({
           {isAuthReady && (
             <div>
               {userId ? (
-                <div className="inline-flex items-center px-3 py-1.5 bg-slate-800 border border-slate-700 rounded-xl text-xs font-bold text-emerald-400 font-mono">
-                  <span className="w-2 h-2 rounded-full bg-emerald-400 mr-2 animate-pulse" />
-                  <span>ID: {userId.substring(0, 8)}</span>
+                <div className="flex items-center space-x-2">
+                  <div className="h-2 w-2 rounded-full bg-emerald-400"></div>
+                  <span className="text-xs font-mono text-slate-400">Compliant</span>
                 </div>
               ) : (
                 <button
                   onClick={onGetStarted}
-                  className="inline-flex items-center justify-center px-4 py-2 text-xs font-bold text-white bg-indigo-600 rounded-xl shadow-md hover:bg-indigo-500 transition"
+                  className="bg-indigo-600 hover:bg-indigo-500 text-white font-semibold rounded-lg text-xs px-4 py-2 transition-all duration-200"
                 >
                   Get Started
                 </button>
               )}
             </div>
           )}
-        </nav>
+        </div>
       </div>
-    </header>
+    </nav>
   );
 };
+
