@@ -17,3 +17,4 @@ export * from './Sparkline';
 export * from './WhatsAppChatButton';
 export * from './LinkedInToastNotification';
 export * from './StatutoryFactSheet';
+export * from './SiteDashboardMetricsHeader';
