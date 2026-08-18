@@ -1470,7 +1470,7 @@ export const appendLedgerRecord = async (
 };
 
 // --- Inline Types ---
-export type Page = 'home' | 'solutions' | 'inspector' | 'academy' | 'handover';
+export type Page = 'home' | 'solutions' | 'inspector' | 'academy' | 'handover' | 'outreach';
 
 export type IconComponent = React.FC<React.SVGProps<SVGSVGElement>>;
 
@@ -12393,10 +12393,8 @@ Safety index and terminal clearance verified. The audit record status has been u
                                     Automated Assessment Drafter
                                 </h3>
                                 <div className="flex items-center gap-2">
-                                    <span className={`text-[9px] font-mono px-2 py-0.5 rounded-full border ${
-                                        viewMode === 'manager' ? 'bg-indigo-500/10 border-indigo-500/30 text-indigo-300' : 'bg-amber-500/10 border-amber-500/30 text-amber-300'
-                                    }`}>
-                                        {viewMode === 'manager' ? 'MANAGER MODE' : 'INSPECTOR MODE'}
+                                    <span className="text-[9px] font-mono px-2 py-0.5 rounded-full border bg-amber-500/10 border-amber-500/30 text-amber-300">
+                                        INSPECTOR MODE
                                     </span>
                                     <div className="flex items-center gap-1.5 text-[9px] font-mono text-slate-400">
                                         <span className={`w-2 h-2 rounded-full ${isVipUnlocked ? 'bg-emerald-400 animate-pulse' : 'bg-indigo-500'}`} />
@@ -12406,8 +12404,7 @@ Safety index and terminal clearance verified. The audit record status has been u
                             </div>
 
                             <form onSubmit={e => { e.preventDefault(); }} className="flex flex-col gap-4">
-                                {viewMode === 'inspector' ? (
-                                    <div className="flex flex-col gap-1.5 bg-slate-950/80 border border-slate-800/90 rounded-2xl p-3.5">
+                                <div className="flex flex-col gap-1.5 bg-slate-950/80 border border-slate-800/90 rounded-2xl p-3.5">
                                         <div className="flex items-center justify-between">
                                             <label className="text-[10px] font-bold text-amber-400 uppercase tracking-wider flex items-center gap-1.5">
                                                 <Terminal className="w-3.5 h-3.5" />
@@ -12423,26 +12420,6 @@ Safety index and terminal clearance verified. The audit record status has been u
                                             className="bg-slate-900 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-amber-500 transition-colors font-mono"
                                         />
                                     </div>
-                                ) : (
-                                    <div className="bg-slate-950/80 border border-indigo-500/20 rounded-2xl p-3.5 flex items-center justify-between text-xs text-indigo-300">
-                                        <div className="flex items-center gap-2.5">
-                                            <div className="p-2 bg-indigo-500/10 border border-indigo-500/30 rounded-xl shrink-0">
-                                                <ShieldCheck className="w-4 h-4 text-indigo-400" />
-                                            </div>
-                                            <div>
-                                                <span className="text-xs font-bold text-white block">Manager View Active</span>
-                                                <span className="text-[10px] text-slate-400 block mt-0.5">Prompt engineering console hidden. Persona directives auto-optimized by SANS policies.</span>
-                                            </div>
-                                        </div>
-                                        <button
-                                            type="button"
-                                            onClick={() => setViewMode('inspector')}
-                                            className="text-[10px] font-bold text-amber-400 hover:text-amber-300 hover:underline shrink-0 ml-2 cursor-pointer bg-slate-900 border border-slate-800 px-2.5 py-1 rounded-lg"
-                                        >
-                                            Show Prompt Console
-                                        </button>
-                                    </div>
-                                )}
 
                                 <div className="flex flex-col gap-1.5">
                                     <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Raw Inspection Details / Scenario</label>
