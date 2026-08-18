@@ -5576,7 +5576,7 @@ const AppNavbar: React.FC<NavbarProps> = ({
         { name: 'Auditing Terminal', page: 'inspector' },
         { name: 'Shift Handover', page: 'handover' },
         { name: 'SHEQ Academy', page: 'academy' },
-        ...(isAdmin ? [{ name: 'Klaviyo Lead Gen', page: 'outreach' as Page, isAdminOnly: true }] : [])
+        { name: 'Outreach Hub', page: 'outreach' }
     ];
 
     return (
@@ -13714,27 +13714,6 @@ const App: React.FC = () => {
       />
     );
   } else if (currentPage === 'outreach') {
-    if (!isAdmin) {
-      return (
-        <div className="max-w-2xl mx-auto my-12 p-8 bg-slate-900 border border-slate-800 rounded-2xl text-center space-y-4 shadow-xl">
-          <div className="w-12 h-12 rounded-xl bg-amber-500/20 text-amber-400 mx-auto flex items-center justify-center">
-            <Lock className="w-6 h-6" />
-          </div>
-          <h2 className="text-xl font-bold text-white tracking-tight">Administrative Route Restricted</h2>
-          <p className="text-sm text-slate-300 leading-relaxed max-w-lg mx-auto">
-            The Klaviyo B2B Outreach & Lead Gen engine is restricted to authorized administrators. To access this portal, please add <code className="bg-slate-950 text-amber-300 px-2 py-1 rounded font-mono text-xs border border-slate-700">?admin=true</code> to the URL query string.
-          </p>
-          <div className="pt-3">
-            <button
-              onClick={() => setCurrentPage('home')}
-              className="px-5 py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold uppercase tracking-wider rounded-xl transition shadow-lg cursor-pointer"
-            >
-              Return to Dashboard
-            </button>
-          </div>
-        </div>
-      );
-    }
     return (
       <KlaviyoOutreachCenter
         onBack={() => setCurrentPage('home')}
