@@ -6861,9 +6861,16 @@ interface LandingPageProps {
     setPage: (page: Page) => void;
     setIsDemoModalOpen: (open: boolean) => void;
     setDemoModalTier?: (tier: 'professional' | 'enterprise' | 'full_site' | 'audit') => void;
+    onOpenTenderWizard?: () => void;
 }
 
-const LandingPage: React.FC<LandingPageProps> = ({ currentPage, setPage, setIsDemoModalOpen, setDemoModalTier }) => {
+const LandingPage: React.FC<LandingPageProps> = ({ 
+    currentPage, 
+    setPage, 
+    setIsDemoModalOpen, 
+    setDemoModalTier,
+    onOpenTenderWizard 
+}) => {
     useEffect(() => {
         if (currentPage === 'solutions') {
             const el = document.getElementById('solutions-section');
@@ -7440,7 +7447,9 @@ const LandingPage: React.FC<LandingPageProps> = ({ currentPage, setPage, setIsDe
                             <button
                                 type="button"
                                 onClick={() => {
-                                    setIsTenderWizardOpen(true);
+                                    if (onOpenTenderWizard) {
+                                        onOpenTenderWizard();
+                                    }
                                     trackGA4Event('hero_cta_clicked', { action: 'launch_tender_wizard' });
                                 }}
                                 className="inline-flex items-center justify-center px-6 py-3.5 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 font-black text-xs tracking-wide uppercase rounded-xl shadow-lg shadow-amber-500/20 hover:shadow-amber-500/30 transform hover:-translate-y-0.5 transition-all duration-200 cursor-pointer"
@@ -13668,6 +13677,7 @@ const App: React.FC = () => {
         setPage={setCurrentPage}
         setIsDemoModalOpen={setIsDemoModalOpen}
         setDemoModalTier={setDemoModalTier}
+        onOpenTenderWizard={() => setIsTenderWizardOpen(true)}
       />
     );
   } else if (currentPage === 'inspector') {
@@ -13730,7 +13740,7 @@ const App: React.FC = () => {
       />
     );
   }
-}, [currentPage, setCurrentPage, setIsDemoModalOpen, setDemoModalTier, isAdmin]);
+}, [currentPage, setCurrentPage, setIsDemoModalOpen, setDemoModalTier, isAdmin, setIsTenderWizardOpen]);
 
 
     return (
