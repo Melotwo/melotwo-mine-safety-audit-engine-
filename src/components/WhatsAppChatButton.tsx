@@ -22,8 +22,8 @@ export const WhatsAppChatButton: React.FC<WhatsAppChatButtonProps> = ({
   label = 'Chat on WhatsApp',
   subLabel = 'Typically replies in 5m'
 }) => {
-  // Use prop or environment variable, falling back to default South African business contact number
-  const rawNumber = phoneNumber || import.meta.env.VITE_WHATSAPP_NUMBER || '27824509182';
+  // Use prop or environment variable, falling back to verified South African business contact number
+  const rawNumber = phoneNumber || import.meta.env.VITE_WHATSAPP_NUMBER || '27679461487';
   
   // Clean phone number: remove all non-digits, leading +, brackets, dashes, and spaces
   const sanitizedNumber = rawNumber.replace(/\D/g, '');
