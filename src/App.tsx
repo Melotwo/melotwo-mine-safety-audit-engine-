@@ -18,6 +18,8 @@ import { CalculateSiteCostModal } from './components/CalculateSiteCostModal';
 import { TenderFileWizard } from './components/TenderFileWizard';
 import { WhatsAppChatButton } from './components/WhatsAppChatButton';
 import { LinkedInToastNotification } from './components/LinkedInToastNotification';
+import { StatutoryFactSheet } from './components/StatutoryFactSheet';
+import appLogo from './assets/images/melotwo_app_icon_1786993726919.jpg';
 import { Database, RefreshCw, Upload, LogOut, Sparkles, CheckCircle2, AlertOctagon, Download, ChevronRight, Lock, Terminal, Minimize2, Maximize2, Activity, Scale, Globe, CheckCircle, Target, ShieldAlert, ArrowRight, Check, Truck, Info, RotateCcw, Sliders, XCircle, Building2, MapPin, ChevronDown, ChevronUp, EyeOff, Filter, Layers, FileSpreadsheet } from 'lucide-react';
 import jsPDF from 'jspdf';
 import { sanitizeInputText } from './utils/sanitizer';
@@ -5582,9 +5584,12 @@ const AppNavbar: React.FC<NavbarProps> = ({
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
                 <button onClick={() => setPage('home')} className="flex items-center space-x-3 shrink-0 cursor-pointer" aria-label="Go to homepage">
                     <img
-                        src="/apple-touch-icon.png"
+                        src={appLogo}
                         alt="MeloTwo App Logo"
                         className="w-8 h-8 rounded-lg object-cover shadow-md ring-1 ring-cyan-400/40"
+                        onError={(e) => {
+                            (e.currentTarget as HTMLImageElement).src = '/melotwo_shield_logo.svg';
+                        }}
                     />
                     <span className="text-lg font-black tracking-tight text-white font-sans">
                         MeloTwo <span className="text-amber-400 font-extrabold text-xs px-2 py-0.5 rounded-full bg-amber-950/80 border border-amber-600/60">MINE SAFETY</span>
@@ -5618,6 +5623,10 @@ const AppNavbar: React.FC<NavbarProps> = ({
                 </nav>
 
                 <div className="flex items-center space-x-2 sm:space-x-3">
+                    <div className="hidden lg:block">
+                        <StatutoryFactSheet triggerLabel="OHSA Audit Matrix™" />
+                    </div>
+
                     {onOpenTenderWizard && (
                         <button
                             onClick={onOpenTenderWizard}
@@ -7382,9 +7391,12 @@ const LandingPage: React.FC<LandingPageProps> = ({ currentPage, setPage, setIsDe
                     {/* Left Column: Core Value Proposition & CRO Trust Indicators */}
                     <div className="md:col-span-6 space-y-6 md:space-y-8 text-left">
                         
-                        <div className="inline-flex items-center gap-2 px-3 py-1 text-[10px] font-black bg-amber-500/10 border border-amber-500/30 text-amber-500 rounded-full tracking-wider uppercase shadow-sm">
-                            <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse"></span>
-                            SANS 10330, SANS 10142 & SANS 10049 COMPLIANT
+                        <div className="flex flex-wrap items-center gap-2.5">
+                            <div className="inline-flex items-center gap-2 px-3 py-1 text-[10px] font-black bg-amber-500/10 border border-amber-500/30 text-amber-500 rounded-full tracking-wider uppercase shadow-sm">
+                                <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse"></span>
+                                SANS 10330, SANS 10142 &amp; SANS 10049 COMPLIANT
+                            </div>
+                            <StatutoryFactSheet triggerLabel="OHSA Audit Matrix™ (Statutory Defensibility)" />
                         </div>
 
                         <h1 className="text-3xl sm:text-4xl md:text-5xl font-black text-white tracking-tight leading-tight sm:leading-none">
@@ -7393,7 +7405,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ currentPage, setPage, setIsDe
                         </h1>
 
                         <p className="text-slate-300 text-sm md:text-base leading-relaxed max-w-xl font-medium">
-                            Empowering SHEQ officers and procurement teams to mitigate multi-million Rand litigation risks, simulate material oxidation wear, and automate audit reporting in real-time.
+                            Stop losing tender deadlines to endless safety paperwork. Empowering SHEQ officers and contractors to build fully compliant 20-section binders automatically and mitigate multi-million Rand litigation risks.
                         </p>
 
                         {/* High-credibility, low-friction SANS checkmarks */}
@@ -7420,12 +7432,23 @@ const LandingPage: React.FC<LandingPageProps> = ({ currentPage, setPage, setIsDe
                                         <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
                                     </svg>
                                 </div>
-                                <span className="text-xs text-slate-300 font-bold tracking-tight">Trusted by SHEQ Personnel in Gauteng & Mpumalanga</span>
+                                <span className="text-xs text-slate-300 font-bold tracking-tight">Trusted by SHEQ Personnel in Gauteng &amp; Mpumalanga</span>
                             </div>
                         </div>
 
                         {/* Flexible Action Triggers */}
-                        <div className="flex flex-col sm:flex-row gap-4 pt-4">
+                        <div className="flex flex-col sm:flex-row flex-wrap gap-3.5 pt-4">
+                            <button
+                                type="button"
+                                onClick={() => {
+                                    setIsTenderWizardOpen(true);
+                                    trackGA4Event('hero_cta_clicked', { action: 'launch_tender_wizard' });
+                                }}
+                                className="inline-flex items-center justify-center px-6 py-3.5 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 font-black text-xs tracking-wide uppercase rounded-xl shadow-lg shadow-amber-500/20 hover:shadow-amber-500/30 transform hover:-translate-y-0.5 transition-all duration-200 cursor-pointer"
+                            >
+                                <FileSpreadsheet className="w-4 h-4 mr-2" />
+                                Build 20-Section Tender File
+                            </button>
                             <button
                                 type="button"
                                 onClick={() => {
@@ -7448,6 +7471,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ currentPage, setPage, setIsDe
                                 Request Enterprise Pilot
                             </button>
                         </div>
+
                     </div>
 
                     {/* Right Column: Dynamic Interactive Compliance Sandbox */}
