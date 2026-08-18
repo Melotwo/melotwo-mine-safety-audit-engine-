@@ -55,6 +55,66 @@ export interface TradeOption {
 
 export const AVAILABLE_TRADES: TradeOption[] = [
   {
+    id: 'catering_haccp',
+    name: 'Catering & Canteen Food Safety',
+    category: 'SANS 10330 / HACCP Food Hygiene',
+    riskLevel: 'High',
+    icon: ShieldCheck,
+    description: 'Mine mess halls, commercial kitchen food preparation, cold chain compliance, CCP sanitation, and grease trap handling.',
+    swps: [
+      { code: 'SWP-CAT-01', title: 'HACCP Critical Control Point Temperature Verification', standard: 'SANS 10330:2020 / Food Hygiene' },
+      { code: 'SWP-CAT-02', title: 'Deep Fat Fryer & Commercial Burner Fire Prevention', standard: 'ER 9 / SANS 10105' },
+      { code: 'SWP-CAT-03', title: 'Food Prep Surface Chemical Sanitization & Waste Handling', standard: 'SANS 10049 / HCAR' },
+      { code: 'SWP-CAT-04', title: 'Walk-In Chiller Cold Chain & Shaft Meal Transport', standard: 'MHSA Food Protocol / DMR' }
+    ],
+    methodStatements: ['Commercial Kitchen Daily CCP Sanitization', 'Underground Shaft Food Pack Transport Protocol', 'Kitchen Fire Blanket & Wet Chemical Suppression']
+  },
+  {
+    id: 'electrical_installation',
+    name: 'Electrical Installation & Reticulation',
+    category: 'SANS 10142 / Specialist Electrical',
+    riskLevel: 'Critical',
+    icon: Zap,
+    description: 'LV/MV distribution boards, cable racking, generator hookups, substation maintenance, and COC pre-testing.',
+    swps: [
+      { code: 'SWP-EL-01', title: 'Lockout / Tagout (LOTO) & Zero Energy Proofing', standard: 'SANS 10142-1 / EIR 6' },
+      { code: 'SWP-EL-02', title: 'Cable Trenching, Armoured Glanding & Earthing', standard: 'SANS 10200 / CR 24' },
+      { code: 'SWP-EL-03', title: 'Earth Leakage Trip Testing & Pre-COC Checks', standard: 'Electrical Installation Regs 9' },
+      { code: 'SWP-EL-04', title: 'Arc Flash Boundary Controls & 1000V Insulated Tooling', standard: 'OHS Act Section 8 / SANS 10108' }
+    ],
+    methodStatements: ['Main Low-Voltage Switchgear Replacement', 'Overhead Cable Tray Reticulation', 'Standby Diesel Generator Hookup']
+  },
+  {
+    id: 'ppe_material_hygiene',
+    name: 'PPE & Occupational Hygiene Auditing',
+    category: 'SANS 10049 / Workplace Safety',
+    riskLevel: 'Medium',
+    icon: Shield,
+    description: 'Respirator fit checks, personal protective equipment integrity, chemical splash zones, and wash station auditing.',
+    swps: [
+      { code: 'SWP-PPE-01', title: 'Occupational PPE Inspection & Material Degradation Protocol', standard: 'SANS 10049 / GSR 2' },
+      { code: 'SWP-PPE-02', title: 'Respiratory Protective Equipment (RPE) Fit & Seal Check', standard: 'HCAR 2021 / DMR Guidelines' },
+      { code: 'SWP-PPE-03', title: 'Emergency Eye Wash Station & Drench Shower Testing', standard: 'GSR 3 / OHS Act' },
+      { code: 'SWP-PPE-04', title: 'Bio-Hazardous Waste Segregation & Sharps Disposal', standard: 'National Environmental Waste Act' }
+    ],
+    methodStatements: ['Daily PPE Issuance & Inspection Register', 'Chemical Drench Shower Monthly Pressure Verification', 'Contaminated PPE Decontamination Protocol']
+  },
+  {
+    id: 'lifting_rigging',
+    name: 'Lifting Operations & Rigging',
+    category: 'SANS 10375 / DMR 18 Lifting Machinery',
+    riskLevel: 'Critical',
+    icon: HardHat,
+    description: 'Overhead cranes, mobile crane lifting plans, wire rope sling inspections, spreader beams, and rigging tackle safety.',
+    swps: [
+      { code: 'SWP-LFT-01', title: 'Pre-Use Inspection of Slings, Shackles & Rigging Tackle', standard: 'Driven Machinery Regs 18 / SANS 10375' },
+      { code: 'SWP-LFT-02', title: 'Tandem & Critical Crane Lift Plan Preparation', standard: 'CR 22 / DMR 18' },
+      { code: 'SWP-LFT-03', title: 'Exclusion Zone Marshaling & Tag-Line Control', standard: 'GSR 2 / OHS Act' },
+      { code: 'SWP-LFT-04', title: 'Overhead Crane Emergency Limit Switch Testing', standard: 'SANS 10375 / DMR 18' }
+    ],
+    methodStatements: ['Critical Heavy Equipment Dual Crane Lift Plan', 'Overhead Gantry Hoist Cable Inspection', 'Shackle & Webbing Sling Load Testing Verification']
+  },
+  {
     id: 'road_maintenance',
     name: 'Road Maintenance & Civils',
     category: 'Civil & Infrastructure',
@@ -98,21 +158,6 @@ export const AVAILABLE_TRADES: TradeOption[] = [
       { code: 'SWP-PD-04', title: 'Chemical Splash Eye & Respiratory Protection', standard: 'GSR 2 / SANS 10330' }
     ],
     methodStatements: ['External Multi-Storey Facade Coating', 'Airless Paint Spraying in Confined Rooms', 'Industrial Epoxy Floor Sealing']
-  },
-  {
-    id: 'electrical_installation',
-    name: 'Electrical Installation & Reticulation',
-    category: 'Specialist Mechanical & Electrical',
-    riskLevel: 'Critical',
-    icon: Zap,
-    description: 'LV distribution boards, conduit reticulation, cable racking, and COC pre-testing.',
-    swps: [
-      { code: 'SWP-EL-01', title: 'Lockout / Tagout (LOTO) & Zero Energy Proofing', standard: 'SANS 10142-1 / EIR 6' },
-      { code: 'SWP-EL-02', title: 'Cable Trenching, Armoured Glanding & Earthing', standard: 'SANS 10200 / CR 24' },
-      { code: 'SWP-EL-03', title: 'Earth Leakage Trip Testing & Pre-COC Checks', standard: 'Electrical Installation Regs 9' },
-      { code: 'SWP-EL-04', title: 'Arc Flash Boundary Controls & 1000V Insulated Tooling', standard: 'OHS Act Section 8 / SANS 10108' }
-    ],
-    methodStatements: ['Main Low-Voltage Switchgear Replacement', 'Overhead Cable Tray Reticulation', 'Standby Diesel Generator Hookup']
   },
   {
     id: 'agricultural_fencing',
