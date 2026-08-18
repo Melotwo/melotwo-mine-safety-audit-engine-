@@ -19,6 +19,7 @@ import { TenderFileWizard } from './components/TenderFileWizard';
 import { WhatsAppChatButton } from './components/WhatsAppChatButton';
 import { LinkedInToastNotification } from './components/LinkedInToastNotification';
 import { StatutoryFactSheet } from './components/StatutoryFactSheet';
+import { SiteDashboardMetricsHeader } from './components/SiteDashboardMetricsHeader';
 import { Database, RefreshCw, Upload, LogOut, Sparkles, CheckCircle2, AlertOctagon, Download, ChevronRight, Lock, Terminal, Minimize2, Maximize2, Activity, Scale, Globe, CheckCircle, Target, ShieldAlert, ArrowRight, Check, Truck, Info, RotateCcw, Sliders, XCircle, Building2, MapPin, ChevronDown, ChevronUp, EyeOff, Filter, Layers, FileSpreadsheet } from 'lucide-react';
 import jsPDF from 'jspdf';
 import { sanitizeInputText } from './utils/sanitizer';
@@ -9101,6 +9102,7 @@ export const WorkplaceHazardMatrix: React.FC<WorkplaceHazardMatrixProps> = ({
 
 interface SafetyInspectorPageProps {
     setPage: (page: any) => void;
+    onOpenTenderWizard?: () => void;
 }
 
 export const SECTOR_PROFILES: Record<string, {
@@ -9560,7 +9562,7 @@ export const handleExportDmreCapaPdf = (
     }
 };
 
-export const SafetyInspectorPage: React.FC<SafetyInspectorPageProps> = ({ setPage }) => {
+export const SafetyInspectorPage: React.FC<SafetyInspectorPageProps> = ({ setPage, onOpenTenderWizard }) => {
     // Editable review fields (Declared at the top for use in applySectorDefaults)
     const [parsedDate, setParsedDate] = useState(() => new Date().toISOString().split('T')[0]);
     const [parsedOperator, setParsedOperator] = useState('');
@@ -11269,6 +11271,27 @@ Safety index and terminal clearance verified. The audit record status has been u
                     </div>
                 </div>
 
+                {/* Prominent Site Dashboard Integration: Active Tender Files & Critical Hazard Compliance Status Grid */}
+                <SiteDashboardMetricsHeader
+                    selectedSector={selectedSector}
+                    onSelectSector={(secId) => {
+                        setSelectedSector(secId);
+                        applySectorDefaults(secId);
+                    }}
+                    onOpenTenderWizard={onOpenTenderWizard}
+                    onConvertToDailyMonitoring={(binder) => {
+                        if (binder.sectorId) {
+                            setSelectedSector(binder.sectorId);
+                            applySectorDefaults(binder.sectorId);
+                        }
+                        setParsedNotes((prev) => {
+                            const binderDirective = `[TENDER BINDER CONVERTED - ${binder.tenderId}]: Converted "${binder.companyName}" (${binder.tradeName}) approved statutory safety dossier into active shift monitoring. Daily HIRA hazard controls, Section 16(2) appointee inspections, and SANS audit items initialized.`;
+                            return prev ? `${binderDirective}\n\n${prev}` : binderDirective;
+                        });
+                        setViewMode('inspector');
+                    }}
+                />
+
                 {/* Regulatory Shift Alert Feed Banner */}
                 <RegulatoryShiftAlertFeed
                     selectedSector={selectedSector}
@@ -11277,8 +11300,8 @@ Safety index and terminal clearance verified. The audit record status has been u
                     }}
                 />
 
-                {/* Enterprise Auditing Profile Selector */}
-                <div className="bg-slate-900 border border-slate-800/85 rounded-2xl p-5 backdrop-blur-xl">
+                {/* Enterprise Auditing Profile Selector & Daily Monitoring Tools */}
+                <div id="daily-monitoring-tools" className="bg-slate-900 border border-slate-800/85 rounded-2xl p-5 backdrop-blur-xl">
                     <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
                         {/* Selector Tabs */}
                         <div className="flex-1">
@@ -13684,6 +13707,7 @@ const App: React.FC = () => {
     return (
       <SafetyInspectorPage
         setPage={setCurrentPage}
+        onOpenTenderWizard={() => setIsTenderWizardOpen(true)}
       />
     );
   } else if (currentPage === 'academy') {
