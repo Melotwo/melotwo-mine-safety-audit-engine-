@@ -32,6 +32,9 @@ export const Navbar: React.FC<NavbarProps> = ({
             src="/apple-touch-icon.png"
             alt="MeloTwo Logo"
             className="w-8 h-8 rounded-lg object-cover shadow-sm ring-1 ring-cyan-500/30"
+            onError={(e) => {
+              (e.currentTarget as HTMLImageElement).src = '/melotwo_shield_logo.svg';
+            }}
           />
           <span className="text-xl font-bold tracking-tight bg-gradient-to-r from-indigo-400 to-cyan-400 bg-clip-text text-transparent">
             Melotwo Safety Engine
