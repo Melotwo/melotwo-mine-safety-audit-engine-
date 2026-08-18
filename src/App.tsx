@@ -19,7 +19,6 @@ import { TenderFileWizard } from './components/TenderFileWizard';
 import { WhatsAppChatButton } from './components/WhatsAppChatButton';
 import { LinkedInToastNotification } from './components/LinkedInToastNotification';
 import { StatutoryFactSheet } from './components/StatutoryFactSheet';
-import appLogo from './assets/images/melotwo_app_icon_1786993726919.jpg';
 import { Database, RefreshCw, Upload, LogOut, Sparkles, CheckCircle2, AlertOctagon, Download, ChevronRight, Lock, Terminal, Minimize2, Maximize2, Activity, Scale, Globe, CheckCircle, Target, ShieldAlert, ArrowRight, Check, Truck, Info, RotateCcw, Sliders, XCircle, Building2, MapPin, ChevronDown, ChevronUp, EyeOff, Filter, Layers, FileSpreadsheet } from 'lucide-react';
 import jsPDF from 'jspdf';
 import { sanitizeInputText } from './utils/sanitizer';
@@ -5584,7 +5583,7 @@ const AppNavbar: React.FC<NavbarProps> = ({
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
                 <button onClick={() => setPage('home')} className="flex items-center space-x-3 shrink-0 cursor-pointer" aria-label="Go to homepage">
                     <img
-                        src={appLogo}
+                        src="/apple-touch-icon.png"
                         alt="MeloTwo App Logo"
                         className="w-8 h-8 rounded-lg object-cover shadow-md ring-1 ring-cyan-400/40"
                         onError={(e) => {
