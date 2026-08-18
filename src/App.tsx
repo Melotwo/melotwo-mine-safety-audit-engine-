@@ -20,6 +20,7 @@ import { WhatsAppChatButton } from './components/WhatsAppChatButton';
 import { LinkedInToastNotification } from './components/LinkedInToastNotification';
 import { StatutoryFactSheet } from './components/StatutoryFactSheet';
 import { SiteDashboardMetricsHeader } from './components/SiteDashboardMetricsHeader';
+import { MeloTwoLogo } from './components/MeloTwoLogo';
 import { Database, RefreshCw, Upload, LogOut, Sparkles, CheckCircle2, AlertOctagon, Download, ChevronRight, Lock, Terminal, Minimize2, Maximize2, Activity, Scale, Globe, CheckCircle, Target, ShieldAlert, ArrowRight, Check, Truck, Info, RotateCcw, Sliders, XCircle, Building2, MapPin, ChevronDown, ChevronUp, EyeOff, Filter, Layers, FileSpreadsheet } from 'lucide-react';
 import jsPDF from 'jspdf';
 import { sanitizeInputText } from './utils/sanitizer';
@@ -5583,15 +5584,8 @@ const AppNavbar: React.FC<NavbarProps> = ({
         <header className="sticky top-0 z-40 bg-slate-900/95 backdrop-blur-md border-b border-slate-800 shadow-md text-white transition-all">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
                 <button onClick={() => setPage('home')} className="flex items-center space-x-3 shrink-0 cursor-pointer" aria-label="Go to homepage">
-                    <img
-                        src="/apple-touch-icon.png"
-                        alt="MeloTwo App Logo"
-                        className="w-8 h-8 rounded-lg object-cover shadow-md ring-1 ring-cyan-400/40"
-                        onError={(e) => {
-                            (e.currentTarget as HTMLImageElement).src = '/melotwo_shield_logo.svg';
-                        }}
-                    />
-                    <span className="text-lg font-black tracking-tight text-white font-sans">
+                    <MeloTwoLogo size="md" />
+                    <span className="text-lg font-black tracking-tight text-white font-sans flex items-center gap-1.5">
                         MeloTwo <span className="text-amber-400 font-extrabold text-xs px-2 py-0.5 rounded-full bg-amber-950/80 border border-amber-600/60">MINE SAFETY</span>
                     </span>
                 </button>
@@ -5824,7 +5818,13 @@ const AppFooter: React.FC = () => (
                 </div>
             </div>
 
-            <div className="md:flex md:items-center md:justify-between">
+            <div className="md:flex md:items-center md:justify-between pt-6">
+                <div className="flex items-center gap-3 mb-4 md:mb-0">
+                    <MeloTwoLogo size="sm" showText={false} />
+                    <span className="text-sm font-bold text-gray-900">
+                        Melo<span className="text-amber-600">Two</span> Mine Safety &bull; <span className="text-gray-500 font-normal text-xs">SANS 10330 Digital SHEQ Engine</span>
+                    </span>
+                </div>
                 <div className="flex justify-center space-x-6 md:order-2">
                     {AFFILIATE_LINKS.map((link) => (
                         <a 
