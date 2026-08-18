@@ -279,7 +279,7 @@ export const TenderFileWizard: React.FC<TenderFileWizardProps> = ({
     fullName: 'David Khumalo',
     companyName: 'Apex Trade & Civils (Pty) Ltd',
     tradingName: 'Apex Contractors',
-    contactPhone: '+27 82 450 9182',
+    contactPhone: '+27 11 000 0000',
     contactEmail: 'safety@apexcontractors.co.za',
     physicalAddress: '14 Industrial Road, Jet Park, Boksburg, 1459',
     cipcRegNumber: '2021/847291/07',
