@@ -1153,6 +1153,224 @@ app.get(['/api/v1/compliance/validate-asset/:assetSerialNumber', '/api/v1/compli
   }
 });
 
+// ============================================================================
+// MODULE 2: REAL-TIME SAFETY DEFENSIBILITY LEDGER API ROUTES
+// ============================================================================
+
+export interface LedgerSyncRecord {
+  client_uuid: string;
+  site_id: string;
+  terminal_id: string;
+  operator_user_id: string;
+  operator_name?: string;
+  taxonomy_tag_id: string;
+  asset_serial_number?: string;
+  recorded_at_local: string;
+  measurement_key: string;
+  measurement_value: number;
+  min_threshold: number;
+  max_threshold?: number;
+  unit?: string;
+  severity?: 'NORMAL' | 'ADVISORY' | 'DEVIATION' | 'CRITICAL_BREACH';
+  latitude?: number;
+  longitude?: number;
+  location_description?: string;
+  photo_evidence_url?: string;
+  digital_signature_hash: string;
+  is_offline_captured?: boolean;
+  capa_action_taken?: string;
+}
+
+interface StoredLedgerEntry extends LedgerSyncRecord {
+  id: string;
+  synced_at_cloud: string;
+  created_at: string;
+}
+
+// In-Memory Time-Series Ledger Store (Pre-seeded with continuous South African underground shift logs)
+const defensibilityLedgerStore: StoredLedgerEntry[] = [
+  {
+    id: 'ledg-001',
+    client_uuid: 'c0182b89-a2e1-4c44-b40b-789a421b1001',
+    site_id: 'SITE-WIT-01',
+    terminal_id: 'TAB-SHAFT-3-UG',
+    operator_user_id: 'TS-981',
+    operator_name: 'T. Seroka (SHEQ Officer)',
+    taxonomy_tag_id: 'tag-001',
+    asset_serial_number: 'PROBE-TESTO-8821',
+    recorded_at_local: '2026-08-20T06:15:00.000Z',
+    synced_at_cloud: '2026-08-20T06:15:02.000Z',
+    measurement_key: 'core_temperature_celsius',
+    measurement_value: 76.5,
+    min_threshold: 60.0,
+    max_threshold: 95.0,
+    unit: '°C',
+    severity: 'NORMAL',
+    latitude: -26.2041,
+    longitude: 28.0473,
+    location_description: 'Shaft 3 Level 42 Subterranean Canteen Hot-Hold',
+    digital_signature_hash: 'e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855',
+    is_offline_captured: false,
+    created_at: '2026-08-20T06:15:02.000Z'
+  },
+  {
+    id: 'ledg-002',
+    client_uuid: 'c0182b89-a2e1-4c44-b40b-789a421b1002',
+    site_id: 'SITE-WIT-01',
+    terminal_id: 'TAB-SHAFT-3-UG',
+    operator_user_id: 'MK-402',
+    operator_name: 'M. Khumalo (Shift Lead)',
+    taxonomy_tag_id: 'tag-003',
+    asset_serial_number: 'CANISTER-THERM-401',
+    recorded_at_local: '2026-08-20T07:45:00.000Z',
+    synced_at_cloud: '2026-08-20T07:45:04.000Z',
+    measurement_key: 'canister_internal_temp',
+    measurement_value: 68.2,
+    min_threshold: 60.0,
+    max_threshold: 90.0,
+    unit: '°C',
+    severity: 'NORMAL',
+    latitude: -26.2045,
+    longitude: 28.0478,
+    location_description: 'Shaft 3 Cage Drop Descent Handover Station',
+    digital_signature_hash: '4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945',
+    is_offline_captured: true,
+    created_at: '2026-08-20T07:45:04.000Z'
+  }
+];
+
+// 1. GET /api/v1/ledger (Query defensibility logs)
+app.get(['/api/v1/ledger', '/api/v1/ledger/'], (req, res) => {
+  const { site_id, terminal_id, severity, limit } = req.query;
+  let filtered = [...defensibilityLedgerStore];
+
+  if (site_id && typeof site_id === 'string') {
+    filtered = filtered.filter(l => l.site_id.toLowerCase() === site_id.toLowerCase());
+  }
+  if (terminal_id && typeof terminal_id === 'string') {
+    filtered = filtered.filter(l => l.terminal_id.toLowerCase() === terminal_id.toLowerCase());
+  }
+  if (severity && typeof severity === 'string') {
+    filtered = filtered.filter(l => l.severity === severity);
+  }
+
+  // Sort descending by recorded_at_local
+  filtered.sort((a, b) => new Date(b.recorded_at_local).getTime() - new Date(a.recorded_at_local).getTime());
+
+  const maxLimit = limit ? parseInt(String(limit), 10) : 100;
+  const result = filtered.slice(0, isNaN(maxLimit) ? 100 : maxLimit);
+
+  res.json({
+    success: true,
+    total_count: filtered.length,
+    returned_count: result.length,
+    records: result
+  });
+});
+
+// 2. POST /api/v1/ledger/sync (Bulk Ingest & Defensibility Audit Engine)
+app.post(['/api/v1/ledger/sync', '/api/v1/ledger/sync/'], (req, res) => {
+  try {
+    const { terminal_id, site_id, records } = req.body;
+
+    if (!records || !Array.isArray(records) || records.length === 0) {
+      return res.status(400).json({ error: 'Payload must include a non-empty "records" array.' });
+    }
+
+    const cloudSyncTime = new Date().toISOString();
+    const syncedUuids: string[] = [];
+    const criticalBreaches: Array<{ client_uuid: string; reason: string }> = [];
+    const deviations: Array<{ client_uuid: string; reason: string }> = [];
+    const gapWarnings: string[] = [];
+
+    // Process each record with statutory threshold checks
+    for (const record of records as LedgerSyncRecord[]) {
+      if (!record.client_uuid || !record.taxonomy_tag_id || typeof record.measurement_value !== 'number') {
+        continue;
+      }
+
+      // Check for duplicate client_uuid (Idempotent sync protection)
+      const alreadyExists = defensibilityLedgerStore.find(e => e.client_uuid === record.client_uuid);
+      if (alreadyExists) {
+        syncedUuids.push(record.client_uuid);
+        continue;
+      }
+
+      // Dynamic severity calculation if not supplied or verifying integrity
+      let calculatedSeverity: 'NORMAL' | 'ADVISORY' | 'DEVIATION' | 'CRITICAL_BREACH' = record.severity || 'NORMAL';
+      const val = record.measurement_value;
+      const minThresh = record.min_threshold;
+      const maxThresh = record.max_threshold;
+
+      // SANS 10330 HACCP CCP Thermal Rule: Hot holding strictly >= 60°C
+      if (minThresh !== undefined && val < minThresh) {
+        if (minThresh - val > 10) {
+          calculatedSeverity = 'CRITICAL_BREACH';
+          criticalBreaches.push({
+            client_uuid: record.client_uuid,
+            reason: `Severe thermal violation: Measured ${val}°C against mandatory minimum ${minThresh}°C (DMRE Section 54 Non-Conformance Risk)`
+          });
+        } else {
+          calculatedSeverity = 'DEVIATION';
+          deviations.push({
+            client_uuid: record.client_uuid,
+            reason: `Measured ${val}°C is below statutory threshold of ${minThresh}°C. Corrective action required.`
+          });
+        }
+      } else if (maxThresh !== undefined && val > maxThresh) {
+        calculatedSeverity = 'DEVIATION';
+        deviations.push({
+          client_uuid: record.client_uuid,
+          reason: `Measured ${val} exceeds safe operational ceiling of ${maxThresh}.`
+        });
+      }
+
+      const newEntry: StoredLedgerEntry = {
+        ...record,
+        id: `ledg-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
+        site_id: record.site_id || site_id || 'SITE-WIT-01',
+        terminal_id: record.terminal_id || terminal_id || 'TERMINAL-OFFLINE',
+        severity: calculatedSeverity,
+        synced_at_cloud: cloudSyncTime,
+        created_at: cloudSyncTime
+      };
+
+      defensibilityLedgerStore.unshift(newEntry);
+      syncedUuids.push(record.client_uuid);
+    }
+
+    // Gap analysis check: inspect if time delta between last sync and oldest batch record > 4 hours
+    if (records.length > 0) {
+      const timestamps = records.map(r => new Date(r.recorded_at_local).getTime()).filter(t => !isNaN(t));
+      if (timestamps.length > 1) {
+        timestamps.sort((a, b) => a - b);
+        for (let i = 0; i < timestamps.length - 1; i++) {
+          const deltaHours = (timestamps[i + 1] - timestamps[i]) / (1000 * 60 * 60);
+          if (deltaHours > 3.0) {
+            gapWarnings.push(`Audit gap warning: ${deltaHours.toFixed(1)} hour unmonitored window detected between ${new Date(timestamps[i]).toLocaleTimeString()} and ${new Date(timestamps[i+1]).toLocaleTimeString()}`);
+          }
+        }
+      }
+    }
+
+    res.status(200).json({
+      success: true,
+      message: `Successfully synchronized ${syncedUuids.length} defensibility ledger entries.`,
+      cloud_sync_timestamp: cloudSyncTime,
+      synced_uuids: syncedUuids,
+      total_synced: syncedUuids.length,
+      critical_breaches_count: criticalBreaches.length,
+      critical_breaches: criticalBreaches,
+      deviations_count: deviations.length,
+      deviations: deviations,
+      gap_warnings: gapWarnings,
+      defensibility_status: criticalBreaches.length === 0 ? 'STATUTORILY_DEFENDED' : 'BREACHES_FLAGGED_FOR_CAPA'
+    });
+  } catch (err: any) {
+    res.status(500).json({ error: err.message || 'Error processing ledger batch sync' });
+  }
+});
+
 // Explicit Static Routes for Webmaster Tools & IndexNow Verification
 app.get('/robots.txt', (req, res) => {
   res.type('text/plain');
