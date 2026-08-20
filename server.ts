@@ -1,6 +1,7 @@
 // Heavy Industrial Safety & Compliance Audit Engine Server
 import express from 'express';
 import path from 'path';
+import crypto from 'crypto';
 import dotenv from 'dotenv';
 import { createServer as createViteServer } from 'vite';
 import { GoogleGenAI } from '@google/genai';
@@ -1578,6 +1579,243 @@ app.get(['/api/v1/aeo/site-summary/:siteId.md', '/api/v1/aeo/site-summary/:siteI
 
   res.setHeader('Content-Type', 'text/markdown; charset=utf-8');
   res.send(markdownContent);
+});
+
+// ============================================================================
+// MODULE 4: IMMUTABLE LIVE COMPLIANCE PROOF API ROUTES
+// ============================================================================
+
+export interface ProofLedgerBlock {
+  id: string;
+  block_index: number;
+  site_id: string;
+  record_payload: Record<string, any>;
+  previous_hash: string;
+  entry_hash: string;
+  created_at: string;
+}
+
+// Compute deterministic SHA-256 hash for proof chaining
+function computeBlockSha256(previousHash: string, payload: Record<string, any>): string {
+  const payloadStr = typeof payload === 'string' ? payload : JSON.stringify(payload);
+  return crypto.createHash('sha256').update(previousHash + payloadStr).digest('hex');
+}
+
+// Initialize pre-seeded cryptographic chained proof store
+function createInitialProofBlocks(): ProofLedgerBlock[] {
+  const blocks: ProofLedgerBlock[] = [];
+  const genesisPayload = {
+    event_type: 'GENESIS_ANCHOR',
+    site_id: 'SITE-WIT-01',
+    site_name: 'Witwatersrand Deep Shaft 3 & 4 Complex',
+    contractor: 'Impala Subterranean Catering & Logistics Pty Ltd',
+    statutory_governance: 'DMRE MHSA Act 29 of 1996 & SANS 10330:2020',
+    sheq_lead: 'T. Seroka (TS-981)',
+    timestamp: '2026-08-01T00:00:00.000Z'
+  };
+  const genesisPrevHash = '0000000000000000000000000000000000000000000000000000000000000000';
+  const genesisHash = computeBlockSha256(genesisPrevHash, genesisPayload);
+
+  blocks.push({
+    id: 'proof-blk-000',
+    block_index: 0,
+    site_id: 'SITE-WIT-01',
+    record_payload: genesisPayload,
+    previous_hash: genesisPrevHash,
+    entry_hash: genesisHash,
+    created_at: '2026-08-01T00:00:00.000Z'
+  });
+
+  const rawEvents = [
+    {
+      event_type: 'SANAS_CALIBRATION_CHECK',
+      asset_serial_number: 'PROBE-TESTO-8821',
+      standard_code: 'SANS_10142_1',
+      lab_accreditation_number: 'SANAS-CAL-2026-991',
+      measured_accuracy_delta: '+0.05°C',
+      status: 'CERTIFIED_ACTIVE',
+      timestamp: '2026-08-05T08:30:00.000Z'
+    },
+    {
+      event_type: 'CCP_CORE_THERMAL_LETHALITY_VERIFICATION',
+      location: 'Shaft 3 Level 42 Mess Station',
+      standard_code: 'SANS_10330_2020',
+      measurement_key: 'core_temperature_celsius',
+      measured_value: 78.4,
+      min_threshold: 60.0,
+      status: 'VERIFIED_COMPLIANT',
+      timestamp: '2026-08-10T11:45:00.000Z'
+    },
+    {
+      event_type: 'SUBTERRANEAN_TRANSIT_INTEGRITY_HANDOVER',
+      canister_id: 'CANISTER-THERM-401',
+      location: 'Shaft 3 Cage Drop Station to Sub-level 52',
+      standard_code: 'SANS_10049_2019',
+      measured_transit_loss: '0.4°C / 45 min',
+      status: 'SEAL_INTACT',
+      timestamp: '2026-08-15T06:15:00.000Z'
+    },
+    {
+      event_type: 'FOOD_HANDLER_HEALTH_R638_AUDIT',
+      operator_user_id: 'TS-981',
+      shift_session: 'Morning Underground Shift 1',
+      standard_code: 'R638_DOH',
+      total_operatives_verified: 48,
+      non_conformance_count: 0,
+      status: 'STATUTORILY_CLEARED',
+      timestamp: '2026-08-20T05:00:00.000Z'
+    }
+  ];
+
+  let prevHash = genesisHash;
+  rawEvents.forEach((ev, idx) => {
+    const currentHash = computeBlockSha256(prevHash, ev);
+    blocks.push({
+      id: `proof-blk-00${idx + 1}`,
+      block_index: idx + 1,
+      site_id: 'SITE-WIT-01',
+      record_payload: ev,
+      previous_hash: prevHash,
+      entry_hash: currentHash,
+      created_at: ev.timestamp
+    });
+    prevHash = currentHash;
+  });
+
+  return blocks;
+}
+
+const proofLedgerStore: ProofLedgerBlock[] = createInitialProofBlocks();
+
+// 1. GET /api/v1/proof/verify/:siteId (Sequential Cryptographic Chain Verification)
+app.get(['/api/v1/proof/verify/:siteId', '/api/v1/proof/verify/:siteId/'], (req, res) => {
+  try {
+    const { siteId } = req.params;
+    const normalizedSiteId = siteId ? siteId.toUpperCase() : 'SITE-WIT-01';
+
+    // Retrieve all blocks for site ordered by block_index ascending
+    const siteBlocks = proofLedgerStore
+      .filter(b => b.site_id.toUpperCase() === normalizedSiteId)
+      .sort((a, b) => a.block_index - b.block_index);
+
+    if (siteBlocks.length === 0) {
+      return res.status(404).json({
+        isValidChain: false,
+        totalRecordsVerified: 0,
+        latestProofHash: null,
+        error: `No cryptographic proof ledger entries found for site "${siteId}".`
+      });
+    }
+
+    let isValidChain = true;
+    let brokenBlockIndex: number | null = null;
+    let verificationError: string | null = null;
+
+    // Verify cryptographic integrity sequentially
+    for (let i = 0; i < siteBlocks.length; i++) {
+      const currentBlock = siteBlocks[i];
+
+      // Check Genesis anchor
+      if (i === 0) {
+        if (currentBlock.previous_hash !== '0000000000000000000000000000000000000000000000000000000000000000') {
+          isValidChain = false;
+          brokenBlockIndex = 0;
+          verificationError = 'Genesis block previous_hash is not standard zero anchor.';
+          break;
+        }
+      } else {
+        // Verify link to preceding block
+        const previousBlock = siteBlocks[i - 1];
+        if (currentBlock.previous_hash !== previousBlock.entry_hash) {
+          isValidChain = false;
+          brokenBlockIndex = currentBlock.block_index;
+          verificationError = `Chain broken at Block #${currentBlock.block_index}: previous_hash (${currentBlock.previous_hash.slice(0, 12)}...) does not match preceding entry_hash (${previousBlock.entry_hash.slice(0, 12)}...).`;
+          break;
+        }
+      }
+
+      // Recompute and verify SHA-256 hash
+      const computedHash = computeBlockSha256(currentBlock.previous_hash, currentBlock.record_payload);
+      if (computedHash !== currentBlock.entry_hash) {
+        isValidChain = false;
+        brokenBlockIndex = currentBlock.block_index;
+        verificationError = `Tamper detected at Block #${currentBlock.block_index}: record payload hash recomputation mismatch.`;
+        break;
+      }
+    }
+
+    const latestBlock = siteBlocks[siteBlocks.length - 1];
+
+    res.json({
+      isValidChain,
+      totalRecordsVerified: siteBlocks.length,
+      latestProofHash: latestBlock.entry_hash,
+      genesisProofHash: siteBlocks[0].entry_hash,
+      site_id: normalizedSiteId,
+      verified_at: new Date().toISOString(),
+      brokenBlockIndex,
+      verificationError,
+      blocks: siteBlocks.map(b => ({
+        block_index: b.block_index,
+        entry_hash: b.entry_hash,
+        previous_hash: b.previous_hash,
+        event_type: b.record_payload.event_type || 'COMPLIANCE_RECORD',
+        created_at: b.created_at,
+        record_payload: b.record_payload
+      }))
+    });
+
+  } catch (err: any) {
+    res.status(500).json({
+      isValidChain: false,
+      totalRecordsVerified: 0,
+      latestProofHash: null,
+      error: err.message || 'Error executing cryptographic chain verification'
+    });
+  }
+});
+
+// 2. POST /api/v1/proof/append (Append New Verified Block to Chained Ledger)
+app.post(['/api/v1/proof/append', '/api/v1/proof/append/'], (req, res) => {
+  try {
+    const { site_id, record_payload } = req.body;
+    if (!site_id || !record_payload) {
+      return res.status(400).json({ error: 'site_id and record_payload are required.' });
+    }
+
+    const normalizedSiteId = site_id.toUpperCase();
+    const siteBlocks = proofLedgerStore
+      .filter(b => b.site_id.toUpperCase() === normalizedSiteId)
+      .sort((a, b) => a.block_index - b.block_index);
+
+    const prevHash = siteBlocks.length > 0
+      ? siteBlocks[siteBlocks.length - 1].entry_hash
+      : '0000000000000000000000000000000000000000000000000000000000000000';
+
+    const nextIndex = siteBlocks.length;
+    const entryHash = computeBlockSha256(prevHash, record_payload);
+    const createdAt = new Date().toISOString();
+
+    const newBlock: ProofLedgerBlock = {
+      id: `proof-blk-${Date.now()}`,
+      block_index: nextIndex,
+      site_id: normalizedSiteId,
+      record_payload,
+      previous_hash: prevHash,
+      entry_hash: entryHash,
+      created_at: createdAt
+    };
+
+    proofLedgerStore.push(newBlock);
+
+    res.status(201).json({
+      success: true,
+      message: `Block #${nextIndex} cryptographically chained successfully.`,
+      block: newBlock
+    });
+  } catch (err: any) {
+    res.status(500).json({ error: err.message || 'Failed to append proof ledger block' });
+  }
 });
 
 // Explicit Static Routes for Webmaster Tools & IndexNow Verification
