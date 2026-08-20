@@ -18,3 +18,6 @@ export * from './WhatsAppChatButton';
 export * from './LinkedInToastNotification';
 export * from './StatutoryFactSheet';
 export * from './SiteDashboardMetricsHeader';
+export * from './TagManager';
+export * from './AeoPreview';
+export * from './ComplianceProofViewer';
