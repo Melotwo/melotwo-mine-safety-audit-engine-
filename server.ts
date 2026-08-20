@@ -838,6 +838,321 @@ app.all(['/api/seo/indexnow', '/api/indexnow'], async (req, res) => {
   }
 });
 
+// ============================================================================
+// MODULE 1: COMPLIANCE TAXONOMY & ASSET CERTIFICATION API ROUTES
+// ============================================================================
+
+interface InMemTaxonomyTag {
+  id: string;
+  site_id: string;
+  tag_name: string;
+  scope_type: 'PROCESS_AUDIT_COMPLIANT' | 'EQUIPMENT_CERTIFIED';
+  standard_code: 'SANS_10330_2020' | 'SANS_10049_2019' | 'SANS_10142_1' | 'DMRE_MHSA_SEC_54' | 'R638_DOH';
+  clause_reference: string;
+  requires_accredited_lab: boolean;
+  description: string;
+  is_active: boolean;
+  created_at: string;
+}
+
+interface InMemCertifiedAsset {
+  id: string;
+  site_id: string;
+  taxonomy_tag_id: string;
+  asset_serial_number: string;
+  equipment_name: string;
+  equipment_model: string;
+  sanas_lab_accreditation_number: string;
+  calibration_certificate_url?: string;
+  calibrated_on: string;
+  valid_until: string;
+  is_active: boolean;
+  created_at: string;
+}
+
+// In-Memory Fallback Seed Stores (Pre-seeded with real-world SA Mining SHEQ assets)
+const taxonomyTagsStore: InMemTaxonomyTag[] = [
+  {
+    id: 'tag-001',
+    site_id: 'SITE-WIT-01',
+    tag_name: 'Hot-Holding Bain-Marie Thermal Control',
+    scope_type: 'PROCESS_AUDIT_COMPLIANT',
+    standard_code: 'SANS_10330_2020',
+    clause_reference: 'Clause 7.4.2 (Thermal Lethality ≥60°C)',
+    requires_accredited_lab: false,
+    description: 'Continuous digital shift verification of underground hot meal holding units.',
+    is_active: true,
+    created_at: '2026-01-10T08:00:00.000Z'
+  },
+  {
+    id: 'tag-002',
+    site_id: 'SITE-WIT-01',
+    tag_name: 'Calibrated Digital Food Probe Thermometer',
+    scope_type: 'EQUIPMENT_CERTIFIED',
+    standard_code: 'SANS_10142_1',
+    clause_reference: 'Clause 5.1 (Calibration Accuracy ±0.2°C)',
+    requires_accredited_lab: true,
+    description: 'SANAS-accredited calibration check for Testo 104-IR handheld penetration probes.',
+    is_active: true,
+    created_at: '2026-01-15T09:30:00.000Z'
+  },
+  {
+    id: 'tag-003',
+    site_id: 'SITE-WIT-01',
+    tag_name: 'Subterranean Insulated Food Transit Canisters',
+    scope_type: 'EQUIPMENT_CERTIFIED',
+    standard_code: 'SANS_10330_2020',
+    clause_reference: 'Clause 7.4.3 (Pressure & Thermal Retention)',
+    requires_accredited_lab: true,
+    description: 'Double-walled stainless transit units used for cage drop descent to shaft stations.',
+    is_active: true,
+    created_at: '2026-02-01T10:15:00.000Z'
+  },
+  {
+    id: 'tag-004',
+    site_id: 'SITE-WIT-01',
+    tag_name: 'Food Handler Hand Hygiene & Health Declaration',
+    scope_type: 'PROCESS_AUDIT_COMPLIANT',
+    standard_code: 'R638_DOH',
+    clause_reference: 'Regulation R638 Section 5 (Personal Hygiene)',
+    requires_accredited_lab: false,
+    description: 'Daily visual check and shift supervisor health sign-off before kitchen clock-in.',
+    is_active: true,
+    created_at: '2026-02-10T06:00:00.000Z'
+  },
+  {
+    id: 'tag-005',
+    site_id: 'SITE-WIT-01',
+    tag_name: 'Shaft 4 Heavy Cold-Room Blast Chiller',
+    scope_type: 'EQUIPMENT_CERTIFIED',
+    standard_code: 'SANS_10049_2019',
+    clause_reference: 'Clause 8.3 (Cooling Velocity <2 hrs to 21°C)',
+    requires_accredited_lab: true,
+    description: 'Surface bulk prep cooling compressor unit with automatic chart logger.',
+    is_active: true,
+    created_at: '2026-03-01T11:00:00.000Z'
+  }
+];
+
+const certifiedAssetsStore: InMemCertifiedAsset[] = [
+  {
+    id: 'ast-001',
+    site_id: 'SITE-WIT-01',
+    taxonomy_tag_id: 'tag-002',
+    asset_serial_number: 'PROBE-TESTO-8821',
+    equipment_name: 'Testo 104-IR Waterproof Food Probe',
+    equipment_model: 'Testo 104-IR Dual Laser',
+    sanas_lab_accreditation_number: 'SANAS-CAL-2026-991',
+    calibration_certificate_url: 'https://melotwo.co.za/certs/SANAS-CAL-2026-991.pdf',
+    calibrated_on: '2026-01-10',
+    valid_until: '2026-10-15',
+    is_active: true,
+    created_at: '2026-01-10T08:30:00.000Z'
+  },
+  {
+    id: 'ast-002',
+    site_id: 'SITE-WIT-01',
+    taxonomy_tag_id: 'tag-003',
+    asset_serial_number: 'CANISTER-THERM-401',
+    equipment_name: 'ThermoBarrier Underground Food Transporter #04',
+    equipment_model: 'TB-50L Industrial Rugged',
+    sanas_lab_accreditation_number: 'SANAS-MET-2025-412',
+    calibration_certificate_url: 'https://melotwo.co.za/certs/SANAS-MET-2025-412.pdf',
+    calibrated_on: '2025-09-01',
+    valid_until: '2026-03-01',
+    is_active: true,
+    created_at: '2025-09-01T09:00:00.000Z'
+  },
+  {
+    id: 'ast-003',
+    site_id: 'SITE-WIT-01',
+    taxonomy_tag_id: 'tag-005',
+    asset_serial_number: 'CHILL-BLAST-902',
+    equipment_name: 'Industrial Heavy Blast Chiller System',
+    equipment_model: 'CryoShield BC-500',
+    sanas_lab_accreditation_number: 'SANAS-ELEC-2026-104',
+    calibration_certificate_url: 'https://melotwo.co.za/certs/SANAS-ELEC-2026-104.pdf',
+    calibrated_on: '2026-02-15',
+    valid_until: '2027-02-15',
+    is_active: true,
+    created_at: '2026-02-15T10:00:00.000Z'
+  }
+];
+
+// 1. GET /api/v1/compliance/tags (List all compliance tags)
+app.get(['/api/v1/compliance/tags', '/api/v1/compliance/tags/'], (req, res) => {
+  const { site_id, scope_type, standard_code } = req.query;
+
+  let filtered = [...taxonomyTagsStore];
+
+  if (site_id && typeof site_id === 'string') {
+    filtered = filtered.filter(t => t.site_id.toLowerCase() === site_id.toLowerCase());
+  }
+
+  if (scope_type && typeof scope_type === 'string') {
+    filtered = filtered.filter(t => t.scope_type === scope_type);
+  }
+
+  if (standard_code && typeof standard_code === 'string') {
+    filtered = filtered.filter(t => t.standard_code === standard_code);
+  }
+
+  res.json({
+    success: true,
+    count: filtered.length,
+    tags: filtered
+  });
+});
+
+// 2. POST /api/v1/compliance/tags (Create tag with strict validation on scope_type)
+app.post(['/api/v1/compliance/tags', '/api/v1/compliance/tags/'], (req, res) => {
+  try {
+    const {
+      site_id,
+      tag_name,
+      scope_type,
+      standard_code,
+      clause_reference,
+      requires_accredited_lab,
+      description
+    } = req.body;
+
+    // Strict validation
+    if (!site_id || typeof site_id !== 'string' || !site_id.trim()) {
+      return res.status(400).json({ error: 'Missing or invalid site_id' });
+    }
+
+    if (!tag_name || typeof tag_name !== 'string' || !tag_name.trim()) {
+      return res.status(400).json({ error: 'Missing or invalid tag_name' });
+    }
+
+    const validScopeTypes = ['PROCESS_AUDIT_COMPLIANT', 'EQUIPMENT_CERTIFIED'];
+    if (!scope_type || !validScopeTypes.includes(scope_type)) {
+      return res.status(400).json({
+        error: `Invalid scope_type. Must be one of: ${validScopeTypes.join(', ')}`
+      });
+    }
+
+    const validStandards = [
+      'SANS_10330_2020',
+      'SANS_10049_2019',
+      'SANS_10142_1',
+      'DMRE_MHSA_SEC_54',
+      'R638_DOH'
+    ];
+    if (!standard_code || !validStandards.includes(standard_code)) {
+      return res.status(400).json({
+        error: `Invalid standard_code. Must be one of: ${validStandards.join(', ')}`
+      });
+    }
+
+    if (!clause_reference || typeof clause_reference !== 'string') {
+      return res.status(400).json({ error: 'Missing or invalid clause_reference' });
+    }
+
+    // Process audits must not falsely claim to require accredited lab certificates
+    const labRequirement = Boolean(requires_accredited_lab);
+    if (scope_type === 'PROCESS_AUDIT_COMPLIANT' && labRequirement) {
+      return res.status(422).json({
+        error: 'Validation error: PROCESS_AUDIT_COMPLIANT records represent operational routines and cannot require SANAS laboratory certification. Use EQUIPMENT_CERTIFIED for physical instruments and calibrated assets.'
+      });
+    }
+
+    // Check duplicate tag for site + standard
+    const exists = taxonomyTagsStore.some(
+      t => t.site_id.toLowerCase() === site_id.toLowerCase() &&
+           t.tag_name.toLowerCase() === tag_name.trim().toLowerCase() &&
+           t.standard_code === standard_code
+    );
+
+    if (exists) {
+      return res.status(409).json({
+        error: `A taxonomy tag named "${tag_name}" already exists for site ${site_id} under standard ${standard_code}.`
+      });
+    }
+
+    const newTag: InMemTaxonomyTag = {
+      id: `tag-${Date.now()}`,
+      site_id: site_id.trim(),
+      tag_name: tag_name.trim(),
+      scope_type,
+      standard_code,
+      clause_reference: clause_reference.trim(),
+      requires_accredited_lab: labRequirement,
+      description: description ? String(description).trim() : '',
+      is_active: true,
+      created_at: new Date().toISOString()
+    };
+
+    taxonomyTagsStore.unshift(newTag);
+
+    res.status(201).json({
+      success: true,
+      message: 'Compliance taxonomy tag registered successfully',
+      tag: newTag
+    });
+  } catch (err: any) {
+    res.status(500).json({ error: err.message || 'Internal server error while creating taxonomy tag' });
+  }
+});
+
+// 3. GET /api/v1/compliance/validate-asset/:assetSerialNumber (Asset certification & expiration checker)
+app.get(['/api/v1/compliance/validate-asset/:assetSerialNumber', '/api/v1/compliance/validate-asset/:assetSerialNumber/'], (req, res) => {
+  try {
+    const { assetSerialNumber } = req.params;
+
+    if (!assetSerialNumber) {
+      return res.status(400).json({ error: 'Asset serial number parameter is required' });
+    }
+
+    const asset = certifiedAssetsStore.find(
+      a => a.asset_serial_number.toLowerCase() === assetSerialNumber.toLowerCase()
+    );
+
+    if (!asset) {
+      return res.status(404).json({
+        error: `Asset with serial number "${assetSerialNumber}" not found in certified registry.`,
+        is_certified: false,
+        valid: false
+      });
+    }
+
+    // Evaluation against current reference date (2026 current timeline)
+    const now = new Date();
+    const expiryDate = new Date(asset.valid_until);
+    const diffTime = expiryDate.getTime() - now.getTime();
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+    const isExpired = diffDays < 0;
+    const isExpiringSoon = diffDays >= 0 && diffDays <= 30;
+
+    const linkedTag = taxonomyTagsStore.find(t => t.id === asset.taxonomy_tag_id);
+
+    res.json({
+      success: true,
+      asset_serial_number: asset.asset_serial_number,
+      equipment_name: asset.equipment_name,
+      equipment_model: asset.equipment_model,
+      scope_type: 'EQUIPMENT_CERTIFIED',
+      sanas_lab_number: asset.sanas_lab_accreditation_number,
+      calibrated_on: asset.calibrated_on,
+      valid_until: asset.valid_until,
+      days_until_expiration: diffDays,
+      is_certified: asset.is_active && !isExpired,
+      status: isExpired ? 'EXPIRED' : isExpiringSoon ? 'EXPIRING_SOON' : 'ACTIVE_VALID',
+      certificate_url: asset.calibration_certificate_url,
+      linked_taxonomy_tag: linkedTag ? {
+        id: linkedTag.id,
+        tag_name: linkedTag.tag_name,
+        standard_code: linkedTag.standard_code,
+        clause_reference: linkedTag.clause_reference
+      } : null
+    });
+  } catch (err: any) {
+    res.status(500).json({ error: err.message || 'Error validating asset certification' });
+  }
+});
+
 // Explicit Static Routes for Webmaster Tools & IndexNow Verification
 app.get('/robots.txt', (req, res) => {
   res.type('text/plain');
