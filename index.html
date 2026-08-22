@@ -159,13 +159,13 @@
     </script>
   </head>
   <body class="bg-gray-950 antialiased text-gray-100">
-    <!-- Static Crawlable SEO Header for Webmaster Tools & Search Engine Indexers -->
-    <header class="sr-only">
-      <h1>Automate OHS Safety Files and Tender Documentation | MeloTwo Safety Engine</h1>
-      <p>Instant 20-section statutory OHS Act, MHSA, and SANS compliant tender safety file automation engine for South African contractors and mine operations.</p>
-    </header>
-
-    <div id="root"></div>
+    <div id="root">
+      <!-- Static Crawlable SEO Fallback for Search Engine Bots before hydration -->
+      <header class="sr-only">
+        <h1>Automate OHS Safety Files and Tender Documentation | MeloTwo Safety Engine</h1>
+        <p>Instant 20-section statutory OHS Act, MHSA, and SANS compliant tender safety file automation engine for South African contractors and mine operations.</p>
+      </header>
+    </div>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>
