@@ -10006,7 +10006,7 @@ Safety index and terminal clearance verified. The audit record status has been u
                         </div>
                         <div>
                             <div className="flex items-center gap-2">
-                                <h1 className="text-xl md:text-2xl font-black text-white tracking-tight">MELOTWO OPERATIONAL GATE</h1>
+                                <h2 className="text-xl md:text-2xl font-black text-white tracking-tight">MELOTWO OPERATIONAL GATE</h2>
                                 <span className="bg-slate-800 text-[10px] text-slate-400 px-2 py-0.5 rounded font-mono border border-slate-700/50">v2.10</span>
                             </div>
                             <p className="text-xs text-slate-400 mt-1 leading-relaxed">Centralized site audit console with synchronized Google Workspace SANS & POPIA compliance ledgering.</p>
