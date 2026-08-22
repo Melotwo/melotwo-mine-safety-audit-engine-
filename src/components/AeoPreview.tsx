@@ -89,12 +89,12 @@ export const AeoPreview: React.FC<AeoPreviewProps> = ({
             )}
             <div className="flex items-center space-x-2">
               <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse" />
-              <h1 className="text-base font-bold text-white tracking-wide flex items-center gap-2">
+              <h2 className="text-base font-bold text-white tracking-wide flex items-center gap-2">
                 <span>AEO (Answer Engine Optimization) Engine</span>
                 <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-slate-800 text-emerald-300 border border-slate-700">
                   MODULE 3
                 </span>
-              </h1>
+              </h2>
             </div>
           </div>
 
