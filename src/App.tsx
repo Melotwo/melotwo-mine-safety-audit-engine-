@@ -6275,8 +6275,12 @@ const LandingPage: React.FC<LandingPageProps> = ({
                         </div>
 
                         <h1 className="text-3xl sm:text-4xl md:text-5xl font-black text-white tracking-tight leading-tight sm:leading-none">
-                            <span className="block text-transparent bg-clip-text bg-gradient-to-r from-amber-400 via-amber-300 to-amber-200">S-Tier Mine Compliance</span>
-                            <span className="block mt-1 sm:mt-2 text-white">&amp; PPE Material Auditing</span>
+                            <span className="block text-transparent bg-clip-text bg-gradient-to-r from-amber-400 via-amber-300 to-amber-200">
+                                Automate OHS Safety Files &amp; Tender Documentation
+                            </span>
+                            <span className="block mt-1 sm:mt-2 text-white text-2xl sm:text-3xl md:text-4xl font-extrabold text-slate-200">
+                                S-Tier Mine Compliance &amp; PPE Auditing
+                            </span>
                         </h1>
 
                         <p className="text-slate-300 text-sm md:text-base leading-relaxed max-w-xl font-medium">
