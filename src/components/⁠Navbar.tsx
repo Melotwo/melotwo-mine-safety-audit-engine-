@@ -82,6 +82,16 @@ export const Navbar: React.FC<NavbarProps> = ({
           >
             SHEQ Academy
           </button>
+          <a
+            href="#savings-calculator"
+            onClick={() => {
+              if (currentPage !== 'home') setPage('home');
+            }}
+            className="text-xs md:text-sm font-bold text-emerald-400 hover:text-emerald-300 transition-colors flex items-center gap-1 bg-emerald-500/10 px-2.5 py-1 rounded-lg border border-emerald-500/20"
+          >
+            <Icons.Calculator className="w-3.5 h-3.5" />
+            <span>ROI Calculator</span>
+          </a>
 
           {/* Protected Admin Route Link - Only visible when isAdmin is active */}
           {isAdmin && (
