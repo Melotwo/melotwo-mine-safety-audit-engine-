@@ -21,3 +21,4 @@ export * from './SiteDashboardMetricsHeader';
 export * from './TagManager';
 export * from './AeoPreview';
 export * from './ComplianceProofViewer';
+export * from './SafetySavingsCalculator';
