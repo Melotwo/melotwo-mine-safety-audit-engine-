@@ -23,7 +23,7 @@ import { StatutoryFactSheet } from './components/StatutoryFactSheet';
 import { SiteDashboardMetricsHeader } from './components/SiteDashboardMetricsHeader';
 import { MeloTwoLogo } from './components/MeloTwoLogo';
 import { OutreachHub } from './components/OutreachHub';
-import { Database, RefreshCw, Upload, LogOut, Sparkles, CheckCircle2, AlertOctagon, Download, ChevronRight, Lock, Terminal, Minimize2, Maximize2, Activity, Scale, Globe, CheckCircle, Target, ShieldAlert, ArrowRight, Check, Truck, Info, RotateCcw, Sliders, XCircle, Building2, MapPin, ChevronDown, ChevronUp, EyeOff, Filter, Layers, FileSpreadsheet } from 'lucide-react';
+import { Database, RefreshCw, Upload, LogOut, Sparkles, CheckCircle2, AlertOctagon, Download, ChevronRight, Lock, Terminal, Minimize2, Maximize2, Activity, Scale, Globe, CheckCircle, Target, ShieldAlert, ArrowRight, Check, Truck, Info, RotateCcw, Sliders, XCircle, Building2, MapPin, ChevronDown, ChevronUp, EyeOff, Filter, Layers, FileSpreadsheet, Calculator } from 'lucide-react';
 import jsPDF from 'jspdf';
 import { sanitizeInputText } from './utils/sanitizer';
 import { DailyComplianceData } from './types';
@@ -6331,6 +6331,16 @@ const LandingPage: React.FC<LandingPageProps> = ({
                                 <FileSpreadsheet className="w-4 h-4 mr-2" />
                                 Build 20-Section Tender File
                             </button>
+                            <a
+                                href="#savings-calculator"
+                                onClick={() => {
+                                    trackGA4Event('hero_cta_clicked', { action: 'scroll_to_savings_calculator' });
+                                }}
+                                className="inline-flex items-center justify-center px-6 py-3.5 bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/40 text-emerald-400 font-extrabold text-xs tracking-wide uppercase rounded-xl shadow-lg shadow-emerald-500/10 hover:shadow-emerald-500/20 transform hover:-translate-y-0.5 transition-all duration-200 cursor-pointer"
+                            >
+                                <Calculator className="w-4 h-4 mr-2 text-emerald-400" />
+                                Calculate Site Savings (ROI)
+                            </a>
                             <button
                                 type="button"
                                 onClick={() => {
