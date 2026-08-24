@@ -15,6 +15,7 @@ import { TrainingAcademyPage } from './components/TrainingAcademyPage';
 import { ShiftHandoverAssistant } from './components/ShiftHandoverAssistant';
 import { RegulatoryShiftAlertFeed } from './components/RegulatoryShiftAlertFeed';
 import { CalculateSiteCostModal } from './components/CalculateSiteCostModal';
+import { SafetySavingsCalculator } from './components/SafetySavingsCalculator';
 import { TenderFileWizard } from './components/TenderFileWizard';
 import { WhatsAppChatButton } from './components/WhatsAppChatButton';
 import { LinkedInToastNotification } from './components/LinkedInToastNotification';
@@ -7251,6 +7252,25 @@ const LandingPage: React.FC<LandingPageProps> = ({
                     </div>
                 </div>
             </div>
+
+            {/* Industrial Safety File Cost & Stoppage Risk Calculator (Lead Magnet) */}
+            <section id="savings-calculator" className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+                <SafetySavingsCalculator 
+                    onAutomateClick={(data) => {
+                        trackGA4Event('savings_calculator_cta_clicked', { 
+                            industry: data.industry,
+                            workers: data.workerCount,
+                            sites: data.siteCount,
+                            projected_savings: data.netAnnualSavings
+                        });
+                        if (onOpenTenderWizard) {
+                            onOpenTenderWizard();
+                        } else {
+                            setIsDemoModalOpen(true);
+                        }
+                    }}
+                />
+            </section>
 
             {/* Executive Authority Statement Section */}
             <AuthoritySection />
