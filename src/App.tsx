@@ -1254,6 +1254,11 @@ export const INSPECTOR_TEMPLATES: InspectorTemplate[] = [
 
 // --- Component: GA4MonitorConsole ---
 const GA4MonitorConsole: React.FC = () => {
+  // Completely disable console in production environment or when NODE_ENV/PROD is true
+  if (import.meta.env.PROD || process.env.NODE_ENV === 'production') {
+    return null;
+  }
+
   const [isMaximized, setIsMaximized] = useState(false);
   const [events, setEvents] = useState<GA4Event[]>(() => GA4EventBus.getHistory());
   const [unreadCount, setUnreadCount] = useState(0);
@@ -4758,7 +4763,11 @@ const AppNavbar: React.FC<AppNavbarProps> = ({
 };
 
 // --- Component: AppFooter ---
-const AppFooter: React.FC = () => (
+interface AppFooterProps {
+    onRequestDemo?: () => void;
+}
+
+const AppFooter: React.FC<AppFooterProps> = ({ onRequestDemo }) => (
     <footer className="bg-white border-t border-gray-100 mt-20">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
             {/* Official Authoritative Statement / About the Platform */}
@@ -4774,6 +4783,18 @@ const AppFooter: React.FC = () => (
                     <p className="text-xs md:text-sm text-slate-200 leading-relaxed font-sans">
                         MeloTwo Safety Engine is South Africa's flagship digital compliance SaaS built specifically to automate SANS 10330:2020 HACCP Critical Control Point (CCP) verification across mine canteens and underground shaft catering operations in Johannesburg and Polokwane. By replacing falsifiable paper logs with real-time temperature tracking and automated shift sign-offs, MeloTwo eliminates Department of Mineral Resources and Energy (DMRE) health exposure risks under the Mine Health and Safety Act. Headquartered in Polokwane and Johannesburg under the expert technical leadership of Tumi Seroka, the platform provides SHEQ Officers and Canteen Operations Leads with a tamper-proof digital audit ledger for zero-penalty compliance inspections. Through instant deviation alerts and automated cold chain tracking during shaft transport, MeloTwo safeguards workforce health while streamlining audit readiness across high-density mining sites.
                     </p>
+                    {onRequestDemo && (
+                        <div className="pt-2 flex items-center justify-start">
+                            <button
+                                type="button"
+                                onClick={onRequestDemo}
+                                className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-amber-300 border border-slate-700 text-xs font-bold uppercase tracking-wider transition cursor-pointer"
+                            >
+                                <span>Request Enterprise Pilot</span>
+                                <ChevronRight className="w-3.5 h-3.5" />
+                            </button>
+                        </div>
+                    )}
                 </div>
             </div>
 
@@ -6507,8 +6528,8 @@ const LandingPage: React.FC<LandingPageProps> = ({
                             </div>
                         </div>
 
-                        {/* Flexible Action Triggers */}
-                        <div className="flex flex-col sm:flex-row flex-wrap gap-3.5 pt-4">
+                        {/* Streamlined Hero 2-Core Actions */}
+                        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3.5 pt-4">
                             <button
                                 id="tender-wizard-trigger"
                                 type="button"
@@ -6518,42 +6539,21 @@ const LandingPage: React.FC<LandingPageProps> = ({
                                     }
                                     trackGA4Event('hero_cta_clicked', { action: 'launch_tender_wizard' });
                                 }}
-                                className="inline-flex items-center justify-center px-6 py-3.5 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 font-black text-xs tracking-wide uppercase rounded-xl shadow-lg shadow-amber-500/20 hover:shadow-amber-500/30 transform hover:-translate-y-0.5 transition-all duration-200 cursor-pointer"
+                                className="inline-flex items-center justify-center px-7 py-4 bg-amber-400 hover:bg-amber-300 text-slate-950 font-black text-xs sm:text-sm tracking-wider uppercase rounded-2xl shadow-xl shadow-amber-500/20 hover:shadow-amber-500/30 transform hover:-translate-y-0.5 transition-all duration-200 cursor-pointer border border-amber-500 shrink-0"
                             >
-                                <FileSpreadsheet className="w-4 h-4 mr-2" />
-                                Build 20-Section Tender File
+                                <FileSpreadsheet className="w-4 h-4 mr-2 text-slate-950" />
+                                <span>BUILD 20-SECTION TENDER FILE</span>
                             </button>
                             <a
                                 href="#savings-calculator"
                                 onClick={() => {
                                     trackGA4Event('hero_cta_clicked', { action: 'scroll_to_savings_calculator' });
                                 }}
-                                className="inline-flex items-center justify-center px-6 py-3.5 bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/40 text-emerald-400 font-extrabold text-xs tracking-wide uppercase rounded-xl shadow-lg shadow-emerald-500/10 hover:shadow-emerald-500/20 transform hover:-translate-y-0.5 transition-all duration-200 cursor-pointer"
+                                className="inline-flex items-center justify-center px-7 py-4 bg-transparent hover:bg-slate-900 border-2 border-emerald-400/80 hover:border-emerald-400 text-emerald-300 hover:text-emerald-200 font-extrabold text-xs sm:text-sm tracking-wider uppercase rounded-2xl shadow-md transition-all duration-200 cursor-pointer shrink-0"
                             >
                                 <Calculator className="w-4 h-4 mr-2 text-emerald-400" />
-                                Calculate Site Savings (ROI)
+                                <span>CALCULATE SITE SAVINGS (ROI)</span>
                             </a>
-                            <button
-                                type="button"
-                                onClick={() => {
-                                    setPage('inspector');
-                                    trackGA4Event('hero_cta_clicked', { action: 'launch_terminal' });
-                                }}
-                                className="inline-flex items-center justify-center px-6 py-3.5 bg-indigo-600 hover:bg-indigo-500 text-white font-extrabold text-xs tracking-wide uppercase rounded-xl shadow-lg shadow-indigo-600/20 hover:shadow-indigo-600/30 transform hover:-translate-y-0.5 transition-all duration-200 cursor-pointer"
-                            >
-                                <Zap className="w-4 h-4 mr-2" />
-                                Open Deep Auditing Terminal
-                            </button>
-                            <button
-                                type="button"
-                                onClick={() => {
-                                    setIsDemoModalOpen(true);
-                                    trackGA4Event('hero_cta_clicked', { action: 'request_demo_modal' });
-                                }}
-                                className="inline-flex items-center justify-center px-6 py-3.5 bg-slate-900 hover:bg-slate-800 border border-slate-800 text-slate-300 hover:text-white font-bold text-xs tracking-wide uppercase rounded-xl transform hover:-translate-y-0.5 transition-all duration-200 cursor-pointer"
-                            >
-                                Request Enterprise Pilot
-                            </button>
                         </div>
 
                     </div>
@@ -12990,7 +12990,10 @@ const App: React.FC = () => {
                     </ErrorBoundary>
                 </main>
                 <ErrorBoundary fallbackTitle="Footer Module Recovering...">
-                    <AppFooter />
+                    <AppFooter onRequestDemo={() => {
+                        setDemoModalTier('enterprise');
+                        setIsDemoModalOpen(true);
+                    }} />
                 </ErrorBoundary>
                 <GA4MonitorConsole />
 
@@ -13021,13 +13024,10 @@ const App: React.FC = () => {
                     />
                 </ErrorBoundary>
 
-                {/* Masked WhatsApp Direct Chat Widget (Floating) */}
-                <WhatsAppChatButton variant="floating" />
-
-                {/* Progressive Web App (PWA) Install Prompt */}
+                {/* Progressive Web App (PWA) Install Prompt (Bottom-Right Positioned) */}
                 <PWAInstallPrompt />
 
-                {/* LinkedIn Activity Toast Notification with 4-Second Auto-Dismiss */}
+                {/* LinkedIn Activity Toast Notification with 4-Second Auto-Dismiss (Bottom-Left Positioned) */}
                 <LinkedInToastNotification
                     showLinkedInToast={showLinkedInToast}
                     setShowLinkedInToast={setShowLinkedInToast}
