@@ -173,7 +173,8 @@ export const CalculateSiteCostModal: React.FC<CalculateSiteCostModalProps> = ({
       }}
     >
       <div 
-        id="calculate-site-cost-modal"
+        id="calculate-cost"
+        data-modal-name="calculate-site-cost-modal"
         role="dialog"
         aria-modal="true"
         aria-labelledby="site-cost-modal-title"
