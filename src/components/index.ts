@@ -22,3 +22,5 @@ export * from './TagManager';
 export * from './AeoPreview';
 export * from './ComplianceProofViewer';
 export * from './SafetySavingsCalculator';
+export * from './BlogPage';
+export * from './OutreachHub';
