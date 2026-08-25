@@ -23,7 +23,9 @@ import { StatutoryFactSheet } from './components/StatutoryFactSheet';
 import { SiteDashboardMetricsHeader } from './components/SiteDashboardMetricsHeader';
 import { MeloTwoLogo } from './components/MeloTwoLogo';
 import { OutreachHub } from './components/OutreachHub';
-import { Database, RefreshCw, Upload, LogOut, Sparkles, CheckCircle2, AlertOctagon, Download, ChevronRight, Lock, Terminal, Minimize2, Maximize2, Activity, Scale, Globe, CheckCircle, Target, ShieldAlert, ArrowRight, Check, Truck, Info, RotateCcw, Sliders, XCircle, Building2, MapPin, ChevronDown, ChevronUp, EyeOff, Filter, Layers, FileSpreadsheet, Calculator } from 'lucide-react';
+import { Navbar } from './components/Navbar';
+import { BlogPage } from './components/BlogPage';
+import { Database, RefreshCw, Upload, LogOut, Sparkles, CheckCircle2, AlertOctagon, Download, ChevronRight, Lock, Terminal, Minimize2, Maximize2, Activity, Scale, Globe, CheckCircle, Target, ShieldAlert, ArrowRight, Check, Truck, Info, RotateCcw, Sliders, XCircle, Building2, MapPin, ChevronDown, ChevronUp, EyeOff, Filter, Layers, FileSpreadsheet, Calculator, BookOpen } from 'lucide-react';
 import jsPDF from 'jspdf';
 import { sanitizeInputText } from './utils/sanitizer';
 import { DailyComplianceData } from './types';
@@ -1192,9 +1194,9 @@ const RcaMarkdownRenderer: React.FC<{ text: string }> = ({ text }) => {
 };
 
 export const AFFILIATE_LINKS: AffiliateLink[] = [
-  { id: 1, name: 'AI Security Pro', url: '#', description: 'Advanced threat modeling and adversarial testing tools.', icon: Shield },
-  { id: 2, name: 'Data Privacy Vault', url: '#', description: 'Comprehensive data anonymization and access control services.', icon: Settings },
-  { id: 3, name: 'Model Governance Engine', url: '#', description: 'Automated policy enforcement and audit trail generation.', icon: Zap },
+  { id: 1, name: 'Compliance Blog & Guides', url: '#blog', description: 'Technical whitepapers, SANS standards & MHSA stoppage prevention guides.', icon: BookOpen },
+  { id: 2, name: 'Tender Safety File Engine', url: '#tender-file', description: 'Generate 20-section DMRE compliant tender safety documentation.', icon: FileSpreadsheet },
+  { id: 3, name: 'Site Stoppage Cost Calculator', url: '#calculate-cost', description: 'Calculate daily financial exposure and ROI of digital compliance.', icon: Shield },
 ];
 
 export const INSPECTOR_TEMPLATES: InspectorTemplate[] = [
@@ -4418,153 +4420,8 @@ const PromptMetricsDashboard: React.FC = () => {
   );
 };
 
-// --- Component: AppNavbar ---
-interface NavbarProps {
-    currentPage: Page;
-    setPage: (page: Page) => void;
-    userId?: string | null;
-    isAuthReady?: boolean;
-    isAdmin?: boolean;
-    onGetStarted?: () => void;
-    onOpenCostCalculator?: () => void;
-    onOpenTenderWizard?: () => void;
-}
-
-const AppNavbar: React.FC<NavbarProps> = ({ 
-    currentPage, 
-    setPage, 
-    userId, 
-    isAuthReady, 
-    isAdmin = false,
-    onGetStarted,
-    onOpenCostCalculator,
-    onOpenTenderWizard
-}) => {
-    const navItems: { name: string; page: Page; isAdminOnly?: boolean }[] = [
-        { name: 'Dashboard', page: 'home' },
-        { name: 'Solutions', page: 'solutions' },
-        { name: 'Auditing Terminal', page: 'inspector' },
-        { name: 'Shift Handover', page: 'handover' },
-        { name: 'SHEQ Academy', page: 'academy' },
-        { name: 'Partner Hub', page: 'outreach' }
-    ];
-
-    return (
-        <header className="sticky top-0 z-40 bg-slate-900/95 backdrop-blur-md border-b border-slate-800 shadow-md text-white transition-all">
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
-                <button onClick={() => setPage('home')} className="flex items-center space-x-3 shrink-0 cursor-pointer" aria-label="Go to homepage">
-                    <MeloTwoLogo size="md" />
-                    <span className="text-lg font-black tracking-tight text-white font-sans flex items-center gap-1.5">
-                        MeloTwo <span className="text-amber-400 font-extrabold text-xs px-2 py-0.5 rounded-full bg-amber-950/80 border border-amber-600/60">MINE SAFETY</span>
-                    </span>
-                </button>
-
-                <nav className="hidden lg:flex items-center space-x-1">
-                    {navItems.map((item) => (
-                        <button
-                            key={item.page}
-                            onClick={() => setPage(item.page)}
-                            className={`px-3 py-1.5 rounded-xl text-xs font-bold transition cursor-pointer flex items-center gap-1.5 ${
-                                currentPage === item.page
-                                    ? item.isAdminOnly
-                                        ? 'bg-amber-500/20 text-amber-300 border border-amber-500/40 font-extrabold shadow-sm'
-                                        : 'bg-indigo-600 text-white font-extrabold shadow-sm'
-                                    : item.isAdminOnly
-                                    ? 'text-amber-400 hover:text-amber-300 hover:bg-amber-950/40'
-                                    : 'text-slate-300 hover:text-white hover:bg-slate-800'
-                            }`}
-                        >
-                            {item.isAdminOnly && <Sparkles className="w-3.5 h-3.5 text-amber-400" />}
-                            <span>{item.name}</span>
-                            {item.isAdminOnly && (
-                                <span className="text-[9px] bg-amber-500 text-slate-950 px-1 py-0.2 rounded font-black uppercase">
-                                    ADMIN
-                                </span>
-                            )}
-                        </button>
-                    ))}
-                </nav>
-
-                <div className="flex items-center space-x-2 sm:space-x-3">
-                    <div className="hidden lg:block">
-                        <StatutoryFactSheet triggerLabel="OHSA Audit Matrix™" />
-                    </div>
-
-                    {onOpenTenderWizard && (
-                        <button
-                            onClick={onOpenTenderWizard}
-                            className="hidden sm:inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold text-amber-300 bg-amber-950/70 border border-amber-500/50 hover:bg-amber-900/70 rounded-xl transition shadow-sm cursor-pointer"
-                            title="Generate Tender-Ready Safety File (Once-off R750)"
-                        >
-                            <FileSpreadsheet className="w-3.5 h-3.5 text-amber-400" />
-                            <span>Tender Safety File</span>
-                        </button>
-                    )}
-
-                    {onOpenCostCalculator && (
-                        <button
-                            onClick={onOpenCostCalculator}
-                            className="hidden md:inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold text-cyan-300 bg-cyan-950/70 border border-cyan-500/50 hover:bg-cyan-900/70 rounded-xl transition shadow-sm cursor-pointer"
-                            title="Calculate Site Cost for SMBs or Enterprise"
-                        >
-                            <Shield className="w-3.5 h-3.5 text-cyan-400" />
-                            <span>Calculate Cost</span>
-                        </button>
-                    )}
-
-                    <WhatsAppChatButton variant="nav" />
-
-                    {isAuthReady ? (
-                        userId ? (
-                            <div className="inline-flex items-center px-3 py-1.5 bg-slate-800 border border-slate-700 rounded-xl text-xs font-bold text-emerald-400 font-mono">
-                                <span className="w-2 h-2 rounded-full bg-emerald-400 mr-2 animate-pulse"></span>
-                                <span>ID: {userId?.substring(0, 8)}</span>
-                            </div>
-                        ) : (
-                            <button 
-                                onClick={onGetStarted}
-                                className="inline-flex items-center justify-center px-3.5 py-1.5 text-xs font-bold text-white bg-indigo-600 border border-transparent rounded-xl shadow-md hover:bg-indigo-500 focus:outline-none cursor-pointer transition"
-                            >
-                                Get Started
-                            </button>
-                        )
-                    ) : (
-                         <div className="h-8 w-24 bg-slate-800 animate-pulse rounded-xl"></div>
-                    )}
-                </div>
-            </div>
-            {/* Small screen navigation list */}
-            <div className="lg:hidden border-t border-slate-800 bg-slate-900 px-2 py-2 flex flex-wrap gap-1.5 justify-around shadow-inner">
-                {navItems.map((item) => (
-                    <button
-                        key={item.page}
-                        onClick={() => setPage(item.page)}
-                        className={`px-2.5 py-1 rounded-lg text-xs font-bold transition cursor-pointer flex items-center gap-1 ${
-                            currentPage === item.page
-                                ? item.isAdminOnly
-                                    ? 'bg-amber-500/20 text-amber-300 border border-amber-500/40'
-                                    : 'bg-indigo-600 text-white'
-                                : item.isAdminOnly
-                                ? 'text-amber-400 hover:text-amber-300'
-                                : 'text-slate-400 hover:text-white'
-                        }`}
-                    >
-                        {item.isAdminOnly && <Sparkles className="w-3 h-3 text-amber-400" />}
-                        <span>{item.name}</span>
-                    </button>
-                ))}
-                {onOpenTenderWizard && (
-                    <button
-                        onClick={onOpenTenderWizard}
-                        className="px-2.5 py-1 rounded-lg text-xs font-bold text-amber-300 bg-amber-950 border border-amber-600/60 transition cursor-pointer"
-                    >
-                        Tender File (R750)
-                    </button>
-                )}
-            </div>
-        </header>
-    );
-};
+// --- Component: AppNavbar (Unified with Navbar) ---
+const AppNavbar: React.FC<NavbarProps> = (props) => <Navbar {...props} />;
 
 // --- Component: AppFooter ---
 const AppFooter: React.FC = () => (
@@ -12612,6 +12469,15 @@ const App: React.FC = () => {
                 rawHash === '#cost-calculator' ||
                 rawHash === '#savings-modal';
 
+            // 3. Check Blog route / hash
+            const isBlogRoute = 
+                rawHash === '#blog' || 
+                rawHash.startsWith('#blog/') ||
+                (typeof window !== 'undefined' && (
+                    window.location.pathname.startsWith('/blog') || 
+                    new URLSearchParams(window.location.search).has('post')
+                ));
+
             if (isTenderHash) {
                 setCurrentPage('home');
                 setIsCostModalOpen(false);
@@ -12630,6 +12496,10 @@ const App: React.FC = () => {
                     target: 'calculate_cost_modal'
                 });
                 window.scrollTo({ top: 0, behavior: 'smooth' });
+            } else if (isBlogRoute) {
+                setCurrentPage('blog');
+                setIsTenderWizardOpen(false);
+                setIsCostModalOpen(false);
             }
         };
 
@@ -12750,15 +12620,23 @@ const App: React.FC = () => {
         onBack={() => setCurrentPage('home')}
       />
     );
+  } else if (currentPage === 'blog') {
+    return (
+      <BlogPage
+        setPage={setCurrentPage}
+        onOpenTenderWizard={handleOpenTenderWizard}
+        onOpenCostCalculator={handleOpenCostModal}
+      />
+    );
   }
-}, [currentPage, setCurrentPage, setIsDemoModalOpen, setDemoModalTier, isAdmin, handleOpenTenderWizard]);
+}, [currentPage, setCurrentPage, setIsDemoModalOpen, setDemoModalTier, isAdmin, handleOpenTenderWizard, handleOpenCostModal]);
 
 
     return (
         <ErrorBoundary fallbackTitle="MeloTwo Session Isolated">
             <div className="flex flex-col min-h-screen bg-gray-50 font-sans relative">
                 <ErrorBoundary fallbackTitle="Navigation Bar Recovering...">
-                    <AppNavbar 
+                    <Navbar 
                         currentPage={currentPage} 
                         setPage={setCurrentPage} 
                         userId={userId} 
