@@ -6319,6 +6319,7 @@ const LandingPage: React.FC<LandingPageProps> = ({
                         {/* Flexible Action Triggers */}
                         <div className="flex flex-col sm:flex-row flex-wrap gap-3.5 pt-4">
                             <button
+                                id="tender-wizard-trigger"
                                 type="button"
                                 onClick={() => {
                                     if (onOpenTenderWizard) {
@@ -12517,6 +12518,80 @@ const App: React.FC = () => {
         return false;
     });
 
+    // Deep-link handlers for Tender Safety File Engine (#tender-file)
+    const handleOpenTenderWizard = useCallback(() => {
+        setIsTenderWizardOpen(true);
+        if (typeof window !== 'undefined' && window.location.hash !== '#tender-file') {
+            try {
+                window.history.replaceState(null, '', '#tender-file');
+            } catch {
+                window.location.hash = 'tender-file';
+            }
+        }
+        trackGA4Event('tender_wizard_opened', { source: 'ui_action' });
+    }, []);
+
+    const handleCloseTenderWizard = useCallback(() => {
+        setIsTenderWizardOpen(false);
+        if (typeof window !== 'undefined') {
+            const currentHash = window.location.hash.toLowerCase();
+            if (
+                currentHash === '#tender-file' || 
+                currentHash === '#tender-wizard' || 
+                currentHash === '#tender' || 
+                currentHash === '#tender-file-generator'
+            ) {
+                try {
+                    window.history.replaceState(
+                        null,
+                        '',
+                        window.location.pathname + window.location.search
+                    );
+                } catch {
+                    window.location.hash = '';
+                }
+            }
+        }
+        trackGA4Event('tender_wizard_closed', { source: 'ui_close' });
+    }, []);
+
+    // Detect #tender-file on mount and on hashchange
+    useEffect(() => {
+        const checkHashForTenderFile = () => {
+            if (typeof window === 'undefined') return;
+            const rawHash = window.location.hash.toLowerCase();
+            const isTenderHash = 
+                rawHash === '#tender-file' || 
+                rawHash === '#tender-wizard' || 
+                rawHash === '#tender' || 
+                rawHash === '#tender-file-generator' ||
+                rawHash.startsWith('#tender');
+
+            if (isTenderHash) {
+                setCurrentPage('home');
+                setIsTenderWizardOpen(true);
+                trackGA4Event('hash_deep_link_triggered', {
+                    hash: window.location.hash,
+                    target: 'tender_safety_file_modal'
+                });
+                // Smoothly bring user to top where modal is centered
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+            }
+        };
+
+        // Check on initial load
+        checkHashForTenderFile();
+
+        // Listen to navigation events
+        window.addEventListener('hashchange', checkHashForTenderFile);
+        window.addEventListener('popstate', checkHashForTenderFile);
+
+        return () => {
+            window.removeEventListener('hashchange', checkHashForTenderFile);
+            window.removeEventListener('popstate', checkHashForTenderFile);
+        };
+    }, []);
+
     useEffect(() => {
         // Run with standard local session ID with fallback for non-secure contexts
         const generatedId = (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function')
@@ -12579,14 +12654,14 @@ const App: React.FC = () => {
         setPage={setCurrentPage}
         setIsDemoModalOpen={setIsDemoModalOpen}
         setDemoModalTier={setDemoModalTier}
-        onOpenTenderWizard={() => setIsTenderWizardOpen(true)}
+        onOpenTenderWizard={handleOpenTenderWizard}
       />
     );
   } else if (currentPage === 'inspector') {
     return (
       <SafetyInspectorPage
         setPage={setCurrentPage}
-        onOpenTenderWizard={() => setIsTenderWizardOpen(true)}
+        onOpenTenderWizard={handleOpenTenderWizard}
       />
     );
   } else if (currentPage === 'academy') {
@@ -12622,7 +12697,7 @@ const App: React.FC = () => {
       />
     );
   }
-}, [currentPage, setCurrentPage, setIsDemoModalOpen, setDemoModalTier, isAdmin, setIsTenderWizardOpen]);
+}, [currentPage, setCurrentPage, setIsDemoModalOpen, setDemoModalTier, isAdmin, handleOpenTenderWizard]);
 
 
     return (
@@ -12636,7 +12711,7 @@ const App: React.FC = () => {
                         isAuthReady={isAuthReady} 
                         isAdmin={isAdmin}
                         onOpenCostCalculator={() => setIsCostModalOpen(true)}
-                        onOpenTenderWizard={() => setIsTenderWizardOpen(true)}
+                        onOpenTenderWizard={handleOpenTenderWizard}
                         onGetStarted={() => {
                             setDemoModalTier('professional');
                             setIsDemoModalOpen(true);
@@ -12676,7 +12751,7 @@ const App: React.FC = () => {
                 <ErrorBoundary fallbackTitle="Tender Safety File Recovering...">
                     <TenderFileWizard
                         isOpen={isTenderWizardOpen}
-                        onClose={() => setIsTenderWizardOpen(false)}
+                        onClose={handleCloseTenderWizard}
                     />
                 </ErrorBoundary>
 
