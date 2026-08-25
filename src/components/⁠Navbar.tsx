@@ -7,9 +7,7 @@ import {
   GraduationCap, 
   LayoutDashboard, 
   BookOpen, 
-  ArrowRight, 
   RotateCcw, 
-  Scale, 
   Layers
 } from 'lucide-react';
 import { Page } from '../types';
@@ -117,7 +115,7 @@ export const Navbar: React.FC<NavbarProps> = ({
             <span>Auditing Terminal</span>
           </button>
 
-          {/* 3. SHEQ Academy (With Partner Hub integrated) */}
+          {/* 3. SHEQ Academy */}
           <button
             onClick={() => setPage('academy')}
             className={`px-3 py-1.5 rounded-xl text-xs font-bold transition cursor-pointer flex items-center gap-1.5 ${
@@ -223,7 +221,7 @@ export const Navbar: React.FC<NavbarProps> = ({
         {/* 3 DIRECT ACTION BUTTONS (RIGHT SIDE) */}
         <div className="flex items-center space-x-2 sm:space-x-3">
           
-          {/* Action 1: Tender Safety File (High-Contrast Amber) */}
+          {/* Action 1: Tender Safety File */}
           {onOpenTenderWizard && (
             <button
               id="build-tender-btn"
@@ -236,7 +234,7 @@ export const Navbar: React.FC<NavbarProps> = ({
             </button>
           )}
 
-          {/* Action 2: Calculate Cost (Secondary Blue/Cyan Outline) */}
+          {/* Action 2: Calculate Cost */}
           {onOpenCostCalculator && (
             <button
               id="calculate-cost-btn"
