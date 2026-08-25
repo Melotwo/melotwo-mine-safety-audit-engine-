@@ -24,7 +24,8 @@ import { SiteDashboardMetricsHeader } from './components/SiteDashboardMetricsHea
 import { MeloTwoLogo } from './components/MeloTwoLogo';
 import { OutreachHub } from './components/OutreachHub';
 import { BlogPage } from './components/BlogPage';
-import { Database, RefreshCw, Upload, LogOut, Sparkles, CheckCircle2, AlertOctagon, Download, ChevronRight, Lock, Terminal, Minimize2, Maximize2, Activity, Scale, Globe, CheckCircle, Target, ShieldAlert, ArrowRight, Check, Truck, Info, RotateCcw, Sliders, XCircle, Building2, MapPin, ChevronDown, ChevronUp, EyeOff, Filter, Layers, FileSpreadsheet, Calculator, BookOpen } from 'lucide-react';
+import { PWAInstallPrompt } from './components/PWAInstallPrompt';
+import { Database, RefreshCw, Upload, LogOut, Sparkles, CheckCircle2, AlertOctagon, Download, ChevronRight, Lock, Terminal, Minimize2, Maximize2, Activity, Scale, Globe, CheckCircle, Target, ShieldAlert, ArrowRight, Check, Truck, Info, RotateCcw, Sliders, XCircle, Building2, MapPin, ChevronDown, ChevronUp, EyeOff, Filter, Layers, FileSpreadsheet, Calculator, BookOpen, Smartphone } from 'lucide-react';
 import jsPDF from 'jspdf';
 import { sanitizeInputText } from './utils/sanitizer';
 import { DailyComplianceData } from './types';
@@ -1196,6 +1197,7 @@ export const AFFILIATE_LINKS: AffiliateLink[] = [
   { id: 1, name: 'Compliance Blog & Guides', url: '#blog', description: 'Technical whitepapers, SANS standards & MHSA stoppage prevention guides.', icon: BookOpen },
   { id: 2, name: 'Tender Safety File Engine', url: '#tender-file', description: 'Generate 20-section DMRE compliant tender safety documentation.', icon: FileSpreadsheet },
   { id: 3, name: 'Site Stoppage Cost Calculator', url: '#calculate-cost', description: 'Calculate daily financial exposure and ROI of digital compliance.', icon: Shield },
+  { id: 4, name: '📲 Install MeloTwo App', url: '#install-app', description: 'Install MeloTwo PWA on your phone or desktop for offline access.', icon: Shield },
 ];
 
 export const INSPECTOR_TEMPLATES: InspectorTemplate[] = [
@@ -13021,6 +13023,9 @@ const App: React.FC = () => {
 
                 {/* Masked WhatsApp Direct Chat Widget (Floating) */}
                 <WhatsAppChatButton variant="floating" />
+
+                {/* Progressive Web App (PWA) Install Prompt */}
+                <PWAInstallPrompt />
 
                 {/* LinkedIn Activity Toast Notification with 4-Second Auto-Dismiss */}
                 <LinkedInToastNotification
