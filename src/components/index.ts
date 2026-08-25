@@ -24,3 +24,5 @@ export * from './ComplianceProofViewer';
 export * from './SafetySavingsCalculator';
 export * from './BlogPage';
 export * from './OutreachHub';
+export * from './PWAInstallPrompt';
+
