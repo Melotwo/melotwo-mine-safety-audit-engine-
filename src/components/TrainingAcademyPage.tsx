@@ -29,9 +29,11 @@ import {
   Star,
   X,
   CheckCircle,
-  ExternalLink
+  ExternalLink,
+  Users
 } from 'lucide-react';
 import { Page } from '../types';
+import { OutreachHub } from './OutreachHub';
 
 interface TrainingAcademyPageProps {
   setPage: (page: Page) => void;
@@ -180,7 +182,7 @@ const QUIZ_QUESTIONS: QuizQuestion[] = [
 ];
 
 export const TrainingAcademyPage: React.FC<TrainingAcademyPageProps> = ({ setPage }) => {
-  const [activeTab, setActiveTab] = useState<'modules' | 'protocol' | 'quiz' | 'checklist'>('modules');
+  const [activeTab, setActiveTab] = useState<'modules' | 'protocol' | 'quiz' | 'checklist' | 'partners'>('modules');
   const [selectedModule, setSelectedModule] = useState<number | null>(1);
   const [userAnswers, setUserAnswers] = useState<Record<number, number>>({});
   const [isQuizSubmitted, setIsQuizSubmitted] = useState<boolean>(false);
@@ -495,6 +497,18 @@ export const TrainingAcademyPage: React.FC<TrainingAcademyPageProps> = ({ setPag
         >
           <CheckCircle2 className="w-4 h-4 text-emerald-500" />
           <span>4. 5-Point Quick Reference Field Checklist</span>
+        </button>
+
+        <button
+          onClick={() => setActiveTab('partners')}
+          className={`flex items-center space-x-2 px-5 py-3 rounded-t-xl font-bold text-xs sm:text-sm whitespace-nowrap transition cursor-pointer ${
+            activeTab === 'partners'
+              ? 'bg-white border border-b-0 border-gray-200 text-amber-600 shadow-sm'
+              : 'text-gray-500 hover:text-gray-900 hover:bg-gray-100/50'
+          }`}
+        >
+          <Users className="w-4 h-4 text-amber-500" />
+          <span>5. Partner & Affiliate Hub</span>
         </button>
       </div>
 
@@ -939,6 +953,13 @@ export const TrainingAcademyPage: React.FC<TrainingAcademyPageProps> = ({ setPag
               );
             })}
           </div>
+        </div>
+      )}
+
+      {/* TAB 5: PARTNER & AFFILIATE HUB */}
+      {activeTab === 'partners' && (
+        <div className="space-y-6">
+          <OutreachHub onBack={() => setActiveTab('modules')} />
         </div>
       )}
 
