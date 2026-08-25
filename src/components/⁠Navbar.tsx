@@ -353,3 +353,6 @@ export const Navbar: React.FC<NavbarProps> = ({
     </header>
   );
 };
+
+export { Navbar as AppNavbar };
+export default Navbar;
