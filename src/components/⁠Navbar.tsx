@@ -108,8 +108,9 @@ export const Navbar: React.FC<NavbarProps> = ({
 
           {onOpenTenderWizard && (
             <button
+              id="build-tender-btn"
               onClick={onOpenTenderWizard}
-              className="text-xs font-bold text-amber-300 bg-amber-950/60 border border-amber-500/40 hover:bg-amber-900/60 px-3 py-1.5 rounded-lg transition-all flex items-center gap-1.5 shadow-sm"
+              className="text-xs font-bold text-amber-300 bg-amber-950/60 border border-amber-500/40 hover:bg-amber-900/60 px-3 py-1.5 rounded-lg transition-all flex items-center gap-1.5 shadow-sm cursor-pointer"
               title="Generate Tender-Ready Safety File (Once-off R750)"
             >
               <Icons.FileSpreadsheet className="w-3.5 h-3.5 text-amber-400" />
@@ -119,8 +120,9 @@ export const Navbar: React.FC<NavbarProps> = ({
 
           {onOpenCostCalculator && (
             <button
+              id="calculate-cost-btn"
               onClick={onOpenCostCalculator}
-              className="text-xs font-bold text-cyan-300 bg-cyan-950/60 border border-cyan-500/40 hover:bg-cyan-900/60 px-3 py-1.5 rounded-lg transition-all flex items-center gap-1.5 shadow-sm"
+              className="text-xs font-bold text-cyan-300 bg-cyan-950/60 border border-cyan-500/40 hover:bg-cyan-900/60 px-3 py-1.5 rounded-lg transition-all flex items-center gap-1.5 shadow-sm cursor-pointer"
               title="Calculate Site Cost for SMBs or Enterprise"
             >
               <Icons.Shield className="w-3.5 h-3.5 text-cyan-400" />
