@@ -2,7 +2,7 @@
  * Global TypeScript types for Melotwo Mine Safety Audit Engine
  */
 
-export type Page = 'home' | 'solutions' | 'inspector' | 'academy' | 'handover' | 'outreach';
+export type Page = 'home' | 'solutions' | 'inspector' | 'academy' | 'handover' | 'outreach' | 'blog';
 
 export interface AuditRecord {
   id: string;
