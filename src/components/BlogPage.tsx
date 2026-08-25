@@ -41,14 +41,18 @@ export const BlogPage: React.FC<BlogPageProps> = ({
   const [isCopied, setIsCopied] = useState<boolean>(false);
   const [scrollProgress, setScrollProgress] = useState<number>(0);
 
-  // Sync with URL query or hash on mount/change
+  // Sync with URL pathname (/blog/:slug), URL query (?post=slug), or hash (#blog/:slug) on mount/change
   useEffect(() => {
     if (typeof window !== 'undefined') {
+      const pathname = window.location.pathname;
       const urlParams = new URLSearchParams(window.location.search);
       const postFromQuery = urlParams.get('post');
       const hash = window.location.hash;
       
-      if (postFromQuery) {
+      if (pathname.startsWith('/blog/')) {
+        const slugFromPath = pathname.replace('/blog/', '').trim();
+        if (slugFromPath) setSelectedSlug(decodeURIComponent(slugFromPath));
+      } else if (postFromQuery) {
         setSelectedSlug(postFromQuery);
       } else if (hash.startsWith('#blog/')) {
         const slugFromHash = hash.replace('#blog/', '');
@@ -62,7 +66,7 @@ export const BlogPage: React.FC<BlogPageProps> = ({
     setSelectedSlug(slug);
     if (typeof window !== 'undefined') {
       try {
-        const newUrl = `${window.location.pathname}?post=${encodeURIComponent(slug)}`;
+        const newUrl = `/blog/${encodeURIComponent(slug)}`;
         window.history.pushState({ slug }, '', newUrl);
       } catch {
         window.location.hash = `blog/${slug}`;
@@ -75,7 +79,7 @@ export const BlogPage: React.FC<BlogPageProps> = ({
     setSelectedSlug(null);
     if (typeof window !== 'undefined') {
       try {
-        window.history.pushState(null, '', window.location.pathname);
+        window.history.pushState(null, '', '/blog');
       } catch {
         window.location.hash = 'blog';
       }
