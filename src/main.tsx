@@ -17,3 +17,17 @@ root.render(
     </ErrorBoundary>
   </React.StrictMode>
 );
+
+// Register Service Worker for offline capability & PWA installability
+if ('serviceWorker' in navigator && window.location.protocol.startsWith('http')) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker
+      .register('/sw.js')
+      .then((registration) => {
+        console.log('[MeloTwo PWA] Service Worker registered with scope:', registration.scope);
+      })
+      .catch((error) => {
+        console.warn('[MeloTwo PWA] Service Worker registration failed:', error);
+      });
+  });
+}
