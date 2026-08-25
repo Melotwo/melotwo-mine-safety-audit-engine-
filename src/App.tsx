@@ -12555,11 +12555,49 @@ const App: React.FC = () => {
         trackGA4Event('tender_wizard_closed', { source: 'ui_close' });
     }, []);
 
-    // Detect #tender-file on mount and on hashchange
+    // Deep-link handlers for Cost Calculator (#calculate-cost)
+    const handleOpenCostModal = useCallback(() => {
+        setIsCostModalOpen(true);
+        if (typeof window !== 'undefined' && window.location.hash !== '#calculate-cost') {
+            try {
+                window.history.replaceState(null, '', '#calculate-cost');
+            } catch {
+                window.location.hash = 'calculate-cost';
+            }
+        }
+        trackGA4Event('calculate_cost_modal_opened', { source: 'ui_action' });
+    }, []);
+
+    const handleCloseCostModal = useCallback(() => {
+        setIsCostModalOpen(false);
+        if (typeof window !== 'undefined') {
+            const currentHash = window.location.hash.toLowerCase();
+            if (
+                currentHash === '#calculate-cost' || 
+                currentHash === '#calc-cost' || 
+                currentHash === '#cost-calculator'
+            ) {
+                try {
+                    window.history.replaceState(
+                        null,
+                        '',
+                        window.location.pathname + window.location.search
+                    );
+                } catch {
+                    window.location.hash = '';
+                }
+            }
+        }
+        trackGA4Event('calculate_cost_modal_closed', { source: 'ui_close' });
+    }, []);
+
+    // Detect #tender-file and #calculate-cost on mount and on hashchange
     useEffect(() => {
-        const checkHashForTenderFile = () => {
+        const handleHashRouting = () => {
             if (typeof window === 'undefined') return;
             const rawHash = window.location.hash.toLowerCase();
+
+            // 1. Check Tender File modal hash
             const isTenderHash = 
                 rawHash === '#tender-file' || 
                 rawHash === '#tender-wizard' || 
@@ -12567,28 +12605,44 @@ const App: React.FC = () => {
                 rawHash === '#tender-file-generator' ||
                 rawHash.startsWith('#tender');
 
+            // 2. Check Calculate Cost modal hash
+            const isCostHash = 
+                rawHash === '#calculate-cost' || 
+                rawHash === '#calc-cost' || 
+                rawHash === '#cost-calculator' ||
+                rawHash === '#savings-modal';
+
             if (isTenderHash) {
                 setCurrentPage('home');
+                setIsCostModalOpen(false);
                 setIsTenderWizardOpen(true);
                 trackGA4Event('hash_deep_link_triggered', {
                     hash: window.location.hash,
                     target: 'tender_safety_file_modal'
                 });
-                // Smoothly bring user to top where modal is centered
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+            } else if (isCostHash) {
+                setCurrentPage('home');
+                setIsTenderWizardOpen(false);
+                setIsCostModalOpen(true);
+                trackGA4Event('hash_deep_link_triggered', {
+                    hash: window.location.hash,
+                    target: 'calculate_cost_modal'
+                });
                 window.scrollTo({ top: 0, behavior: 'smooth' });
             }
         };
 
         // Check on initial load
-        checkHashForTenderFile();
+        handleHashRouting();
 
         // Listen to navigation events
-        window.addEventListener('hashchange', checkHashForTenderFile);
-        window.addEventListener('popstate', checkHashForTenderFile);
+        window.addEventListener('hashchange', handleHashRouting);
+        window.addEventListener('popstate', handleHashRouting);
 
         return () => {
-            window.removeEventListener('hashchange', checkHashForTenderFile);
-            window.removeEventListener('popstate', checkHashForTenderFile);
+            window.removeEventListener('hashchange', handleHashRouting);
+            window.removeEventListener('popstate', handleHashRouting);
         };
     }, []);
 
@@ -12710,7 +12764,7 @@ const App: React.FC = () => {
                         userId={userId} 
                         isAuthReady={isAuthReady} 
                         isAdmin={isAdmin}
-                        onOpenCostCalculator={() => setIsCostModalOpen(true)}
+                        onOpenCostCalculator={handleOpenCostModal}
                         onOpenTenderWizard={handleOpenTenderWizard}
                         onGetStarted={() => {
                             setDemoModalTier('professional');
@@ -12739,9 +12793,9 @@ const App: React.FC = () => {
                 <ErrorBoundary fallbackTitle="Cost Calculator Recovering...">
                     <CalculateSiteCostModal
                         isOpen={isCostModalOpen}
-                        onClose={() => setIsCostModalOpen(false)}
+                        onClose={handleCloseCostModal}
                         onStartTrial={() => {
-                            setIsCostModalOpen(false);
+                            handleCloseCostModal();
                             setDemoModalTier('professional');
                             setIsDemoModalOpen(true);
                         }}
