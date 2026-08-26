@@ -7,6 +7,7 @@ const CORE_ASSETS = [
   '/favicon.png',
   '/favicon-32x32.png',
   '/apple-touch-icon.png',
+  '/pwa-icon.png',
   '/pwa-192x192.png',
   '/pwa-512x512.png',
   '/melotwo_shield_logo.svg',
