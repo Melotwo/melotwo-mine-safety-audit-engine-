@@ -24,5 +24,7 @@ export * from './ComplianceProofViewer';
 export * from './SafetySavingsCalculator';
 export * from './BlogPage';
 export * from './OutreachHub';
+export * from './LeadManagementTable';
+export * from './Toast';
 export * from './PWAInstallPrompt';
 
