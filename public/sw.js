@@ -17,103 +17,62 @@ const CORE_ASSETS = [
   '/pwa-icon.png',
   '/pwa-192x192.png',
   '/pwa-512x512.png',
-  '/melotwo_shield_logo.svg',
-  '/robots.txt',
-  '/sitemap.xml'
+  '/melotwo_shield_logo.svg'
 ];
 
-// Install Event: Cache Core Offline Assets
+// Install Event - Pre-cache core shell
 self.addEventListener('install', (event) => {
   event.waitUntil(
     caches.open(CACHE_NAME).then((cache) => {
-      return cache.addAll(CORE_ASSETS).catch((err) => {
-        console.warn('[MeloTwo PWA] Pre-caching core assets warning:', err);
-      });
-    }).then(() => {
-      return self.skipWaiting();
-    })
+      console.log('[MeloTwo SW] Pre-caching offline shell and icon assets');
+      return cache.addAll(CORE_ASSETS);
+    }).then(() => self.skipWaiting())
   );
 });
 
-// Activate Event: Clean up outdated caches
+// Activate Event - Clean old caches
 self.addEventListener('activate', (event) => {
   event.waitUntil(
     caches.keys().then((cacheNames) => {
       return Promise.all(
-        cacheNames.map((name) => {
-          if (name !== CACHE_NAME) {
-            console.log('[MeloTwo PWA] Removing legacy cache:', name);
-            return caches.delete(name);
+        cacheNames.map((cacheName) => {
+          if (cacheName !== CACHE_NAME) {
+            console.log('[MeloTwo SW] Purging obsolete cache:', cacheName);
+            return caches.delete(cacheName);
           }
         })
       );
-    }).then(() => {
-      return self.clients.claim();
-    })
+    }).then(() => self.clients.claim())
   );
 });
 
-// Fetch Event Strategy:
-// 1. Navigation requests (HTML pages) -> Network First with offline fallback
-// 2. Static Assets (JS, CSS, Images, Fonts) -> Stale-While-Revalidate
+// Fetch Event - Stale-while-revalidate strategy for maximum speed & offline reliability
 self.addEventListener('fetch', (event) => {
-  const { request } = event;
-  const url = new URL(request.url);
-
-  // Skip non-GET and cross-origin external API requests
-  if (request.method !== 'GET' || !url.origin.includes(self.location.origin)) {
+  // Only handle GET requests and http/https schemes
+  if (event.request.method !== 'GET' || !event.request.url.startsWith('http')) {
     return;
   }
 
-  // Handle HTML document navigation
-  if (request.mode === 'navigate') {
-    event.respondWith(
-      fetch(request)
-        .then((networkResponse) => {
-          if (networkResponse && networkResponse.status === 200) {
-            const responseClone = networkResponse.clone();
-            caches.open(CACHE_NAME).then((cache) => {
-              cache.put(request, responseClone);
-            });
-          }
-          return networkResponse;
-        })
-        .catch(() => {
-          return caches.match(request).then((cachedResponse) => {
-            if (cachedResponse) return cachedResponse;
-            return caches.match('/index.html');
-          });
-        })
-    );
+  // API calls & real-time sync bypass service worker cache
+  if (event.request.url.includes('/api/') || event.request.url.includes('firestore.googleapis.com')) {
     return;
   }
 
-  // Handle Static Assets (images, css, js, json, svg)
   event.respondWith(
-    caches.match(request).then((cachedResponse) => {
-      const fetchPromise = fetch(request)
-        .then((networkResponse) => {
-          if (networkResponse && networkResponse.status === 200) {
-            const responseClone = networkResponse.clone();
-            caches.open(CACHE_NAME).then((cache) => {
-              cache.put(request, responseClone);
-            });
-          }
-          return networkResponse;
-        })
-        .catch(() => {
-          // Offline fallback
-          return cachedResponse;
-        });
+    caches.open(CACHE_NAME).then(async (cache) => {
+      const cachedResponse = await cache.match(event.request);
+      
+      const fetchPromise = fetch(event.request).then((networkResponse) => {
+        if (networkResponse && networkResponse.status === 200 && networkResponse.type === 'basic') {
+          cache.put(event.request, networkResponse.clone());
+        }
+        return networkResponse;
+      }).catch((err) => {
+        console.warn('[MeloTwo SW] Offline fetch fallback for:', event.request.url);
+        return cachedResponse;
+      });
 
       return cachedResponse || fetchPromise;
     })
   );
-});
-
-// Listen for skip waiting message from app
-self.addEventListener('message', (event) => {
-  if (event.data && event.data.type === 'SKIP_WAITING') {
-    self.skipWaiting();
-  }
 });
