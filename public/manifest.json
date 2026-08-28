@@ -3,7 +3,6 @@
   "short_name": "MeloTwo",
   "description": "Automate 20-Section MHSA & OHSA Safety Files, SANS 10330 Audits, and DMRE Stoppage Prevention.",
   "start_url": "/",
-  "scope": "/",
   "display": "standalone",
   "background_color": "#000000",
   "theme_color": "#000000",
@@ -63,7 +62,7 @@
   ],
   "shortcuts": [
     {
-      "name": "Auditing Terminal",
+      "name": "Audit Terminal",
       "short_name": "Audit Terminal",
       "description": "Conduct deep subterranean and industrial OHS audits offline",
       "url": "/#inspector",
@@ -71,7 +70,7 @@
     },
     {
       "name": "Tender Safety File",
-      "short_name": "Tender Binder",
+      "short_name": "Tender File",
       "description": "Generate 20-section DMRE compliant tender safety binder",
       "url": "/#tender-file",
       "icons": [{ "src": "/icon-192.png", "sizes": "192x192" }]
