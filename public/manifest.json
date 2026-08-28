@@ -1,18 +1,41 @@
 {
-  "name": "MeloTwo Safety Engine - Mine & Industrial SHEQ Compliance",
+  "name": "MeloTwo Safety",
   "short_name": "MeloTwo",
   "description": "Automate 20-Section MHSA & OHSA Safety Files, SANS 10330 Audits, and DMRE Stoppage Prevention.",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",
-  "display_override": ["window-controls-overlay", "standalone", "minimal-ui"],
-  "background_color": "#0b1120",
-  "theme_color": "#0f172a",
+  "background_color": "#000000",
+  "theme_color": "#000000",
   "orientation": "portrait-primary",
   "lang": "en-ZA",
   "dir": "ltr",
   "categories": ["business", "productivity", "utilities"],
   "icons": [
+    {
+      "src": "/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icon-192-maskable.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "maskable"
+    },
+    {
+      "src": "/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icon-512-maskable.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    },
     {
       "src": "/apple-touch-icon.png",
       "sizes": "180x180",
@@ -20,19 +43,14 @@
       "purpose": "any maskable"
     },
     {
-      "src": "/pwa-icon-512.png",
-      "sizes": "512x512",
-      "type": "image/png"
-    },
-    {
-      "src": "/pwa-icon-512.png",
-      "sizes": "512x512",
-      "type": "image/png",
-      "purpose": "any maskable"
-    },
-    {
       "src": "/favicon-32x32.png",
       "sizes": "32x32",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/favicon-16x16.png",
+      "sizes": "16x16",
       "type": "image/png",
       "purpose": "any"
     },
@@ -49,28 +67,28 @@
       "short_name": "Audit Terminal",
       "description": "Conduct deep subterranean and industrial OHS audits offline",
       "url": "/#inspector",
-      "icons": [{ "src": "/favicon.png", "sizes": "192x192" }]
+      "icons": [{ "src": "/icon-192.png", "sizes": "192x192" }]
     },
     {
       "name": "Tender Safety File",
       "short_name": "Tender Binder",
       "description": "Generate 20-section DMRE compliant tender safety binder",
       "url": "/#tender-file",
-      "icons": [{ "src": "/favicon.png", "sizes": "192x192" }]
+      "icons": [{ "src": "/icon-192.png", "sizes": "192x192" }]
     },
     {
       "name": "Stoppage Cost Calculator",
       "short_name": "Cost ROI",
       "description": "Calculate daily mine stoppage financial risk & ROI",
       "url": "/#calculate-cost",
-      "icons": [{ "src": "/favicon.png", "sizes": "192x192" }]
+      "icons": [{ "src": "/icon-192.png", "sizes": "192x192" }]
     },
     {
       "name": "SHEQ Knowledge Blog",
       "short_name": "SHEQ Blog",
       "description": "MHSA Section 54/55 guides and SANS technical papers",
       "url": "/#blog",
-      "icons": [{ "src": "/favicon.png", "sizes": "192x192" }]
+      "icons": [{ "src": "/icon-192.png", "sizes": "192x192" }]
     }
   ],
   "prefer_related_applications": false
