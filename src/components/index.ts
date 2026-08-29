@@ -25,6 +25,7 @@ export * from './SafetySavingsCalculator';
 export * from './BlogPage';
 export * from './OutreachHub';
 export * from './LeadManagementTable';
+export * from './TenderLeadScraperHub';
 export * from './Toast';
 export * from './PWAInstallPrompt';
 
