@@ -20,6 +20,7 @@ import {
 } from 'lucide-react';
 import { MeloTwoLogo } from './MeloTwoLogo';
 import { LeadManagementTable } from './LeadManagementTable';
+import { TenderLeadScraperHub } from './TenderLeadScraperHub';
 import { useToast } from '../hooks/useToast';
 import { ToastContainer } from './Toast';
 
@@ -33,7 +34,7 @@ export const OutreachHub: React.FC<OutreachHubProps> = ({
   userId = 'BUILD10'
 }) => {
   const { toast } = useToast();
-  const [activeTab, setActiveTab] = useState<'pipeline' | 'referrals' | 'earnings'>('pipeline');
+  const [activeTab, setActiveTab] = useState<'tender-scraper' | 'pipeline' | 'referrals' | 'earnings'>('tender-scraper');
   const [promoCode, setPromoCode] = useState<string>('BUILD10');
   const [isCopied, setIsCopied] = useState<boolean>(false);
   const [isCodeCopied, setIsCodeCopied] = useState<boolean>(false);
@@ -212,6 +213,21 @@ export const OutreachHub: React.FC<OutreachHubProps> = ({
         {/* Navigation Tabs */}
         <div className="flex flex-wrap items-center gap-2 border-b border-slate-800 pb-3">
           <button
+            onClick={() => setActiveTab('tender-scraper')}
+            className={`inline-flex items-center gap-2 px-4 py-2.5 rounded-2xl text-xs font-bold transition cursor-pointer ${
+              activeTab === 'tender-scraper'
+                ? 'bg-amber-500 text-slate-950 shadow-lg shadow-amber-950/60 font-black'
+                : 'bg-slate-900 hover:bg-slate-800 text-slate-300 border border-slate-800'
+            }`}
+          >
+            <Sparkles className="w-4 h-4 text-amber-400" />
+            <span>Strategy 3: eTenders Scraper</span>
+            <span className={`text-[10px] font-mono px-1.5 py-0.5 rounded-full ${activeTab === 'tender-scraper' ? 'bg-slate-950/20 text-slate-950' : 'bg-emerald-950 text-emerald-300 border border-emerald-800/40'}`}>
+              LIVE CRON
+            </span>
+          </button>
+
+          <button
             onClick={() => setActiveTab('pipeline')}
             className={`inline-flex items-center gap-2 px-4 py-2.5 rounded-2xl text-xs font-bold transition cursor-pointer ${
               activeTab === 'pipeline'
@@ -253,6 +269,13 @@ export const OutreachHub: React.FC<OutreachHubProps> = ({
             </span>
           </button>
         </div>
+
+        {/* TAB 0: STRATEGY 3 AUTOMATED TENDER & LEAD SCRAPER */}
+        {activeTab === 'tender-scraper' && (
+          <div className="space-y-6">
+            <TenderLeadScraperHub />
+          </div>
+        )}
 
         {/* TAB 1: LEAD PIPELINE (LEAD MANAGEMENT TABLE) */}
         {activeTab === 'pipeline' && (
