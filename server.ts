@@ -1818,6 +1818,245 @@ app.post(['/api/v1/proof/append', '/api/v1/proof/append/'], (req, res) => {
   }
 });
 
+// ============================================================================
+// STRATEGY 3: AUTOMATED TENDER & LEAD SCRAPER (ETENDERS.GOV.ZA PIPELINE)
+// ============================================================================
+import {
+  getScraperStatus,
+  getAllScrapedTenders,
+  getAllTenderLeads,
+  updateLeadStatus,
+  deleteLead,
+  createManualLead,
+  parseBriefingRegister,
+  simulateAutomatedCrawl,
+  generateTailoredPitch
+} from './src/server/tenderScraperService';
+
+// 1. Scraper Cron / Telemetry Status
+app.get(['/api/tenders/scraper/status', '/api/tenders/scraper/status/'], (req, res) => {
+  try {
+    const status = getScraperStatus();
+    res.json(status);
+  } catch (err: any) {
+    res.status(500).json({ error: err.message || 'Failed to retrieve scraper status' });
+  }
+});
+
+// 2. Trigger On-Demand eTenders Crawl / Sync
+app.post(['/api/tenders/scraper/trigger-crawl', '/api/tenders/scraper/trigger-crawl/'], (req, res) => {
+  try {
+    const result = simulateAutomatedCrawl();
+    res.json({
+      success: true,
+      timestamp: new Date().toISOString(),
+      ...result,
+      status: getScraperStatus()
+    });
+  } catch (err: any) {
+    res.status(500).json({ error: err.message || 'Failed to trigger eTenders crawler' });
+  }
+});
+
+// 3. Get Scraped Active and Awarded Tenders
+app.get(['/api/tenders/list', '/api/tenders/list/'], (req, res) => {
+  try {
+    const { category, status } = req.query;
+    let tenders = getAllScrapedTenders();
+    
+    if (category && typeof category === 'string' && category !== 'All') {
+      tenders = tenders.filter(t => t.category.toLowerCase() === category.toLowerCase());
+    }
+    if (status && typeof status === 'string' && status !== 'All') {
+      tenders = tenders.filter(t => t.status.toLowerCase() === status.toLowerCase());
+    }
+
+    res.json({
+      total: tenders.length,
+      tenders
+    });
+  } catch (err: any) {
+    res.status(500).json({ error: err.message || 'Failed to retrieve scraped tenders' });
+  }
+});
+
+// 4. Get Scraped Tender Leads (Pre-Submission & Post-Win)
+app.get(['/api/tenders/leads', '/api/tenders/leads/'], (req, res) => {
+  try {
+    const { leadType, status, category, search } = req.query;
+    let leads = getAllTenderLeads();
+
+    if (leadType && typeof leadType === 'string' && leadType !== 'ALL') {
+      leads = leads.filter(l => l.leadType === leadType);
+    }
+    if (status && typeof status === 'string' && status !== 'ALL') {
+      leads = leads.filter(l => l.status === status);
+    }
+    if (category && typeof category === 'string' && category !== 'ALL') {
+      leads = leads.filter(l => l.category.toLowerCase() === category.toLowerCase());
+    }
+    if (search && typeof search === 'string') {
+      const q = search.toLowerCase();
+      leads = leads.filter(l => 
+        l.companyName.toLowerCase().includes(q) ||
+        l.contactPerson.toLowerCase().includes(q) ||
+        l.email.toLowerCase().includes(q) ||
+        l.sourceTenderId.toLowerCase().includes(q) ||
+        l.tenderTitle.toLowerCase().includes(q)
+      );
+    }
+
+    res.json({
+      total: leads.length,
+      preSubmissionCount: leads.filter(l => l.leadType === 'PRE_SUBMISSION').length,
+      postWinCount: leads.filter(l => l.leadType === 'POST_WIN').length,
+      newCount: leads.filter(l => l.status === 'NEW').length,
+      contactedCount: leads.filter(l => l.status === 'CONTACTED').length,
+      convertedCount: leads.filter(l => l.status === 'CONVERTED').length,
+      leads
+    });
+  } catch (err: any) {
+    res.status(500).json({ error: err.message || 'Failed to retrieve tender leads' });
+  }
+});
+
+// 5. Create Manual Lead
+app.post(['/api/tenders/leads', '/api/tenders/leads/'], (req, res) => {
+  try {
+    const lead = createManualLead(req.body);
+    res.status(201).json({
+      success: true,
+      lead
+    });
+  } catch (err: any) {
+    res.status(500).json({ error: err.message || 'Failed to create lead' });
+  }
+});
+
+// 6. Update Lead Status / Notes
+app.patch(['/api/tenders/leads/:id', '/api/tenders/leads/:id/'], (req, res) => {
+  try {
+    const { id } = req.params;
+    const { status, notes } = req.body;
+    const updated = updateLeadStatus(id, status, notes);
+    
+    if (!updated) {
+      return res.status(404).json({ error: `Lead with ID "${id}" not found` });
+    }
+
+    res.json({
+      success: true,
+      lead: updated
+    });
+  } catch (err: any) {
+    res.status(500).json({ error: err.message || 'Failed to update lead' });
+  }
+});
+
+// 7. Delete Lead
+app.delete(['/api/tenders/leads/:id', '/api/tenders/leads/:id/'], (req, res) => {
+  try {
+    const { id } = req.params;
+    const success = deleteLead(id);
+    res.json({ success });
+  } catch (err: any) {
+    res.status(500).json({ error: err.message || 'Failed to delete lead' });
+  }
+});
+
+// 8. AI Briefing Register PDF & Document Parser
+app.post(['/api/tenders/parse-briefing-register', '/api/tenders/parse-briefing-register/'], async (req, res) => {
+  try {
+    const { documentText, fileName, tenderMeta } = req.body;
+    if (!documentText) {
+      return res.status(400).json({ error: 'documentText is required for register parsing.' });
+    }
+
+    const result = await parseBriefingRegister(documentText, fileName || 'Briefing_Attendance_Register.pdf', ai, tenderMeta);
+    res.json({
+      success: true,
+      ...result
+    });
+  } catch (err: any) {
+    res.status(500).json({ error: err.message || 'Error executing briefing register parser' });
+  }
+});
+
+// 9. Batch Outreach Generator
+app.post(['/api/tenders/leads/outreach-batch', '/api/tenders/leads/outreach-batch/'], (req, res) => {
+  try {
+    const { leadIds, channel = 'email' } = req.body;
+    const allLeads = getAllTenderLeads();
+    const targetLeads = leadIds && Array.isArray(leadIds)
+      ? allLeads.filter(l => leadIds.includes(l.id))
+      : allLeads.filter(l => l.status === 'NEW');
+
+    const generatedOutreach = targetLeads.map(lead => {
+      const pitch = generateTailoredPitch(lead);
+      return {
+        leadId: lead.id,
+        companyName: lead.companyName,
+        recipientEmail: lead.email,
+        recipientPhone: lead.phone,
+        channel,
+        subject: pitch.subject,
+        messageBody: pitch.body,
+        actionUrl: `https://melotwo.com/tender-file?ref=AUTO-${lead.sourceTenderId}`
+      };
+    });
+
+    res.json({
+      success: true,
+      batchSize: generatedOutreach.length,
+      outreachQueue: generatedOutreach
+    });
+  } catch (err: any) {
+    res.status(500).json({ error: err.message || 'Error generating batch outreach' });
+  }
+});
+
+// 10. Export Leads (CSV / JSON)
+app.get(['/api/tenders/leads/export', '/api/tenders/leads/export/'], (req, res) => {
+  try {
+    const format = (req.query.format as string) || 'json';
+    const leads = getAllTenderLeads();
+
+    if (format.toLowerCase() === 'csv') {
+      const headers = ['ID', 'Lead Type', 'Company Name', 'Contact Person', 'Email', 'Phone', 'Source Tender ID', 'Tender Title', 'Category', 'Target Safety Product', 'Status', 'Closing Date', 'Award Value ZAR', 'Created At'];
+      const rows = leads.map(l => [
+        `"${l.id}"`,
+        `"${l.leadType}"`,
+        `"${(l.companyName || '').replace(/"/g, '""')}"`,
+        `"${(l.contactPerson || '').replace(/"/g, '""')}"`,
+        `"${l.email}"`,
+        `"${l.phone}"`,
+        `"${l.sourceTenderId}"`,
+        `"${(l.tenderTitle || '').replace(/"/g, '""')}"`,
+        `"${l.category}"`,
+        `"${(l.targetSafetyProduct || '').replace(/"/g, '""')}"`,
+        `"${l.status}"`,
+        `"${l.closingDate || ''}"`,
+        `"${l.awardValueZar || ''}"`,
+        `"${l.createdAt}"`
+      ]);
+
+      const csvContent = [headers.join(','), ...rows.map(r => r.join(','))].join('\n');
+
+      res.setHeader('Content-Type', 'text/csv');
+      res.setHeader('Content-Disposition', `attachment; filename=MeloTwo_Tender_Leads_${new Date().toISOString().split('T')[0]}.csv`);
+      return res.send(csvContent);
+    }
+
+    res.json({
+      exportedAt: new Date().toISOString(),
+      totalLeads: leads.length,
+      leads
+    });
+  } catch (err: any) {
+    res.status(500).json({ error: err.message || 'Failed to export leads' });
+  }
+});
+
 // Explicit Static Routes for Webmaster Tools & IndexNow Verification
 app.get('/robots.txt', (req, res) => {
   res.type('text/plain');
