@@ -193,3 +193,5 @@ export const UserFeedbackWidget: React.FC = () => {
     </>
   );
 };
+
+export default UserFeedbackWidget;

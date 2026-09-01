@@ -23,7 +23,7 @@ export const PromptMetricsDashboard: React.FC = () => {
     return Object.entries(counts).map(([name, count]) => ({
       name,
       count,
-      percentage: Math.round((count / records.length) * 100)
+      percentage: Math.round((count / (records.length || 1)) * 100)
     })).sort((a, b) => b.count - a.count);
   }, [records]);
 
@@ -36,7 +36,7 @@ export const PromptMetricsDashboard: React.FC = () => {
     return Object.entries(counts).map(([name, count]) => ({
       name,
       count,
-      percentage: Math.round((count / records.length) * 100)
+      percentage: Math.round((count / (records.length || 1)) * 100)
     })).sort((a, b) => b.count - a.count);
   }, [records]);
 
@@ -162,3 +162,5 @@ export const PromptMetricsDashboard: React.FC = () => {
     </div>
   );
 };
+
+export default PromptMetricsDashboard;

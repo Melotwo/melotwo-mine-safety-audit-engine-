@@ -1101,18 +1101,19 @@ app.post(['/api/v1/compliance/tags', '/api/v1/compliance/tags/'], (req, res) => 
 app.get(['/api/v1/compliance/validate-asset/:assetSerialNumber', '/api/v1/compliance/validate-asset/:assetSerialNumber/'], (req, res) => {
   try {
     const { assetSerialNumber } = req.params;
+    const serialStr = Array.isArray(assetSerialNumber) ? assetSerialNumber[0] : (assetSerialNumber || '');
 
-    if (!assetSerialNumber) {
+    if (!serialStr) {
       return res.status(400).json({ error: 'Asset serial number parameter is required' });
     }
 
     const asset = certifiedAssetsStore.find(
-      a => a.asset_serial_number.toLowerCase() === assetSerialNumber.toLowerCase()
+      a => a.asset_serial_number.toLowerCase() === serialStr.toLowerCase()
     );
 
     if (!asset) {
       return res.status(404).json({
-        error: `Asset with serial number "${assetSerialNumber}" not found in certified registry.`,
+        error: `Asset with serial number "${serialStr}" not found in certified registry.`,
         is_certified: false,
         valid: false
       });
@@ -1420,12 +1421,12 @@ const siteAeoStore: Record<string, SiteAeoRegistryItem> = {
 
 // 1. GET /api/v1/aeo/site-summary/:siteId.json (Schema.org JSON-LD structured data)
 app.get(['/api/v1/aeo/site-summary/:siteId.json', '/api/v1/aeo/site-summary/:siteId.json/'], (req, res) => {
-  const { siteId } = req.params;
-  const normalizedId = siteId ? siteId.toLowerCase() : '';
-  const siteData = siteAeoStore[normalizedId] || {
-    site_id: siteId.toUpperCase(),
+  const rawSiteId = Array.isArray(req.params.siteId) ? req.params.siteId[0] : (req.params.siteId || '');
+  const normalizedId = rawSiteId.toLowerCase();
+  const siteData: SiteAeoRegistryItem = siteAeoStore[normalizedId] || {
+    site_id: rawSiteId.toUpperCase(),
     contractor_name: 'Mining Food Safety Services SA',
-    site_name: `Mining Operations Area ${siteId.toUpperCase()}`,
+    site_name: `Mining Operations Area ${rawSiteId.toUpperCase()}`,
     location: 'South Africa',
     primary_standard: 'SANS 10330:2020',
     standards_list: ['SANS 10330:2020 (HACCP)', 'DMRE MHSA Sec 54'],
@@ -1434,7 +1435,8 @@ app.get(['/api/v1/aeo/site-summary/:siteId.json', '/api/v1/aeo/site-summary/:sit
     compliance_score_percentage: 98.5,
     last_audited_date: '2026-08-10',
     sheq_officer_name: 'Compliance Officer',
-    sheq_officer_id: 'SHEQ-GENERIC'
+    sheq_officer_id: 'SHEQ-GENERIC',
+    verification_url: `https://melotwo.co.za/sites/${normalizedId}`
   };
 
   const canonicalUrl = siteData.verification_url || `https://melotwo.co.za/sites/${normalizedId}`;
@@ -1515,12 +1517,12 @@ app.get(['/api/v1/aeo/site-summary/:siteId.json', '/api/v1/aeo/site-summary/:sit
 
 // 2. GET /api/v1/aeo/site-summary/:siteId.md (Semantic Markdown for LLM ingestion)
 app.get(['/api/v1/aeo/site-summary/:siteId.md', '/api/v1/aeo/site-summary/:siteId.md/'], (req, res) => {
-  const { siteId } = req.params;
-  const normalizedId = siteId ? siteId.toLowerCase() : '';
-  const siteData = siteAeoStore[normalizedId] || {
-    site_id: siteId.toUpperCase(),
+  const rawSiteId = Array.isArray(req.params.siteId) ? req.params.siteId[0] : (req.params.siteId || '');
+  const normalizedId = rawSiteId.toLowerCase();
+  const siteData: SiteAeoRegistryItem = siteAeoStore[normalizedId] || {
+    site_id: rawSiteId.toUpperCase(),
     contractor_name: 'Mining Food Safety Services SA',
-    site_name: `Mining Operations Area ${siteId.toUpperCase()}`,
+    site_name: `Mining Operations Area ${rawSiteId.toUpperCase()}`,
     location: 'South Africa',
     primary_standard: 'SANS 10330:2020',
     standards_list: ['SANS 10330:2020 (HACCP)', 'DMRE MHSA Sec 54'],
@@ -1530,7 +1532,8 @@ app.get(['/api/v1/aeo/site-summary/:siteId.md', '/api/v1/aeo/site-summary/:siteI
     last_audited_date: '2026-08-10',
     sheq_officer_name: 'Compliance Officer',
     sheq_officer_id: 'SHEQ-GENERIC',
-    merkle_root_hash: '9a8e2b77c019284e9102482bb214f828a201bfa82940294821038291048291'
+    merkle_root_hash: '9a8e2b77c019284e9102482bb214f828a201bfa82940294821038291048291',
+    verification_url: `https://melotwo.co.za/sites/${normalizedId}`
   };
 
   const canonicalUrl = siteData.verification_url || `https://melotwo.co.za/sites/${normalizedId}`;
@@ -1690,8 +1693,8 @@ const proofLedgerStore: ProofLedgerBlock[] = createInitialProofBlocks();
 // 1. GET /api/v1/proof/verify/:siteId (Sequential Cryptographic Chain Verification)
 app.get(['/api/v1/proof/verify/:siteId', '/api/v1/proof/verify/:siteId/'], (req, res) => {
   try {
-    const { siteId } = req.params;
-    const normalizedSiteId = siteId ? siteId.toUpperCase() : 'SITE-WIT-01';
+    const rawSiteId = Array.isArray(req.params.siteId) ? req.params.siteId[0] : (req.params.siteId || '');
+    const normalizedSiteId = rawSiteId ? rawSiteId.toUpperCase() : 'SITE-WIT-01';
 
     // Retrieve all blocks for site ordered by block_index ascending
     const siteBlocks = proofLedgerStore
@@ -1703,7 +1706,7 @@ app.get(['/api/v1/proof/verify/:siteId', '/api/v1/proof/verify/:siteId/'], (req,
         isValidChain: false,
         totalRecordsVerified: 0,
         latestProofHash: null,
-        error: `No cryptographic proof ledger entries found for site "${siteId}".`
+        error: `No cryptographic proof ledger entries found for site "${rawSiteId}".`
       });
     }
 
@@ -1936,12 +1939,12 @@ app.post(['/api/tenders/leads', '/api/tenders/leads/'], (req, res) => {
 // 6. Update Lead Status / Notes
 app.patch(['/api/tenders/leads/:id', '/api/tenders/leads/:id/'], (req, res) => {
   try {
-    const { id } = req.params;
+    const rawId = Array.isArray(req.params.id) ? req.params.id[0] : (req.params.id || '');
     const { status, notes } = req.body;
-    const updated = updateLeadStatus(id, status, notes);
+    const updated = updateLeadStatus(rawId, status, notes);
     
     if (!updated) {
-      return res.status(404).json({ error: `Lead with ID "${id}" not found` });
+      return res.status(404).json({ error: `Lead with ID "${rawId}" not found` });
     }
 
     res.json({
@@ -1956,8 +1959,8 @@ app.patch(['/api/tenders/leads/:id', '/api/tenders/leads/:id/'], (req, res) => {
 // 7. Delete Lead
 app.delete(['/api/tenders/leads/:id', '/api/tenders/leads/:id/'], (req, res) => {
   try {
-    const { id } = req.params;
-    const success = deleteLead(id);
+    const rawId = Array.isArray(req.params.id) ? req.params.id[0] : (req.params.id || '');
+    const success = deleteLead(rawId);
     res.json({ success });
   } catch (err: any) {
     res.status(500).json({ error: err.message || 'Failed to delete lead' });

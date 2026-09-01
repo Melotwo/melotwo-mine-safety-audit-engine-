@@ -93,3 +93,5 @@ export const GA4MonitorConsole: React.FC = () => {
     </div>
   );
 };
+
+export default GA4MonitorConsole;

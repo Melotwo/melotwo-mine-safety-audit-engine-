@@ -92,3 +92,108 @@ export interface ScraperCronJobStatus {
   totalLeadsGenerated: number;
   lastRunSummary?: string;
 }
+
+export interface MineParams {
+  mineName: string;
+  miningSector: 'gold' | 'coal' | 'platinum' | 'iron_ore' | 'diamond' | 'copper';
+  depthLevel: number;
+  headcount: number;
+  environmentHazards: string[];
+  currentPPE: {
+    fabricType: string;
+    fabricWashCycles: number;
+    footwearSoleMaterial: string;
+    footwearSpecification: string;
+    arcRatingValue: string;
+  };
+}
+
+export interface SANSStandard {
+  code: string;
+  title: string;
+  scope: string;
+  relevance: string;
+  auditCheck: string;
+}
+
+export interface AuditReportResponse {
+  auditSummary: {
+    complianceScore: number;
+    riskLevel: 'CRITICAL' | 'HIGH' | 'MEDIUM' | 'LOW' | string;
+    regulatoryFrameworksChecked: string[];
+    executiveSummary: string;
+    primaryThreatIdentified?: string;
+  };
+  riskAnalysis: {
+    primaryVulnerabilities: Array<{
+      hazard: string;
+      currentEquipmentDeficiency: string;
+      sansViolationCode: string;
+      severity: string;
+      consequenceDescription: string;
+    }>;
+    environmentalImpactScore: number;
+    theVillain?: string;
+    technicalDeficitReasoning?: string;
+    potentialFinancialImpact?: string;
+  };
+  complianceActionPlan: {
+    requiredMaterialSpecifications: {
+      fabricTypeRequired: string;
+      minimumPerformanceRating: string;
+      footwearSpecification: string;
+      recommendedSolingMaterial?: string;
+    };
+    remediationSteps: Array<{
+      stepNumber: number;
+      actionTitle: string;
+      implementationDetails: string;
+      targetCompletionTimeframe: string;
+    }>;
+    theVow?: string;
+    immediateRemediationSteps?: string[];
+  };
+  vendorMatchingCriteria: {
+    targetSupplierCategory: string;
+    bulkOrderSpecsSummary: string;
+    estimatedCostVarianceZar?: string;
+  };
+  dailyShiftBriefing?: {
+    briefingTitle: string;
+    shiftName?: string;
+    siteName?: string;
+    mineType?: string;
+    hazardsOverview: string;
+    toolboxMessage: string;
+    gearChecklist?: string[];
+    ppeInspectionPoints?: Array<{
+      item: string;
+      checkDescription: string;
+      mandatoryStandard: string;
+    }>;
+  };
+  dailyDstiBriefing?: {
+    briefingTitle: string;
+    siteName?: string;
+    hazardsOverview: string;
+    toolboxMessage: string;
+    heightsChecklist?: string[];
+    scaffoldChecklist?: string[];
+    electricalChecklist?: string[];
+    ppeInspectionPoints?: Array<{
+      item: string;
+      checkDescription: string;
+      mandatoryStandard: string;
+    }>;
+  };
+  riskHeatmap?: {
+    score?: string | number;
+    likelihood?: string;
+    consequence?: string;
+    zone?: string;
+    mitigation?: string;
+    breakdown?: Record<string, any>;
+  };
+  pdfExport?: any;
+  _fallback?: boolean;
+}
