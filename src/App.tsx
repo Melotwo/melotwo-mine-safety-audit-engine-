@@ -4631,15 +4631,15 @@ const AppNavbar: React.FC<AppNavbarProps> = ({
         {/* 3 DIRECT ACTION BUTTONS (RIGHT SIDE) */}
         <div className="flex items-center space-x-2 sm:space-x-3">
           
-          {/* Action 1: Tender Safety File */}
+          {/* Action 1: Tender Safety File ("The Red File") */}
           {onOpenTenderWizard && (
             <button
               id="build-tender-btn"
               onClick={onOpenTenderWizard}
-              className="inline-flex items-center gap-1.5 px-3.5 py-1.5 text-xs font-black text-slate-950 bg-amber-400 hover:bg-amber-300 border border-amber-500 rounded-xl transition shadow-md hover:shadow-amber-400/20 cursor-pointer uppercase tracking-wider shrink-0"
+              className="inline-flex items-center gap-1.5 px-3.5 py-1.5 text-xs font-black text-white bg-red-600 hover:bg-red-500 border border-red-500 hover:border-red-400 rounded-xl transition shadow-md hover:shadow-red-600/30 cursor-pointer uppercase tracking-wider shrink-0"
               title="Generate 20-Section Tender-Ready Safety File (R750)"
             >
-              <FileSpreadsheet className="w-3.5 h-3.5 text-slate-950" />
+              <FileSpreadsheet className="w-3.5 h-3.5 text-white" />
               <span>Tender Safety File</span>
             </button>
           )}
@@ -4729,7 +4729,21 @@ const AppNavbar: React.FC<AppNavbarProps> = ({
             </button>
           </div>
 
-          <div className="pt-2 border-t border-slate-800/80 grid grid-cols-2 gap-2">
+          <div className="pt-2 border-t border-slate-800/80 space-y-2">
+            {onOpenTenderWizard && (
+              <button
+                onClick={() => {
+                  onOpenTenderWizard();
+                  setIsMobileMenuOpen(false);
+                }}
+                className="w-full px-3.5 py-2.5 rounded-xl text-xs font-black uppercase tracking-wider flex items-center justify-center gap-2 bg-red-600 hover:bg-red-500 text-white shadow-md border border-red-500 cursor-pointer"
+              >
+                <FileSpreadsheet className="w-4 h-4 text-white" />
+                <span>Tender Safety File (The Red File)</span>
+              </button>
+            )}
+
+            <div className="grid grid-cols-2 gap-2">
             <button
               onClick={() => {
                 setPage('handover');
@@ -4757,6 +4771,7 @@ const AppNavbar: React.FC<AppNavbarProps> = ({
             </button>
           </div>
         </div>
+      </div>
       )}
     </header>
   );

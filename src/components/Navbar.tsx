@@ -221,17 +221,16 @@ export const Navbar: React.FC<NavbarProps> = ({
         {/* 3 DIRECT ACTION BUTTONS (RIGHT SIDE) */}
         <div className="flex items-center space-x-2 sm:space-x-3">
           
-          {/* Action 1: Tender Safety File ("Red File") */}
+          {/* Action 1: Tender Safety File ("The Red File") */}
           {onOpenTenderWizard && (
             <button
               id="build-tender-btn"
               onClick={onOpenTenderWizard}
-              className="inline-flex items-center gap-1.5 px-2.5 sm:px-3.5 py-1.5 text-xs font-black text-white bg-gradient-to-r from-red-600 via-rose-600 to-red-700 hover:from-red-500 hover:to-rose-500 active:scale-95 border border-red-400/80 rounded-xl transition shadow-md shadow-red-950/50 hover:shadow-red-600/30 cursor-pointer uppercase tracking-wider shrink-0"
-              title="Generate Statutory 20-Section Red Safety File (R750)"
+              className="inline-flex items-center gap-1.5 px-3.5 py-1.5 text-xs font-black text-white bg-red-600 hover:bg-red-500 border border-red-500 hover:border-red-400 rounded-xl transition shadow-md hover:shadow-red-600/30 cursor-pointer uppercase tracking-wider shrink-0"
+              title="Generate 20-Section Tender-Ready Safety File (R750)"
             >
-              <FileSpreadsheet className="w-3.5 h-3.5 text-white shrink-0" />
-              <span className="hidden sm:inline">Red Safety File</span>
-              <span className="sm:hidden font-extrabold">Red File</span>
+              <FileSpreadsheet className="w-3.5 h-3.5 text-white" />
+              <span>TENDER SAFETY FILE</span>
             </button>
           )}
 
