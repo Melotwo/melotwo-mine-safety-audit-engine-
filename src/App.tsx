@@ -4474,8 +4474,8 @@ const AppNavbar: React.FC<AppNavbarProps> = ({
   };
 
   return (
-    <header className="sticky top-0 z-40 bg-slate-900/95 backdrop-blur-md border-b border-slate-800 shadow-md text-white transition-all">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+    <header className="sticky top-0 z-40 bg-slate-900/95 backdrop-blur-md border-b border-slate-800 shadow-md text-white transition-all w-full overflow-x-clip">
+      <div className="w-full max-w-7xl mx-auto px-2 sm:px-4 lg:px-8 h-14 sm:h-16 flex items-center justify-between gap-1 sm:gap-3">
         
         {/* BRAND ZONE */}
         <button 
@@ -4487,12 +4487,12 @@ const AppNavbar: React.FC<AppNavbarProps> = ({
               } catch {}
             }
           }} 
-          className="flex items-center space-x-3 shrink-0 cursor-pointer text-left focus:outline-none"
+          className="flex items-center gap-1.5 sm:gap-2.5 shrink-0 cursor-pointer text-left focus:outline-none min-w-0"
           aria-label="Go to MeloTwo Homepage"
         >
-          <MeloTwoLogo size="md" />
-          <span className="text-lg font-black tracking-tight text-white font-sans flex items-center gap-1.5">
-            MeloTwo <span className="text-amber-400 font-extrabold text-[10px] sm:text-xs px-2 py-0.5 rounded-full bg-amber-950/80 border border-amber-600/60 uppercase">MINE SAFETY</span>
+          <MeloTwoLogo size="sm" />
+          <span className="text-base sm:text-lg font-black tracking-tight text-white font-sans flex items-center gap-1 sm:gap-1.5 truncate">
+            MeloTwo <span className="hidden sm:inline-flex text-amber-400 font-extrabold text-[9px] sm:text-xs px-1.5 sm:px-2 py-0.5 rounded-full bg-amber-950/80 border border-amber-600/60 uppercase">MINE SAFETY</span>
           </span>
         </button>
 
@@ -4628,19 +4628,20 @@ const AppNavbar: React.FC<AppNavbarProps> = ({
           </button>
         </nav>
 
-        {/* 3 DIRECT ACTION BUTTONS (RIGHT SIDE) */}
-        <div className="flex items-center space-x-2 sm:space-x-3">
+        {/* DIRECT ACTION BUTTONS (RIGHT SIDE) */}
+        <div className="flex items-center gap-1 sm:gap-2 shrink-0">
           
           {/* Action 1: Tender Safety File ("The Red File") */}
           {onOpenTenderWizard && (
             <button
               id="build-tender-btn"
               onClick={onOpenTenderWizard}
-              className="inline-flex items-center gap-1.5 px-3.5 py-1.5 text-xs font-black text-white bg-red-600 hover:bg-red-500 border border-red-500 hover:border-red-400 rounded-xl transition shadow-md hover:shadow-red-600/30 cursor-pointer uppercase tracking-wider shrink-0"
-              title="Generate 20-Section Tender-Ready Safety File (R750)"
+              className="inline-flex items-center justify-center gap-1 sm:gap-1.5 px-2 py-1 sm:px-3 sm:py-1.5 text-[10.5px] sm:text-xs font-black text-white bg-red-600 hover:bg-red-500 active:scale-95 border border-red-500 hover:border-red-400 rounded-lg sm:rounded-xl transition shadow-md shadow-red-950/40 hover:shadow-red-600/30 cursor-pointer uppercase tracking-wider shrink-0 whitespace-nowrap"
+              title="Generate 20-Section Tender-Ready Safety File (The Red File - R750)"
             >
-              <FileSpreadsheet className="w-3.5 h-3.5 text-white" />
-              <span>Tender Safety File</span>
+              <FileSpreadsheet className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-white shrink-0" />
+              <span className="hidden sm:inline">Tender Safety File</span>
+              <span className="sm:hidden font-black">Red File</span>
             </button>
           )}
 
@@ -4649,25 +4650,25 @@ const AppNavbar: React.FC<AppNavbarProps> = ({
             <button
               id="calculate-cost-btn"
               onClick={onOpenCostCalculator}
-              className="inline-flex items-center gap-1.5 px-3.5 py-1.5 text-xs font-bold text-cyan-300 bg-cyan-950/60 border border-cyan-500/50 hover:bg-cyan-900/60 hover:border-cyan-400 rounded-xl transition shadow-sm cursor-pointer shrink-0"
+              className="inline-flex items-center justify-center gap-1 px-1.5 py-1 sm:px-2.5 sm:py-1.5 text-[10px] sm:text-xs font-bold text-cyan-300 bg-cyan-950/60 border border-cyan-500/50 hover:bg-cyan-900/60 hover:border-cyan-400 rounded-lg sm:rounded-xl transition shadow-sm cursor-pointer shrink-0 whitespace-nowrap"
               title="Calculate Site Stoppage Cost & ROI"
             >
-              <Calculator className="w-3.5 h-3.5 text-cyan-400" />
-              <span className="hidden sm:inline">Calculate Cost</span>
-              <span className="sm:hidden">Cost</span>
+              <Calculator className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-cyan-400 shrink-0" />
+              <span className="hidden md:inline">Calculate Cost</span>
+              <span className="md:hidden">Cost</span>
             </button>
           )}
 
-          {/* Action 3: WhatsApp Icon Button */}
+          {/* Action 3: WhatsApp Icon Button - Scaled down, discreet */}
           <WhatsAppChatButton variant="nav" />
 
           {/* Mobile Menu Toggle */}
           <button
             onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-            className="lg:hidden p-2 rounded-xl bg-slate-800 text-slate-300 hover:text-white border border-slate-700 cursor-pointer"
+            className="lg:hidden p-1.5 sm:p-2 rounded-lg sm:rounded-xl bg-slate-800 text-slate-300 hover:text-white border border-slate-700 cursor-pointer shrink-0"
             aria-label="Toggle navigation menu"
           >
-            <ChevronDown className={`w-4 h-4 transition-transform ${isMobileMenuOpen ? 'rotate-180' : ''}`} />
+            <ChevronDown className={`w-3.5 h-3.5 sm:w-4 sm:h-4 transition-transform ${isMobileMenuOpen ? 'rotate-180' : ''}`} />
           </button>
         </div>
       </div>

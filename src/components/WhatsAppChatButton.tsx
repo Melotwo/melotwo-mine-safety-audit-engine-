@@ -36,20 +36,28 @@ export const WhatsAppChatButton: React.FC<WhatsAppChatButtonProps> = ({
     window.open(whatsappUrl, '_blank', 'noopener,noreferrer');
   };
 
-  // 1. Navigation Bar Variant
+  // 1. Navigation Bar Variant - Compact, discrete, and non-distracting
   if (variant === 'nav') {
+    const isDefaultLabel = label === 'Chat on WhatsApp';
     return (
       <a
         href={whatsappUrl}
         onClick={handleOpenWhatsApp}
         target="_blank"
         rel="noopener noreferrer"
-        className={`inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold text-emerald-300 bg-emerald-950/70 border border-emerald-500/40 hover:bg-emerald-900/70 hover:border-emerald-400 rounded-xl transition shadow-sm cursor-pointer group ${className}`}
+        className={`inline-flex items-center gap-1 px-1.5 py-1 sm:px-2.5 sm:py-1.5 text-[10px] sm:text-xs font-medium text-emerald-400/90 bg-emerald-950/40 border border-emerald-500/30 hover:bg-emerald-950/70 hover:border-emerald-400/50 rounded-lg sm:rounded-xl transition shadow-none hover:shadow-sm cursor-pointer group shrink-0 whitespace-nowrap ${className}`}
         title="Chat with MeloTwo Safety Engineer on WhatsApp"
         aria-label="Chat on WhatsApp"
       >
-        <MessageCircle className="w-3.5 h-3.5 text-emerald-400 fill-emerald-500/20 group-hover:scale-110 transition-transform" />
-        <span>{label}</span>
+        <MessageCircle className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-emerald-400 shrink-0 group-hover:scale-105 transition-transform" />
+        {isDefaultLabel ? (
+          <>
+            <span className="hidden sm:inline">WhatsApp</span>
+            <span className="sm:hidden text-[10px] font-semibold">WA</span>
+          </>
+        ) : (
+          <span>{label}</span>
+        )}
       </a>
     );
   }
