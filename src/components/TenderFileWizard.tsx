@@ -633,33 +633,36 @@ export const TenderFileWizard: React.FC<TenderFileWizardProps> = ({
     <div 
       id="tender-file"
       data-modal-name="tender-safety-file-wizard"
-      className="bg-slate-900 border border-slate-800 text-slate-100 rounded-2xl shadow-2xl overflow-hidden flex flex-col max-w-4xl w-full mx-auto relative"
+      className="bg-slate-900 border-t sm:border border-slate-800 text-slate-100 rounded-t-2xl sm:rounded-2xl shadow-2xl overflow-hidden flex flex-col max-w-4xl w-full mx-auto relative h-[100dvh] sm:h-auto sm:max-h-[90dvh]"
     >
       {/* Header Banner */}
-      <div className="px-6 py-4 sm:py-5 border-b border-slate-800 bg-slate-950/80 flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-amber-500/10 border border-amber-500/30 flex items-center justify-center text-amber-400">
-            <FolderCheck className="w-5 h-5" />
+      <div className="px-4 py-3 sm:px-6 sm:py-4 border-b border-slate-800 bg-slate-950/90 shrink-0 flex items-center justify-between gap-2">
+        <div className="flex items-center gap-2.5 sm:gap-3 min-w-0">
+          <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-xl bg-red-600/15 border border-red-500/40 flex items-center justify-center text-red-400 shrink-0 shadow-sm">
+            <FolderCheck className="w-4 h-4 sm:w-5 sm:h-5" />
           </div>
-          <div>
-            <div className="flex items-center gap-2">
-              <h2 className="text-lg sm:text-xl font-bold text-white tracking-tight">
-                Tender-Ready Safety File Generator
+          <div className="min-w-0">
+            <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap">
+              <h2 className="text-sm sm:text-base md:text-lg font-bold text-white tracking-tight truncate">
+                Tender Safety File Generator
               </h2>
-              <span className="text-[10px] font-bold uppercase px-2 py-0.5 rounded-full bg-cyan-500/10 text-cyan-300 border border-cyan-500/30">
+              <span className="text-[9px] sm:text-[10px] font-black uppercase px-2 py-0.5 rounded-full bg-red-600/20 text-red-300 border border-red-500/40 font-mono shrink-0">
+                The "Red File"
+              </span>
+              <span className="hidden sm:inline-block text-[10px] font-semibold uppercase px-2 py-0.5 rounded-full bg-slate-800 text-slate-300 border border-slate-700">
                 CR 2014 Compliant
               </span>
             </div>
-            <p className="text-xs text-slate-400">
-              Instant statutory H&S dossier for South African contractors, tenders, and site gate clearances
+            <p className="text-[11px] sm:text-xs text-slate-400 truncate hidden xs:block">
+              Statutory 20-section DMRE &amp; OHS Act safety dossier for tenders and site gate clearances
             </p>
           </div>
         </div>
 
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2 shrink-0">
           {/* Download Count Pill */}
           <div 
-            className={`hidden sm:flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-mono border cursor-pointer ${
+            className={`hidden md:flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[11px] font-mono border cursor-pointer ${
               downloadCount >= MAX_DOWNLOAD_LIMIT && !isPaidUnlocked
                 ? 'bg-rose-950/80 border-rose-600 text-rose-300'
                 : 'bg-slate-800/80 border-slate-700 text-slate-300'
@@ -677,7 +680,7 @@ export const TenderFileWizard: React.FC<TenderFileWizardProps> = ({
           {onClose && (
             <button
               onClick={onClose}
-              className="p-2 text-slate-400 hover:text-white hover:bg-slate-800 rounded-xl transition-colors cursor-pointer"
+              className="p-1.5 sm:p-2 text-slate-400 hover:text-white hover:bg-slate-800 rounded-xl transition-colors cursor-pointer"
               aria-label="Close Wizard"
             >
               <X className="w-5 h-5" />
@@ -687,12 +690,12 @@ export const TenderFileWizard: React.FC<TenderFileWizardProps> = ({
       </div>
 
       {/* Step Navigation Indicator */}
-      <div className="grid grid-cols-4 border-b border-slate-800/80 bg-slate-950/40 text-xs font-mono">
+      <div className="grid grid-cols-4 border-b border-slate-800/80 bg-slate-950/50 text-[10px] sm:text-xs font-mono shrink-0">
         {[
-          { step: 1, label: '1. Profile & COID', icon: Building2 },
-          { step: 2, label: '2. Trades & SWPs', icon: HardHat },
-          { step: 3, label: '3. Appointments', icon: Users },
-          { step: 4, label: '4. File Blueprint & Preview', icon: FileSpreadsheet }
+          { step: 1, label: 'Profile & COID', short: 'Profile', icon: Building2 },
+          { step: 2, label: 'Trades & SWPs', short: 'Trades', icon: HardHat },
+          { step: 3, label: 'Appointments', short: 'Appts', icon: Users },
+          { step: 4, label: 'Red File Blueprint', short: 'Red File', icon: FileSpreadsheet }
         ].map((item) => {
           const isActive = currentStep === item.step;
           const isDone = currentStep > item.step;
@@ -700,144 +703,146 @@ export const TenderFileWizard: React.FC<TenderFileWizardProps> = ({
           return (
             <button
               key={item.step}
+              type="button"
               onClick={() => setCurrentStep(item.step as any)}
-              className={`py-3 px-2 sm:px-4 flex items-center justify-center gap-1.5 transition-colors border-b-2 cursor-pointer ${
+              className={`py-2.5 sm:py-3 px-1 sm:px-3 flex items-center justify-center gap-1 sm:gap-1.5 transition-colors border-b-2 cursor-pointer truncate ${
                 isActive
-                  ? 'border-cyan-500 text-cyan-300 bg-cyan-500/5 font-bold'
+                  ? 'border-red-500 text-red-400 bg-red-600/10 font-bold'
                   : isDone
                   ? 'border-emerald-500/80 text-emerald-400 bg-emerald-500/5'
                   : 'border-transparent text-slate-400 hover:text-slate-200'
               }`}
             >
-              {isDone ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Icon className="w-3.5 h-3.5" />}
-              <span className="hidden sm:inline">{item.label}</span>
-              <span className="sm:hidden font-bold">Step {item.step}</span>
+              {isDone ? <Check className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-emerald-400 shrink-0" /> : <Icon className="w-3 h-3 sm:w-3.5 sm:h-3.5 shrink-0" />}
+              <span className="hidden md:inline truncate">{item.step}. {item.label}</span>
+              <span className="hidden xs:inline md:hidden truncate">{item.short}</span>
+              <span className="xs:hidden font-bold">#{item.step}</span>
             </button>
           );
         })}
       </div>
 
       {/* Wizard Step Body */}
-      <div className="p-6 sm:p-8 overflow-y-auto max-h-[68vh] space-y-6">
+      <div className="p-4 sm:p-6 md:p-8 overflow-y-auto overscroll-contain flex-1 min-h-0 space-y-5 sm:space-y-6">
         
         {/* ================= STEP 1: Company Profile & Compliance Docs ================= */}
         {currentStep === 1 && (
-          <div className="space-y-6 animate-in fade-in duration-200">
+          <div className="space-y-5 sm:space-y-6 animate-in fade-in duration-200">
             <div className="flex items-center justify-between pb-2 border-b border-slate-800">
-              <div>
-                <h3 className="text-sm font-bold text-white uppercase tracking-wider font-mono text-cyan-400">
-                  Step 1: Contractor & Statutory Profile
+              <div className="min-w-0">
+                <h3 className="text-xs sm:text-sm font-bold text-white uppercase tracking-wider font-mono text-red-400 truncate">
+                  Step 1: Contractor &amp; Statutory Profile
                 </h3>
-                <p className="text-xs text-slate-400">
+                <p className="text-[11px] sm:text-xs text-slate-400">
                   Enter your registered legal entity details. These are embedded directly into Section 37.2 agreements.
                 </p>
               </div>
-              <span className="text-xs text-amber-400 font-mono font-semibold bg-amber-500/10 px-2 py-1 rounded border border-amber-500/20">
+              <span className="text-[10px] sm:text-xs text-amber-400 font-mono font-semibold bg-amber-500/10 px-2 py-1 rounded border border-amber-500/20 shrink-0 ml-2">
                 OHS Act 16(1) / (2)
               </span>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-xs font-semibold text-slate-300 mb-1">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5 sm:gap-4">
+              <div className="min-w-0">
+                <label className="block text-[11px] sm:text-xs font-semibold text-slate-300 mb-1">
                   Full Name of Managing Director / Safety Lead *
                 </label>
                 <input
                   type="text"
                   value={profile.fullName}
                   onChange={e => setProfile({ ...profile, fullName: e.target.value })}
-                  className="w-full bg-slate-950 border border-slate-800 focus:border-cyan-500 rounded-xl px-3.5 py-2.5 text-sm text-white outline-none"
+                  className="w-full bg-slate-950 border border-slate-800 focus:border-red-500 rounded-xl px-3 sm:px-3.5 py-2 sm:py-2.5 text-xs sm:text-sm text-white outline-none transition-colors"
                   placeholder="e.g. David Khumalo"
                 />
               </div>
 
-              <div>
-                <label className="block text-xs font-semibold text-slate-300 mb-1">
+              <div className="min-w-0">
+                <label className="block text-[11px] sm:text-xs font-semibold text-slate-300 mb-1">
                   Registered Legal Entity Name (Pty Ltd / CC) *
                 </label>
                 <input
                   type="text"
                   value={profile.companyName}
                   onChange={e => setProfile({ ...profile, companyName: e.target.value })}
-                  className="w-full bg-slate-950 border border-slate-800 focus:border-cyan-500 rounded-xl px-3.5 py-2.5 text-sm text-white outline-none"
+                  className="w-full bg-slate-950 border border-slate-800 focus:border-red-500 rounded-xl px-3 sm:px-3.5 py-2 sm:py-2.5 text-xs sm:text-sm text-white outline-none transition-colors"
                   placeholder="e.g. Apex Trade & Civils (Pty) Ltd"
                 />
               </div>
 
-              <div>
-                <label className="block text-xs font-semibold text-slate-300 mb-1">
+              <div className="min-w-0">
+                <label className="block text-[11px] sm:text-xs font-semibold text-slate-300 mb-1">
                   CIPC Registration Number *
                 </label>
                 <input
                   type="text"
                   value={profile.cipcRegNumber}
                   onChange={e => setProfile({ ...profile, cipcRegNumber: e.target.value })}
-                  className="w-full bg-slate-950 border border-slate-800 focus:border-cyan-500 rounded-xl px-3.5 py-2.5 text-sm text-white font-mono outline-none"
+                  className="w-full bg-slate-950 border border-slate-800 focus:border-red-500 rounded-xl px-3 sm:px-3.5 py-2 sm:py-2.5 text-xs sm:text-sm text-white font-mono outline-none transition-colors"
                   placeholder="2021/123456/07"
                 />
               </div>
 
-              <div>
-                <label className="block text-xs font-semibold text-slate-300 mb-1">
+              <div className="min-w-0">
+                <label className="block text-[11px] sm:text-xs font-semibold text-slate-300 mb-1">
                   COIDA / FEM Registration Number *
                 </label>
                 <input
                   type="text"
                   value={profile.coidNumber}
                   onChange={e => setProfile({ ...profile, coidNumber: e.target.value })}
-                  className="w-full bg-slate-950 border border-slate-800 focus:border-cyan-500 rounded-xl px-3.5 py-2.5 text-sm text-white font-mono outline-none"
+                  className="w-full bg-slate-950 border border-slate-800 focus:border-red-500 rounded-xl px-3 sm:px-3.5 py-2 sm:py-2.5 text-xs sm:text-sm text-white font-mono outline-none transition-colors"
                   placeholder="990001248573"
                 />
               </div>
 
-              <div>
-                <label className="block text-xs font-semibold text-slate-300 mb-1">
+              <div className="min-w-0">
+                <label className="block text-[11px] sm:text-xs font-semibold text-slate-300 mb-1">
                   SARS Tax Compliance Status (PIN) *
                 </label>
                 <input
                   type="text"
                   value={profile.sarsPin}
                   onChange={e => setProfile({ ...profile, sarsPin: e.target.value })}
-                  className="w-full bg-slate-950 border border-slate-800 focus:border-cyan-500 rounded-xl px-3.5 py-2.5 text-sm text-white font-mono outline-none"
+                  className="w-full bg-slate-950 border border-slate-800 focus:border-red-500 rounded-xl px-3 sm:px-3.5 py-2 sm:py-2.5 text-xs sm:text-sm text-white font-mono outline-none transition-colors"
                   placeholder="9482716301"
                 />
               </div>
 
-              <div>
-                <label className="block text-xs font-semibold text-slate-300 mb-1">
-                  Contact Phone & WhatsApp *
+              <div className="min-w-0">
+                <label className="block text-[11px] sm:text-xs font-semibold text-slate-300 mb-1">
+                  Contact Phone &amp; WhatsApp *
                 </label>
                 <input
                   type="text"
                   value={profile.contactPhone}
                   onChange={e => setProfile({ ...profile, contactPhone: e.target.value })}
-                  className="w-full bg-slate-950 border border-slate-800 focus:border-cyan-500 rounded-xl px-3.5 py-2.5 text-sm text-white outline-none"
+                  className="w-full bg-slate-950 border border-slate-800 focus:border-red-500 rounded-xl px-3 sm:px-3.5 py-2 sm:py-2.5 text-xs sm:text-sm text-white outline-none transition-colors"
                   placeholder="+27 82 000 0000"
                 />
               </div>
 
-              <div className="sm:col-span-2">
-                <label className="block text-xs font-semibold text-slate-300 mb-1">
-                  Project Tender Title & Scope Location *
+              <div className="sm:col-span-2 min-w-0">
+                <label className="block text-[11px] sm:text-xs font-semibold text-slate-300 mb-1">
+                  Project Tender Title &amp; Scope Location *
                 </label>
                 <input
                   type="text"
                   value={profile.projectTenderName}
                   onChange={e => setProfile({ ...profile, projectTenderName: e.target.value })}
-                  className="w-full bg-slate-950 border border-slate-800 focus:border-cyan-500 rounded-xl px-3.5 py-2.5 text-sm text-white outline-none"
+                  className="w-full bg-slate-950 border border-slate-800 focus:border-red-500 rounded-xl px-3 sm:px-3.5 py-2 sm:py-2.5 text-xs sm:text-sm text-white outline-none transition-colors"
                   placeholder="Tender No. / Subcontract Scope Description"
                 />
               </div>
 
-              <div className="sm:col-span-2">
-                <label className="block text-xs font-semibold text-slate-300 mb-1">
+              <div className="sm:col-span-2 min-w-0">
+                <label className="block text-[11px] sm:text-xs font-semibold text-slate-300 mb-1">
                   Principal Client / Mining Corporation / Main Contractor *
                 </label>
                 <input
                   type="text"
                   value={profile.clientPrincipalName}
                   onChange={e => setProfile({ ...profile, clientPrincipalName: e.target.value })}
-                  className="w-full bg-slate-950 border border-slate-800 focus:border-cyan-500 rounded-xl px-3.5 py-2.5 text-sm text-white outline-none"
+                  className="w-full bg-slate-950 border border-slate-800 focus:border-red-500 rounded-xl px-3 sm:px-3.5 py-2 sm:py-2.5 text-xs sm:text-sm text-white outline-none transition-colors"
                   placeholder="e.g. Anglo Platinum, Exxaro, Murray & Roberts, Municipality"
                 />
               </div>
@@ -845,24 +850,24 @@ export const TenderFileWizard: React.FC<TenderFileWizardProps> = ({
 
             {/* Mandatory Document Verification Check */}
             <div className="space-y-3 pt-2">
-              <span className="text-xs font-semibold text-slate-300 uppercase tracking-wider font-mono">
+              <span className="text-[11px] sm:text-xs font-semibold text-slate-300 uppercase tracking-wider font-mono">
                 Mandatory Supporting Compliance Attachments
               </span>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 sm:gap-3">
                 {Object.entries(docUploads).map(([key, doc]) => (
                   <div 
                     key={key}
-                    className="p-3 bg-slate-950 border border-slate-800/80 rounded-xl flex items-center justify-between"
+                    className="p-2.5 sm:p-3 bg-slate-950 border border-slate-800/80 rounded-xl flex items-center justify-between gap-2 min-w-0"
                   >
-                    <div className="flex items-center gap-2.5 overflow-hidden">
+                    <div className="flex items-center gap-2 sm:gap-2.5 overflow-hidden min-w-0">
                       <div className={`w-7 h-7 rounded-lg flex items-center justify-center shrink-0 ${
                         doc.uploaded ? 'bg-emerald-500/10 text-emerald-400' : 'bg-slate-800 text-slate-400'
                       }`}>
                         {doc.uploaded ? <CheckCircle2 className="w-4 h-4" /> : <Upload className="w-4 h-4" />}
                       </div>
-                      <div className="truncate">
+                      <div className="truncate min-w-0">
                         <div className="text-xs font-semibold text-white truncate">{doc.name}</div>
-                        <div className="text-[10px] text-slate-400 font-mono">
+                        <div className="text-[10px] text-slate-400 font-mono truncate">
                           {doc.uploaded ? `${doc.fileName} (${doc.size})` : 'Pending attachment'}
                         </div>
                       </div>
@@ -872,12 +877,12 @@ export const TenderFileWizard: React.FC<TenderFileWizardProps> = ({
                       <button
                         type="button"
                         onClick={() => handleSimulatedUpload(key)}
-                        className="px-2.5 py-1 text-[10px] font-bold text-cyan-300 bg-cyan-950/80 border border-cyan-500/30 hover:bg-cyan-900 rounded-lg transition cursor-pointer"
+                        className="px-2.5 py-1 text-[10px] font-bold text-red-300 bg-red-950/80 border border-red-500/40 hover:bg-red-900 rounded-lg transition cursor-pointer shrink-0"
                       >
                         Attach
                       </button>
                     ) : (
-                      <span className="text-[10px] text-emerald-400 font-mono font-bold bg-emerald-500/10 px-2 py-0.5 rounded">
+                      <span className="text-[10px] text-emerald-400 font-mono font-bold bg-emerald-500/10 px-2 py-0.5 rounded shrink-0">
                         Verified
                       </span>
                     )}
@@ -890,22 +895,22 @@ export const TenderFileWizard: React.FC<TenderFileWizardProps> = ({
 
         {/* ================= STEP 2: Trades & Scope Selection ================= */}
         {currentStep === 2 && (
-          <div className="space-y-6 animate-in fade-in duration-200">
+          <div className="space-y-5 sm:space-y-6 animate-in fade-in duration-200">
             <div className="flex items-center justify-between pb-2 border-b border-slate-800">
-              <div>
-                <h3 className="text-sm font-bold text-white uppercase tracking-wider font-mono text-cyan-400">
-                  Step 2: Subcontractor Trade Packages & Risk Tier
+              <div className="min-w-0">
+                <h3 className="text-xs sm:text-sm font-bold text-white uppercase tracking-wider font-mono text-red-400 truncate">
+                  Step 2: Subcontractor Trade Packages &amp; Risk Tier
                 </h3>
-                <p className="text-xs text-slate-400">
+                <p className="text-[11px] sm:text-xs text-slate-400">
                   Select all active scopes of work. MeloTwo will automatically inject matching SANS Safe Work Procedures and Hazard Identification (HIRA).
                 </p>
               </div>
-              <span className="text-xs text-cyan-400 font-mono font-bold bg-cyan-500/10 px-2 py-1 rounded border border-cyan-500/20">
+              <span className="text-[10px] sm:text-xs text-red-300 font-mono font-bold bg-red-500/10 px-2.5 py-1 rounded-lg border border-red-500/30 shrink-0 ml-2">
                 {selectedTrades.length} Selected
               </span>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-3.5">
               {AVAILABLE_TRADES.map((trade) => {
                 const isSelected = selectedTrades.includes(trade.id);
                 const Icon = trade.icon;
@@ -920,45 +925,45 @@ export const TenderFileWizard: React.FC<TenderFileWizardProps> = ({
                   <div
                     key={trade.id}
                     onClick={() => toggleTrade(trade.id)}
-                    className={`p-4 rounded-xl border transition-all cursor-pointer flex flex-col justify-between ${
+                    className={`p-3.5 sm:p-4 rounded-xl border transition-all cursor-pointer flex flex-col justify-between min-w-0 ${
                       isSelected
-                        ? 'bg-slate-950 border-cyan-500 shadow-md shadow-cyan-950/40'
+                        ? 'bg-slate-950 border-red-500 shadow-md shadow-red-950/40'
                         : 'bg-slate-950/50 border-slate-800/80 hover:border-slate-700'
                     }`}
                   >
                     <div>
-                      <div className="flex items-center justify-between mb-2">
-                        <div className="flex items-center gap-2.5">
-                          <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${
-                            isSelected ? 'bg-cyan-500/20 text-cyan-400' : 'bg-slate-800 text-slate-400'
+                      <div className="flex items-center justify-between mb-2 gap-1.5">
+                        <div className="flex items-center gap-2 sm:gap-2.5 min-w-0">
+                          <div className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 ${
+                            isSelected ? 'bg-red-500/20 text-red-400' : 'bg-slate-800 text-slate-400'
                           }`}>
                             <Icon className="w-4 h-4" />
                           </div>
-                          <div>
-                            <h4 className="text-xs font-bold text-white">{trade.name}</h4>
-                            <span className="text-[10px] text-slate-400 font-mono">{trade.category}</span>
+                          <div className="min-w-0 truncate">
+                            <h4 className="text-xs font-bold text-white truncate">{trade.name}</h4>
+                            <span className="text-[10px] text-slate-400 font-mono block truncate">{trade.category}</span>
                           </div>
                         </div>
-                        <div className="flex items-center gap-1.5">
+                        <div className="flex items-center gap-1.5 shrink-0">
                           <span className={`text-[9px] font-bold uppercase px-1.5 py-0.5 rounded border font-mono ${riskBadgeColors}`}>
                             {trade.riskLevel} Risk
                           </span>
                           <div className={`w-4 h-4 rounded-full border flex items-center justify-center ${
-                            isSelected ? 'border-cyan-500 bg-cyan-500 text-slate-950' : 'border-slate-600'
+                            isSelected ? 'border-red-500 bg-red-600 text-white' : 'border-slate-600'
                           }`}>
                             {isSelected && <Check className="w-3 h-3 stroke-[3]" />}
                           </div>
                         </div>
                       </div>
 
-                      <p className="text-[11px] text-slate-400 leading-relaxed mb-3">
+                      <p className="text-[11px] text-slate-400 leading-relaxed mb-3 line-clamp-2 sm:line-clamp-none">
                         {trade.description}
                       </p>
                     </div>
 
                     <div className="pt-2 border-t border-slate-800/60 flex items-center justify-between text-[10px] font-mono text-slate-400">
                       <span>{trade.swps.length} Statutory SWPs</span>
-                      <span className="text-cyan-400 font-semibold">{trade.methodStatements.length} Method Statements</span>
+                      <span className="text-red-300 font-semibold">{trade.methodStatements.length} Method Statements</span>
                     </div>
                   </div>
                 );
@@ -969,101 +974,101 @@ export const TenderFileWizard: React.FC<TenderFileWizardProps> = ({
 
         {/* ================= STEP 3: Legal Appointments ================= */}
         {currentStep === 3 && (
-          <div className="space-y-6 animate-in fade-in duration-200">
+          <div className="space-y-5 sm:space-y-6 animate-in fade-in duration-200">
             <div className="flex items-center justify-between pb-2 border-b border-slate-800">
-              <div>
-                <h3 className="text-sm font-bold text-white uppercase tracking-wider font-mono text-cyan-400">
+              <div className="min-w-0">
+                <h3 className="text-xs sm:text-sm font-bold text-white uppercase tracking-wider font-mono text-red-400 truncate">
                   Step 3: Statutory Duty-Bearer Legal Appointments
                 </h3>
-                <p className="text-xs text-slate-400">
-                  Assign key personnel to mandatory legal appointments required by Construction Regulations 2014 & OHSA.
+                <p className="text-[11px] sm:text-xs text-slate-400">
+                  Assign key personnel to mandatory legal appointments required by Construction Regulations 2014 &amp; OHSA.
                 </p>
               </div>
               <button
                 type="button"
                 onClick={handleAutofillSupervisor}
-                className="text-xs text-cyan-400 hover:text-cyan-300 font-mono bg-cyan-500/10 px-2.5 py-1 rounded-lg border border-cyan-500/30 flex items-center gap-1 cursor-pointer"
+                className="text-[11px] sm:text-xs text-red-300 hover:text-red-200 font-mono bg-red-500/10 px-2.5 py-1 rounded-lg border border-red-500/30 flex items-center gap-1 cursor-pointer shrink-0 ml-2"
               >
                 <Sparkles className="w-3.5 h-3.5" />
                 Auto-fill Lead
               </button>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-xs font-semibold text-slate-300 mb-1">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5 sm:gap-4">
+              <div className="min-w-0">
+                <label className="block text-[11px] sm:text-xs font-semibold text-slate-300 mb-1">
                   Section 16.2 Assistant to CEO / Director *
                 </label>
                 <input
                   type="text"
                   value={staff.ceoSupervisorName}
                   onChange={e => setStaff({ ...staff, ceoSupervisorName: e.target.value })}
-                  className="w-full bg-slate-950 border border-slate-800 focus:border-cyan-500 rounded-xl px-3.5 py-2.5 text-sm text-white outline-none"
+                  className="w-full bg-slate-950 border border-slate-800 focus:border-red-500 rounded-xl px-3 sm:px-3.5 py-2 sm:py-2.5 text-xs sm:text-sm text-white outline-none transition-colors"
                 />
               </div>
 
-              <div>
-                <label className="block text-xs font-semibold text-slate-300 mb-1">
+              <div className="min-w-0">
+                <label className="block text-[11px] sm:text-xs font-semibold text-slate-300 mb-1">
                   Construction Manager (CR 8.1) *
                 </label>
                 <input
                   type="text"
                   value={staff.constructionManagerName}
                   onChange={e => setStaff({ ...staff, constructionManagerName: e.target.value })}
-                  className="w-full bg-slate-950 border border-slate-800 focus:border-cyan-500 rounded-xl px-3.5 py-2.5 text-sm text-white outline-none"
+                  className="w-full bg-slate-950 border border-slate-800 focus:border-red-500 rounded-xl px-3 sm:px-3.5 py-2 sm:py-2.5 text-xs sm:text-sm text-white outline-none transition-colors"
                 />
               </div>
 
-              <div>
-                <label className="block text-xs font-semibold text-slate-300 mb-1">
+              <div className="min-w-0">
+                <label className="block text-[11px] sm:text-xs font-semibold text-slate-300 mb-1">
                   Certified First Aider (GSR 3) *
                 </label>
                 <input
                   type="text"
                   value={staff.firstAiderName}
                   onChange={e => setStaff({ ...staff, firstAiderName: e.target.value })}
-                  className="w-full bg-slate-950 border border-slate-800 focus:border-cyan-500 rounded-xl px-3.5 py-2.5 text-sm text-white outline-none"
+                  className="w-full bg-slate-950 border border-slate-800 focus:border-red-500 rounded-xl px-3 sm:px-3.5 py-2 sm:py-2.5 text-xs sm:text-sm text-white outline-none transition-colors"
                 />
               </div>
 
-              <div>
-                <label className="block text-xs font-semibold text-slate-300 mb-1">
+              <div className="min-w-0">
+                <label className="block text-[11px] sm:text-xs font-semibold text-slate-300 mb-1">
                   Fire Fighting Officer (ER 9) *
                 </label>
                 <input
                   type="text"
                   value={staff.fireMarshalName}
                   onChange={e => setStaff({ ...staff, fireMarshalName: e.target.value })}
-                  className="w-full bg-slate-950 border border-slate-800 focus:border-cyan-500 rounded-xl px-3.5 py-2.5 text-sm text-white outline-none"
+                  className="w-full bg-slate-950 border border-slate-800 focus:border-red-500 rounded-xl px-3 sm:px-3.5 py-2 sm:py-2.5 text-xs sm:text-sm text-white outline-none transition-colors"
                 />
               </div>
 
-              <div>
-                <label className="block text-xs font-semibold text-slate-300 mb-1">
-                  Health & Safety Representative (Sec 17/18) *
+              <div className="min-w-0">
+                <label className="block text-[11px] sm:text-xs font-semibold text-slate-300 mb-1">
+                  Health &amp; Safety Representative (Sec 17/18) *
                 </label>
                 <input
                   type="text"
                   value={staff.safetyRepName}
                   onChange={e => setStaff({ ...staff, safetyRepName: e.target.value })}
-                  className="w-full bg-slate-950 border border-slate-800 focus:border-cyan-500 rounded-xl px-3.5 py-2.5 text-sm text-white outline-none"
+                  className="w-full bg-slate-950 border border-slate-800 focus:border-red-500 rounded-xl px-3 sm:px-3.5 py-2 sm:py-2.5 text-xs sm:text-sm text-white outline-none transition-colors"
                 />
               </div>
 
-              <div>
-                <label className="block text-xs font-semibold text-slate-300 mb-1">
+              <div className="min-w-0">
+                <label className="block text-[11px] sm:text-xs font-semibold text-slate-300 mb-1">
                   Lead Risk Assessor (CR 9.1) *
                 </label>
                 <input
                   type="text"
                   value={staff.riskAssessorName}
                   onChange={e => setStaff({ ...staff, riskAssessorName: e.target.value })}
-                  className="w-full bg-slate-950 border border-slate-800 focus:border-cyan-500 rounded-xl px-3.5 py-2.5 text-sm text-white outline-none"
+                  className="w-full bg-slate-950 border border-slate-800 focus:border-red-500 rounded-xl px-3 sm:px-3.5 py-2 sm:py-2.5 text-xs sm:text-sm text-white outline-none transition-colors"
                 />
               </div>
             </div>
 
-            <div className="p-4 bg-slate-950/80 border border-slate-800 rounded-xl flex items-start gap-3 text-xs text-slate-400">
+            <div className="p-3.5 sm:p-4 bg-slate-950/80 border border-slate-800 rounded-xl flex items-start gap-2.5 sm:gap-3 text-xs text-slate-400">
               <ShieldCheck className="w-5 h-5 text-emerald-400 shrink-0 mt-0.5" />
               <div>
                 <span className="text-white font-semibold block">Statutory Legal Protection</span>
@@ -1075,25 +1080,25 @@ export const TenderFileWizard: React.FC<TenderFileWizardProps> = ({
 
         {/* ================= STEP 4: Dynamic Output, Watermarking Preview & Blueprint ================= */}
         {currentStep === 4 && (
-          <div className="space-y-6 animate-in fade-in duration-200">
-            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 pb-2 border-b border-slate-800">
-              <div>
-                <h3 className="text-sm font-bold text-white uppercase tracking-wider font-mono text-cyan-400">
-                  Step 4: Safety File Blueprint & Watermarked Preview
+          <div className="space-y-5 sm:space-y-6 animate-in fade-in duration-200">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2.5 pb-2 border-b border-slate-800">
+              <div className="min-w-0">
+                <h3 className="text-xs sm:text-sm font-bold text-white uppercase tracking-wider font-mono text-red-400 truncate">
+                  Step 4: Red File Blueprint &amp; Watermarked Preview
                 </h3>
-                <p className="text-xs text-slate-400">
-                  Review the structured dossier, inspect the live watermarked document preview, or compile the complete PDF.
+                <p className="text-[11px] sm:text-xs text-slate-400">
+                  Review the structured 20-section dossier, inspect the live watermarked document preview, or compile the complete PDF.
                 </p>
               </div>
 
               {/* View Switcher */}
-              <div className="flex items-center gap-1 bg-slate-950 p-1 rounded-xl border border-slate-800 text-xs font-mono">
+              <div className="flex items-center gap-1 bg-slate-950 p-1 rounded-xl border border-slate-800 text-xs font-mono shrink-0 self-start sm:self-auto">
                 <button
                   type="button"
                   onClick={() => setActivePreviewTab('live_preview')}
                   className={`px-3 py-1 rounded-lg transition-colors cursor-pointer flex items-center gap-1.5 ${
                     activePreviewTab === 'live_preview'
-                      ? 'bg-cyan-600 text-white font-bold'
+                      ? 'bg-red-600 text-white font-bold shadow-sm'
                       : 'text-slate-400 hover:text-white'
                   }`}
                 >
@@ -1105,7 +1110,7 @@ export const TenderFileWizard: React.FC<TenderFileWizardProps> = ({
                   onClick={() => setActivePreviewTab('blueprint')}
                   className={`px-3 py-1 rounded-lg transition-colors cursor-pointer flex items-center gap-1.5 ${
                     activePreviewTab === 'blueprint'
-                      ? 'bg-cyan-600 text-white font-bold'
+                      ? 'bg-red-600 text-white font-bold shadow-sm'
                       : 'text-slate-400 hover:text-white'
                   }`}
                 >
@@ -1127,79 +1132,79 @@ export const TenderFileWizard: React.FC<TenderFileWizardProps> = ({
                 </div>
 
                 {/* THE WATERMARKED PREVIEW CANVAS */}
-                <div className="relative bg-white text-slate-900 rounded-xl p-6 sm:p-8 shadow-2xl border-4 border-slate-800 select-none overflow-hidden min-h-[380px]">
+                <div className="relative bg-white text-slate-900 rounded-xl p-3.5 sm:p-6 md:p-8 shadow-2xl border-2 sm:border-4 border-slate-800 select-none overflow-hidden min-h-[320px] sm:min-h-[380px]">
                   
                   {/* DIAGONAL ANTI-SCREENSHOT WATERMARK OVERLAYS */}
-                  <div className="absolute inset-0 pointer-events-none z-20 flex flex-col justify-around rotate-[-25deg] scale-125 opacity-25">
-                    <div className="whitespace-nowrap text-rose-600 font-black text-xs sm:text-sm tracking-widest uppercase text-center py-2 bg-rose-500/10 border-y border-rose-500/30">
-                      PREVIEW ONLY • TENDER SAFETY FILE • NOT FOR OFFICIAL SUBMISSION UNTIL PURCHASED
+                  <div className="absolute inset-0 pointer-events-none z-20 flex flex-col justify-around rotate-[-25deg] scale-125 opacity-25 overflow-hidden">
+                    <div className="whitespace-nowrap text-rose-600 font-black text-[10px] sm:text-xs md:text-sm tracking-widest uppercase text-center py-1.5 sm:py-2 bg-rose-500/10 border-y border-rose-500/30">
+                      PREVIEW ONLY • TENDER RED SAFETY FILE • NOT FOR OFFICIAL SUBMISSION UNTIL PURCHASED
                     </div>
-                    <div className="whitespace-nowrap text-rose-600 font-black text-xs sm:text-sm tracking-widest uppercase text-center py-2 bg-rose-500/10 border-y border-rose-500/30">
-                      PREVIEW ONLY • TENDER SAFETY FILE • NOT FOR OFFICIAL SUBMISSION UNTIL PURCHASED
+                    <div className="whitespace-nowrap text-rose-600 font-black text-[10px] sm:text-xs md:text-sm tracking-widest uppercase text-center py-1.5 sm:py-2 bg-rose-500/10 border-y border-rose-500/30">
+                      PREVIEW ONLY • TENDER RED SAFETY FILE • NOT FOR OFFICIAL SUBMISSION UNTIL PURCHASED
                     </div>
-                    <div className="whitespace-nowrap text-rose-600 font-black text-xs sm:text-sm tracking-widest uppercase text-center py-2 bg-rose-500/10 border-y border-rose-500/30">
-                      PREVIEW ONLY • TENDER SAFETY FILE • NOT FOR OFFICIAL SUBMISSION UNTIL PURCHASED
+                    <div className="whitespace-nowrap text-rose-600 font-black text-[10px] sm:text-xs md:text-sm tracking-widest uppercase text-center py-1.5 sm:py-2 bg-rose-500/10 border-y border-rose-500/30">
+                      PREVIEW ONLY • TENDER RED SAFETY FILE • NOT FOR OFFICIAL SUBMISSION UNTIL PURCHASED
                     </div>
-                    <div className="whitespace-nowrap text-rose-600 font-black text-xs sm:text-sm tracking-widest uppercase text-center py-2 bg-rose-500/10 border-y border-rose-500/30">
-                      PREVIEW ONLY • TENDER SAFETY FILE • NOT FOR OFFICIAL SUBMISSION UNTIL PURCHASED
+                    <div className="whitespace-nowrap text-rose-600 font-black text-[10px] sm:text-xs md:text-sm tracking-widest uppercase text-center py-1.5 sm:py-2 bg-rose-500/10 border-y border-rose-500/30">
+                      PREVIEW ONLY • TENDER RED SAFETY FILE • NOT FOR OFFICIAL SUBMISSION UNTIL PURCHASED
                     </div>
                   </div>
 
                   {/* Document Header */}
-                  <div className="border-b-2 border-slate-900 pb-4 mb-4 flex justify-between items-start">
-                    <div>
-                      <div className="text-[10px] font-mono font-bold uppercase tracking-wider text-slate-500">
+                  <div className="border-b-2 border-slate-900 pb-3 sm:pb-4 mb-3 sm:mb-4 flex justify-between items-start gap-2">
+                    <div className="min-w-0">
+                      <div className="text-[9px] sm:text-[10px] font-mono font-bold uppercase tracking-wider text-slate-500 truncate">
                         REPUBLIC OF SOUTH AFRICA • OCCUPATIONAL HEALTH AND SAFETY ACT 85 OF 1993
                       </div>
-                      <h3 className="text-base sm:text-lg font-black tracking-tight text-slate-900 mt-1">
-                        STATUTORY HEALTH AND SAFETY TENDER FILE
+                      <h3 className="text-sm sm:text-base md:text-lg font-black tracking-tight text-slate-900 mt-1">
+                        STATUTORY HEALTH AND SAFETY TENDER FILE (THE "RED FILE")
                       </h3>
-                      <p className="text-xs font-semibold text-slate-600">
-                        Construction Regulations 2014 & Section 37(2) Mandatary Agreement Dossier
+                      <p className="text-[11px] sm:text-xs font-semibold text-slate-600">
+                        Construction Regulations 2014 &amp; Section 37(2) Mandatary Agreement Dossier
                       </p>
                     </div>
-                    <div className="text-right">
-                      <span className="text-[10px] font-mono font-bold px-2 py-1 bg-slate-100 border border-slate-300 rounded text-slate-700">
+                    <div className="text-right shrink-0">
+                      <span className="text-[9px] sm:text-[10px] font-mono font-bold px-2 py-1 bg-slate-100 border border-slate-300 rounded text-slate-700">
                         REF: M2-ZA-2026
                       </span>
                     </div>
                   </div>
 
                   {/* Document Body Metadata */}
-                  <div className="grid grid-cols-2 gap-4 text-xs mb-4">
-                    <div className="bg-slate-50 p-3 rounded border border-slate-200">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 sm:gap-4 text-xs mb-4">
+                    <div className="bg-slate-50 p-2.5 sm:p-3 rounded-lg border border-slate-200">
                       <span className="text-[10px] font-bold text-slate-500 uppercase block">Appointed Contractor</span>
-                      <span className="font-bold text-slate-900">{profile.companyName}</span>
+                      <span className="font-bold text-slate-900 text-xs sm:text-sm">{profile.companyName}</span>
                       <span className="block text-[11px] text-slate-600">CIPC: {profile.cipcRegNumber}</span>
                       <span className="block text-[11px] text-slate-600">COID / WCA: {profile.coidNumber}</span>
                     </div>
-                    <div className="bg-slate-50 p-3 rounded border border-slate-200">
+                    <div className="bg-slate-50 p-2.5 sm:p-3 rounded-lg border border-slate-200">
                       <span className="text-[10px] font-bold text-slate-500 uppercase block">Principal Employer / Client</span>
-                      <span className="font-bold text-slate-900">{profile.clientPrincipalName}</span>
+                      <span className="font-bold text-slate-900 text-xs sm:text-sm">{profile.clientPrincipalName}</span>
                       <span className="block text-[11px] text-slate-600">Scope: {profile.projectTenderName.slice(0, 40)}...</span>
                       <span className="block text-[11px] text-slate-600">Managing Lead: {profile.fullName}</span>
                     </div>
                   </div>
 
                   {/* Document Trade Table Sample */}
-                  <div className="border border-slate-200 rounded overflow-hidden text-[11px] mb-4">
-                    <div className="bg-slate-100 px-3 py-1.5 font-bold text-slate-700 border-b border-slate-200 flex justify-between">
-                      <span>Mapped Trades & Safe Work Procedures ({totalSwps} SWPs)</span>
+                  <div className="border border-slate-200 rounded-lg overflow-hidden text-[11px] mb-3 sm:mb-4">
+                    <div className="bg-slate-100 px-3 py-1.5 font-bold text-slate-700 border-b border-slate-200 flex justify-between text-[10px] sm:text-[11px]">
+                      <span>Mapped Trades &amp; Safe Work Procedures ({totalSwps} SWPs)</span>
                       <span>Risk Tier</span>
                     </div>
-                    <div className="p-3 space-y-1.5 bg-white">
+                    <div className="p-2.5 sm:p-3 space-y-1.5 bg-white">
                       {activeTradeObjects.map(t => (
-                        <div key={t.id} className="flex justify-between items-center border-b border-slate-100 pb-1">
-                          <span className="font-semibold text-slate-800">• {t.name}</span>
-                          <span className="text-[10px] font-mono font-bold text-slate-600">{t.riskLevel}</span>
+                        <div key={t.id} className="flex justify-between items-center border-b border-slate-100 pb-1 text-[11px]">
+                          <span className="font-semibold text-slate-800 truncate mr-2">• {t.name}</span>
+                          <span className="text-[10px] font-mono font-bold text-slate-600 shrink-0">{t.riskLevel}</span>
                         </div>
                       ))}
                     </div>
                   </div>
 
                   {/* Section 37.2 Notice snippet */}
-                  <div className="text-[10px] text-slate-500 leading-relaxed italic border-t border-slate-200 pt-2">
-                    * Section 37(2) Mandatary Agreement legally indemnifies the Principal Client by transferring statutory duty of care to appointed Section 16.2 and CR 8.1 personnel in accordance with SANS 10330 & DMR Mine Standards.
+                  <div className="text-[9px] sm:text-[10px] text-slate-500 leading-relaxed italic border-t border-slate-200 pt-2">
+                    * Section 37(2) Mandatary Agreement legally indemnifies the Principal Client by transferring statutory duty of care to appointed Section 16.2 and CR 8.1 personnel in accordance with SANS 10330 &amp; DMR Mine Standards.
                   </div>
                 </div>
               </div>
@@ -1301,29 +1306,29 @@ export const TenderFileWizard: React.FC<TenderFileWizardProps> = ({
             )}
 
             {/* Price & Commercial Package Box */}
-            <div className="p-5 bg-gradient-to-br from-slate-950 to-slate-900 border border-slate-800 rounded-xl space-y-4 shadow-inner">
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="p-4 sm:p-5 bg-gradient-to-br from-slate-950 to-slate-900 border border-slate-800 rounded-xl space-y-3 sm:space-y-4 shadow-inner">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                 
                 {/* Once-Off Option */}
-                <div className="p-4 bg-slate-900/90 border border-cyan-500/40 rounded-xl space-y-2 relative">
+                <div className="p-3.5 sm:p-4 bg-red-950/20 border-2 border-red-500/60 rounded-xl space-y-2 relative shadow-md">
                   <div className="flex items-center justify-between">
-                    <span className="text-xs font-bold uppercase tracking-wider text-cyan-300">
-                      Tender-Ready Safety File PDF
+                    <span className="text-xs font-black uppercase tracking-wider text-red-300">
+                      The "Red File" Standard (20 Sections)
                     </span>
-                    <span className="text-[10px] font-mono font-bold text-cyan-300 bg-cyan-500/20 px-2 py-0.5 rounded">
+                    <span className="text-[10px] font-mono font-bold text-red-200 bg-red-600/30 px-2 py-0.5 rounded border border-red-500/40">
                       Once-off
                     </span>
                   </div>
                   <div className="text-2xl font-black text-white font-mono">
                     R750 <span className="text-xs font-normal text-slate-400">once-off</span>
                   </div>
-                  <p className="text-xs text-slate-400">
-                    Instant complete 45+ page audit-ready PDF formatted for immediate tender submission and client vetting.
+                  <p className="text-xs text-slate-300">
+                    Instant complete 45+ page audit-ready Red Safety File PDF formatted for immediate tender submission and client vetting.
                   </p>
                 </div>
 
                 {/* Subscription Option */}
-                <div className="p-4 bg-slate-950/60 border border-amber-500/30 rounded-xl space-y-2">
+                <div className="p-3.5 sm:p-4 bg-slate-950/60 border border-amber-500/30 rounded-xl space-y-2">
                   <div className="flex items-center justify-between">
                     <span className="text-xs font-bold uppercase tracking-wider text-amber-300">
                       SMB Continuous SHEQ Plan
@@ -1348,27 +1353,27 @@ export const TenderFileWizard: React.FC<TenderFileWizardProps> = ({
                   type="button"
                   onClick={handleDownloadClick}
                   disabled={isGeneratingPdf}
-                  className={`w-full py-3.5 px-4 text-sm font-extrabold uppercase tracking-wider rounded-xl transition-all shadow-xl flex items-center justify-center gap-2 cursor-pointer ${
+                  className={`w-full py-3.5 px-4 text-xs sm:text-sm font-black uppercase tracking-wider rounded-xl transition-all shadow-xl flex items-center justify-center gap-2 cursor-pointer border ${
                     downloadCount >= MAX_DOWNLOAD_LIMIT && !isPaidUnlocked
-                      ? 'bg-gradient-to-r from-rose-600 to-amber-600 hover:from-rose-500 hover:to-amber-500 text-white shadow-rose-950/80'
-                      : 'bg-gradient-to-r from-amber-500 via-cyan-500 to-indigo-600 hover:from-amber-400 hover:to-indigo-500 text-slate-950 shadow-cyan-950/80'
+                      ? 'bg-gradient-to-r from-red-700 to-rose-700 hover:from-red-600 hover:to-rose-600 text-white border-red-500 shadow-red-950/80'
+                      : 'bg-gradient-to-r from-red-600 via-rose-600 to-red-700 hover:from-red-500 hover:to-rose-500 text-white border-red-400/80 shadow-lg shadow-red-950/60 hover:shadow-red-600/30 active:scale-98'
                   }`}
                 >
                   {isGeneratingPdf ? (
                     <>
                       <Sparkles className="w-4 h-4 animate-spin" />
-                      Compiling Statutory Documents & Watermarks...
+                      <span>Compiling Red File PDF &amp; Watermarks...</span>
                     </>
                   ) : downloadCount >= MAX_DOWNLOAD_LIMIT && !isPaidUnlocked ? (
                     <>
                       <Lock className="w-4 h-4" />
-                      Download Limit Reached (3/3) • Upgrade to Download
+                      <span>Download Limit Reached (3/3) • Upgrade to Download</span>
                       <ArrowRight className="w-4 h-4" />
                     </>
                   ) : (
                     <>
                       <Download className="w-4 h-4" />
-                      Generate & Download Safety File PDF ({MAX_DOWNLOAD_LIMIT - downloadCount} Free Left)
+                      <span>Generate &amp; Download Red File PDF ({MAX_DOWNLOAD_LIMIT - downloadCount} Free Left)</span>
                       <ArrowRight className="w-4 h-4" />
                     </>
                   )}
@@ -1377,7 +1382,7 @@ export const TenderFileWizard: React.FC<TenderFileWizardProps> = ({
 
               {pdfGeneratedSuccess && (
                 <div className="p-3 bg-emerald-950/60 border border-emerald-500/40 rounded-xl text-center text-xs text-emerald-300 font-mono animate-in fade-in">
-                  ✓ Safety File PDF compiled and downloaded successfully as <span className="font-bold text-white">{profile.companyName.replace(/[^a-zA-Z0-9]/g, '_')}_Tender_Safety_File.pdf</span>
+                  ✓ Red Safety File PDF compiled and downloaded successfully as <span className="font-bold text-white">{profile.companyName.replace(/[^a-zA-Z0-9]/g, '_')}_Tender_Safety_File.pdf</span>
                 </div>
               )}
             </div>
@@ -1388,18 +1393,18 @@ export const TenderFileWizard: React.FC<TenderFileWizardProps> = ({
       </div>
 
       {/* Footer Navigation Controls */}
-      <div className="px-6 py-4 border-t border-slate-800 bg-slate-950 flex items-center justify-between">
+      <div className="px-4 py-3 sm:px-6 sm:py-3.5 border-t border-slate-800 bg-slate-950 shrink-0 flex items-center justify-between gap-2 pb-[max(0.875rem,env(safe-area-inset-bottom))]">
         <button
           type="button"
           onClick={() => setCurrentStep(prev => (prev > 1 ? (prev - 1 as any) : prev))}
           disabled={currentStep === 1}
-          className="px-4 py-2 text-xs font-semibold text-slate-400 hover:text-white disabled:opacity-30 flex items-center gap-1.5 transition-colors cursor-pointer"
+          className="px-3 sm:px-4 py-2 text-xs font-semibold text-slate-400 hover:text-white disabled:opacity-30 flex items-center gap-1 sm:gap-1.5 transition-colors cursor-pointer shrink-0"
         >
           <ArrowLeft className="w-4 h-4" />
-          Previous Step
+          <span>Previous</span>
         </button>
 
-        <div className="text-xs text-slate-400 font-mono hidden sm:block">
+        <div className="text-[11px] sm:text-xs text-slate-400 font-mono hidden xs:block">
           Step {currentStep} of 4 • {currentStep === 4 ? 'Ready to Export' : 'In Progress'}
         </div>
 
@@ -1407,9 +1412,9 @@ export const TenderFileWizard: React.FC<TenderFileWizardProps> = ({
           <button
             type="button"
             onClick={() => setCurrentStep(prev => (prev < 4 ? (prev + 1 as any) : prev))}
-            className="px-5 py-2.5 bg-gradient-to-r from-cyan-600 to-indigo-600 hover:from-cyan-500 hover:to-indigo-500 text-white text-xs font-bold uppercase tracking-wider rounded-xl transition-all shadow-lg shadow-cyan-950/40 flex items-center gap-1.5 cursor-pointer"
+            className="px-4 sm:px-5 py-2.5 bg-gradient-to-r from-red-600 to-rose-600 hover:from-red-500 hover:to-rose-500 text-white text-xs font-bold uppercase tracking-wider rounded-xl transition-all shadow-md shadow-red-950/40 border border-red-500/60 flex items-center gap-1.5 cursor-pointer shrink-0 active:scale-95"
           >
-            Next Step
+            <span>Next Step</span>
             <ArrowRight className="w-4 h-4" />
           </button>
         ) : (
@@ -1417,14 +1422,14 @@ export const TenderFileWizard: React.FC<TenderFileWizardProps> = ({
             type="button"
             onClick={handleDownloadClick}
             disabled={isGeneratingPdf}
-            className={`px-5 py-2.5 text-xs font-bold uppercase tracking-wider rounded-xl transition-all shadow-lg flex items-center gap-1.5 cursor-pointer disabled:opacity-50 ${
+            className={`px-4 sm:px-5 py-2.5 text-xs font-bold uppercase tracking-wider rounded-xl transition-all shadow-md flex items-center gap-1.5 cursor-pointer disabled:opacity-50 shrink-0 active:scale-95 ${
               downloadCount >= MAX_DOWNLOAD_LIMIT && !isPaidUnlocked
                 ? 'bg-rose-600 hover:bg-rose-500 text-white shadow-rose-950/40'
-                : 'bg-amber-500 hover:bg-amber-400 text-slate-950 shadow-amber-950/40'
+                : 'bg-gradient-to-r from-red-600 to-rose-600 hover:from-red-500 hover:to-rose-500 text-white shadow-red-950/40 border border-red-500/60'
             }`}
           >
             {downloadCount >= MAX_DOWNLOAD_LIMIT && !isPaidUnlocked ? <Lock className="w-4 h-4" /> : <Download className="w-4 h-4" />}
-            {isGeneratingPdf ? 'Compiling...' : downloadCount >= MAX_DOWNLOAD_LIMIT && !isPaidUnlocked ? 'Upgrade to Unlock' : 'Download File'}
+            <span>{isGeneratingPdf ? 'Compiling...' : downloadCount >= MAX_DOWNLOAD_LIMIT && !isPaidUnlocked ? 'Upgrade to Unlock' : 'Download Red File'}</span>
           </button>
         )}
       </div>
@@ -1532,7 +1537,7 @@ export const TenderFileWizard: React.FC<TenderFileWizardProps> = ({
   return (
     <div 
       id="tender-file-wizard-backdrop"
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 bg-slate-950/80 backdrop-blur-md overflow-y-auto animate-in fade-in duration-200"
+      className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 md:p-6 bg-slate-950/85 backdrop-blur-md overflow-hidden animate-in fade-in duration-200"
       onClick={(e) => {
         if (e.target === e.currentTarget && onClose) onClose();
       }}

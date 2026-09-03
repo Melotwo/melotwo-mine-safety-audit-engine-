@@ -221,16 +221,17 @@ export const Navbar: React.FC<NavbarProps> = ({
         {/* 3 DIRECT ACTION BUTTONS (RIGHT SIDE) */}
         <div className="flex items-center space-x-2 sm:space-x-3">
           
-          {/* Action 1: Tender Safety File */}
+          {/* Action 1: Tender Safety File ("Red File") */}
           {onOpenTenderWizard && (
             <button
               id="build-tender-btn"
               onClick={onOpenTenderWizard}
-              className="inline-flex items-center gap-1.5 px-3.5 py-1.5 text-xs font-black text-slate-950 bg-amber-400 hover:bg-amber-300 border border-amber-500 rounded-xl transition shadow-md hover:shadow-amber-400/20 cursor-pointer uppercase tracking-wider shrink-0"
-              title="Generate 20-Section Tender-Ready Safety File (R750)"
+              className="inline-flex items-center gap-1.5 px-2.5 sm:px-3.5 py-1.5 text-xs font-black text-white bg-gradient-to-r from-red-600 via-rose-600 to-red-700 hover:from-red-500 hover:to-rose-500 active:scale-95 border border-red-400/80 rounded-xl transition shadow-md shadow-red-950/50 hover:shadow-red-600/30 cursor-pointer uppercase tracking-wider shrink-0"
+              title="Generate Statutory 20-Section Red Safety File (R750)"
             >
-              <FileSpreadsheet className="w-3.5 h-3.5 text-slate-950" />
-              <span>Tender Safety File</span>
+              <FileSpreadsheet className="w-3.5 h-3.5 text-white shrink-0" />
+              <span className="hidden sm:inline">Red Safety File</span>
+              <span className="sm:hidden font-extrabold">Red File</span>
             </button>
           )}
 
@@ -319,32 +320,47 @@ export const Navbar: React.FC<NavbarProps> = ({
             </button>
           </div>
 
-          <div className="pt-2 border-t border-slate-800/80 grid grid-cols-2 gap-2">
-            <button
-              onClick={() => {
-                setPage('handover');
-                setIsMobileMenuOpen(false);
-              }}
-              className={`px-3 py-2 rounded-xl text-xs font-bold flex items-center space-x-2 ${
-                currentPage === 'handover' ? 'bg-indigo-600 text-white' : 'bg-slate-800 text-slate-300'
-              }`}
-            >
-              <RotateCcw className="w-3.5 h-3.5 text-indigo-400" />
-              <span>Shift Handover</span>
-            </button>
+          <div className="pt-2 border-t border-slate-800/80 space-y-2">
+            {onOpenTenderWizard && (
+              <button
+                onClick={() => {
+                  onOpenTenderWizard();
+                  setIsMobileMenuOpen(false);
+                }}
+                className="w-full px-3.5 py-2.5 rounded-xl text-xs font-black uppercase tracking-wider flex items-center justify-center gap-2 bg-gradient-to-r from-red-600 via-rose-600 to-red-700 text-white shadow-md shadow-red-950/60 border border-red-500/80 active:scale-98"
+              >
+                <FileSpreadsheet className="w-4 h-4 text-white" />
+                <span>Open Red Safety File (20 Sections)</span>
+              </button>
+            )}
 
-            <button
-              onClick={() => {
-                setPage('solutions');
-                setIsMobileMenuOpen(false);
-              }}
-              className={`px-3 py-2 rounded-xl text-xs font-bold flex items-center space-x-2 ${
-                currentPage === 'solutions' ? 'bg-indigo-600 text-white' : 'bg-slate-800 text-slate-300'
-              }`}
-            >
-              <Layers className="w-3.5 h-3.5 text-emerald-400" />
-              <span>Hazard Matrix</span>
-            </button>
+            <div className="grid grid-cols-2 gap-2">
+              <button
+                onClick={() => {
+                  setPage('handover');
+                  setIsMobileMenuOpen(false);
+                }}
+                className={`px-3 py-2 rounded-xl text-xs font-bold flex items-center space-x-2 ${
+                  currentPage === 'handover' ? 'bg-indigo-600 text-white' : 'bg-slate-800 text-slate-300'
+                }`}
+              >
+                <RotateCcw className="w-3.5 h-3.5 text-indigo-400" />
+                <span>Shift Handover</span>
+              </button>
+
+              <button
+                onClick={() => {
+                  setPage('solutions');
+                  setIsMobileMenuOpen(false);
+                }}
+                className={`px-3 py-2 rounded-xl text-xs font-bold flex items-center space-x-2 ${
+                  currentPage === 'solutions' ? 'bg-indigo-600 text-white' : 'bg-slate-800 text-slate-300'
+                }`}
+              >
+                <Layers className="w-3.5 h-3.5 text-emerald-400" />
+                <span>Hazard Matrix</span>
+              </button>
+            </div>
           </div>
         </div>
       )}
