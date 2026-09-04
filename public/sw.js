@@ -1,5 +1,5 @@
 // MeloTwo Safety Engine - Progressive Web App Service Worker
-const CACHE_NAME = 'melotwo-safety-v1.1.0';
+const CACHE_NAME = 'melotwo-safety-v1.2.0';
 const CORE_ASSETS = [
   '/',
   '/index.html',

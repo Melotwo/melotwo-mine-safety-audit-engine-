@@ -1,11 +1,13 @@
 {
+  "id": "/",
   "name": "MeloTwo Safety",
   "short_name": "MeloTwo",
   "description": "Automate 20-Section MHSA & OHSA Safety Files, SANS 10330 Audits, and DMRE Stoppage Prevention.",
   "start_url": "/",
+  "scope": "/",
   "display": "standalone",
-  "background_color": "#000000",
-  "theme_color": "#000000",
+  "background_color": "#0b0f19",
+  "theme_color": "#0b0f19",
   "orientation": "portrait-primary",
   "lang": "en-ZA",
   "dir": "ltr",
@@ -39,7 +41,7 @@
       "src": "/apple-touch-icon.png",
       "sizes": "180x180",
       "type": "image/png",
-      "purpose": "any maskable"
+      "purpose": "any"
     },
     {
       "src": "/favicon-32x32.png",
@@ -57,7 +59,7 @@
       "src": "/melotwo_shield_logo.svg",
       "sizes": "any",
       "type": "image/svg+xml",
-      "purpose": "any maskable"
+      "purpose": "any"
     }
   ],
   "shortcuts": [

@@ -13,6 +13,7 @@ import {
   ExternalLink,
   ChevronRight
 } from 'lucide-react';
+import { MeloTwoLogo } from './MeloTwoLogo';
 
 interface BeforeInstallPromptEvent extends Event {
   readonly platforms: string[];
@@ -193,8 +194,8 @@ export const PWAInstallPrompt: React.FC = () => {
             </button>
 
             <div className="flex items-start gap-3.5 pr-6">
-              <div className="p-2.5 rounded-xl bg-amber-400/10 border border-amber-400/30 text-amber-400 shrink-0 mt-0.5">
-                <Smartphone className="w-6 h-6" />
+              <div className="p-1 rounded-xl bg-slate-950/80 border border-amber-400/40 shrink-0 mt-0.5 shadow-sm">
+                <MeloTwoLogo size="md" />
               </div>
 
               <div className="space-y-1">
@@ -257,8 +258,8 @@ export const PWAInstallPrompt: React.FC = () => {
             </button>
 
             <div className="flex items-center gap-3">
-              <div className="p-3 rounded-xl bg-amber-400/10 border border-amber-400/30 text-amber-400">
-                <Smartphone className="w-6 h-6" />
+              <div className="p-1 rounded-xl bg-slate-950/90 border border-amber-400/40 shrink-0 shadow-sm">
+                <MeloTwoLogo size="md" />
               </div>
               <div>
                 <h3 className="text-base font-bold text-white">Install MeloTwo on Your Device</h3>
