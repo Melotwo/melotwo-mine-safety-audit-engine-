@@ -25,6 +25,7 @@ import { MeloTwoLogo } from './components/MeloTwoLogo';
 import { OutreachHub } from './components/OutreachHub';
 import { BlogPage } from './components/BlogPage';
 import { PWAInstallPrompt } from './components/PWAInstallPrompt';
+import { GooglePreferredSourceBanner } from './components/GooglePreferredSourceBanner';
 import { Database, RefreshCw, Upload, LogOut, Sparkles, CheckCircle2, AlertOctagon, Download, ChevronRight, Lock, Terminal, Minimize2, Maximize2, Activity, Scale, Globe, CheckCircle, Target, ShieldAlert, ArrowRight, Check, Truck, Info, RotateCcw, Sliders, XCircle, Building2, MapPin, ChevronDown, ChevronUp, EyeOff, Filter, Layers, FileSpreadsheet, Calculator, BookOpen, Smartphone } from 'lucide-react';
 import jsPDF from 'jspdf';
 import { sanitizeInputText } from './utils/sanitizer';
@@ -4913,6 +4914,11 @@ const AppFooter: React.FC<AppFooterProps> = ({ onRequestDemo }) => (
                         </ul>
                     </div>
                 </div>
+            </div>
+
+            {/* Google Preferred Sources Conversion Block */}
+            <div className="mb-12">
+                <GooglePreferredSourceBanner variant="footer" />
             </div>
 
             <div className="md:flex md:items-center md:justify-between pt-6">

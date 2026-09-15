@@ -28,4 +28,5 @@ export * from './LeadManagementTable';
 export * from './TenderLeadScraperHub';
 export * from './Toast';
 export * from './PWAInstallPrompt';
+export * from './GooglePreferredSourceBanner';
 

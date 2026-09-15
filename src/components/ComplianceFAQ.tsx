@@ -1,5 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { Search, ChevronDown, ChevronUp, FileText, ShieldCheck, HelpCircle, Activity } from 'lucide-react';
+import { GooglePreferredSourceBanner } from './GooglePreferredSourceBanner';
 
 export interface FAQItem {
   id: string;
@@ -201,6 +202,11 @@ export const ComplianceFAQ: React.FC = () => {
             </button>
           </div>
         )}
+      </div>
+
+      {/* Google Preferred Sources Integration */}
+      <div className="mt-8">
+        <GooglePreferredSourceBanner variant="footer" />
       </div>
 
       {/* Decorative Footer info */}
