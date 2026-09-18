@@ -83,6 +83,27 @@ export const MINE_PROFILES_BASELINE: MineProfile[] = [
       { id: 'AUD-R-301', date: '2026-05-18', category: 'SANS 10330: HACCP / Canteen', score: 95, status: 'Passed' },
       { id: 'AUD-R-300', date: '2026-04-11', category: 'SANS 10142: Electrical', score: 96, status: 'Passed' },
     ]
+  },
+  {
+    id: 'copperbelt-shaft-4',
+    name: 'Copperbelt Shaft No. 4 Subterranean',
+    type: 'Copper & Cobalt (Deep Shaft 900m Level)',
+    location: 'Kitwe, Copperbelt Province, Zambia',
+    complianceScore: 94,
+    activeAuditsCount: 11,
+    safetyRating: 'A+',
+    stats: {
+      airQuality: 96,
+      waterRecycling: 91,
+      noiseLevel: 79,
+      ppeAdherence: 97,
+    },
+    audits: [
+      { id: 'AUD-ZM-401', date: '2026-09-15', category: 'MSR Part XIV: Subterranean Atmosphere & CH4', score: 96, status: 'Passed' },
+      { id: 'AUD-ZM-402', date: '2026-09-12', category: 'ZEMA SI 112: Effluent & Heavy Metal Limits', score: 92, status: 'Passed' },
+      { id: 'AUD-ZM-403', date: '2026-08-28', category: 'MSR Part X: Strata Control & 80kN Bolt Pull', score: 95, status: 'Passed' },
+      { id: 'AUD-ZM-404', date: '2026-08-10', category: 'MMDA 2015: Contractor Safety Dossier & MBOD', score: 93, status: 'Passed' },
+    ]
   }
 ];
 

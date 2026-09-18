@@ -197,3 +197,5 @@ export interface AuditReportResponse {
   pdfExport?: any;
   _fallback?: boolean;
 }
+
+export * from './config/regulatoryRules.zambia';

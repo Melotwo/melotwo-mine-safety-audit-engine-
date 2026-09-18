@@ -1,0 +1,448 @@
+{
+  "jurisdiction": "ZM",
+  "jurisdiction_name": "Republic of Zambia",
+  "country_code": "ZMB",
+  "currency": "ZMW",
+  "version": "2026.3.0",
+  "last_updated": "2026-09-18",
+  "title": "MeloTwo Zambian Mining & Environmental Regulatory Ruleset",
+  "description": "Statutory rule configuration integrating the Mines and Minerals Development Act No. 11 of 2015, the Mining Regulations (MSR), and ZEMA Environmental Management Regulations for subterranean hazard enforcement and local contractor onboarding.",
+  "regulatory_authorities": [
+    {
+      "code": "MSD",
+      "name": "Mines Safety Department",
+      "ministry": "Ministry of Mines and Minerals Development",
+      "headquarters": "Kitwe, Copperbelt Province, Zambia",
+      "statutory_act": "Mines and Minerals Development Act No. 11 of 2015 / Mining Regulations (MSR)"
+    },
+    {
+      "code": "ZEMA",
+      "name": "Zambia Environmental Management Agency",
+      "ministry": "Ministry of Green Economy and Environment",
+      "headquarters": "Lusaka / Ndola Regional Office, Zambia",
+      "statutory_act": "Environmental Management Act No. 12 of 2011 & Statutory Instrument No. 112"
+    },
+    {
+      "code": "MBOD",
+      "name": "Medical Bureau for Occupational Diseases (Silicosis Bureau)",
+      "ministry": "Ministry of Health",
+      "headquarters": "Ndola, Copperbelt Province, Zambia",
+      "statutory_act": "Occupational Health and Safety Act No. 36 of 2010"
+    },
+    {
+      "code": "WCFCB",
+      "name": "Workers' Compensation Fund Control Board",
+      "ministry": "Ministry of Labour and Social Security",
+      "headquarters": "Ndola, Copperbelt Province, Zambia",
+      "statutory_act": "Workers' Compensation Act No. 10 of 1999"
+    }
+  ],
+  "modules": {
+    "subterranean_hazards": {
+      "module_id": "ZM_MSR_SUBTERRANEAN_HAZARDS",
+      "title": "Subterranean Hazards & Mining Safety Regulations (MSR)",
+      "statutory_basis": "Mining Regulations (MSR), Parts IX, XII, and XIV (Underground Working, Electricity, Explosives & Ventilation)",
+      "risk_severity": "CRITICAL_STOPPAGE_RISK",
+      "rules": [
+        {
+          "rule_id": "MSR-VENT-GAS-CH4",
+          "category": "ATMOSPHERE_AND_GASES",
+          "name": "Methane (CH4) Flammable Gas Thresholds",
+          "parameter_code": "ZM_GAS_CH4",
+          "uom": "% vol",
+          "thresholds": {
+            "normal_baseline": 0.1,
+            "warning_threshold": 0.8,
+            "power_trip_threshold": 1.0,
+            "statutory_evacuation_ceiling": 1.25
+          },
+          "statutory_reference": "MSR Part XIV, Reg 1404",
+          "enforcement_protocol": {
+            "on_warning": "Log alert on MeloTwo PWA, initiate auxiliary ventilation boost, notify Section Ventilation Officer.",
+            "on_power_trip": "Automated interlock disconnects electrical feeder to section.",
+            "on_evacuation": "Immediate withdrawal of all personnel from heading to fresh-air base; entry barricaded with red statutory warning notice."
+          }
+        },
+        {
+          "rule_id": "MSR-VENT-GAS-CO",
+          "category": "ATMOSPHERE_AND_GASES",
+          "name": "Carbon Monoxide (CO) Toxic Gas Thresholds",
+          "parameter_code": "ZM_GAS_CO",
+          "uom": "ppm",
+          "thresholds": {
+            "twa_safe_limit": 30.0,
+            "short_term_alert": 50.0,
+            "statutory_ceiling": 100.0
+          },
+          "statutory_reference": "MSR Part XIV, Reg 1406",
+          "enforcement_protocol": {
+            "on_alert": "Don Self-Contained Self-Rescuers (SCSRs) if CO > 50 ppm.",
+            "on_ceiling": "Immediate section shutdown; investigate post-blast lingering fumes or smoldering timber/conveyor belt."
+          }
+        },
+        {
+          "rule_id": "MSR-VENT-GAS-O2",
+          "category": "ATMOSPHERE_AND_GASES",
+          "name": "Oxygen (O2) Deficiency Minimum",
+          "parameter_code": "ZM_GAS_O2",
+          "uom": "% vol",
+          "thresholds": {
+            "statutory_minimum": 19.5,
+            "optimal": 20.9
+          },
+          "statutory_reference": "MSR Part XIV, Reg 1401",
+          "enforcement_protocol": {
+            "on_deficiency": "No entry permitted under 19.5% O2; red tag entry and activate secondary fresh air line."
+          }
+        },
+        {
+          "rule_id": "MSR-VENT-AIRFLOW-VELOCITY",
+          "category": "SUBTERRANEAN_VENTILATION",
+          "name": "Minimum Air Velocity in Underground Working Faces",
+          "parameter_code": "ZM_VENT_AIR_VEL",
+          "uom": "m/s",
+          "thresholds": {
+            "minimum_active_stope": 0.30,
+            "recommended_heading": 0.50,
+            "maximum_permissible_airway": 4.0
+          },
+          "statutory_reference": "MSR Part XIV, Reg 1410",
+          "enforcement_protocol": {
+            "on_sub_minimum": "Halt drilling/loading activities until auxiliary ducting is inspected and fan volume verified."
+          }
+        },
+        {
+          "rule_id": "MSR-STRATA-GROUND-SUPPORT",
+          "category": "STRATA_CONTROL_AND_ROCKFALL",
+          "name": "Underground Geotechnical Ground Support & Rock Bolt Integrity",
+          "parameter_code": "ZM_STRATA_BOLT_PULL",
+          "uom": "kN",
+          "thresholds": {
+            "minimum_pull_test_load": 80.0,
+            "maximum_unsupported_span_meters": 2.0,
+            "mesh_overlap_minimum_mm": 100.0
+          },
+          "statutory_reference": "MSR Part X, Reg 1008 (Excavations & Support of Workings)",
+          "enforcement_protocol": {
+            "on_failure": "Condemn unsupported advance face; install temporary hydraulic props before secondary bolting."
+          }
+        },
+        {
+          "rule_id": "MSR-ELEC-UNDERGROUND-FLAMEPROOF",
+          "category": "HIGH_VOLTAGE_AND_ELECTRICAL",
+          "name": "Subterranean Substation Flameproof Enclosures & Grounding",
+          "parameter_code": "ZM_ELEC_EARTH_RESIST",
+          "uom": "Ohms",
+          "thresholds": {
+            "max_earth_continuity_resistance": 10.0,
+            "earth_leakage_trip_current_ma": 300.0,
+            "max_breaker_trip_time_ms": 100.0
+          },
+          "statutory_reference": "MSR Part XII (Electricity in Mines) & SANS 10142-1 Code of Practice",
+          "enforcement_protocol": {
+            "on_exceedance": "Lock out high-voltage feed (3.3kV / 550V) until NGR resistor and bonding jumpers are re-tested."
+          }
+        },
+        {
+          "rule_id": "MSR-EXPLOSIVES-REENTRY",
+          "category": "BLASTING_AND_EXPLOSIVES",
+          "name": "Subterranean Blast Clearance & Fume Re-entry Interval",
+          "parameter_code": "ZM_BLAST_REENTRY_WAIT",
+          "uom": "minutes",
+          "thresholds": {
+            "minimum_reentry_time": 30,
+            "maximum_nitrogen_dioxide_ppm": 3.0
+          },
+          "statutory_reference": "MSR Part IX, Reg 912 (Handling of Explosives & Blasting Times)",
+          "enforcement_protocol": {
+            "on_premature_entry": "Automatic violation flag; revocation of shift entry badge; MSD disciplinary logging."
+          }
+        },
+        {
+          "rule_id": "MSR-REFUGE-CHAMBER-READINESS",
+          "category": "EMERGENCY_PREPAREDNESS",
+          "name": "Subterranean Fresh Air Refuge Chamber Operational Readiness",
+          "parameter_code": "ZM_REFUGE_AUTONOMY",
+          "uom": "hours",
+          "thresholds": {
+            "minimum_oxygen_endurance_hours": 36.0,
+            "minimum_positive_pressure_pa": 100.0,
+            "max_travel_distance_meters": 750.0
+          },
+          "statutory_reference": "MSR Part XIV, Emergency Preparedness Directives",
+          "enforcement_protocol": {
+            "on_inspection_deficit": "Immediate audit ticket; replenishment of soda-lime scrubber canisters and emergency rations."
+          }
+        }
+      ]
+    },
+    "zema_environmental_effluent": {
+      "module_id": "ZM_ZEMA_ENVIRONMENTAL_EFFLUENT",
+      "title": "ZEMA Mine Water Discharge & Effluent Licensing Rules",
+      "statutory_basis": "Environmental Management Act No. 12 of 2011 / Statutory Instrument No. 112 (Licensing of Emissions and Effluent)",
+      "risk_severity": "STATUTORY_FINANCIAL_LIABILITY_AND_STOPPAGE",
+      "rules": [
+        {
+          "rule_id": "ZEMA-EFFLUENT-PH",
+          "category": "WATER_QUALITY",
+          "name": "Industrial Effluent & Decant Discharge pH Range",
+          "parameter_code": "ZM_EFF_PH",
+          "uom": "pH units",
+          "thresholds": {
+            "statutory_minimum": 6.5,
+            "statutory_maximum": 9.0
+          },
+          "statutory_reference": "ZEMA SI 112 Third Schedule (Effluent Standards)",
+          "enforcement_protocol": {
+            "on_breach": "Automated shutoff of river discharge weir gate; redirect to neutralizing lime slurry circuit."
+          }
+        },
+        {
+          "rule_id": "ZEMA-EFFLUENT-CU",
+          "category": "HEAVY_METALS",
+          "name": "Total Dissolved Copper (Cu) in Final Discharge",
+          "parameter_code": "ZM_EFF_CU",
+          "uom": "mg/L",
+          "thresholds": {
+            "statutory_maximum": 1.0,
+            "warning_alert": 0.75
+          },
+          "statutory_reference": "ZEMA SI 112 Third Schedule",
+          "enforcement_protocol": {
+            "on_breach": "Divert stream to retention/settling dam No. 3; audit solvent extraction/electrowinning wash circuit."
+          }
+        },
+        {
+          "rule_id": "ZEMA-EFFLUENT-TSS",
+          "category": "SUSPENDED_SOLIDS",
+          "name": "Total Suspended Solids (TSS)",
+          "parameter_code": "ZM_EFF_TSS",
+          "uom": "mg/L",
+          "thresholds": {
+            "statutory_maximum": 100.0,
+            "warning_alert": 70.0
+          },
+          "statutory_reference": "ZEMA SI 112 Third Schedule",
+          "enforcement_protocol": {
+            "on_breach": "Increase flocculant dosage at thickener overflow ponds; halt discharge into drainage canal."
+          }
+        },
+        {
+          "rule_id": "ZEMA-EFFLUENT-CO",
+          "category": "HEAVY_METALS",
+          "name": "Total Cobalt (Co) in Aquatic Discharge",
+          "parameter_code": "ZM_EFF_CO",
+          "uom": "mg/L",
+          "thresholds": {
+            "statutory_maximum": 1.0
+          },
+          "statutory_reference": "ZEMA SI 112 Third Schedule",
+          "enforcement_protocol": {
+            "on_breach": "Engage secondary precipitation reactor; notify Kafue Basin water management catchment team."
+          }
+        },
+        {
+          "rule_id": "ZEMA-EFFLUENT-CYANIDE",
+          "category": "TOXIC_COMPOUNDS",
+          "name": "Weak Acid Dissociable (WAD) Cyanide in Tailings Decant",
+          "parameter_code": "ZM_EFF_WAD_CN",
+          "uom": "mg/L",
+          "thresholds": {
+            "statutory_maximum": 0.2,
+            "warning_alert": 0.1
+          },
+          "statutory_reference": "ZEMA SI 112 Hazardous Waste / Mining Effluent Criteria",
+          "enforcement_protocol": {
+            "on_breach": "Activate Caro's acid / sodium metabisulfite detox circuit; halt decant transfer immediately."
+          }
+        },
+        {
+          "rule_id": "ZEMA-TSF-FREEBOARD-STABILITY",
+          "category": "TAILINGS_STORAGE_FACILITIES",
+          "name": "TSF Embankment Freeboard Margin & Factor of Safety",
+          "parameter_code": "ZM_TSF_SAFETY_FACTOR",
+          "uom": "ratio",
+          "thresholds": {
+            "minimum_factor_of_safety": 1.50,
+            "minimum_dry_freeboard_meters": 1.50
+          },
+          "statutory_reference": "ZEMA Environmental Code of Practice for Tailings Dam Safety",
+          "enforcement_protocol": {
+            "on_breach": "Mandatory geotechnical audit within 24 hours; cease tailings deposition on affected crest."
+          }
+        },
+        {
+          "rule_id": "ZEMA-CHEM-CONTAINMENT-BUNDING",
+          "category": "HAZARDOUS_SUBSTANCES",
+          "name": "Secondary Chemical Containment Bunding Capacity",
+          "parameter_code": "ZM_CHEM_BUND_CAPACITY",
+          "uom": "% volume",
+          "thresholds": {
+            "minimum_bund_capacity": 110.0
+          },
+          "statutory_reference": "ZEMA Hazardous Waste Management Regulations",
+          "enforcement_protocol": {
+            "on_deficit": "Prohibit bulk reagent offloading (hydrochloric acid, diesel, flotation reagents) until bund integrity is certified."
+          }
+        }
+      ]
+    },
+    "contractor_onboarding_and_local_content": {
+      "module_id": "ZM_MMDA_CONTRACTOR_ONBOARDING",
+      "title": "Mines & Minerals Development Act Contractor Onboarding & Local Content",
+      "statutory_basis": "Mines and Minerals Development Act No. 11 of 2015 & Local Content Statutory Guidelines",
+      "risk_severity": "TENDER_DISQUALIFICATION_AND_LICENSE_REVOCATION",
+      "rules": [
+        {
+          "rule_id": "MMDA-CITIZEN-EQUITY-RATIO",
+          "category": "LOCAL_CONTENT_OWNERSHIP",
+          "name": "Citizen-Owned / Influenced Business Equity Requirement",
+          "parameter_code": "ZM_CITIZEN_EQUITY",
+          "uom": "% equity",
+          "thresholds": {
+            "citizen_owned_tier1_minimum": 51.0,
+            "citizen_empowered_joint_venture_minimum": 25.0
+          },
+          "statutory_reference": "Mines and Minerals Development (General) Regulations, Local Content Framework",
+          "mandatory_verification_documents": [
+            "PACRA (Patents and Companies Registration Agency) Certified Shareholding Structure",
+            "National Registration Cards (NRC) of Zambian Citizen Directors",
+            "Zambia Chamber of Mines Contractor Accreditation"
+          ],
+          "enforcement_protocol": {
+            "on_non_compliance": "Contractor locked out from Tier-1 mining house supply tenders; classified as Non-Compliant Expatriate Entity."
+          }
+        },
+        {
+          "rule_id": "MMDA-LOCAL-WORKFORCE-QUOTA",
+          "category": "LOCAL_EMPLOYMENT",
+          "name": "Zambian National Workforce Quota",
+          "parameter_code": "ZM_LOCAL_WORKFORCE_PCT",
+          "uom": "% workforce",
+          "thresholds": {
+            "minimum_skilled_local_ratio": 85.0,
+            "minimum_unskilled_local_ratio": 100.0
+          },
+          "statutory_reference": "Mines and Minerals Development Act No. 11 of 2015, Part IV (Employment and Training)",
+          "mandatory_verification_documents": [
+            "Certified Monthly Staff Payroll / NAPSA Schedule",
+            "Approved Succession Plan for any Expatriate Engineering Roles",
+            "Department of Immigration Expatriate Work Permits"
+          ],
+          "enforcement_protocol": {
+            "on_deficit": "Block site gate pass clearances until workforce ratios reflect statutory quotas."
+          }
+        },
+        {
+          "rule_id": "MMDA-STATUTORY-REGISTRATION-GATE",
+          "category": "CONTRACTOR_LEGAL_STANDING",
+          "name": "Mandatory Zambian Statutory Registrations",
+          "parameter_code": "ZM_STATUTORY_REG_GATE",
+          "mandatory_credentials": [
+            {
+              "institution": "PACRA",
+              "credential": "Certificate of Incorporation / Business Name",
+              "validity_check": "Active status with annual returns lodged"
+            },
+            {
+              "institution": "ZRA (Zambia Revenue Authority)",
+              "credential": "Tax Clearance Certificate (TPIN)",
+              "validity_check": "Valid within current fiscal tax period"
+            },
+            {
+              "institution": "WCFCB",
+              "credential": "Certificate of Good Standing",
+              "validity_check": "Workers' Compensation fund contributions paid to date"
+            },
+            {
+              "institution": "NAPSA",
+              "credential": "Social Security Compliance Certificate",
+              "validity_check": "Zero employee pension contribution arrears"
+            }
+          ],
+          "enforcement_protocol": {
+            "on_missing_credential": "Immediate hard onboarding block. No site access or tender dossier compilation permitted."
+          }
+        },
+        {
+          "rule_id": "MMDA-MSD-COMPETENCY-APPOINTMENTS",
+          "category": "MINING_SAFETY_COMPETENCY",
+          "name": "MSD Statutory Competency Licenses & Legal Appointments",
+          "parameter_code": "ZM_MSD_LEGAL_APPOINTMENTS",
+          "mandatory_appointment_categories": [
+            {
+              "role": "Mine Captain / Section Overseer",
+              "statutory_license": "MSD Statutory Certificate of Competency",
+              "form": "Form MSD-08"
+            },
+            {
+              "role": "Blaster / Explosives Handler",
+              "statutory_license": "Valid Blasting License",
+              "form": "Form MSD-14"
+            },
+            {
+              "role": "Section Electrical Engineer",
+              "statutory_license": "Engineering Institution of Zambia (EIZ) Registered & ERB Practicing License",
+              "standard": "SANS 10142 / MSR Part XII"
+            },
+            {
+              "role": "SHEQ Safety Officer",
+              "statutory_license": "MSD Approved Mine Safety Officer Certification",
+              "standard": "ISO 45001 / Mining Safety Regulations"
+            }
+          ],
+          "enforcement_protocol": {
+            "on_expired_license": "Contractor barred from high-risk subterranean activities until renewals are stamped by MSD Kitwe."
+          }
+        },
+        {
+          "rule_id": "MMDA-MEDICAL-SURVEILLANCE-SILICOSIS",
+          "category": "OCCUPATIONAL_HEALTH",
+          "name": "Medical Bureau for Occupational Diseases (Silicosis) Fitness Certificate",
+          "parameter_code": "ZM_MED_BUREAU_FITNESS",
+          "mandatory_checks": [
+            "Baseline Chest X-Ray (ILO Classification for pneumoconiosis / silicosis)",
+            "Spirometry / Lung Function Test",
+            "Audiometric Hearing Assessment (Baseline < 85 dBA)",
+            "Active MBOD Fit-for-Duty Certificate (Valid for 12 months)"
+          ],
+          "statutory_reference": "Occupational Health and Safety Act & Mines Regulations MBOD Protocol",
+          "enforcement_protocol": {
+            "on_unfit_result": "Immediate subterranean work restriction; reassignment to low-dust surface operations."
+          }
+        },
+        {
+          "rule_id": "MMDA-SHEQ-SAFETY-FILE-COMPLIANCE",
+          "category": "SAFETY_FILE_COMPILATION",
+          "name": "MeloTwo 20-Section Zambian Mining Tender Safety File",
+          "parameter_code": "ZM_SAFETY_FILE_INDEX",
+          "required_dossier_sections": [
+            "Section 1: Company Profile, PACRA, ZRA TPIN, ZEMA Permits",
+            "Section 2: Mines Safety Department (MSD) Legal Appointments & Organogram",
+            "Section 3: Occupational Health & Safety Policy (OHS Act / MSR Compliant)",
+            "Section 4: Baseline Risk Assessments (HIRA) & Issue-Based JSA",
+            "Section 5: Standard Operating Procedures (SOPs) for Subterranean Advance",
+            "Section 6: Fall of Ground & Strata Management Plan",
+            "Section 7: Flammable Gas & Atmospheric Monitoring Procedures",
+            "Section 8: Electrical & Lockout Tagout (LOTO) Procedures (SANS 10142)",
+            "Section 9: Explosives Handling, Transport & Blasting Permits (Form MSD-14)",
+            "Section 10: TSF Decant & Effluent Environmental Management Plan (ZEMA SI 112)",
+            "Section 11: Waste Management & Hazardous Chemicals Register",
+            "Section 12: Incident Notification & MSD Section 54/55 Response Plan",
+            "Section 13: Emergency Preparedness & Underground Refuge Chamber Protocol",
+            "Section 14: Medical Surveillance & MBOD Silicosis Certificates",
+            "Section 15: PPE Issue Register & Specification Compliance Matrix",
+            "Section 16: Training Records, Induction Log & Competency Certificates",
+            "Section 17: Machinery & Trackless Mobile Machinery (TMM) Pre-use Checklists",
+            "Section 18: Workers' Compensation (WCFCB) & NAPSA Clearance Certificates",
+            "Section 19: Internal SHEQ Audit Schedule & Inspection Records",
+            "Section 20: Contractor Sign-off, Statutory Declarations & Client Acceptance"
+          ],
+          "enforcement_protocol": {
+            "on_compile": "Export audit-ready cryptographically stamped PDF dossier in under 90 seconds via MeloTwo engine."
+          }
+        }
+      ]
+    }
+  }
+}

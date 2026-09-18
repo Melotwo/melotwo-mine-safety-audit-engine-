@@ -105,6 +105,48 @@ export const MINE_PRESETS: { name: string; description: string; data: MineParams
         arcRatingValue: "No rating"
       }
     }
+  },
+  {
+    name: "Copperbelt Shaft No. 4 Pilot Project (Zambia)",
+    description: "Subterranean Copper/Cobalt operation (900m level) audited under Zambian MSR Part XIV, ZEMA SI 112, and MMDA Local Content regulations.",
+    data: {
+      mineName: "Copperbelt Shaft No. 4 - Subterranean Haulage",
+      miningSector: "copper",
+      depthLevel: 900,
+      headcount: 480,
+      environmentHazards: ["Thermal/Flash Fire", "Acid Mine Drainage", "High Humidity", "Mechanical Crushing"],
+      currentPPE: {
+        fabricType: "Inherent FR Flame-Resistant Anti-Static Fabric (SANS 724 / MSR Compliant)",
+        fabricWashCycles: 12,
+        footwearSoleMaterial: "Nitrile Rubber Sole",
+        footwearSpecification: "SANS 20345 / Acid Resistant Nitrile",
+        arcRatingValue: "12.4 cal/cm2 (ATPV Class 2)"
+      }
+    }
+  }
+];
+
+export const ZAMBIAN_STATUTORY_STANDARDS: SANSStandard[] = [
+  {
+    code: "ZM MSR Part XIV",
+    title: "Mining Safety Regulations - Underground Atmosphere & Ventilation",
+    scope: "Prescribes statutory gas ceilings (Methane CH4 < 1.25%, Carbon Monoxide CO < 30 ppm TWA, Oxygen O2 > 19.5%) and minimum face ventilation velocity (0.30 m/s).",
+    relevance: "Mandatory compliance parameter enforced by the Mines Safety Department (MSD) Kitwe across all underground Copperbelt operations.",
+    auditCheck: "Continuous gas detection monitoring with automated power lockout trip integration on aux fan circuits."
+  },
+  {
+    code: "ZEMA SI 112 (2013)",
+    title: "Environmental Management (Licensing of Emissions & Effluents)",
+    scope: "Mandates strict aquatic discharge thresholds for mining effluent (pH 6.5-9.0, Total Dissolved Copper <= 1.0 mg/L, Total Suspended Solids <= 100 mg/L, WAD Cyanide <= 0.2 mg/L).",
+    relevance: "Enforces non-pollution standards for decant return water and dewatering effluent entering the Kafue River drainage basin.",
+    auditCheck: "Automated sampling verification at final discharge weir with lime slurry neutralization interlock."
+  },
+  {
+    code: "MMDA Act No. 11 (2015)",
+    title: "Mines and Minerals Development Act - Local Content & Contractor Onboarding",
+    scope: "Sets minimum 51% citizen-owned equity for Tier-1 suppliers, 85% Zambian workforce quota, and statutory clearance from PACRA, ZRA, WCFCB, NAPSA, and MBOD Silicosis Bureau.",
+    relevance: "Required legal gate for all industrial service providers and engineering contractors bidding on mining house tenders in Zambia.",
+    auditCheck: "Automated verification of PACRA shareholding, ZRA TPIN status, and MBOD annual Silicosis fitness cards."
   }
 ];
 

@@ -142,6 +142,40 @@ export const REGULATORY_SHIFTS_DATA: Record<string, RegulatoryAlert[]> = {
       authority: 'International AI Governance Council (ISO/IEC JTC 1/SC 42)',
       clauseRef: 'ISO/IEC 42001:2023 Annex A.8.2'
     }
+  ],
+  zambia_mhs: [
+    {
+      id: 'alert-zm-mhs-1',
+      code: 'REG-2026-ZM01',
+      title: 'Zambian MSR Part XIV: Subterranean Methane & Air Velocity Lockout Thresholds',
+      sectorId: 'zambia_mhs',
+      sectorName: 'Zambian MHS & Copperbelt Operations',
+      standardCode: 'MSR Part XIV / MSD Kitwe',
+      severity: 'Critical Directive',
+      severityColor: 'bg-rose-500/20 text-rose-300 border-rose-500/30',
+      effectiveDate: 'Sep 15, 2026',
+      summary: 'Mines Safety Department (MSD) Kitwe mandates automated continuous electrical isolation when subterranean CH4 reaches 1.0% and halts headings with airflow < 0.30 m/s.',
+      impactDetails: 'Underground operations across the Copperbelt must verify continuous telemetry coupling to secondary substation trip breakers. Readings >= 1.25% CH4 trigger mandatory crew evacuation. Auxiliary ventilation velocity must maintain >= 0.30 m/s at all blast faces.',
+      actionRequired: 'ZAMBIAN MHS DIRECTIVE: Verify Ex-d flameproof interlock relays on Shaft 4 and calibrate vane anemometer airflow logs under MSD MSR Part XIV Reg 1404/1410.',
+      authority: 'Mines Safety Department (MSD) Kitwe',
+      clauseRef: 'Mining Regulations (MSR) Part XIV, Reg 1404 & 1410'
+    },
+    {
+      id: 'alert-zm-mhs-2',
+      code: 'REG-2026-ZM02',
+      title: 'ZEMA SI 112: Heavy Metal Aquatic Discharge & Decant pH Compliance Mandate',
+      sectorId: 'zambia_mhs',
+      sectorName: 'Zambian MHS & Copperbelt Operations',
+      standardCode: 'ZEMA SI 112 / EPPCA',
+      severity: 'Statutory Stoppage',
+      severityColor: 'bg-amber-500/20 text-amber-300 border-amber-500/30',
+      effectiveDate: 'Sep 10, 2026',
+      summary: 'Zambia Environmental Management Agency (ZEMA) enforces instant shutoff for effluent with pH < 6.5 or Total Dissolved Copper (Cu) > 1.0 mg/L entering the Kafue Basin.',
+      impactDetails: 'Decant return waters from tailings storage facilities (TSFs) and dewatering circuits must be analyzed continuously. Exceedance of 1.0 mg/L Cu, 100 mg/L TSS, or 0.2 mg/L WAD Cyanide triggers automatic Environmental Protection Orders (EPOs) and site license suspension.',
+      actionRequired: 'ZEMA SI 112 DIRECTIVE: Engage secondary lime slurry neutralization circuit on decant return dam and log continuous photometric copper analysis.',
+      authority: 'Zambia Environmental Management Agency (ZEMA)',
+      clauseRef: 'ZEMA SI 112 of 2013 Third Schedule Table 1 & 2'
+    }
   ]
 };
 

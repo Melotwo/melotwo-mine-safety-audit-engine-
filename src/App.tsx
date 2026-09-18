@@ -26,6 +26,7 @@ import { OutreachHub } from './components/OutreachHub';
 import { BlogPage } from './components/BlogPage';
 import { PWAInstallPrompt } from './components/PWAInstallPrompt';
 import { GooglePreferredSourceBanner } from './components/GooglePreferredSourceBanner';
+import { ZambianMhsCompliancePanel } from './components/ZambianMhsCompliancePanel';
 import { Database, RefreshCw, Upload, LogOut, Sparkles, CheckCircle2, AlertOctagon, Download, ChevronRight, Lock, Terminal, Minimize2, Maximize2, Activity, Scale, Globe, CheckCircle, Target, ShieldAlert, ArrowRight, Check, Truck, Info, RotateCcw, Sliders, XCircle, Building2, MapPin, ChevronDown, ChevronUp, EyeOff, Filter, Layers, FileSpreadsheet, Calculator, BookOpen, Smartphone } from 'lucide-react';
 import jsPDF from 'jspdf';
 import { sanitizeInputText } from './utils/sanitizer';
@@ -7765,6 +7766,26 @@ export const HAZARD_CATEGORIES: HazardCategoryItem[] = [
     iconName: 'Truck',
     defaultDescription: 'Proximity detection systems (PDS), brakes & reverse alarms.',
     mitigationAction: 'Calibrate PDS radar sensors on underground diesel scoops, audit emergency brake holding pressure, and test reverse alarms.'
+  },
+  {
+    id: 'subterranean_atmosphere',
+    name: 'Subterranean Ventilation & Flammable Gases',
+    code: 'HAZ-ZM-VENT',
+    standardRef: 'MSR Part XIV / MSD Reg 1404',
+    isHighRisk: true,
+    iconName: 'Flame',
+    defaultDescription: 'CH4 < 1.25%, CO <= 30 ppm, air velocity >= 0.30 m/s & auxiliary fan interlocks.',
+    mitigationAction: 'Enforce automatic power lockout at 1.0% CH4, purge blast heading for 30 mins, and verify fresh air velocity >= 0.30 m/s under Zambian MSR 1404.'
+  },
+  {
+    id: 'zema_effluent_drainage',
+    name: 'ZEMA Aquatic Effluent & Tailings Decant Discharge',
+    code: 'HAZ-ZM-ZEMA',
+    standardRef: 'ZEMA SI 112 / EPPCA Act',
+    isHighRisk: true,
+    iconName: 'ShieldAlert',
+    defaultDescription: 'pH 6.5-9.0, Cu <= 1.0 mg/L, TSS <= 100 mg/L, CN <= 0.2 mg/L & TSF freeboard >= 1.5m.',
+    mitigationAction: 'Activate lime slurry neutralization dosing on decant weir to hold pH 6.5-9.0 and clarify discharge to ensure Copper <= 1.0 mg/L under ZEMA SI 112.'
   }
 ];
 
@@ -11765,6 +11786,18 @@ Safety index and terminal clearance verified. The audit record status has been u
 
                         {/* Red Team Operational Analytics Widget */}
                         <AuditHistoryChart />
+
+                        {/* Zambian MHS & ZEMA Effluent Compliance Panel (Active for Mining / Zambian Operations) */}
+                        {(selectedSector === 'mining' || (selectedSector as string) === 'zambia_mhs') && (
+                            <ZambianMhsCompliancePanel 
+                                onApplyDirective={(directive) => {
+                                    setParsedNotes((prev) => prev ? `${prev}\n\n${directive}` : directive);
+                                    setTimeout(() => {
+                                        document.getElementById('terminal-audit-form-section')?.scrollIntoView({ behavior: 'smooth' });
+                                    }, 100);
+                                }}
+                            />
+                        )}
 
                     </div>
                 </div>

@@ -111,6 +111,26 @@ export const HAZARD_CATEGORIES: HazardCategoryItem[] = [
     iconName: 'Truck',
     defaultDescription: 'Proximity detection systems (PDS), brakes & reverse alarms.',
     mitigationAction: 'Calibrate PDS radar sensors on underground diesel scoops, audit emergency brake holding pressure, and test reverse alarms.'
+  },
+  {
+    id: 'subterranean_atmosphere',
+    name: 'Subterranean Ventilation & Flammable Gases',
+    code: 'HAZ-ZM-VENT',
+    standardRef: 'MSR Part XIV / MSD Reg 1404',
+    isHighRisk: true,
+    iconName: 'Flame',
+    defaultDescription: 'CH4 < 1.25%, CO <= 30 ppm, air velocity >= 0.30 m/s & auxiliary fan interlocks.',
+    mitigationAction: 'Enforce automatic power lockout at 1.0% CH4, purge blast heading for 30 mins, and verify fresh air velocity >= 0.30 m/s under Zambian MSR 1404.'
+  },
+  {
+    id: 'zema_effluent_drainage',
+    name: 'ZEMA Aquatic Effluent & Tailings Decant Discharge',
+    code: 'HAZ-ZM-ZEMA',
+    standardRef: 'ZEMA SI 112 / EPPCA Act',
+    isHighRisk: true,
+    iconName: 'ShieldAlert',
+    defaultDescription: 'pH 6.5-9.0, Cu <= 1.0 mg/L, TSS <= 100 mg/L, CN <= 0.2 mg/L & TSF freeboard >= 1.5m.',
+    mitigationAction: 'Activate lime slurry neutralization dosing on decant weir to hold pH 6.5-9.0 and clarify discharge to ensure Copper <= 1.0 mg/L under ZEMA SI 112.'
   }
 ];
 
