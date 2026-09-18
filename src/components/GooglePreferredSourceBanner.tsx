@@ -3,12 +3,12 @@ import { ExternalLink, Check, Sparkles, ShieldCheck, HelpCircle, ChevronDown, Ch
 import { MeloTwoLogo } from './MeloTwoLogo';
 
 interface GooglePreferredSourceBannerProps {
-  variant?: 'banner' | 'card' | 'compact' | 'footer';
+  variant?: 'hero' | 'banner' | 'card' | 'compact' | 'footer';
   className?: string;
 }
 
 export const GooglePreferredSourceBanner: React.FC<GooglePreferredSourceBannerProps> = ({
-  variant = 'banner',
+  variant = 'hero',
   className = '',
 }) => {
   const [showExplainer, setShowExplainer] = useState(false);
@@ -69,6 +69,118 @@ export const GooglePreferredSourceBanner: React.FC<GooglePreferredSourceBannerPr
           <span>Add</span>
           <ExternalLink className="w-3 h-3" />
         </a>
+      </div>
+    );
+  }
+
+  if (variant === 'hero') {
+    return (
+      <div className={`relative overflow-hidden rounded-2xl bg-gradient-to-br from-slate-900 via-slate-900/95 to-slate-950 border border-amber-500/30 p-4 sm:p-5 shadow-2xl shadow-black/40 ${className}`}>
+        {/* Subtle Ambient Glow */}
+        <div className="absolute -top-8 -right-8 w-40 h-40 bg-amber-500/10 rounded-full blur-3xl pointer-events-none" />
+        <div className="absolute -bottom-8 -left-8 w-40 h-40 bg-blue-500/10 rounded-full blur-3xl pointer-events-none" />
+
+        <div className="relative z-10 flex flex-col gap-3.5">
+          <div className="flex items-start gap-3.5">
+            <div className="p-2.5 rounded-xl bg-white/5 border border-white/10 shrink-0 mt-0.5 shadow-inner">
+              <GoogleLogoSvg size={22} />
+            </div>
+            <div className="space-y-1.5 min-w-0 flex-1">
+              <div className="flex flex-wrap items-center gap-2">
+                <span className="text-[10px] font-mono font-bold tracking-wider uppercase px-2 py-0.5 rounded-full bg-amber-400/10 text-amber-400 border border-amber-400/20">
+                  Google Search & AI Overviews
+                </span>
+                <span className="text-[10px] font-mono text-emerald-400 flex items-center gap-1">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                  Official Integration
+                </span>
+              </div>
+              <h3 className="text-sm sm:text-base font-bold text-white tracking-tight leading-snug">
+                Make MeloTwo Your Preferred Source on Google
+              </h3>
+              <p className="text-xs text-slate-300 leading-relaxed font-normal">
+                Prioritize South African MHSA, DMRE Section 54/55, and SANS 10330 HACCP statutory guides whenever you or your team search Google or query Gemini AI.
+              </p>
+            </div>
+          </div>
+
+          <div className="flex flex-wrap items-center gap-2.5 pt-1">
+            {/* Native Google Preferred Sources button container (Option A) */}
+            <div ref={nativeBtnRef} className="google-add-preferred-source-btn empty:hidden" />
+
+            {/* Direct 1-Click Action Button */}
+            <a
+              id="hero-add-preferred-source-btn"
+              href={PREFERRED_SOURCE_URL}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-gradient-to-r from-amber-400 to-amber-500 hover:from-amber-300 hover:to-amber-400 text-slate-950 font-black text-xs uppercase tracking-wider shadow-lg shadow-amber-500/20 hover:shadow-amber-500/30 transition-all cursor-pointer shrink-0"
+            >
+              <GoogleLogoSvg size={15} />
+              <span>ADD TO PREFERRED SOURCES</span>
+              <ExternalLink className="w-3.5 h-3.5" />
+            </a>
+
+            <button
+              id="hero-why-add-toggle-btn"
+              type="button"
+              onClick={() => setShowExplainer(!showExplainer)}
+              className="inline-flex items-center gap-1.5 px-3 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold border border-slate-700 transition cursor-pointer"
+              title="How this works"
+            >
+              <HelpCircle className="w-3.5 h-3.5 text-slate-400" />
+              <span>Why add?</span>
+              {showExplainer ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
+            </button>
+          </div>
+
+          {/* Collapsible Explainer Drawer */}
+          {showExplainer && (
+            <div className="mt-2 pt-3.5 border-t border-slate-800/80 grid sm:grid-cols-3 gap-3 text-xs text-slate-300 animate-fadeIn">
+              <div className="p-3 rounded-xl bg-slate-950/70 border border-slate-800/70 space-y-1">
+                <div className="font-bold text-white flex items-center gap-1.5">
+                  <Sparkles className="w-3.5 h-3.5 text-amber-400" />
+                  <span>Priority AI Overviews</span>
+                </div>
+                <p className="text-[11px] text-slate-400 leading-normal">
+                  Google surfaces MeloTwo's vetted statutory checklists at the top of AI search summaries and Gemini prompts.
+                </p>
+              </div>
+              <div className="p-3 rounded-xl bg-slate-950/70 border border-slate-800/70 space-y-1">
+                <div className="font-bold text-white flex items-center gap-1.5">
+                  <ShieldCheck className="w-3.5 h-3.5 text-emerald-400" />
+                  <span>Trusted Badge</span>
+                </div>
+                <p className="text-[11px] text-slate-400 leading-normal">
+                  Articles and statutory updates from melotwo.com receive a "Preferred Source" trust badge on your Google account.
+                </p>
+              </div>
+              <div className="p-3 rounded-xl bg-slate-950/70 border border-slate-800/70 space-y-1">
+                <div className="font-bold text-white flex items-center gap-1.5">
+                  <Share2 className="w-3.5 h-3.5 text-cyan-400" />
+                  <span>Share with SHEQ Team</span>
+                </div>
+                <p className="text-[11px] text-slate-400 leading-normal">
+                  Equip your site safety officers, engineers, and catering managers with uniform audit-ready compliance answers.
+                </p>
+                <button
+                  type="button"
+                  onClick={handleCopyLink}
+                  className="mt-1 text-[11px] text-amber-400 hover:underline flex items-center gap-1 cursor-pointer"
+                >
+                  {copied ? (
+                    <>
+                      <Check className="w-3 h-3 text-emerald-400" />
+                      <span className="text-emerald-400">Copied invite link!</span>
+                    </>
+                  ) : (
+                    <span>Copy team setup link</span>
+                  )}
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
       </div>
     );
   }

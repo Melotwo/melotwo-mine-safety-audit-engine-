@@ -4959,11 +4959,6 @@ const AppFooter: React.FC<AppFooterProps> = ({ onRequestDemo }) => (
                 </div>
             </div>
 
-            {/* Google Preferred Sources Conversion Block */}
-            <div className="mb-12">
-                <GooglePreferredSourceBanner variant="footer" />
-            </div>
-
             <div className="md:flex md:items-center md:justify-between pt-6">
                 <div className="flex items-center gap-3 mb-4 md:mb-0">
                     <MeloTwoLogo size="sm" showText={false} />
@@ -6564,6 +6559,11 @@ const LandingPage: React.FC<LandingPageProps> = ({
                         <p className="text-slate-300 text-sm md:text-base leading-relaxed max-w-xl font-medium">
                             Stop losing tender deadlines to endless safety paperwork. Empowering SHEQ officers and contractors to build fully compliant 20-section binders automatically and mitigate multi-million Rand litigation risks.
                         </p>
+
+                        {/* Google Preferred Source Banner - Positioned prominently directly below headline/tagline and above primary CTAs */}
+                        <div className="w-full pt-1">
+                            <GooglePreferredSourceBanner variant="hero" />
+                        </div>
 
                         {/* High-credibility, low-friction SANS checkmarks */}
                         <div className="space-y-3.5 pt-2">
@@ -9319,6 +9319,7 @@ Safety index and terminal clearance verified. The audit record status has been u
     // Ledger Search & Filtering State
     const [ledgerSearchQuery, setLedgerSearchQuery] = useState('');
     const [searchMode, setSearchMode] = useState<'keyword' | 'semantic' | 'hybrid'>('hybrid');
+    const [showSearchModesTooltip, setShowSearchModesTooltip] = useState(false);
     const [semanticScores, setSemanticScores] = useState<Record<number, {score: number, reason: string}>>({});
     const [semanticLoading, setSemanticLoading] = useState(false);
 
@@ -12354,28 +12355,163 @@ Safety index and terminal clearance verified. The audit record status has been u
                     <div className="flex flex-col gap-4 mb-5 bg-slate-950/40 p-5 rounded-2xl border border-slate-800/80">
                         {/* Mode selection + Main Search Input */}
                         <div className="flex flex-col xl:flex-row gap-4 items-stretch">
-                            <div className="relative flex-1">
-                                <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                            <div className="relative flex-1 group/search">
+                                <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
                                 <input
                                     id="ledger-search-input"
                                     type="text"
                                     value={ledgerSearchQuery}
                                     onChange={(e) => setLedgerSearchQuery(e.target.value)}
                                     placeholder="Perform high-fidelity hybrid vector query or standard text search..."
-                                    className="w-full bg-slate-950/80 border border-slate-800 focus:border-amber-500/50 focus:ring-1 focus:ring-amber-500/30 text-white rounded-xl py-2.5 pl-10 pr-12 text-xs font-sans placeholder-slate-500 outline-none transition-all"
+                                    title="Search modes: Keyword (exact lexical) | Semantic (AI vector context) | Hybrid (blended 40/60 precision)"
+                                    className="w-full bg-slate-950/80 border border-slate-800 focus:border-amber-500/50 focus:ring-1 focus:ring-amber-500/30 text-white rounded-xl py-2.5 pl-10 pr-24 text-xs font-sans placeholder-slate-500 outline-none transition-all"
                                 />
-                                <div className="absolute right-3.5 top-1/2 -translate-y-1/2 flex items-center gap-1.5">
+                                <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-1.5">
                                     {semanticLoading && (
                                         <div className="w-4 h-4 border-2 border-amber-500 border-t-transparent rounded-full animate-spin" />
                                     )}
                                     {ledgerSearchQuery && (
                                         <button
                                             onClick={() => setLedgerSearchQuery('')}
-                                            className="text-slate-400 hover:text-white text-xs font-bold px-1.5 py-0.5 hover:bg-slate-800 rounded transition-colors"
+                                            className="text-slate-400 hover:text-white text-xs font-bold px-1.5 py-0.5 hover:bg-slate-800 rounded transition-colors cursor-pointer"
+                                            title="Clear search query"
                                         >
                                             Clear
                                         </button>
                                     )}
+                                    {/* Tooltip trigger & popover explaining Keyword vs Semantic vs Hybrid */}
+                                    <div className="relative group/modestooltip">
+                                        <button
+                                            id="ledger-search-modes-tooltip-trigger"
+                                            type="button"
+                                            onClick={() => setShowSearchModesTooltip(prev => !prev)}
+                                            className="p-1 rounded-lg text-slate-400 hover:text-amber-400 hover:bg-slate-800/80 transition-all cursor-pointer flex items-center justify-center"
+                                            title="Search Modes Tooltip: Learn how Keyword, Semantic, and Hybrid search work"
+                                            aria-label="Explain Keyword, Semantic, and Hybrid search modes"
+                                            aria-expanded={showSearchModesTooltip}
+                                        >
+                                            <Info className="w-4 h-4" />
+                                        </button>
+
+                                        {/* Tooltip Popover Card */}
+                                        <div
+                                            id="ledger-search-modes-tooltip"
+                                            className={`absolute right-0 top-full mt-3 w-[calc(100vw-2.5rem)] sm:w-[420px] max-w-[440px] z-50 transition-all duration-200 ${
+                                                showSearchModesTooltip
+                                                    ? 'opacity-100 scale-100 pointer-events-auto'
+                                                    : 'opacity-0 scale-95 pointer-events-none group-hover/modestooltip:opacity-100 group-hover/modestooltip:scale-100 group-hover/modestooltip:pointer-events-auto'
+                                            }`}
+                                        >
+                                            {/* Caret pointer */}
+                                            <div className="absolute -top-1.5 right-2.5 w-3 h-3 bg-slate-900 border-t border-l border-slate-700/80 rotate-45 transform pointer-events-none" />
+
+                                            <div className="relative rounded-2xl bg-gradient-to-b from-slate-900 via-slate-900 to-slate-950 border border-slate-700/80 p-4 shadow-2xl shadow-black/90 backdrop-blur-xl text-left">
+                                                {/* Tooltip Header */}
+                                                <div className="flex items-center justify-between pb-2.5 border-b border-slate-800">
+                                                    <div className="flex items-center gap-2">
+                                                        <div className="p-1.5 rounded-lg bg-amber-500/10 border border-amber-500/20 text-amber-400">
+                                                            <Sparkles className="w-3.5 h-3.5" />
+                                                        </div>
+                                                        <div>
+                                                            <h4 className="text-xs font-bold text-white tracking-wide">
+                                                                Search Modes Explained
+                                                            </h4>
+                                                            <p className="text-[10px] text-slate-400">
+                                                                Audit query engine & ranking behavior
+                                                            </p>
+                                                        </div>
+                                                    </div>
+                                                    <span className="text-[9px] font-mono font-bold uppercase px-2 py-0.5 rounded-full bg-slate-800 text-slate-300 border border-slate-700">
+                                                        Active: <span className="text-amber-400">{searchMode}</span>
+                                                    </span>
+                                                </div>
+
+                                                {/* Three Modes Breakdown */}
+                                                <div className="mt-3 space-y-2.5 text-xs">
+                                                    {/* 1. Keyword Mode */}
+                                                    <div className={`p-2.5 rounded-xl border transition-all ${
+                                                        searchMode === 'keyword'
+                                                            ? 'bg-sky-950/40 border-sky-500/50 shadow-sm'
+                                                            : 'bg-slate-950/60 border-slate-800/80'
+                                                    }`}>
+                                                        <div className="flex items-center justify-between">
+                                                            <div className="flex items-center gap-1.5">
+                                                                <span className="w-1.5 h-1.5 rounded-full bg-sky-400" />
+                                                                <span className="font-bold text-sky-400 text-[11px] uppercase tracking-wider">
+                                                                    Keyword Match
+                                                                </span>
+                                                            </div>
+                                                            <span className="text-[9px] font-mono text-slate-400">Exact Lexical</span>
+                                                        </div>
+                                                        <p className="text-[11px] text-slate-300 mt-1 leading-relaxed">
+                                                            Deterministic substring matching across terminal IDs, violation texts, operator names, and audit notes. Pure verbatim search with zero AI inference.
+                                                        </p>
+                                                        <p className="text-[10px] text-slate-400 mt-1 font-mono">
+                                                            <strong className="text-slate-300 font-sans">Best for:</strong> Specific terminal IDs, personnel names, exact SANS clause numbers.
+                                                        </p>
+                                                    </div>
+
+                                                    {/* 2. Semantic Mode */}
+                                                    <div className={`p-2.5 rounded-xl border transition-all ${
+                                                        searchMode === 'semantic'
+                                                            ? 'bg-purple-950/40 border-purple-500/50 shadow-sm'
+                                                            : 'bg-slate-950/60 border-slate-800/80'
+                                                    }`}>
+                                                        <div className="flex items-center justify-between">
+                                                            <div className="flex items-center gap-1.5">
+                                                                <span className="w-1.5 h-1.5 rounded-full bg-purple-400" />
+                                                                <span className="font-bold text-purple-400 text-[11px] uppercase tracking-wider">
+                                                                    Semantic Vector
+                                                                </span>
+                                                            </div>
+                                                            <span className="text-[9px] font-mono text-slate-400">AI Conceptual</span>
+                                                        </div>
+                                                        <p className="text-[11px] text-slate-300 mt-1 leading-relaxed">
+                                                            AI-driven vector search that understands safety context and statutory intent. Matches records by meaning and regulatory equivalence even without shared keywords.
+                                                        </p>
+                                                        <p className="text-[10px] text-slate-400 mt-1 font-mono">
+                                                            <strong className="text-slate-300 font-sans">Best for:</strong> Conceptual inquiries (e.g., &ldquo;fall risk&rdquo;, &ldquo;chemical spill containment&rdquo;, &ldquo;ventilation failure&rdquo;).
+                                                        </p>
+                                                    </div>
+
+                                                    {/* 3. Hybrid Mode */}
+                                                    <div className={`p-2.5 rounded-xl border transition-all ${
+                                                        searchMode === 'hybrid'
+                                                            ? 'bg-amber-950/40 border-amber-500/50 shadow-sm'
+                                                            : 'bg-slate-950/60 border-slate-800/80'
+                                                    }`}>
+                                                        <div className="flex items-center justify-between">
+                                                            <div className="flex items-center gap-1.5">
+                                                                <span className="w-1.5 h-1.5 rounded-full bg-amber-400" />
+                                                                <span className="font-bold text-amber-400 text-[11px] uppercase tracking-wider">
+                                                                    Hybrid Ranker
+                                                                </span>
+                                                            </div>
+                                                            <span className="text-[9px] font-mono text-amber-400/90 font-bold">40% Lexical + 60% Neural</span>
+                                                        </div>
+                                                        <p className="text-[11px] text-slate-300 mt-1 leading-relaxed">
+                                                            Blends verbatim keyword accuracy with neural semantic ranking. Ensures exact code hits top the list while surfacing semantically adjacent hazards.
+                                                        </p>
+                                                        <p className="text-[10px] text-slate-400 mt-1 font-mono">
+                                                            <strong className="text-slate-300 font-sans">Best for:</strong> Comprehensive audit preparation, cross-vector safety inspections, and general exploration.
+                                                        </p>
+                                                    </div>
+                                                </div>
+
+                                                {/* Tooltip Footer */}
+                                                <div className="mt-3 pt-2.5 border-t border-slate-800 flex items-center justify-between text-[10px] text-slate-400">
+                                                    <span>Switch modes with the buttons on the right</span>
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => setShowSearchModesTooltip(false)}
+                                                        className="text-amber-400 hover:text-amber-300 font-bold transition-colors cursor-pointer px-2 py-0.5 rounded hover:bg-amber-400/10"
+                                                    >
+                                                        Dismiss
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
 
