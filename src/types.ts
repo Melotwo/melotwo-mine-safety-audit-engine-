@@ -13,6 +13,17 @@ export interface AuditRecord {
   standard: string;
 }
 
+export interface ComplianceLedgerRow {
+  date: string;
+  operator: string;
+  terminalId: string;
+  riskCategory: string;
+  violationVector: string;
+  severityLevel: string;
+  auditStatus: string;
+  detailedNotes?: string;
+}
+
 export interface DailyComplianceData {
   date: string;
   complianceScore: number;

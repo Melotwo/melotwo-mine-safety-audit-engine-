@@ -27,6 +27,7 @@ import { BlogPage } from './components/BlogPage';
 import { PWAInstallPrompt } from './components/PWAInstallPrompt';
 import { GooglePreferredSourceBanner } from './components/GooglePreferredSourceBanner';
 import { ZambianMhsCompliancePanel } from './components/ZambianMhsCompliancePanel';
+import { CsvImportModal } from './components/CsvImportModal';
 import { Database, RefreshCw, Upload, LogOut, Sparkles, CheckCircle2, AlertOctagon, Download, ChevronRight, Lock, Terminal, Minimize2, Maximize2, Activity, Scale, Globe, CheckCircle, Target, ShieldAlert, ArrowRight, Check, Truck, Info, RotateCcw, Sliders, XCircle, Building2, MapPin, ChevronDown, ChevronUp, EyeOff, Filter, Layers, FileSpreadsheet, Calculator, BookOpen, Smartphone } from 'lucide-react';
 import jsPDF from 'jspdf';
 import { sanitizeInputText } from './utils/sanitizer';
@@ -339,6 +340,47 @@ export const appendLedgerRecord = async (
     console.log('Appended compliance record successfully to sheet!');
   } catch (err) {
     console.error('appendLedgerRecord failed:', err);
+    throw err;
+  }
+};
+
+/**
+ * Append multiple records in batch to the Google Sheet
+ */
+export const appendLedgerRecords = async (
+  token: string,
+  spreadsheetId: string,
+  records: ComplianceLedgerRow[]
+): Promise<void> => {
+  if (records.length === 0) return;
+  const url = `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}/values/Sheet1!A:A:append?valueInputOption=USER_ENTERED`;
+  try {
+    const rows = records.map(record => [
+      record.date,
+      record.operator,
+      record.terminalId,
+      record.riskCategory,
+      record.violationVector,
+      record.severityLevel,
+      record.auditStatus,
+      record.detailedNotes || ''
+    ]);
+
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${token}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ values: rows })
+    });
+
+    if (!response.ok) {
+      throw new Error(`Failed to batch append rows to spreadsheet: ${response.statusText}`);
+    }
+    console.log(`Batch appended ${records.length} records successfully to sheet!`);
+  } catch (err) {
+    console.error('appendLedgerRecords batch failed:', err);
     throw err;
   }
 };
@@ -9899,6 +9941,32 @@ Safety index and terminal clearance verified. The audit record status has been u
     // Commit parameters to Google Sheets / local storage fallback
     const [commitLoading, setCommitLoading] = useState(false);
     const [commitSuccess, setCommitSuccess] = useState(false);
+    const [showCsvModal, setShowCsvModal] = useState(false);
+
+    // Batch import logs from CSV mapping wizard
+    const handleImportCsvLogs = async (newLogs: ComplianceLedgerRow[]) => {
+        if (!newLogs || newLogs.length === 0) return;
+
+        try {
+            if (token && ledgerId) {
+                await appendLedgerRecords(token, ledgerId, newLogs);
+                const records = await fetchLedgerRecords(token, ledgerId);
+                setLedgerLogs(records);
+            } else {
+                const updated = [...newLogs, ...ledgerLogs];
+                setLedgerLogs(updated);
+                localStorage.setItem('melotwo_sandbox_logs', JSON.stringify(updated));
+            }
+            setShowCsvModal(false);
+        } catch (err: any) {
+            console.error('Failed to import CSV logs to ledger:', err);
+            // Fallback to local storage if remote sheet append failed
+            const updated = [...newLogs, ...ledgerLogs];
+            setLedgerLogs(updated);
+            localStorage.setItem('melotwo_sandbox_logs', JSON.stringify(updated));
+            setShowCsvModal(false);
+        }
+    };
 
     const handleCommitToLedger = async () => {
         setCommitLoading(true);
@@ -12256,7 +12324,15 @@ Safety index and terminal clearance verified. The audit record status has been u
                             </h3>
                             <p className="text-[11px] text-slate-400 mt-0.5">Real-time status of mine terminals, SANS directives, and POPIA data vectors.</p>
                         </div>
-                        <div className="flex items-center gap-2 sm:gap-3">
+                        <div className="flex items-center gap-2 sm:gap-3 flex-wrap">
+                            <button
+                                id="import-csv-ledger-btn"
+                                onClick={() => setShowCsvModal(true)}
+                                className="inline-flex items-center gap-1.5 px-3.5 py-1.5 bg-amber-500 hover:bg-amber-400 text-slate-950 rounded-xl text-xs font-bold transition-all cursor-pointer shadow-md shadow-amber-500/10 border border-amber-400/40"
+                                title="Import and parse CSV files into the compliance ledger with field mapping"
+                            >
+                                <Upload className="w-3.5 h-3.5" /> Import CSV
+                            </button>
                             {selectedLogIndices.length > 0 && (
                                 <button
                                     onClick={handleDeleteSelectedLogs}
@@ -12742,6 +12818,13 @@ Safety index and terminal clearance verified. The audit record status has been u
                     </div>
                 </div>
             )}
+
+            {/* CSV Ledger Import Modal */}
+            <CsvImportModal
+                isOpen={showCsvModal}
+                onClose={() => setShowCsvModal(false)}
+                onImportLogs={handleImportCsvLogs}
+            />
         </div>
     );
 };
