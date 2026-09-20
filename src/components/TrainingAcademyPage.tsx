@@ -34,9 +34,11 @@ import {
 } from 'lucide-react';
 import { Page } from '../types';
 import { OutreachHub } from './OutreachHub';
+import { QctoAlignmentMatrix } from './QctoAlignmentMatrix';
 
 interface TrainingAcademyPageProps {
   setPage: (page: Page) => void;
+  onOpenTenderWizard?: () => void;
 }
 
 interface QuizQuestion {
@@ -181,8 +183,8 @@ const QUIZ_QUESTIONS: QuizQuestion[] = [
   }
 ];
 
-export const TrainingAcademyPage: React.FC<TrainingAcademyPageProps> = ({ setPage }) => {
-  const [activeTab, setActiveTab] = useState<'modules' | 'protocol' | 'quiz' | 'checklist' | 'partners'>('modules');
+export const TrainingAcademyPage: React.FC<TrainingAcademyPageProps> = ({ setPage, onOpenTenderWizard }) => {
+  const [activeTab, setActiveTab] = useState<'modules' | 'qcto' | 'protocol' | 'quiz' | 'checklist' | 'partners'>('modules');
   const [selectedModule, setSelectedModule] = useState<number | null>(1);
   const [userAnswers, setUserAnswers] = useState<Record<number, number>>({});
   const [isQuizSubmitted, setIsQuizSubmitted] = useState<boolean>(false);
@@ -457,6 +459,21 @@ export const TrainingAcademyPage: React.FC<TrainingAcademyPageProps> = ({ setPag
         </button>
 
         <button
+          onClick={() => setActiveTab('qcto')}
+          className={`flex items-center space-x-2 px-5 py-3 rounded-t-xl font-bold text-xs sm:text-sm whitespace-nowrap transition cursor-pointer ${
+            activeTab === 'qcto'
+              ? 'bg-slate-900 border border-b-0 border-amber-500/50 text-amber-400 shadow-sm'
+              : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100/60'
+          }`}
+        >
+          <Shield className="w-4 h-4 text-amber-500" />
+          <span>2. QCTO & MQA Alignment Matrix</span>
+          <span className="px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-600 text-[10px] font-black uppercase tracking-wider border border-amber-500/40">
+            SAQA Registered
+          </span>
+        </button>
+
+        <button
           onClick={() => setActiveTab('protocol')}
           className={`flex items-center space-x-2 px-5 py-3 rounded-t-xl font-bold text-xs sm:text-sm whitespace-nowrap transition cursor-pointer ${
             activeTab === 'protocol'
@@ -465,7 +482,7 @@ export const TrainingAcademyPage: React.FC<TrainingAcademyPageProps> = ({ setPag
           }`}
         >
           <Layers className="w-4 h-4" />
-          <span>2. Conflict Reconciliation & Site Mapping</span>
+          <span>3. Conflict Reconciliation & Site Mapping</span>
         </button>
 
         <button
@@ -483,7 +500,7 @@ export const TrainingAcademyPage: React.FC<TrainingAcademyPageProps> = ({ setPag
           }`}
         >
           <Award className="w-4 h-4 text-amber-500" />
-          <span>3. 10-Question Field Practice Quiz</span>
+          <span>4. 10-Question Field Practice Quiz</span>
           {!isProUser && <Lock className="w-3 h-3 text-amber-500 ml-1" />}
         </button>
 
@@ -496,7 +513,7 @@ export const TrainingAcademyPage: React.FC<TrainingAcademyPageProps> = ({ setPag
           }`}
         >
           <CheckCircle2 className="w-4 h-4 text-emerald-500" />
-          <span>4. 5-Point Quick Reference Field Checklist</span>
+          <span>5. 5-Point Quick Reference Field Checklist</span>
         </button>
 
         <button
@@ -508,7 +525,7 @@ export const TrainingAcademyPage: React.FC<TrainingAcademyPageProps> = ({ setPag
           }`}
         >
           <Users className="w-4 h-4 text-amber-500" />
-          <span>5. Partner & Affiliate Hub</span>
+          <span>6. Partner & Affiliate Hub</span>
         </button>
       </div>
 
@@ -607,7 +624,12 @@ export const TrainingAcademyPage: React.FC<TrainingAcademyPageProps> = ({ setPag
         </div>
       )}
 
-      {/* TAB 2: CONFLICT RECONCILIATION & SITE MAPPING */}
+      {/* TAB 2: QCTO & MQA ALIGNMENT MATRIX */}
+      {activeTab === 'qcto' && (
+        <QctoAlignmentMatrix onOpenTenderWizard={onOpenTenderWizard} />
+      )}
+
+      {/* TAB 3: CONFLICT RECONCILIATION & SITE MAPPING */}
       {activeTab === 'protocol' && (
         <div className="space-y-6">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">

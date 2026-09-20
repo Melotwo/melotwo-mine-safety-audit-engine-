@@ -13200,6 +13200,7 @@ const App: React.FC = () => {
     return (
       <TrainingAcademyPage
         setPage={setCurrentPage}
+        onOpenTenderWizard={handleOpenTenderWizard}
       />
     );
   } else if (currentPage === 'handover') {
