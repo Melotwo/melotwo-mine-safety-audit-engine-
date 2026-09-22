@@ -1,10 +1,44 @@
-# MeloTwo Safety Engine Robots Configuration
+# MeloTwo Safety Engine - Optimized for AI Crawlers (2026)
+
 User-agent: *
 Allow: /
 Disallow: /api/
+Disallow: /admin/
+Disallow: /auth/
 
-# Search Engine Sitemaps
+# Explicitly allow major AI Search & Citation bots
+User-agent: GPTBot
+Allow: /
+
+User-agent: OAI-SearchBot
+Allow: /
+
+User-agent: ChatGPT-User
+Allow: /
+
+User-agent: PerplexityBot
+Allow: /
+
+User-agent: Google-Extended
+Allow: /
+
+User-agent: ClaudeBot
+Allow: /
+
+User-agent: anthropic-ai
+Allow: /
+
+User-agent: Claude-Web
+Allow: /
+
+User-agent: Amazonbot
+Allow: /
+
+User-agent: cohere-ai
+Allow: /
+
+# Sitemaps
 Sitemap: https://melotwo.com/sitemap.xml
 
-# Search Engine Indexing Host
+# Preferred host
 Host: https://melotwo.com
