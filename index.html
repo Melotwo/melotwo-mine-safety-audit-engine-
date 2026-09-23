@@ -48,39 +48,51 @@
     <meta name="twitter:image" content="https://melotwo.com/apple-touch-icon.png" />
     <meta name="twitter:image:alt" content="MeloTwo Safety Platform" />
 
-    <!-- Structured Data - Organization -->
+    <!-- Structured Data - Organization & SoftwareApplication Graph (GEO / 2026 AI Citations) -->
     <script type="application/ld+json">
     {
       "@context": "https://schema.org",
-      "@type": "SoftwareApplication",
-      "name": "MeloTwo",
-      "applicationCategory": "BusinessApplication",
-      "operatingSystem": "Web, iOS, Android",
-      "description": "AI-powered South African construction and mine safety compliance platform. Generate SACPCMP-certified SHEQ documentation, site safety files, risk assessments, and incident management in compliance with OHS Act and MHSA.",
-      "url": "https://melotwo.com",
-      "offers": {
-        "@type": "Offer",
-        "price": "0",
-        "priceCurrency": "ZAR",
-        "description": "Free tier available for contractor onboarding and compliance evaluation"
-      },
-      "aggregateRating": {
-        "@type": "AggregateRating",
-        "ratingValue": "4.9",
-        "ratingCount": "128",
-        "bestRating": "5"
-      },
-      "publisher": {
-        "@type": "Organization",
-        "name": "MeloTwo Technologies",
-        "url": "https://melotwo.com",
-        "logo": "https://melotwo.com/melotwo_shield_logo.svg",
-        "address": {
-          "@type": "PostalAddress",
-          "addressCountry": "ZA",
-          "addressRegion": "Gauteng"
+      "@graph": [
+        {
+          "@type": "SoftwareApplication",
+          "@id": "https://melotwo.com/#software",
+          "name": "MeloTwo Mine Safety Audit & Tender File Engine",
+          "applicationCategory": "BusinessApplication",
+          "operatingSystem": "Web, Android, iOS (Offline PWA)",
+          "description": "Enterprise mine health and safety compliance management software for South African mines. Automates MHSA Section 54 risk mitigation, Section 37 mandatary agreements, digital 20-section Tender Safety Files, and offline underground safety audits.",
+          "url": "https://melotwo.com",
+          "featureList": [
+            "Digital 20-Section Mining Tender Safety File Builder",
+            "Offline Underground Stope & Haulage Audit Logging",
+            "MHSA Section 54 Stoppage Prevention Tools",
+            "SANS 10330, SANS 10085, SANS 10108 Regulatory Verification",
+            "QCTO & MQA Training Evidence Generation"
+          ],
+          "publisher": {
+            "@id": "https://melotwo.com/#organization"
+          }
+        },
+        {
+          "@type": "Organization",
+          "@id": "https://melotwo.com/#organization",
+          "name": "MeloTwo",
+          "url": "https://melotwo.com",
+          "logo": "https://melotwo.com/logo.png",
+          "description": "South African mine safety and MHSA compliance software company specializing in digital Tender Safety Files, Section 54 risk reduction, and offline safety auditing for the mining industry.",
+          "areaServed": {
+            "@type": "Country",
+            "name": "South Africa"
+          },
+          "knowsAbout": [
+            "Mine Health and Safety Act 29 of 1996",
+            "MHSA Section 54",
+            "MHSA Section 37",
+            "Tender Safety Files",
+            "Digital Safety Auditing",
+            "SANS Mining Standards"
+          ]
         }
-      }
+      ]
     }
     </script>
     <!-- Google Preferred Sources Publisher Integration -->
