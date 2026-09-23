@@ -153,6 +153,15 @@ export const BlogPage: React.FC<BlogPageProps> = ({
     const cleanSlug = selectedSlug.toLowerCase().trim();
     return BLOG_POSTS.find(p => {
       if (p.slug === cleanSlug) return true;
+      // Alias handling for MHSA Section 10 vs OHSA 37(2) guide
+      if (p.slug === 'mhsa-section-10-vs-ohsa-section-37-2') {
+        return (
+          cleanSlug === 'mine-mandatary-agreement' ||
+          cleanSlug === 'mhsa-section-10-vs-ohsa-37-2' ||
+          cleanSlug === 'mining-mandatary-agreement' ||
+          cleanSlug === 'mhsa-section-10-contractor-agreement'
+        );
+      }
       // Alias handling for Section 54 Stoppage guide
       if (p.slug === 'how-to-prevent-and-lift-section-54-stoppage') {
         return (
