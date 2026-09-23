@@ -150,7 +150,27 @@ export const BlogPage: React.FC<BlogPageProps> = ({
 
   const activePost = useMemo(() => {
     if (!selectedSlug) return null;
-    return BLOG_POSTS.find(p => p.slug === selectedSlug) || null;
+    const cleanSlug = selectedSlug.toLowerCase().trim();
+    return BLOG_POSTS.find(p => {
+      if (p.slug === cleanSlug) return true;
+      // Alias handling for Section 54 Stoppage guide
+      if (p.slug === 'how-to-prevent-and-lift-section-54-stoppage') {
+        return (
+          cleanSlug === 'section-54-stoppage-guide' ||
+          cleanSlug === 'how-to-prevent-and-lift-a-dmre-section-54-stoppage' ||
+          cleanSlug === 'section-54-guide' ||
+          cleanSlug === 'prevent-and-lift-section-54-stoppage'
+        );
+      }
+      // Alias handling for 20-Section Mining Tender Safety File guide
+      if (p.slug === '20-section-mining-tender-safety-file') {
+        return (
+          cleanSlug === '20-section-red-file-guide' ||
+          cleanSlug === '20-section-mhsa-tender-safety-file-blueprint'
+        );
+      }
+      return false;
+    }) || null;
   }, [selectedSlug]);
 
   // Dynamic SEO metadata & Article Schema.org injection for active post
