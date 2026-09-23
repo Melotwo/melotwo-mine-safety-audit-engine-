@@ -13077,12 +13077,15 @@ const App: React.FC = () => {
                 rawHash === '#cost-calculator' ||
                 rawHash === '#savings-modal';
 
-            // 3. Check Blog route / hash
+            // 3. Check Blog & Guide route / hash
             const isBlogRoute = 
                 rawHash === '#blog' || 
                 rawHash.startsWith('#blog/') ||
+                rawHash === '#guides' ||
+                rawHash.startsWith('#guides/') ||
                 (typeof window !== 'undefined' && (
                     window.location.pathname.startsWith('/blog') || 
+                    window.location.pathname.startsWith('/guides') || 
                     new URLSearchParams(window.location.search).has('post')
                 ));
 
@@ -13141,13 +13144,15 @@ const App: React.FC = () => {
     }, []);
 
     useEffect(() => {
-        // Track GA4 Page View on route/tab change
-        const pageTitle = currentPage.charAt(0).toUpperCase() + currentPage.slice(1) + ' | Melotwo AI Safety Inspector';
-        if (typeof document !== 'undefined') {
-            document.title = pageTitle;
+        // Track GA4 Page View on route/tab change (skip title overwrite on blog to let active article set its own SEO title)
+        if (currentPage !== 'blog') {
+            const pageTitle = currentPage.charAt(0).toUpperCase() + currentPage.slice(1) + ' | Melotwo AI Safety Inspector';
+            if (typeof document !== 'undefined') {
+                document.title = pageTitle;
+            }
         }
         trackGA4Event('page_view', {
-            page_title: pageTitle,
+            page_title: typeof document !== 'undefined' ? document.title : '',
             page_location: typeof window !== 'undefined' ? window.location.href : '',
             page_path: `/${currentPage}`
         });

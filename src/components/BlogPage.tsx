@@ -52,10 +52,16 @@ export const BlogPage: React.FC<BlogPageProps> = ({
       if (pathname.startsWith('/blog/')) {
         const slugFromPath = pathname.replace('/blog/', '').trim();
         if (slugFromPath) setSelectedSlug(decodeURIComponent(slugFromPath));
+      } else if (pathname.startsWith('/guides/')) {
+        const slugFromPath = pathname.replace('/guides/', '').trim();
+        if (slugFromPath) setSelectedSlug(decodeURIComponent(slugFromPath));
       } else if (postFromQuery) {
         setSelectedSlug(postFromQuery);
       } else if (hash.startsWith('#blog/')) {
         const slugFromHash = hash.replace('#blog/', '');
+        if (slugFromHash) setSelectedSlug(slugFromHash);
+      } else if (hash.startsWith('#guides/')) {
+        const slugFromHash = hash.replace('#guides/', '');
         if (slugFromHash) setSelectedSlug(slugFromHash);
       }
     }
@@ -107,6 +113,61 @@ export const BlogPage: React.FC<BlogPageProps> = ({
     if (!selectedSlug) return null;
     return BLOG_POSTS.find(p => p.slug === selectedSlug) || null;
   }, [selectedSlug]);
+
+  // Dynamic SEO metadata & Article Schema.org injection for active post
+  useEffect(() => {
+    if (typeof document === 'undefined') return;
+
+    if (activePost) {
+      document.title = `${activePost.title} | MeloTwo Mining Safety Intelligence`;
+      
+      const metaDesc = document.querySelector('meta[name="description"]');
+      if (metaDesc) {
+        metaDesc.setAttribute('content', activePost.description);
+      }
+
+      // Inject Article Schema for search engines and AI citation bots
+      const articleScriptId = 'article-json-ld';
+      let existingScript = document.getElementById(articleScriptId);
+      if (!existingScript) {
+        existingScript = document.createElement('script');
+        existingScript.id = articleScriptId;
+        existingScript.setAttribute('type', 'application/ld+json');
+        document.head.appendChild(existingScript);
+      }
+
+      const articleSchema = {
+        '@context': 'https://schema.org',
+        '@type': 'Article',
+        'headline': activePost.title,
+        'description': activePost.description,
+        'author': {
+          '@type': 'Organization',
+          'name': activePost.author.name,
+          'url': 'https://melotwo.com'
+        },
+        'publisher': {
+          '@type': 'Organization',
+          'name': 'MeloTwo',
+          'url': 'https://melotwo.com',
+          'logo': 'https://melotwo.com/logo.png'
+        },
+        'datePublished': activePost.publishedAt,
+        'dateModified': activePost.publishedAt,
+        'mainEntityOfPage': {
+          '@type': 'WebPage',
+          '@id': `https://melotwo.com/blog/${activePost.slug}`
+        },
+        'keywords': activePost.tags.join(', ')
+      };
+
+      existingScript.textContent = JSON.stringify(articleSchema);
+    } else {
+      document.title = 'MeloTwo - AI-Powered Construction & Mine Safety Compliance Platform | South Africa';
+      const existingScript = document.getElementById('article-json-ld');
+      if (existingScript) existingScript.remove();
+    }
+  }, [activePost]);
 
   const categories = useMemo(() => {
     const cats = ['All', ...new Set(BLOG_POSTS.map(p => p.category))];
