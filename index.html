@@ -9,6 +9,20 @@
     <meta name="author" content="MeloTwo Technologies" />
     <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1" />
 
+    <!-- Single Page Apps for GitHub Pages: restore clean URL from 404 redirect -->
+    <script type="text/javascript">
+      (function(l) {
+        if (l.search[1] === '/' ) {
+          var decoded = l.search.slice(1).split('&').map(function(s) { 
+            return s.replace(/~and~/g, '&') 
+          }).join('?');
+          window.history.replaceState(null, null,
+              l.pathname.slice(0, -1) + decoded + l.hash
+          );
+        }
+      }(window.location))
+    </script>
+
     <!-- Canonical URL & Icons -->
     <link rel="canonical" href="https://melotwo.com/" />
     <link rel="manifest" href="/manifest.json" />

@@ -41,17 +41,20 @@ export const BlogPage: React.FC<BlogPageProps> = ({
   const [isCopied, setIsCopied] = useState<boolean>(false);
   const [scrollProgress, setScrollProgress] = useState<number>(0);
 
-  // Sync with URL pathname (/blog/:slug), URL query (?post=slug), or hash (#blog/:slug) on mount/change
+  // Sync with URL pathname (/blog/:slug, /guides/:slug), URL query (?post=slug), or hash (#blog/:slug, #guides/:slug) on mount and popstate/hashchange
   useEffect(() => {
-    if (typeof window !== 'undefined') {
-      const pathname = window.location.pathname;
+    const syncSlugFromUrl = () => {
+      if (typeof window === 'undefined') return;
+      const pathname = window.location.pathname.replace(/\/+$/, ''); // strip trailing slash
       const urlParams = new URLSearchParams(window.location.search);
       const postFromQuery = urlParams.get('post');
-      const hash = window.location.hash;
-      
+      const hash = window.location.hash.replace(/\/+$/, '');
+
       if (pathname.startsWith('/blog/')) {
         const slugFromPath = pathname.replace('/blog/', '').trim();
         if (slugFromPath) setSelectedSlug(decodeURIComponent(slugFromPath));
+      } else if (pathname === '/blog' || pathname === '/guides') {
+        setSelectedSlug(null);
       } else if (pathname.startsWith('/guides/')) {
         const slugFromPath = pathname.replace('/guides/', '').trim();
         if (slugFromPath) setSelectedSlug(decodeURIComponent(slugFromPath));
@@ -64,7 +67,16 @@ export const BlogPage: React.FC<BlogPageProps> = ({
         const slugFromHash = hash.replace('#guides/', '');
         if (slugFromHash) setSelectedSlug(slugFromHash);
       }
-    }
+    };
+
+    syncSlugFromUrl();
+    window.addEventListener('popstate', syncSlugFromUrl);
+    window.addEventListener('hashchange', syncSlugFromUrl);
+
+    return () => {
+      window.removeEventListener('popstate', syncSlugFromUrl);
+      window.removeEventListener('hashchange', syncSlugFromUrl);
+    };
   }, []);
 
   // Update URL history when slug changes
