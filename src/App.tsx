@@ -12967,7 +12967,31 @@ Safety index and terminal clearance verified. The audit record status has been u
 
 // --- Component: Main App ---
 const App: React.FC = () => {
-    const [currentPage, setCurrentPage] = useState<Page>('home');
+    const [currentPage, setCurrentPage] = useState<Page>(() => {
+        if (typeof window !== 'undefined') {
+            const rawPath = window.location.pathname.toLowerCase();
+            const rawHash = window.location.hash.toLowerCase();
+            const search = window.location.search;
+
+            if (
+                rawPath.startsWith('/blog') || 
+                rawPath.startsWith('/guides') || 
+                rawHash === '#blog' || 
+                rawHash.startsWith('#blog/') || 
+                rawHash === '#guides' || 
+                rawHash.startsWith('#guides/') ||
+                new URLSearchParams(search).has('post')
+            ) {
+                return 'blog';
+            }
+            if (rawPath.startsWith('/inspector') || rawHash === '#inspector') return 'inspector';
+            if (rawPath.startsWith('/academy') || rawHash === '#academy') return 'academy';
+            if (rawPath.startsWith('/handover') || rawHash === '#handover') return 'handover';
+            if (rawPath.startsWith('/outreach') || rawHash === '#outreach') return 'outreach';
+            if (rawPath.startsWith('/solutions') || rawHash === '#solutions') return 'solutions';
+        }
+        return 'home';
+    });
     const [userId, setUserId] = useState<string | null>(null);
     const [isAuthReady, setIsAuthReady] = useState(false);
     const [isDemoModalOpen, setIsDemoModalOpen] = useState(false);

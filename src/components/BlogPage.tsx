@@ -35,7 +35,34 @@ export const BlogPage: React.FC<BlogPageProps> = ({
   onOpenTenderWizard,
   onOpenCostCalculator
 }) => {
-  const [selectedSlug, setSelectedSlug] = useState<string | null>(initialSlug);
+  const [selectedSlug, setSelectedSlug] = useState<string | null>(() => {
+    if (initialSlug) return initialSlug;
+    if (typeof window !== 'undefined') {
+      const pathname = window.location.pathname.replace(/\/+$/, '');
+      const urlParams = new URLSearchParams(window.location.search);
+      const postFromQuery = urlParams.get('post');
+      const hash = window.location.hash.replace(/\/+$/, '');
+
+      if (pathname.startsWith('/blog/')) {
+        const slugFromPath = pathname.replace('/blog/', '').trim();
+        if (slugFromPath) return decodeURIComponent(slugFromPath);
+      }
+      if (pathname.startsWith('/guides/')) {
+        const slugFromPath = pathname.replace('/guides/', '').trim();
+        if (slugFromPath) return decodeURIComponent(slugFromPath);
+      }
+      if (postFromQuery) return postFromQuery;
+      if (hash.startsWith('#blog/')) {
+        const slugFromHash = hash.replace('#blog/', '').trim();
+        if (slugFromHash) return slugFromHash;
+      }
+      if (hash.startsWith('#guides/')) {
+        const slugFromHash = hash.replace('#guides/', '').trim();
+        if (slugFromHash) return slugFromHash;
+      }
+    }
+    return null;
+  });
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [selectedCategory, setSelectedCategory] = useState<string>('All');
   const [isCopied, setIsCopied] = useState<boolean>(false);
