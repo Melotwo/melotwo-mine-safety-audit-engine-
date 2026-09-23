@@ -178,6 +178,15 @@ export const BlogPage: React.FC<BlogPageProps> = ({
           cleanSlug === '20-section-mhsa-tender-safety-file-blueprint'
         );
       }
+      // Alias handling for Offline Auditing guide
+      if (p.slug === 'offline-digital-safety-auditing-deep-level-mines') {
+        return (
+          cleanSlug === 'offline-safety-auditing' ||
+          cleanSlug === 'underground-offline-auditing' ||
+          cleanSlug === 'offline-digital-safety-auditing' ||
+          cleanSlug === 'offline-auditing-deep-level-mines'
+        );
+      }
       return false;
     }) || null;
   }, [selectedSlug]);
@@ -262,18 +271,19 @@ export const BlogPage: React.FC<BlogPageProps> = ({
     }
   }, [activePost]);
 
-  // Related Guides specific to the three core mining compliance guides
+  // Related Guides specific to the core mining compliance guides
   const relatedMiningGuides = useMemo(() => {
     if (!activePost) return [];
-    const coreThreeSlugs = [
+    const coreSlugs = [
+      'offline-digital-safety-auditing-deep-level-mines',
       '20-section-mining-tender-safety-file',
       'how-to-prevent-and-lift-section-54-stoppage',
       'mhsa-section-10-vs-ohsa-section-37-2'
     ];
 
-    if (coreThreeSlugs.includes(activePost.slug)) {
-      // For any of the 3 guides, return the other 2 in the triad
-      return BLOG_POSTS.filter(p => coreThreeSlugs.includes(p.slug) && p.slug !== activePost.slug);
+    if (coreSlugs.includes(activePost.slug)) {
+      // Recommend the most relevant companion guides from the core group
+      return BLOG_POSTS.filter(p => coreSlugs.includes(p.slug) && p.slug !== activePost.slug).slice(0, 3);
     }
 
     // Default fallback for other articles: related by category or tag
