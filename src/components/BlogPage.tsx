@@ -262,6 +262,26 @@ export const BlogPage: React.FC<BlogPageProps> = ({
     }
   }, [activePost]);
 
+  // Related Guides specific to the three core mining compliance guides
+  const relatedMiningGuides = useMemo(() => {
+    if (!activePost) return [];
+    const coreThreeSlugs = [
+      '20-section-mining-tender-safety-file',
+      'how-to-prevent-and-lift-section-54-stoppage',
+      'mhsa-section-10-vs-ohsa-section-37-2'
+    ];
+
+    if (coreThreeSlugs.includes(activePost.slug)) {
+      // For any of the 3 guides, return the other 2 in the triad
+      return BLOG_POSTS.filter(p => coreThreeSlugs.includes(p.slug) && p.slug !== activePost.slug);
+    }
+
+    // Default fallback for other articles: related by category or tag
+    return BLOG_POSTS
+      .filter(p => p.slug !== activePost.slug && (p.category === activePost.category || p.tags.some(t => activePost.tags.includes(t))))
+      .slice(0, 2);
+  }, [activePost]);
+
   const handleCopyArticleLink = async () => {
     if (typeof window === 'undefined') return;
     try {
@@ -364,7 +384,39 @@ export const BlogPage: React.FC<BlogPageProps> = ({
 
           {/* Rendered Markdown Article Body */}
           <article 
-            className="prose prose-invert max-w-none prose-headings:font-bold prose-headings:tracking-tight prose-headings:text-white prose-h1:text-2xl prose-h2:text-xl prose-h2:border-b prose-h2:border-slate-800 prose-h2:pb-2 prose-h2:mt-8 prose-h3:text-lg prose-p:text-slate-300 prose-p:leading-relaxed prose-li:text-slate-300 prose-strong:text-amber-300 prose-table:w-full prose-table:text-left prose-table:border-collapse prose-th:bg-slate-900 prose-th:p-3 prose-th:text-xs prose-th:font-bold prose-th:text-slate-200 prose-th:border prose-th:border-slate-800 prose-td:p-3 prose-td:text-xs prose-td:border prose-td:border-slate-800/80 prose-td:text-slate-300 prose-tr:even:bg-slate-900/40 prose-blockquote:border-l-4 prose-blockquote:border-amber-500 prose-blockquote:bg-slate-900/60 prose-blockquote:p-4 prose-blockquote:rounded-r-xl prose-blockquote:text-slate-200 prose-blockquote:italic"
+            className="prose prose-invert max-w-none prose-headings:font-bold prose-headings:tracking-tight prose-headings:text-white prose-h1:text-2xl prose-h2:text-xl prose-h2:border-b prose-h2:border-slate-800 prose-h2:pb-2 prose-h2:mt-8 prose-h3:text-lg prose-p:text-slate-300 prose-p:leading-relaxed prose-li:text-slate-300 prose-strong:text-amber-300 prose-table:w-full prose-table:text-left prose-table:border-collapse prose-th:bg-slate-900 prose-th:p-3 prose-th:text-xs prose-th:font-bold prose-th:text-slate-200 prose-th:border prose-th:border-slate-800 prose-td:p-3 prose-td:text-xs prose-td:border prose-td:border-slate-800/80 prose-td:text-slate-300 prose-tr:even:bg-slate-900/40 prose-blockquote:border-l-4 prose-blockquote:border-amber-500 prose-blockquote:bg-slate-900/60 prose-blockquote:p-4 prose-blockquote:rounded-r-xl prose-blockquote:text-slate-200 prose-blockquote:italic prose-a:text-amber-400 hover:prose-a:text-amber-300 prose-a:underline prose-a:underline-offset-4 prose-a:font-semibold"
+            onClick={(e) => {
+              const target = e.target as HTMLElement;
+              const anchor = target.closest('a');
+              if (anchor) {
+                const href = anchor.getAttribute('href');
+                if (href) {
+                  if (href.startsWith('/blog/')) {
+                    e.preventDefault();
+                    const slug = href.replace('/blog/', '').trim();
+                    handleSelectPost(slug);
+                  } else if (href.startsWith('/guides/')) {
+                    e.preventDefault();
+                    const slug = href.replace('/guides/', '').trim();
+                    handleSelectPost(slug);
+                  } else if (href === '#tender-file') {
+                    e.preventDefault();
+                    if (onOpenTenderWizard) {
+                      onOpenTenderWizard();
+                    } else {
+                      window.location.hash = 'tender-file';
+                    }
+                  } else if (href === '#calculate-cost') {
+                    e.preventDefault();
+                    if (onOpenCostCalculator) {
+                      onOpenCostCalculator();
+                    } else {
+                      window.location.hash = 'calculate-cost';
+                    }
+                  }
+                }
+              }
+            }}
             dangerouslySetInnerHTML={{ __html: renderedMarkdown }}
           />
 
@@ -382,6 +434,62 @@ export const BlogPage: React.FC<BlogPageProps> = ({
               </span>
             ))}
           </div>
+
+          {/* Related Guides / Related Reading Section (Before Final Call to Action) */}
+          {relatedMiningGuides.length > 0 && (
+            <section className="pt-8 mt-10 border-t border-slate-800/80 space-y-4">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center space-x-2">
+                  <div className="p-1.5 rounded-lg bg-amber-500/10 text-amber-400 border border-amber-500/20">
+                    <BookOpen className="w-4 h-4" />
+                  </div>
+                  <div>
+                    <h3 className="text-lg sm:text-xl font-black text-white tracking-tight">
+                      Related Statutory Compliance Guides
+                    </h3>
+                    <p className="text-xs text-slate-400">
+                      Essential companion reading for South African mining SHEQ professionals & contractors
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2">
+                {relatedMiningGuides.map(guide => (
+                  <div
+                    key={guide.slug}
+                    onClick={() => handleSelectPost(guide.slug)}
+                    className="group bg-slate-900/80 hover:bg-slate-900 border border-slate-800 hover:border-amber-500/50 rounded-2xl p-5 transition-all duration-200 cursor-pointer flex flex-col justify-between space-y-4 shadow-lg hover:shadow-amber-500/5 relative overflow-hidden"
+                  >
+                    <div className="space-y-2.5">
+                      <div className="flex items-center justify-between text-xs">
+                        <span className="px-2.5 py-0.5 rounded-md font-bold uppercase tracking-wider text-[10px] bg-slate-800 text-amber-300 border border-slate-700/60">
+                          {guide.category}
+                        </span>
+                        <span className="flex items-center text-slate-400 text-[11px]">
+                          <Clock className="w-3 h-3 mr-1" />
+                          {guide.readTime}
+                        </span>
+                      </div>
+
+                      <h4 className="text-base font-bold text-white group-hover:text-amber-300 transition-colors line-clamp-2 leading-snug">
+                        {guide.title}
+                      </h4>
+
+                      <p className="text-xs text-slate-400 line-clamp-2 leading-relaxed">
+                        {guide.description}
+                      </p>
+                    </div>
+
+                    <div className="pt-3 border-t border-slate-800/60 flex items-center justify-between text-xs font-bold text-amber-400 group-hover:text-amber-300">
+                      <span>Read Full Guide</span>
+                      <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-1 transition-transform" />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </section>
+          )}
 
           {/* High-Conversion Bottom Call-to-Action Card */}
           <div className="bg-gradient-to-br from-slate-900 via-slate-900 to-indigo-950/70 border border-amber-500/30 rounded-3xl p-6 sm:p-8 text-white space-y-6 shadow-2xl relative overflow-hidden mt-12">
