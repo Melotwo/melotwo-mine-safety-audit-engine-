@@ -30,7 +30,8 @@ import { ZambianMhsCompliancePanel } from './components/ZambianMhsCompliancePane
 import { ZambiaComplianceAssessmentModal } from './components/ZambiaComplianceAssessmentModal';
 import { PartnerCoPilotAdminView } from './components/PartnerCoPilotAdminView';
 import { CsvImportModal } from './components/CsvImportModal';
-import { Database, RefreshCw, Upload, LogOut, Sparkles, CheckCircle2, AlertOctagon, Download, ChevronRight, Lock, Terminal, Minimize2, Maximize2, Activity, Scale, Globe, CheckCircle, Target, ShieldAlert, ArrowRight, Check, Truck, Info, RotateCcw, Sliders, XCircle, Building2, MapPin, ChevronDown, ChevronUp, EyeOff, Filter, Layers, FileSpreadsheet, Calculator, BookOpen, Smartphone, Wifi, WifiOff, Save, HardDrive, Users, Droplets } from 'lucide-react';
+import { InspectorConflictResolver, OfflineAuditNoteItem, ConflictResolutionChoice } from './components/InspectorConflictResolver';
+import { Database, RefreshCw, Upload, LogOut, Sparkles, CheckCircle2, AlertOctagon, Download, ChevronRight, Lock, Terminal, Minimize2, Maximize2, Activity, Scale, Globe, CheckCircle, Target, ShieldAlert, ArrowRight, Check, Truck, Info, RotateCcw, Sliders, XCircle, Building2, MapPin, ChevronDown, ChevronUp, EyeOff, Filter, Layers, FileSpreadsheet, Calculator, BookOpen, Smartphone, Wifi, WifiOff, Save, HardDrive, Users, Droplets, GitCompare, Pencil, X } from 'lucide-react';
 import jsPDF from 'jspdf';
 import { sanitizeInputText } from './utils/sanitizer';
 import { DailyComplianceData } from './types';
@@ -9471,18 +9472,7 @@ Safety index and terminal clearance verified. The audit record status has been u
     const [terminalAuditNoteInput, setTerminalAuditNoteInput] = useState<string>(() => {
         return localStorage.getItem('melotwo_inspector_terminal_note_draft') || '';
     });
-    const [offlineAuditNotesList, setOfflineAuditNotesList] = useState<{
-        id: string;
-        text: string;
-        timestamp: number;
-        date: string;
-        operator?: string;
-        terminalId?: string;
-        category?: string;
-        severity?: string;
-        status?: string;
-        violationVector?: string;
-    }[]>(() => {
+    const [offlineAuditNotesList, setOfflineAuditNotesList] = useState<OfflineAuditNoteItem[]>(() => {
         try {
             const saved = localStorage.getItem('melotwo_offline_audit_notes');
             if (saved) {
@@ -9492,6 +9482,11 @@ Safety index and terminal clearance verified. The audit record status has been u
         } catch (e) {}
         return [];
     });
+    const [activeConflictNote, setActiveConflictNote] = useState<OfflineAuditNoteItem | null>(null);
+    const [onlineTransitionTimestamp, setOnlineTransitionTimestamp] = useState<number | null>(() => Date.now());
+    const [editingOfflineNoteId, setEditingOfflineNoteId] = useState<string | null>(null);
+    const [editingOfflineNoteText, setEditingOfflineNoteText] = useState<string>('');
+
     const [isSimulatedOffline, setIsSimulatedOffline] = useState<boolean>(false);
     const [offlineSyncFeedback, setOfflineSyncFeedback] = useState<string | null>(null);
     const [isSyncingOfflineNotes, setIsSyncingOfflineNotes] = useState<boolean>(false);
@@ -9499,16 +9494,223 @@ Safety index and terminal clearance verified. The audit record status has been u
 
     const isEffectivelyOnline = isOnline && !isSimulatedOffline;
 
+    // Conflict Resolution Handler: commits chosen version to ledger and purges from localStorage
+    const handleResolveConflict = useCallback(async (
+        choice: ConflictResolutionChoice,
+        resolvedText?: string,
+        resolvedMetadata?: { severity?: string; status?: string; category?: string }
+    ) => {
+        if (!activeConflictNote) return;
+
+        const note = activeConflictNote;
+        let recordToCommit: ComplianceLedgerRow | null = null;
+
+        if (choice === 'local') {
+            recordToCommit = {
+                date: note.date || new Date().toISOString().split('T')[0],
+                operator: note.operator || user?.displayName || 'Field Inspector (Local Override)',
+                terminalId: note.terminalId || 'TERM-LOCAL',
+                riskCategory: note.category || 'Field Audit Note',
+                violationVector: note.violationVector || 'MHSA / SANS Local Storage Override',
+                severityLevel: note.severity || 'Medium',
+                auditStatus: note.status || 'Action Required',
+                detailedNotes: resolvedText || note.text
+            };
+        } else if (choice === 'remote') {
+            // User discarded local change in favor of online ledger record
+            recordToCommit = null;
+        } else if (choice === 'merge') {
+            recordToCommit = {
+                date: note.date || new Date().toISOString().split('T')[0],
+                operator: `${note.operator || 'Inspector'} & Auditor (Reconciled)`,
+                terminalId: note.terminalId || 'TERM-MERGE',
+                riskCategory: resolvedMetadata?.category || note.category || 'Field Audit Note',
+                violationVector: 'Reconciled Audit Record (Local + Remote Merge)',
+                severityLevel: resolvedMetadata?.severity || note.severity || 'Medium',
+                auditStatus: resolvedMetadata?.status || 'Resolved & Reconciled',
+                detailedNotes: resolvedText || note.text
+            };
+        } else if (choice === 'both') {
+            recordToCommit = {
+                date: note.date || new Date().toISOString().split('T')[0],
+                operator: note.operator || user?.displayName || 'Field Inspector',
+                terminalId: note.terminalId || 'TERM-LOCAL',
+                riskCategory: note.category || 'Field Audit Note',
+                violationVector: 'Post-Online Amendment Record',
+                severityLevel: note.severity || 'Medium',
+                auditStatus: 'Amended Post-Online',
+                detailedNotes: `[POST-ONLINE FIELD AMENDMENT]: ${resolvedText || note.text}`
+            };
+        }
+
+        // Commit record to remote or local sandbox ledger
+        if (recordToCommit) {
+            try {
+                if (token && ledgerId) {
+                    await appendLedgerRecord(token, ledgerId, recordToCommit);
+                    const fetched = await fetchLedgerRecords(token, ledgerId);
+                    setLedgerLogs(fetched);
+                } else {
+                    setLedgerLogs(prevLogs => {
+                        const updated = [recordToCommit!, ...prevLogs];
+                        localStorage.setItem('melotwo_sandbox_logs', JSON.stringify(updated));
+                        return updated;
+                    });
+                }
+            } catch (err) {
+                console.error('[Conflict Resolution] Error committing resolved record:', err);
+            }
+        }
+
+        // Remove the resolved note from localStorage
+        const rawStored = localStorage.getItem('melotwo_offline_audit_notes');
+        let currentNotes: OfflineAuditNoteItem[] = [];
+        try {
+            if (rawStored) currentNotes = JSON.parse(rawStored);
+        } catch (e) {}
+
+        const remainingNotes = currentNotes.filter(n => n.id !== note.id);
+        if (remainingNotes.length > 0) {
+            localStorage.setItem('melotwo_offline_audit_notes', JSON.stringify(remainingNotes));
+            setOfflineAuditNotesList(remainingNotes);
+        } else {
+            localStorage.removeItem('melotwo_offline_audit_notes');
+            setOfflineAuditNotesList([]);
+        }
+
+        const choiceFeedback = {
+            local: 'LocalStorage version committed to compliance ledger.',
+            remote: 'Online Ledger version retained. Local modifications discarded.',
+            merge: 'Reconciled merged audit note committed to compliance ledger.',
+            both: 'Both online and local versions committed as distinct ledger entries.'
+        };
+
+        setOfflineSyncFeedback(`Conflict Resolved: ${choiceFeedback[choice]}`);
+        setActiveConflictNote(null);
+        setTimeout(() => setOfflineSyncFeedback(null), 6000);
+    }, [activeConflictNote, token, ledgerId, user?.displayName]);
+
+    // Save edited offline note: if edited while online, automatically mark as post-online conflict
+    const handleSaveEditedOfflineNote = useCallback((noteId: string, newText: string) => {
+        if (!newText.trim()) return;
+        const now = Date.now();
+        const updatedList = offlineAuditNotesList.map(item => {
+            if (item.id === noteId) {
+                const isModifiedAfterOnline = isEffectivelyOnline;
+                const updated: OfflineAuditNoteItem = {
+                    ...item,
+                    text: newText.trim(),
+                    lastModified: now,
+                    modifiedPostOnline: isModifiedAfterOnline,
+                    conflictDetected: isModifiedAfterOnline,
+                    conflictReason: isModifiedAfterOnline 
+                        ? 'Audit note was modified in localStorage after the app went back online' 
+                        : undefined,
+                    remoteSnapshot: isModifiedAfterOnline ? (item.remoteSnapshot || {
+                        text: item.text,
+                        timestamp: item.timestamp,
+                        operator: item.operator || 'Auditor',
+                        terminalId: item.terminalId || 'TERM-ONLINE',
+                        severity: item.severity || 'Medium',
+                        status: item.status || 'Verified Compliant',
+                        date: item.date || new Date().toISOString().split('T')[0]
+                    }) : undefined
+                };
+                return updated;
+            }
+            return item;
+        });
+
+        localStorage.setItem('melotwo_offline_audit_notes', JSON.stringify(updatedList));
+        setOfflineAuditNotesList(updatedList);
+        setEditingOfflineNoteId(null);
+        setEditingOfflineNoteText('');
+
+        const targetNote = updatedList.find(n => n.id === noteId);
+        if (targetNote && isEffectivelyOnline) {
+            setActiveConflictNote(targetNote);
+            setOfflineSyncFeedback('Audit note modified post-online: conflict resolution UI activated in terminal.');
+        } else {
+            setOfflineSyncFeedback('Offline audit note updated in localStorage.');
+            setTimeout(() => setOfflineSyncFeedback(null), 4000);
+        }
+    }, [offlineAuditNotesList, isEffectivelyOnline]);
+
+    // Simulate Post-Online Conflict for testing / demo
+    const handleSimulatePostOnlineConflict = useCallback(() => {
+        const now = Date.now();
+        const conflictItem: OfflineAuditNoteItem = {
+            id: `offline-conflict-${now}-${Math.random().toString(36).substring(2, 6)}`,
+            text: 'Shaft 2 intake velocity: 0.38 m/s [FIELD REVISION MODIFIED POST-ONLINE: Auxiliary Booster Fan 3 tripped on thermal overload at 14:15. Temporary bypass duct engaged per SANS 10108]',
+            timestamp: now - 360000, // Created 6 minutes ago while offline
+            lastModified: now - 30000, // Modified 30 seconds ago in localStorage post-online
+            modifiedPostOnline: true,
+            conflictDetected: true,
+            conflictReason: 'Audit note in localStorage was modified after the app went back online',
+            date: new Date().toISOString().split('T')[0],
+            operator: user?.displayName || 'Lead Underground Inspector',
+            terminalId: 'TERM-UNDERGROUND-04',
+            category: 'Underground Ventilation',
+            severity: 'High',
+            status: 'Critical Alert',
+            violationVector: 'MHSA Part X Subterranean Hazard Ventilation',
+            remoteSnapshot: {
+                text: 'Shaft 2 intake velocity: 0.55 m/s verified compliant with SANS 10108. Standard airflow damper settings active. Verified by Surface Monitoring System.',
+                timestamp: now - 180000,
+                date: new Date().toISOString().split('T')[0],
+                operator: 'Central SCADA Auditor',
+                terminalId: 'TERM-SURFACE-GATEWAY',
+                category: 'Underground Ventilation',
+                severity: 'Low',
+                status: 'Verified Compliant',
+                violationVector: 'MHSA Part X Statutory Airflow'
+            }
+        };
+
+        const existingRaw = localStorage.getItem('melotwo_offline_audit_notes');
+        let current: OfflineAuditNoteItem[] = [];
+        try {
+            if (existingRaw) current = JSON.parse(existingRaw);
+        } catch (e) {}
+
+        const updated = [conflictItem, ...current];
+        localStorage.setItem('melotwo_offline_audit_notes', JSON.stringify(updated));
+        setOfflineAuditNotesList(updated);
+        setOnlineTransitionTimestamp(now - 180000);
+        setActiveConflictNote(conflictItem);
+        setOfflineSyncFeedback('Post-online conflict simulated: conflict resolution UI active in terminal.');
+    }, [user?.displayName]);
+
     // Flush & synchronize offline audit notes from localStorage directly into the Compliance Ledger
     const syncOfflineNotesToLedger = useCallback(async () => {
         const rawStored = localStorage.getItem('melotwo_offline_audit_notes');
         if (!rawStored) return;
-        let storedNotes: any[] = [];
+        let storedNotes: OfflineAuditNoteItem[] = [];
         try {
             storedNotes = JSON.parse(rawStored);
             if (!Array.isArray(storedNotes) || storedNotes.length === 0) return;
         } catch (e) {
             return;
+        }
+
+        // Detect any notes with conflicts (e.g. modified post-online)
+        const conflictingNotes = storedNotes.filter(n => 
+            n.conflictDetected || 
+            n.modifiedPostOnline || 
+            (n.lastModified && onlineTransitionTimestamp && n.lastModified > onlineTransitionTimestamp && n.remoteSnapshot)
+        );
+
+        if (conflictingNotes.length > 0) {
+            console.warn(`[Offline Sync] Detected ${conflictingNotes.length} audit notes with post-online modification conflicts. Initiating conflict resolution UI.`);
+            setActiveConflictNote(conflictingNotes[0]);
+            setOfflineSyncFeedback(`Conflict detected: ${conflictingNotes.length} audit note${conflictingNotes.length === 1 ? '' : 's'} modified post-online. Please choose which version to commit below.`);
+            
+            // Only sync non-conflicting notes automatically
+            const nonConflictingNotes = storedNotes.filter(n => !conflictingNotes.some(cn => cn.id === n.id));
+            if (nonConflictingNotes.length === 0) {
+                return;
+            }
+            storedNotes = nonConflictingNotes;
         }
 
         setIsSyncingOfflineNotes(true);
@@ -9540,11 +9742,16 @@ Safety index and terminal clearance verified. The audit record status has been u
                 });
             }
 
-            // Successfully synced all pending offline audit notes: clear localStorage
-            localStorage.removeItem('melotwo_offline_audit_notes');
-            setOfflineAuditNotesList([]);
-            setOfflineSyncFeedback(`Connection restored! Successfully synced ${newRecords.length} offline audit note${newRecords.length === 1 ? '' : 's'} from localStorage to compliance ledger.`);
-            setTimeout(() => setOfflineSyncFeedback(null), 6000);
+            // Successfully synced non-conflicting notes: preserve any conflicting notes in localStorage
+            if (conflictingNotes.length > 0) {
+                localStorage.setItem('melotwo_offline_audit_notes', JSON.stringify(conflictingNotes));
+                setOfflineAuditNotesList(conflictingNotes);
+            } else {
+                localStorage.removeItem('melotwo_offline_audit_notes');
+                setOfflineAuditNotesList([]);
+                setOfflineSyncFeedback(`Connection restored! Successfully synced ${newRecords.length} offline audit note${newRecords.length === 1 ? '' : 's'} from localStorage to compliance ledger.`);
+                setTimeout(() => setOfflineSyncFeedback(null), 6000);
+            }
         } catch (err: any) {
             console.error('[Offline Sync] Failed to flush offline notes to ledger:', err);
             setOfflineSyncFeedback('Sync retry scheduled: unable to flush offline notes to remote ledger.');
@@ -9552,7 +9759,7 @@ Safety index and terminal clearance verified. The audit record status has been u
         } finally {
             setIsSyncingOfflineNotes(false);
         }
-    }, [token, ledgerId, user?.displayName]);
+    }, [token, ledgerId, user?.displayName, onlineTransitionTimestamp]);
 
     // Window event listener for network online restoration
     useEffect(() => {
@@ -9572,6 +9779,7 @@ Safety index and terminal clearance verified. The audit record status has been u
     useEffect(() => {
         if (!prevOnlineStateRef.current && isEffectivelyOnline) {
             console.log('[OfflineSync] Connection restored. Synchronizing queued offline notes to ledger.');
+            setOnlineTransitionTimestamp(Date.now());
             syncOfflineNotesToLedger();
         }
         prevOnlineStateRef.current = isEffectivelyOnline;
@@ -9591,6 +9799,34 @@ Safety index and terminal clearance verified. The audit record status has been u
             }
         }
     }, [isEffectivelyOnline, syncOfflineNotesToLedger]);
+
+    // Continuously monitor localStorage for pending offline audit notes across browser sessions & tabs
+    useEffect(() => {
+        const checkPendingOfflineNotes = () => {
+            try {
+                const saved = localStorage.getItem('melotwo_offline_audit_notes');
+                if (saved) {
+                    const parsed = JSON.parse(saved);
+                    if (Array.isArray(parsed) && parsed.length > 0) {
+                        setOfflineAuditNotesList(parsed);
+                        return;
+                    }
+                }
+            } catch (e) {}
+            setOfflineAuditNotesList([]);
+        };
+
+        checkPendingOfflineNotes();
+        const pollTimer = setInterval(checkPendingOfflineNotes, 1500);
+
+        window.addEventListener('storage', checkPendingOfflineNotes);
+        window.addEventListener('focus', checkPendingOfflineNotes);
+        return () => {
+            clearInterval(pollTimer);
+            window.removeEventListener('storage', checkPendingOfflineNotes);
+            window.removeEventListener('focus', checkPendingOfflineNotes);
+        };
+    }, [isOnline]);
 
     // Handler to save audit note: saves to localStorage if offline, or commits directly if online
     const handleSaveTerminalAuditNote = async (overrideText?: string) => {
@@ -10887,6 +11123,24 @@ Safety index and terminal clearance verified. The audit record status has been u
                                 </button>
                             )}
                         </div>
+
+                        {/* Permanent 'Offline Sync Pending' notification badge whenever audit notes are waiting in localStorage */}
+                        {offlineAuditNotesList.length > 0 && (
+                            <div 
+                                id="toolbar-offline-sync-pending-badge"
+                                className={`flex items-center gap-2 border rounded-xl p-1.5 px-3 transition-colors shadow-sm ${
+                                    !isOnline
+                                        ? 'bg-amber-950/70 border-amber-500/50 text-amber-300'
+                                        : 'bg-amber-500/20 border-amber-400/40 text-amber-200'
+                                }`}
+                                title={`${offlineAuditNotesList.length} audit note(s) stored in localStorage waiting to sync`}
+                            >
+                                <span className={`w-2 h-2 rounded-full ${!isOnline ? 'bg-amber-500 animate-ping' : 'bg-amber-400 animate-pulse'}`} />
+                                <span className="text-[10px] font-mono uppercase font-bold tracking-wider">
+                                    Offline Sync Pending ({offlineAuditNotesList.length})
+                                </span>
+                            </div>
+                        )}
                     </div>
                 </div>
 
@@ -11719,14 +11973,45 @@ Safety index and terminal clearance verified. The audit record status has been u
                                                         MHSA Sec 10 &amp; 16(2)
                                                     </span>
                                                 </div>
-                                                <h3 className="text-base font-extrabold text-white tracking-tight flex items-center gap-2">
+                                                <h3 className="text-base font-extrabold text-white tracking-tight flex items-center gap-2 flex-wrap">
                                                     <span>Inspector Terminal — Offline Audit Notes</span>
+                                                    {offlineAuditNotesList.length > 0 && (
+                                                        <span 
+                                                            id="inspector-terminal-offline-sync-badge-header"
+                                                            className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-mono font-bold bg-amber-500/20 border border-amber-500/50 text-amber-300 shadow-sm"
+                                                        >
+                                                            <span className={`w-1.5 h-1.5 rounded-full ${!isOnline ? 'bg-amber-500 animate-ping' : 'bg-amber-400 animate-pulse'}`} />
+                                                            <span>Offline Sync Pending ({offlineAuditNotesList.length})</span>
+                                                        </span>
+                                                    )}
                                                 </h3>
                                             </div>
                                         </div>
 
                                         {/* Status Indicators & Simulation Controls */}
                                         <div className="flex flex-wrap items-center gap-2">
+                                            {/* Permanent 'Offline Sync Pending' notification badge whenever audit notes are waiting in localStorage */}
+                                            {offlineAuditNotesList.length > 0 && (
+                                                <div
+                                                    id="inspector-terminal-offline-sync-pending-badge"
+                                                    className={`flex items-center gap-2 px-3 py-1.5 rounded-xl border text-xs font-mono font-bold transition-all shadow-md ${
+                                                        !isOnline
+                                                            ? 'bg-amber-950/80 border-amber-500/60 text-amber-300 shadow-amber-500/10'
+                                                            : 'bg-amber-500/20 border-amber-400/50 text-amber-200 shadow-amber-500/10'
+                                                    }`}
+                                                    title={`${offlineAuditNotesList.length} audit note(s) waiting in localStorage`}
+                                                >
+                                                    <span className={`w-2 h-2 rounded-full ${!isOnline ? 'bg-amber-500 animate-ping' : 'bg-amber-400 animate-pulse'}`} />
+                                                    <span className="uppercase tracking-wider">Offline Sync Pending</span>
+                                                    <span className="text-[10px] px-1.5 py-0.5 rounded bg-amber-500/30 text-amber-100 font-bold border border-amber-500/40">
+                                                        {offlineAuditNotesList.length}
+                                                    </span>
+                                                    <span className="text-[10px] font-normal text-amber-300/80 hidden lg:inline">
+                                                        {!isOnline ? '(LocalStorage • Offline)' : '(LocalStorage • Queued)'}
+                                                    </span>
+                                                </div>
+                                            )}
+
                                             {/* Live Connection / Offline Mode Badge */}
                                             <div className={`flex items-center gap-2 px-3 py-1.5 rounded-xl border text-xs font-mono font-bold transition-all ${
                                                 !isEffectivelyOnline
@@ -11805,6 +12090,19 @@ Safety index and terminal clearance verified. The audit record status has been u
                                             >
                                                 ✕
                                             </button>
+                                        </div>
+                                    )}
+
+                                    {/* Interactive Terminal Conflict Resolution UI */}
+                                    {activeConflictNote && (
+                                        <div className="animate-fade-in my-2">
+                                            <InspectorConflictResolver
+                                                conflictNote={activeConflictNote}
+                                                appOnlineTransitionTime={onlineTransitionTimestamp || undefined}
+                                                isOnline={isEffectivelyOnline}
+                                                onResolve={handleResolveConflict}
+                                                onCancel={() => setActiveConflictNote(null)}
+                                            />
                                         </div>
                                     )}
 
@@ -11907,17 +12205,32 @@ Safety index and terminal clearance verified. The audit record status has been u
                                     {/* Stored Offline Audit Notes Buffer Drawer */}
                                     {offlineAuditNotesList.length > 0 && (
                                         <div className="mt-4 p-4 bg-slate-950/90 border border-amber-500/25 rounded-2xl flex flex-col gap-3 font-mono">
-                                            <div className="flex items-center justify-between border-b border-slate-800/80 pb-2">
-                                                <div className="flex items-center gap-2">
+                                            <div className="flex flex-col sm:flex-row sm:items-center justify-between border-b border-slate-800/80 pb-3 gap-3">
+                                                <div className="flex items-center gap-2 flex-wrap">
                                                     <span className="w-2 h-2 rounded-full bg-amber-400 animate-pulse" />
                                                     <span className="text-xs font-bold text-amber-300">
                                                         {offlineAuditNotesList.length} Offline Audit Note{offlineAuditNotesList.length === 1 ? '' : 's'} Stored in localStorage
                                                     </span>
-                                                    <span className="text-[9px] bg-amber-500/10 border border-amber-500/30 text-amber-400 px-2 py-0.5 rounded">
-                                                        Queued for Ledger Sync
+                                                    <span className="text-[9px] bg-amber-500/20 border border-amber-500/40 text-amber-300 px-2 py-0.5 rounded font-bold uppercase tracking-wider">
+                                                        Offline Sync Pending
                                                     </span>
+                                                    {offlineAuditNotesList.some(n => n.conflictDetected || n.modifiedPostOnline) && (
+                                                        <span className="text-[9px] bg-rose-500/20 border border-rose-500/40 text-rose-300 px-2 py-0.5 rounded font-bold uppercase tracking-wider flex items-center gap-1 animate-pulse">
+                                                            <AlertTriangle className="w-2.5 h-2.5" />
+                                                            Conflict Detected
+                                                        </span>
+                                                    )}
                                                 </div>
-                                                <div className="flex items-center gap-2">
+                                                <div className="flex flex-wrap items-center gap-2">
+                                                    <button
+                                                        type="button"
+                                                        onClick={handleSimulatePostOnlineConflict}
+                                                        title="Simulate an audit note modified in localStorage post-online to test and inspect conflict resolution"
+                                                        className="text-[10px] font-bold text-amber-300 hover:text-amber-200 bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/30 px-2.5 py-1 rounded-lg transition-colors cursor-pointer flex items-center gap-1.5"
+                                                    >
+                                                        <GitCompare className="w-3 h-3 text-amber-400" />
+                                                        <span>Simulate Post-Online Conflict</span>
+                                                    </button>
                                                     {isEffectivelyOnline && (
                                                         <button
                                                             type="button"
@@ -11935,6 +12248,7 @@ Safety index and terminal clearance verified. The audit record status has been u
                                                             if (confirm('Clear all offline audit notes currently queued in localStorage?')) {
                                                                 localStorage.removeItem('melotwo_offline_audit_notes');
                                                                 setOfflineAuditNotesList([]);
+                                                                setActiveConflictNote(null);
                                                             }
                                                         }}
                                                         className="text-[10px] text-slate-500 hover:text-rose-400 transition-colors cursor-pointer"
@@ -11944,39 +12258,148 @@ Safety index and terminal clearance verified. The audit record status has been u
                                                 </div>
                                             </div>
 
-                                            <div className="space-y-2 max-h-48 overflow-y-auto pr-1">
-                                                {offlineAuditNotesList.map((item, idx) => (
-                                                    <div
-                                                        key={item.id || idx}
-                                                        className="p-2.5 bg-slate-900/80 border border-slate-800 rounded-xl flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs"
+                                            {/* Conflict Alert Banner if any conflicts exist */}
+                                            {offlineAuditNotesList.some(n => n.conflictDetected || n.modifiedPostOnline) && !activeConflictNote && (
+                                                <div className="p-3 bg-amber-500/10 border border-amber-500/30 rounded-xl flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs font-mono text-amber-200">
+                                                    <div className="flex items-center gap-2">
+                                                        <AlertTriangle className="w-4 h-4 text-amber-400 shrink-0 animate-pulse" />
+                                                        <span>
+                                                            Post-Online Modification Conflict Detected: {offlineAuditNotesList.filter(n => n.conflictDetected || n.modifiedPostOnline).length} note(s) modified in localStorage after reconnecting.
+                                                        </span>
+                                                    </div>
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => {
+                                                            const firstConflict = offlineAuditNotesList.find(n => n.conflictDetected || n.modifiedPostOnline);
+                                                            if (firstConflict) setActiveConflictNote(firstConflict);
+                                                        }}
+                                                        className="text-[10px] font-bold bg-amber-500 hover:bg-amber-400 text-slate-950 px-3 py-1 rounded-lg transition-colors cursor-pointer shrink-0 self-start sm:self-center"
                                                     >
-                                                        <div className="flex-1 min-w-0">
-                                                            <p className="text-slate-200 font-sans text-xs break-words">{item.text}</p>
-                                                            <div className="flex flex-wrap items-center gap-2 text-[10px] text-slate-400 mt-1">
-                                                                <span>{new Date(item.timestamp).toLocaleTimeString()}</span>
-                                                                <span>•</span>
-                                                                <span>{item.terminalId || 'TERM-UNDERGROUND'}</span>
-                                                                <span>•</span>
-                                                                <span>{item.operator || 'Inspector'}</span>
-                                                                <span className="bg-amber-500/10 text-amber-400 border border-amber-500/20 px-1.5 py-0.2 rounded text-[9px]">
-                                                                    Buffered in localStorage
-                                                                </span>
+                                                        Open Conflict Resolver
+                                                    </button>
+                                                </div>
+                                            )}
+
+                                            <div className="space-y-2 max-h-56 overflow-y-auto pr-1">
+                                                {offlineAuditNotesList.map((item, idx) => {
+                                                    const isEditing = editingOfflineNoteId === item.id;
+                                                    const isConflicted = item.conflictDetected || item.modifiedPostOnline;
+
+                                                    if (isEditing) {
+                                                        return (
+                                                            <div key={item.id || idx} className="p-3 bg-slate-900 border border-indigo-500/40 rounded-xl space-y-2.5">
+                                                                <div className="flex items-center justify-between text-[11px] font-mono text-slate-300">
+                                                                    <span className="font-bold flex items-center gap-1.5 text-indigo-300">
+                                                                        <Pencil className="w-3.5 h-3.5" />
+                                                                        Edit Audit Note in LocalStorage
+                                                                    </span>
+                                                                    {isEffectivelyOnline && (
+                                                                        <span className="text-[10px] text-amber-400 bg-amber-500/10 border border-amber-500/30 px-2 py-0.5 rounded">
+                                                                            App Online: Saving will trigger post-online conflict resolver
+                                                                        </span>
+                                                                    )}
+                                                                </div>
+                                                                <textarea
+                                                                    value={editingOfflineNoteText}
+                                                                    onChange={(e) => setEditingOfflineNoteText(e.target.value)}
+                                                                    rows={3}
+                                                                    className="w-full bg-slate-950 border border-slate-700 focus:border-indigo-400 rounded-lg p-2.5 text-xs text-white font-mono focus:outline-none leading-relaxed"
+                                                                />
+                                                                <div className="flex items-center justify-end gap-2">
+                                                                    <button
+                                                                        type="button"
+                                                                        onClick={() => {
+                                                                            setEditingOfflineNoteId(null);
+                                                                            setEditingOfflineNoteText('');
+                                                                        }}
+                                                                        className="text-[10px] font-mono text-slate-400 hover:text-slate-200 px-2.5 py-1 cursor-pointer"
+                                                                    >
+                                                                        Cancel
+                                                                    </button>
+                                                                    <button
+                                                                        type="button"
+                                                                        onClick={() => handleSaveEditedOfflineNote(item.id, editingOfflineNoteText)}
+                                                                        className="text-[10px] font-mono font-bold bg-indigo-600 hover:bg-indigo-500 text-white px-3 py-1.5 rounded-lg transition-colors cursor-pointer shadow-md"
+                                                                    >
+                                                                        Save Local Edit
+                                                                    </button>
+                                                                </div>
+                                                            </div>
+                                                        );
+                                                    }
+
+                                                    return (
+                                                        <div
+                                                            key={item.id || idx}
+                                                            className={`p-2.5 border rounded-xl flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs transition-all ${
+                                                                isConflicted
+                                                                    ? 'bg-amber-950/20 border-amber-500/40 shadow-sm shadow-amber-500/5'
+                                                                    : 'bg-slate-900/80 border-slate-800'
+                                                            }`}
+                                                        >
+                                                            <div className="flex-1 min-w-0">
+                                                                <p className="text-slate-200 font-sans text-xs break-words">{item.text}</p>
+                                                                <div className="flex flex-wrap items-center gap-2 text-[10px] text-slate-400 mt-1">
+                                                                    <span>{new Date(item.timestamp).toLocaleTimeString()}</span>
+                                                                    <span>•</span>
+                                                                    <span>{item.terminalId || 'TERM-UNDERGROUND'}</span>
+                                                                    <span>•</span>
+                                                                    <span>{item.operator || 'Inspector'}</span>
+                                                                    {isConflicted ? (
+                                                                        <span className="bg-amber-500/20 text-amber-300 border border-amber-500/40 px-2 py-0.5 rounded text-[9px] font-bold flex items-center gap-1 animate-pulse">
+                                                                            <AlertTriangle className="w-2.5 h-2.5" />
+                                                                            Modified Post-Online (Conflict)
+                                                                        </span>
+                                                                    ) : (
+                                                                        <span className="bg-amber-500/10 text-amber-400 border border-amber-500/20 px-1.5 py-0.2 rounded text-[9px]">
+                                                                            Buffered in localStorage
+                                                                        </span>
+                                                                    )}
+                                                                </div>
+                                                            </div>
+
+                                                            <div className="flex items-center gap-1.5 self-end sm:self-center shrink-0">
+                                                                {isConflicted && (
+                                                                    <button
+                                                                        type="button"
+                                                                        onClick={() => setActiveConflictNote(item)}
+                                                                        className="text-[10px] font-mono font-bold bg-amber-500 hover:bg-amber-400 text-slate-950 px-2.5 py-1 rounded-lg transition-colors cursor-pointer flex items-center gap-1 shadow-sm"
+                                                                        title="Resolve version conflict"
+                                                                    >
+                                                                        <GitCompare className="w-3 h-3" />
+                                                                        <span>Resolve Conflict</span>
+                                                                    </button>
+                                                                )}
+                                                                <button
+                                                                    type="button"
+                                                                    onClick={() => {
+                                                                        setEditingOfflineNoteId(item.id);
+                                                                        setEditingOfflineNoteText(item.text);
+                                                                    }}
+                                                                    className="p-1.5 text-slate-400 hover:text-indigo-300 hover:bg-slate-800 rounded transition-colors cursor-pointer"
+                                                                    title="Edit note in localStorage"
+                                                                >
+                                                                    <Pencil className="w-3.5 h-3.5" />
+                                                                </button>
+                                                                <button
+                                                                    type="button"
+                                                                    onClick={() => {
+                                                                        const filtered = offlineAuditNotesList.filter(n => n.id !== item.id);
+                                                                        localStorage.setItem('melotwo_offline_audit_notes', JSON.stringify(filtered));
+                                                                        setOfflineAuditNotesList(filtered);
+                                                                        if (activeConflictNote?.id === item.id) {
+                                                                            setActiveConflictNote(null);
+                                                                        }
+                                                                    }}
+                                                                    className="p-1.5 text-slate-400 hover:text-rose-400 hover:bg-slate-800 rounded transition-colors cursor-pointer"
+                                                                    title="Remove Note"
+                                                                >
+                                                                    <X className="w-3.5 h-3.5" />
+                                                                </button>
                                                             </div>
                                                         </div>
-                                                        <button
-                                                            type="button"
-                                                            onClick={() => {
-                                                                const filtered = offlineAuditNotesList.filter(n => n.id !== item.id);
-                                                                localStorage.setItem('melotwo_offline_audit_notes', JSON.stringify(filtered));
-                                                                setOfflineAuditNotesList(filtered);
-                                                            }}
-                                                            className="text-slate-500 hover:text-rose-400 text-xs px-2 py-1 self-end sm:self-center cursor-pointer"
-                                                            title="Remove Note"
-                                                        >
-                                                            ✕
-                                                        </button>
-                                                    </div>
-                                                ))}
+                                                    );
+                                                })}
                                             </div>
 
                                             <div className="text-[10px] text-slate-400 flex flex-col sm:flex-row sm:items-center justify-between gap-1 pt-1">

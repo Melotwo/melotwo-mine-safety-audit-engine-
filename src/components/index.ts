@@ -37,4 +37,5 @@ export * from './QctoToolboxTalkModal';
 export * from './QctoTrainingReportModal';
 export * from './ZambiaComplianceAssessmentModal';
 export * from './PartnerCoPilotAdminView';
+export * from './InspectorConflictResolver';
 
