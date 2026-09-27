@@ -27,8 +27,10 @@ import { BlogPage } from './components/BlogPage';
 import { PWAInstallPrompt } from './components/PWAInstallPrompt';
 import { GooglePreferredSourceBanner } from './components/GooglePreferredSourceBanner';
 import { ZambianMhsCompliancePanel } from './components/ZambianMhsCompliancePanel';
+import { ZambiaComplianceAssessmentModal } from './components/ZambiaComplianceAssessmentModal';
+import { PartnerCoPilotAdminView } from './components/PartnerCoPilotAdminView';
 import { CsvImportModal } from './components/CsvImportModal';
-import { Database, RefreshCw, Upload, LogOut, Sparkles, CheckCircle2, AlertOctagon, Download, ChevronRight, Lock, Terminal, Minimize2, Maximize2, Activity, Scale, Globe, CheckCircle, Target, ShieldAlert, ArrowRight, Check, Truck, Info, RotateCcw, Sliders, XCircle, Building2, MapPin, ChevronDown, ChevronUp, EyeOff, Filter, Layers, FileSpreadsheet, Calculator, BookOpen, Smartphone } from 'lucide-react';
+import { Database, RefreshCw, Upload, LogOut, Sparkles, CheckCircle2, AlertOctagon, Download, ChevronRight, Lock, Terminal, Minimize2, Maximize2, Activity, Scale, Globe, CheckCircle, Target, ShieldAlert, ArrowRight, Check, Truck, Info, RotateCcw, Sliders, XCircle, Building2, MapPin, ChevronDown, ChevronUp, EyeOff, Filter, Layers, FileSpreadsheet, Calculator, BookOpen, Smartphone, Wifi, WifiOff, Save, HardDrive, Users, Droplets } from 'lucide-react';
 import jsPDF from 'jspdf';
 import { sanitizeInputText } from './utils/sanitizer';
 import { DailyComplianceData } from './types';
@@ -386,7 +388,7 @@ export const appendLedgerRecords = async (
 };
 
 // --- Inline Types ---
-export type Page = 'home' | 'solutions' | 'inspector' | 'academy' | 'handover' | 'outreach' | 'blog';
+export type Page = 'home' | 'solutions' | 'inspector' | 'academy' | 'handover' | 'outreach' | 'blog' | 'zambia-assessment' | 'partner-copilot';
 
 export type IconComponent = React.FC<React.SVGProps<SVGSVGElement>>;
 
@@ -4582,7 +4584,29 @@ const AppNavbar: React.FC<AppNavbarProps> = ({
             <span>SHEQ Academy</span>
           </button>
 
-          {/* 4. Solutions Dropdown */}
+          {/* 4. Zambia Mining Diagnostic Nav Link */}
+          <button
+            onClick={() => {
+              setPage('zambia-assessment');
+              if (typeof window !== 'undefined') {
+                try {
+                  window.history.pushState(null, '', '#zambia-assessment');
+                } catch {}
+              }
+            }}
+            className={`px-3 py-1.5 rounded-xl text-xs font-bold transition cursor-pointer flex items-center gap-1.5 ${
+              currentPage === 'zambia-assessment'
+                ? 'bg-amber-600 text-white font-extrabold shadow-sm'
+                : 'text-amber-300 hover:text-white hover:bg-slate-800'
+            }`}
+            title="Zambian Mining Compliance Readiness Assessment (15-Point Lead Magnet)"
+          >
+            <Scale className="w-3.5 h-3.5 text-amber-400" />
+            <span>Zambia Diagnostic</span>
+            <span className="hidden xl:inline text-[9px] px-1.5 py-0.2 rounded-full bg-amber-500/20 text-amber-300 font-mono font-bold">15-PT</span>
+          </button>
+
+          {/* 5. Solutions Dropdown */}
           <div 
             ref={dropdownRef}
             className="relative"
@@ -4592,7 +4616,7 @@ const AppNavbar: React.FC<AppNavbarProps> = ({
             <button
               onClick={() => setIsSolutionsOpen(!isSolutionsOpen)}
               className={`px-3 py-1.5 rounded-xl text-xs font-bold transition cursor-pointer flex items-center gap-1.5 ${
-                currentPage === 'solutions' || currentPage === 'handover' || isSolutionsOpen
+                currentPage === 'solutions' || currentPage === 'handover' || currentPage === 'partner-copilot' || isSolutionsOpen
                   ? 'bg-slate-800 text-white border border-slate-700 font-extrabold'
                   : 'text-slate-300 hover:text-white hover:bg-slate-800'
               }`}
@@ -4605,7 +4629,41 @@ const AppNavbar: React.FC<AppNavbarProps> = ({
 
             {/* Dropdown Menu */}
             {isSolutionsOpen && (
-              <div className="absolute left-0 mt-1 w-64 rounded-2xl bg-slate-900 border border-slate-800 shadow-2xl p-2 z-50 text-slate-200 animate-fade-in space-y-1">
+              <div className="absolute left-0 mt-1 w-68 rounded-2xl bg-slate-900 border border-slate-800 shadow-2xl p-2 z-50 text-slate-200 animate-fade-in space-y-1">
+                <button
+                  onClick={() => {
+                    setPage('zambia-assessment');
+                    setIsSolutionsOpen(false);
+                  }}
+                  className={`w-full text-left px-3 py-2 rounded-xl text-xs font-bold flex items-center justify-between hover:bg-slate-800 hover:text-white transition cursor-pointer ${
+                    currentPage === 'zambia-assessment' ? 'bg-amber-600/20 text-amber-300 border border-amber-500/30' : 'text-slate-300'
+                  }`}
+                >
+                  <div className="flex items-center space-x-2">
+                    <Scale className="w-3.5 h-3.5 text-amber-400" />
+                    <span>Zambia Mining Diagnostic (15-PT)</span>
+                  </div>
+                  <ChevronDown className="w-3 h-3 -rotate-90 text-slate-500" />
+                </button>
+
+                <button
+                  onClick={() => {
+                    setPage('partner-copilot');
+                    setIsSolutionsOpen(false);
+                  }}
+                  className={`w-full text-left px-3 py-2 rounded-xl text-xs font-bold flex items-center justify-between hover:bg-slate-800 hover:text-white transition cursor-pointer ${
+                    currentPage === 'partner-copilot' ? 'bg-indigo-600/20 text-indigo-300 border border-indigo-500/30' : 'text-slate-300'
+                  }`}
+                >
+                  <div className="flex items-center space-x-2">
+                    <Users className="w-3.5 h-3.5 text-indigo-400" />
+                    <span>Partner Co-Pilot Intelligence</span>
+                  </div>
+                  <ChevronDown className="w-3 h-3 -rotate-90 text-slate-500" />
+                </button>
+
+                <div className="my-1 border-t border-slate-800/80" />
+
                 <button
                   onClick={() => {
                     setPage('handover');
@@ -4649,7 +4707,7 @@ const AppNavbar: React.FC<AppNavbarProps> = ({
             )}
           </div>
 
-          {/* 5. Blog */}
+          {/* 6. Blog */}
           <button
             onClick={() => {
               setPage('blog');
@@ -4771,6 +4829,32 @@ const AppNavbar: React.FC<AppNavbarProps> = ({
             >
               <BookOpen className="w-3.5 h-3.5 text-amber-400" />
               <span>Blog / Guides</span>
+            </button>
+
+            <button
+              onClick={() => {
+                setPage('zambia-assessment');
+                setIsMobileMenuOpen(false);
+              }}
+              className={`px-3 py-2 rounded-xl text-xs font-bold flex items-center space-x-2 ${
+                currentPage === 'zambia-assessment' ? 'bg-amber-600 text-white' : 'bg-slate-800 text-amber-300'
+              }`}
+            >
+              <Scale className="w-3.5 h-3.5 text-amber-400" />
+              <span>Zambia Diagnostic</span>
+            </button>
+
+            <button
+              onClick={() => {
+                setPage('partner-copilot');
+                setIsMobileMenuOpen(false);
+              }}
+              className={`px-3 py-2 rounded-xl text-xs font-bold flex items-center space-x-2 ${
+                currentPage === 'partner-copilot' ? 'bg-indigo-600 text-white' : 'bg-slate-800 text-indigo-300'
+              }`}
+            >
+              <Users className="w-3.5 h-3.5 text-indigo-400" />
+              <span>Partner Co-Pilot</span>
             </button>
           </div>
 
@@ -7520,6 +7604,73 @@ const LandingPage: React.FC<LandingPageProps> = ({
                 </div>
             </div>
 
+            {/* Zambian Mining Compliance Readiness Assessment (15-Point Lead Magnet Banner) */}
+            <section id="zambia-compliance-banner" className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+                <div className="relative overflow-hidden rounded-3xl bg-gradient-to-r from-slate-900 via-slate-900 to-amber-950/40 border-2 border-amber-500/30 p-6 sm:p-8 shadow-2xl backdrop-blur-xl">
+                    <div className="absolute top-0 right-0 w-80 h-80 bg-amber-500/10 rounded-full blur-3xl pointer-events-none" />
+                    <div className="relative z-10 flex flex-col lg:flex-row lg:items-center justify-between gap-6">
+                        <div className="space-y-3 max-w-2xl">
+                            <div className="flex flex-wrap items-center gap-2">
+                                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-500/10 border border-amber-500/30 text-amber-400 text-xs font-mono font-bold uppercase tracking-wider">
+                                    <Scale className="w-3.5 h-3.5" />
+                                    <span>Republic of Zambia</span>
+                                </span>
+                                <span className="text-[11px] font-mono text-emerald-400 bg-emerald-950/60 px-2.5 py-0.5 rounded-full border border-emerald-800/40">
+                                    Multi-Jurisdictional Architecture
+                                </span>
+                                <span className="text-[11px] font-mono text-slate-400 bg-slate-800 px-2 py-0.5 rounded-full">
+                                    MSD &bull; ZEMA &bull; OHS &bull; Local Content
+                                </span>
+                            </div>
+                            <h2 className="text-xl sm:text-3xl font-black text-white tracking-tight">
+                                Zambia Mining Compliance Readiness Assessment
+                            </h2>
+                            <p className="text-xs sm:text-sm text-slate-300 leading-relaxed">
+                                Complete our 15-Point Due-Diligence Lead Magnet to benchmark statutory appointments (Form MSD-08 / MSD-14), ZEMA SI 112 aquatic effluent limits, MBOD Silicosis medical passports, and 51% Citizen Equity supply chain quotas across the Copperbelt.
+                            </p>
+                            <div className="pt-1 flex flex-wrap items-center gap-3">
+                                <button
+                                    onClick={() => setPage('zambia-assessment')}
+                                    className="px-5 py-2.5 rounded-xl bg-amber-600 hover:bg-amber-500 text-white font-black text-xs transition flex items-center gap-2 shadow-lg shadow-amber-950/50 cursor-pointer"
+                                >
+                                    <span>Launch 15-Point Diagnostic Assessment</span>
+                                    <ArrowRight className="w-4 h-4" />
+                                </button>
+                                <button
+                                    onClick={() => setPage('partner-copilot')}
+                                    className="px-4 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold text-xs transition flex items-center gap-2 border border-slate-700 cursor-pointer"
+                                >
+                                    <Users className="w-3.5 h-3.5 text-indigo-400" />
+                                    <span>Partner Co-Pilot Console</span>
+                                </button>
+                            </div>
+                        </div>
+
+                        <div className="shrink-0 bg-slate-950/80 border border-slate-800 rounded-2xl p-5 space-y-3 min-w-[260px]">
+                            <div className="text-[11px] font-mono uppercase text-slate-400 font-bold">Statutory Coverage</div>
+                            <div className="space-y-2 text-xs">
+                                <div className="flex items-center justify-between gap-3 text-slate-200">
+                                    <span className="flex items-center gap-1.5"><Droplets className="w-3.5 h-3.5 text-cyan-400" /> ZEMA SI 112 Decant:</span>
+                                    <span className="font-mono text-emerald-400 font-bold">VERIFIED</span>
+                                </div>
+                                <div className="flex items-center justify-between gap-3 text-slate-200">
+                                    <span className="flex items-center gap-1.5"><Flame className="w-3.5 h-3.5 text-amber-400" /> MSD Kitwe MSR:</span>
+                                    <span className="font-mono text-emerald-400 font-bold">VERIFIED</span>
+                                </div>
+                                <div className="flex items-center justify-between gap-3 text-slate-200">
+                                    <span className="flex items-center gap-1.5"><ShieldAlert className="w-3.5 h-3.5 text-rose-400" /> MBOD Silicosis:</span>
+                                    <span className="font-mono text-emerald-400 font-bold">VERIFIED</span>
+                                </div>
+                                <div className="flex items-center justify-between gap-3 text-slate-200">
+                                    <span className="flex items-center gap-1.5"><Layers className="w-3.5 h-3.5 text-indigo-400" /> Local Content:</span>
+                                    <span className="font-mono text-emerald-400 font-bold">VERIFIED</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
             {/* Industrial Safety File Cost & Stoppage Risk Calculator (Lead Magnet) */}
             <section id="savings-calculator" className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
                 <SafetySavingsCalculator 
@@ -9316,6 +9467,219 @@ Safety index and terminal clearance verified. The audit record status has been u
         }
     });
 
+    // --- Inspector Terminal Offline Audit Notes Engine & Synchronization ---
+    const [terminalAuditNoteInput, setTerminalAuditNoteInput] = useState<string>(() => {
+        return localStorage.getItem('melotwo_inspector_terminal_note_draft') || '';
+    });
+    const [offlineAuditNotesList, setOfflineAuditNotesList] = useState<{
+        id: string;
+        text: string;
+        timestamp: number;
+        date: string;
+        operator?: string;
+        terminalId?: string;
+        category?: string;
+        severity?: string;
+        status?: string;
+        violationVector?: string;
+    }[]>(() => {
+        try {
+            const saved = localStorage.getItem('melotwo_offline_audit_notes');
+            if (saved) {
+                const parsed = JSON.parse(saved);
+                if (Array.isArray(parsed)) return parsed;
+            }
+        } catch (e) {}
+        return [];
+    });
+    const [isSimulatedOffline, setIsSimulatedOffline] = useState<boolean>(false);
+    const [offlineSyncFeedback, setOfflineSyncFeedback] = useState<string | null>(null);
+    const [isSyncingOfflineNotes, setIsSyncingOfflineNotes] = useState<boolean>(false);
+    const [isOfflineNoteSaving, setIsOfflineNoteSaving] = useState<boolean>(false);
+
+    const isEffectivelyOnline = isOnline && !isSimulatedOffline;
+
+    // Flush & synchronize offline audit notes from localStorage directly into the Compliance Ledger
+    const syncOfflineNotesToLedger = useCallback(async () => {
+        const rawStored = localStorage.getItem('melotwo_offline_audit_notes');
+        if (!rawStored) return;
+        let storedNotes: any[] = [];
+        try {
+            storedNotes = JSON.parse(rawStored);
+            if (!Array.isArray(storedNotes) || storedNotes.length === 0) return;
+        } catch (e) {
+            return;
+        }
+
+        setIsSyncingOfflineNotes(true);
+        console.log(`[Offline Sync] Restored connection detected. Syncing ${storedNotes.length} offline audit notes to compliance ledger...`);
+
+        const newRecords: ComplianceLedgerRow[] = storedNotes.map(n => ({
+            date: n.date || new Date(n.timestamp || Date.now()).toISOString().split('T')[0],
+            operator: n.operator || user?.displayName || 'Field Inspector',
+            terminalId: n.terminalId || 'TERM-UNDERGROUND',
+            riskCategory: n.category || 'Field Audit Note',
+            violationVector: n.violationVector || 'MHSA Statutory Offline Audit',
+            severityLevel: n.severity || 'Medium',
+            auditStatus: n.status || 'Action Required',
+            detailedNotes: n.text
+        }));
+
+        try {
+            if (token && ledgerId) {
+                for (const rec of newRecords) {
+                    await appendLedgerRecord(token, ledgerId, rec);
+                }
+                const fetched = await fetchLedgerRecords(token, ledgerId);
+                setLedgerLogs(fetched);
+            } else {
+                setLedgerLogs(prevLogs => {
+                    const combined = [...newRecords, ...prevLogs];
+                    localStorage.setItem('melotwo_sandbox_logs', JSON.stringify(combined));
+                    return combined;
+                });
+            }
+
+            // Successfully synced all pending offline audit notes: clear localStorage
+            localStorage.removeItem('melotwo_offline_audit_notes');
+            setOfflineAuditNotesList([]);
+            setOfflineSyncFeedback(`Connection restored! Successfully synced ${newRecords.length} offline audit note${newRecords.length === 1 ? '' : 's'} from localStorage to compliance ledger.`);
+            setTimeout(() => setOfflineSyncFeedback(null), 6000);
+        } catch (err: any) {
+            console.error('[Offline Sync] Failed to flush offline notes to ledger:', err);
+            setOfflineSyncFeedback('Sync retry scheduled: unable to flush offline notes to remote ledger.');
+            setTimeout(() => setOfflineSyncFeedback(null), 5000);
+        } finally {
+            setIsSyncingOfflineNotes(false);
+        }
+    }, [token, ledgerId, user?.displayName]);
+
+    // Window event listener for network online restoration
+    useEffect(() => {
+        const handleOnlineEvent = () => {
+            console.log('[OfflineSync] Browser online event fired.');
+            syncOfflineNotesToLedger();
+        };
+
+        window.addEventListener('online', handleOnlineEvent);
+        return () => {
+            window.removeEventListener('online', handleOnlineEvent);
+        };
+    }, [syncOfflineNotesToLedger]);
+
+    // Trigger auto-sync when connection transitions to effectively online
+    const prevOnlineStateRef = useRef(isEffectivelyOnline);
+    useEffect(() => {
+        if (!prevOnlineStateRef.current && isEffectivelyOnline) {
+            console.log('[OfflineSync] Connection restored. Synchronizing queued offline notes to ledger.');
+            syncOfflineNotesToLedger();
+        }
+        prevOnlineStateRef.current = isEffectivelyOnline;
+    }, [isEffectivelyOnline, syncOfflineNotesToLedger]);
+
+    // Initial mount sync check if online and pending notes exist in localStorage
+    useEffect(() => {
+        if (isEffectivelyOnline) {
+            const rawStored = localStorage.getItem('melotwo_offline_audit_notes');
+            if (rawStored) {
+                try {
+                    const parsed = JSON.parse(rawStored);
+                    if (Array.isArray(parsed) && parsed.length > 0) {
+                        syncOfflineNotesToLedger();
+                    }
+                } catch (e) {}
+            }
+        }
+    }, [isEffectivelyOnline, syncOfflineNotesToLedger]);
+
+    // Handler to save audit note: saves to localStorage if offline, or commits directly if online
+    const handleSaveTerminalAuditNote = async (overrideText?: string) => {
+        const textToSave = (overrideText !== undefined ? overrideText : terminalAuditNoteInput).trim();
+        if (!textToSave) return;
+
+        setIsOfflineNoteSaving(true);
+
+        if (!isEffectivelyOnline) {
+            // App is OFFLINE: Save audit notes to localStorage
+            const newOfflineNote = {
+                id: `offline-note-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`,
+                text: textToSave,
+                timestamp: Date.now(),
+                date: parsedDate || new Date().toISOString().split('T')[0],
+                operator: parsedOperator || user?.displayName || 'Field Inspector',
+                terminalId: parsedTerminalId || 'TERM-UNDERGROUND',
+                category: parsedCategory || 'Field Audit Note',
+                severity: parsedSeverity || 'Medium',
+                status: parsedStatus || 'Action Required',
+                violationVector: parsedViolationVector || 'MHSA / SANS Offline Inspection'
+            };
+
+            const existingRaw = localStorage.getItem('melotwo_offline_audit_notes');
+            let currentNotes: any[] = [];
+            try {
+                if (existingRaw) currentNotes = JSON.parse(existingRaw);
+            } catch (e) {}
+            const updatedNotes = [newOfflineNote, ...currentNotes];
+            localStorage.setItem('melotwo_offline_audit_notes', JSON.stringify(updatedNotes));
+            localStorage.removeItem('melotwo_inspector_terminal_note_draft');
+            setOfflineAuditNotesList(updatedNotes);
+            setTerminalAuditNoteInput('');
+            setOfflineSyncFeedback(`Audit note securely saved to localStorage (Offline Mode: ${updatedNotes.length} pending sync to ledger).`);
+            setTimeout(() => setOfflineSyncFeedback(null), 5000);
+        } else {
+            // App is ONLINE: commit directly to ledger
+            const newRecord: ComplianceLedgerRow = {
+                date: parsedDate || new Date().toISOString().split('T')[0],
+                operator: parsedOperator || user?.displayName || 'Field Inspector',
+                terminalId: parsedTerminalId || 'TERM-LIVE',
+                riskCategory: parsedCategory || 'Field Audit Note',
+                violationVector: parsedViolationVector || 'General SANS / MHSA',
+                severityLevel: parsedSeverity || 'Medium',
+                auditStatus: parsedStatus || 'Action Required',
+                detailedNotes: textToSave
+            };
+
+            try {
+                if (token && ledgerId) {
+                    await appendLedgerRecord(token, ledgerId, newRecord);
+                    const records = await fetchLedgerRecords(token, ledgerId);
+                    setLedgerLogs(records);
+                } else {
+                    const updated = [newRecord, ...ledgerLogs];
+                    setLedgerLogs(updated);
+                    localStorage.setItem('melotwo_sandbox_logs', JSON.stringify(updated));
+                }
+                setTerminalAuditNoteInput('');
+                localStorage.removeItem('melotwo_inspector_terminal_note_draft');
+                setOfflineSyncFeedback('Audit note committed directly to compliance ledger.');
+                setTimeout(() => setOfflineSyncFeedback(null), 4000);
+            } catch (err: any) {
+                console.warn('[Terminal Audit] Direct ledger append failed, buffering to localStorage:', err);
+                const fallbackNote = {
+                    id: `offline-note-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`,
+                    text: textToSave,
+                    timestamp: Date.now(),
+                    date: parsedDate || new Date().toISOString().split('T')[0],
+                    operator: parsedOperator || user?.displayName || 'Field Inspector',
+                    terminalId: parsedTerminalId || 'TERM-UNDERGROUND',
+                    category: parsedCategory || 'Field Audit Note',
+                    severity: parsedSeverity || 'Medium',
+                    status: parsedStatus || 'Action Required',
+                    violationVector: parsedViolationVector || 'MHSA / SANS Offline Inspection'
+                };
+                const updated = [fallbackNote, ...offlineAuditNotesList];
+                localStorage.setItem('melotwo_offline_audit_notes', JSON.stringify(updated));
+                setOfflineAuditNotesList(updated);
+                setTerminalAuditNoteInput('');
+                localStorage.removeItem('melotwo_inspector_terminal_note_draft');
+                setOfflineSyncFeedback('Network error: Audit note saved to localStorage. Will sync once connection is restored.');
+                setTimeout(() => setOfflineSyncFeedback(null), 5000);
+            }
+        }
+
+        setIsOfflineNoteSaving(false);
+    };
+
     // Ledger Search & Filtering State
     const [ledgerSearchQuery, setLedgerSearchQuery] = useState('');
     const [searchMode, setSearchMode] = useState<'keyword' | 'semantic' | 'hybrid'>('hybrid');
@@ -9985,6 +10349,34 @@ Safety index and terminal clearance verified. The audit record status has been u
         };
 
         try {
+            if (!isEffectivelyOnline) {
+                // Save audit notes to localStorage when offline
+                const offlineNote = {
+                    id: `offline-note-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`,
+                    text: parsedNotes || `${parsedCategory} audit: ${parsedViolationVector || 'General standard check'}`,
+                    timestamp: Date.now(),
+                    date: parsedDate,
+                    operator: parsedOperator || user?.displayName || 'Field Inspector',
+                    terminalId: parsedTerminalId || 'TERM-UNDERGROUND',
+                    category: parsedCategory,
+                    severity: parsedSeverity,
+                    status: parsedStatus,
+                    violationVector: parsedViolationVector
+                };
+                const existingRaw = localStorage.getItem('melotwo_offline_audit_notes');
+                let cur: any[] = [];
+                try { if (existingRaw) cur = JSON.parse(existingRaw); } catch (e) {}
+                const updatedNotes = [offlineNote, ...cur];
+                localStorage.setItem('melotwo_offline_audit_notes', JSON.stringify(updatedNotes));
+                setOfflineAuditNotesList(updatedNotes);
+                setCommitSuccess(true);
+                setOfflineSyncFeedback('Offline Mode Active: Audit notes saved to localStorage. Will automatically sync to ledger once connection is restored.');
+                setTimeout(() => setCommitSuccess(false), 3500);
+                setTimeout(() => setOfflineSyncFeedback(null), 5000);
+                setScanSuccess(false);
+                return;
+            }
+
             if (token && ledgerId) {
                 await appendLedgerRecord(token, ledgerId, newRecord);
                 const records = await fetchLedgerRecords(token, ledgerId);
@@ -9998,8 +10390,29 @@ Safety index and terminal clearance verified. The audit record status has been u
             setTimeout(() => setCommitSuccess(false), 3000);
             setScanSuccess(false);
         } catch (err: any) {
-            console.error('Commit to ledger failed:', err);
-            alert(`Failed to commit record: ${err.message || 'Unknown error'}`);
+            console.warn('Commit to remote ledger failed, buffering to localStorage:', err);
+            const fallbackNote = {
+                id: `offline-note-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`,
+                text: parsedNotes || `${parsedCategory} audit`,
+                timestamp: Date.now(),
+                date: parsedDate,
+                operator: parsedOperator || user?.displayName || 'Field Inspector',
+                terminalId: parsedTerminalId || 'TERM-UNDERGROUND',
+                category: parsedCategory,
+                severity: parsedSeverity,
+                status: parsedStatus,
+                violationVector: parsedViolationVector
+            };
+            const existingRaw = localStorage.getItem('melotwo_offline_audit_notes');
+            let cur: any[] = [];
+            try { if (existingRaw) cur = JSON.parse(existingRaw); } catch (e) {}
+            const updatedNotes = [fallbackNote, ...cur];
+            localStorage.setItem('melotwo_offline_audit_notes', JSON.stringify(updatedNotes));
+            setOfflineAuditNotesList(updatedNotes);
+            setCommitSuccess(true);
+            setOfflineSyncFeedback('Network error: record saved to offline localStorage. Will sync once connection is restored.');
+            setTimeout(() => setCommitSuccess(false), 3500);
+            setTimeout(() => setOfflineSyncFeedback(null), 5000);
         } finally {
             setCommitLoading(false);
         }
@@ -11290,6 +11703,292 @@ Safety index and terminal clearance verified. The audit record status has been u
                         {/* Field Inspector Data Entry Suite (Inspector View Only) */}
                         {viewMode === 'inspector' && (
                             <>
+                                {/* Inspector Terminal — Offline Audit Notes Logging Console */}
+                                <div id="inspector-terminal-offline-notes" className="bg-slate-900 border border-slate-800 rounded-3xl p-6 backdrop-blur-xl shadow-2xl space-y-4">
+                                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-800/80 pb-4">
+                                        <div className="flex items-center gap-3">
+                                            <div className="p-2.5 bg-amber-500/10 border border-amber-500/30 rounded-2xl text-amber-400 shrink-0">
+                                                <Terminal className="w-5 h-5" />
+                                            </div>
+                                            <div>
+                                                <div className="flex items-center gap-2">
+                                                    <span className="text-[10px] font-bold text-amber-400 font-mono uppercase tracking-widest block">
+                                                        Underground &amp; Deep-Level Audit Console
+                                                    </span>
+                                                    <span className="text-[9px] font-mono px-2 py-0.5 rounded-full border bg-slate-950 text-slate-400 border-slate-800">
+                                                        MHSA Sec 10 &amp; 16(2)
+                                                    </span>
+                                                </div>
+                                                <h3 className="text-base font-extrabold text-white tracking-tight flex items-center gap-2">
+                                                    <span>Inspector Terminal — Offline Audit Notes</span>
+                                                </h3>
+                                            </div>
+                                        </div>
+
+                                        {/* Status Indicators & Simulation Controls */}
+                                        <div className="flex flex-wrap items-center gap-2">
+                                            {/* Live Connection / Offline Mode Badge */}
+                                            <div className={`flex items-center gap-2 px-3 py-1.5 rounded-xl border text-xs font-mono font-bold transition-all ${
+                                                !isEffectivelyOnline
+                                                    ? 'bg-amber-500/10 border-amber-500/40 text-amber-300 shadow-md shadow-amber-500/5'
+                                                    : 'bg-emerald-500/10 border-emerald-500/40 text-emerald-400'
+                                            }`}>
+                                                {!isEffectivelyOnline ? (
+                                                    <>
+                                                        <WifiOff className="w-3.5 h-3.5 text-amber-400 animate-pulse" />
+                                                        <span>OFFLINE (Saving to localStorage)</span>
+                                                    </>
+                                                ) : (
+                                                    <>
+                                                        <Wifi className="w-3.5 h-3.5 text-emerald-400" />
+                                                        <span>ONLINE (Ledger Sync Gateway)</span>
+                                                    </>
+                                                )}
+                                            </div>
+
+                                            {/* Offline Simulator Toggle Button for testing / deep stope simulation */}
+                                            <button
+                                                type="button"
+                                                onClick={() => {
+                                                    const nextSim = !isSimulatedOffline;
+                                                    setIsSimulatedOffline(nextSim);
+                                                    if (!nextSim) {
+                                                        // Turning back online: trigger sync
+                                                        setTimeout(() => syncOfflineNotesToLedger(), 100);
+                                                    }
+                                                }}
+                                                className={`text-[10px] font-mono font-bold px-3 py-1.5 rounded-xl border transition-all cursor-pointer flex items-center gap-1.5 ${
+                                                    isSimulatedOffline
+                                                        ? 'bg-rose-500/20 text-rose-300 border-rose-500/50 hover:bg-rose-500/30'
+                                                        : 'bg-slate-950 text-slate-400 hover:text-slate-200 border-slate-800 hover:border-slate-700'
+                                                }`}
+                                                title="Toggle simulated underground network disconnect to test offline localStorage saving and automatic ledger synchronization upon reconnection"
+                                            >
+                                                {isSimulatedOffline ? (
+                                                    <>
+                                                        <span className="w-2 h-2 rounded-full bg-rose-500 animate-ping" />
+                                                        <span>Simulating Underground (Offline)</span>
+                                                    </>
+                                                ) : (
+                                                    <>
+                                                        <span>Simulate Offline Mode</span>
+                                                    </>
+                                                )}
+                                            </button>
+
+                                            {/* Sync Now Button if pending offline notes */}
+                                            {offlineAuditNotesList.length > 0 && (
+                                                <button
+                                                    type="button"
+                                                    onClick={syncOfflineNotesToLedger}
+                                                    disabled={isSyncingOfflineNotes || !isEffectivelyOnline}
+                                                    className="text-[10px] font-bold font-mono px-3 py-1.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 transition-all cursor-pointer flex items-center gap-1.5 disabled:opacity-40 disabled:cursor-not-allowed shadow-md shadow-amber-500/10"
+                                                >
+                                                    <RefreshCw className={`w-3 h-3 ${isSyncingOfflineNotes ? 'animate-spin' : ''}`} />
+                                                    <span>Sync {offlineAuditNotesList.length} Stored to Ledger</span>
+                                                </button>
+                                            )}
+                                        </div>
+                                    </div>
+
+                                    {/* Real-time Feedback Banner */}
+                                    {offlineSyncFeedback && (
+                                        <div className="p-3 bg-amber-500/10 border border-amber-500/30 rounded-xl text-xs font-mono text-amber-200 flex items-center justify-between gap-2 animate-fade-in">
+                                            <div className="flex items-center gap-2">
+                                                <CheckCircle2 className="w-4 h-4 text-amber-400 shrink-0" />
+                                                <span>{offlineSyncFeedback}</span>
+                                            </div>
+                                            <button
+                                                type="button"
+                                                onClick={() => setOfflineSyncFeedback(null)}
+                                                className="text-amber-400 hover:text-white text-xs font-bold px-1.5 cursor-pointer"
+                                            >
+                                                ✕
+                                            </button>
+                                        </div>
+                                    )}
+
+                                    {/* Primary Text Input Field within Inspector Terminal */}
+                                    <div className="flex flex-col gap-2">
+                                        <div className="flex items-center justify-between">
+                                            <label 
+                                                htmlFor="inspector-terminal-audit-notes-input"
+                                                className="text-[11px] font-bold text-slate-300 uppercase tracking-wider font-mono flex items-center gap-2"
+                                            >
+                                                <HardDrive className="w-3.5 h-3.5 text-amber-400" />
+                                                <span>Inspector Terminal Audit Notes Input</span>
+                                                {!isEffectivelyOnline && (
+                                                    <span className="text-[9px] text-amber-400 bg-amber-500/10 border border-amber-500/20 px-2 py-0.5 rounded font-mono lowercase">
+                                                        • auto-saves to localstorage
+                                                    </span>
+                                                )}
+                                            </label>
+                                            <span className="text-[10px] text-slate-500 font-mono hidden sm:inline">
+                                                Press [Enter] or click Save Note to commit
+                                            </span>
+                                        </div>
+
+                                        <div className="flex flex-col sm:flex-row gap-2">
+                                            <div className="relative flex-1">
+                                                <input
+                                                    id="inspector-terminal-audit-notes-input"
+                                                    type="text"
+                                                    value={terminalAuditNoteInput}
+                                                    onChange={(e) => {
+                                                        setTerminalAuditNoteInput(e.target.value);
+                                                        localStorage.setItem('melotwo_inspector_terminal_note_draft', e.target.value);
+                                                    }}
+                                                    onKeyDown={(e) => {
+                                                        if (e.key === 'Enter') {
+                                                            e.preventDefault();
+                                                            handleSaveTerminalAuditNote();
+                                                        }
+                                                    }}
+                                                    placeholder={
+                                                        !isEffectivelyOnline
+                                                            ? "Offline: Enter audit notes (saves to localStorage, e.g., 'Shaft 2 intake velocity 0.42 m/s, SANS 10108 methane check passed')..."
+                                                            : "Enter inspector audit notes (e.g., 'Section 54 pre-audit: substations inspected, earthing continuous per SANS 10142-1')..."
+                                                    }
+                                                    className={`w-full bg-slate-950 border rounded-xl px-4 py-3 text-xs text-white focus:outline-none transition-all font-mono placeholder:text-slate-500 ${
+                                                        !isEffectivelyOnline
+                                                            ? 'border-amber-500/50 focus:border-amber-400 focus:ring-1 focus:ring-amber-500/20'
+                                                            : 'border-slate-800 focus:border-indigo-500'
+                                                    }`}
+                                                />
+                                            </div>
+                                            <button
+                                                type="button"
+                                                id="btn-save-terminal-audit-note"
+                                                onClick={() => handleSaveTerminalAuditNote()}
+                                                disabled={isOfflineNoteSaving || !terminalAuditNoteInput.trim()}
+                                                className={`inline-flex items-center justify-center gap-2 px-5 py-3 rounded-xl font-bold text-xs uppercase tracking-wider transition-all cursor-pointer font-mono shrink-0 shadow-lg disabled:opacity-40 disabled:cursor-not-allowed ${
+                                                    !isEffectivelyOnline
+                                                        ? 'bg-amber-500 hover:bg-amber-400 text-slate-950 shadow-amber-500/10'
+                                                        : 'bg-indigo-600 hover:bg-indigo-500 text-white shadow-indigo-600/10'
+                                                }`}
+                                            >
+                                                {isOfflineNoteSaving ? (
+                                                    <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                                                ) : !isEffectivelyOnline ? (
+                                                    <Save className="w-3.5 h-3.5" />
+                                                ) : (
+                                                    <Database className="w-3.5 h-3.5" />
+                                                )}
+                                                <span>{!isEffectivelyOnline ? 'Save to LocalStorage' : 'Save Note to Ledger'}</span>
+                                            </button>
+                                        </div>
+
+                                        {/* Quick Inspector Preset Tags */}
+                                        <div className="flex flex-wrap items-center gap-1.5 pt-1">
+                                            <span className="text-[9px] font-bold text-slate-500 uppercase font-mono mr-1">Quick Audit Tags:</span>
+                                            {[
+                                                'Methane <1.0% v/v Verified (SANS 10108)',
+                                                'Shaft 4 Ventilation Flow 0.65 m/s Compliant',
+                                                'Ex-d Flameproof Enclosure Sealed & Torqued',
+                                                'Emergency Egress Clear 1.2m Boundary Maintained',
+                                                'Section 16(2) Statutory Logbook Endorsed'
+                                            ].map((tag) => (
+                                                <button
+                                                    key={tag}
+                                                    type="button"
+                                                    onClick={() => {
+                                                        const newText = terminalAuditNoteInput ? `${terminalAuditNoteInput} | ${tag}` : tag;
+                                                        setTerminalAuditNoteInput(newText);
+                                                        localStorage.setItem('melotwo_inspector_terminal_note_draft', newText);
+                                                    }}
+                                                    className="px-2 py-0.5 rounded-lg bg-slate-950 hover:bg-slate-800 border border-slate-800 text-[10px] font-mono text-slate-400 hover:text-slate-200 transition-colors cursor-pointer"
+                                                >
+                                                    + {tag}
+                                                </button>
+                                            ))}
+                                        </div>
+                                    </div>
+
+                                    {/* Stored Offline Audit Notes Buffer Drawer */}
+                                    {offlineAuditNotesList.length > 0 && (
+                                        <div className="mt-4 p-4 bg-slate-950/90 border border-amber-500/25 rounded-2xl flex flex-col gap-3 font-mono">
+                                            <div className="flex items-center justify-between border-b border-slate-800/80 pb-2">
+                                                <div className="flex items-center gap-2">
+                                                    <span className="w-2 h-2 rounded-full bg-amber-400 animate-pulse" />
+                                                    <span className="text-xs font-bold text-amber-300">
+                                                        {offlineAuditNotesList.length} Offline Audit Note{offlineAuditNotesList.length === 1 ? '' : 's'} Stored in localStorage
+                                                    </span>
+                                                    <span className="text-[9px] bg-amber-500/10 border border-amber-500/30 text-amber-400 px-2 py-0.5 rounded">
+                                                        Queued for Ledger Sync
+                                                    </span>
+                                                </div>
+                                                <div className="flex items-center gap-2">
+                                                    {isEffectivelyOnline && (
+                                                        <button
+                                                            type="button"
+                                                            onClick={syncOfflineNotesToLedger}
+                                                            disabled={isSyncingOfflineNotes}
+                                                            className="text-[10px] font-bold text-slate-950 bg-amber-500 hover:bg-amber-400 px-3 py-1 rounded-lg transition-colors cursor-pointer flex items-center gap-1"
+                                                        >
+                                                            <RefreshCw className={`w-3 h-3 ${isSyncingOfflineNotes ? 'animate-spin' : ''}`} />
+                                                            Sync All Now
+                                                        </button>
+                                                    )}
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => {
+                                                            if (confirm('Clear all offline audit notes currently queued in localStorage?')) {
+                                                                localStorage.removeItem('melotwo_offline_audit_notes');
+                                                                setOfflineAuditNotesList([]);
+                                                            }
+                                                        }}
+                                                        className="text-[10px] text-slate-500 hover:text-rose-400 transition-colors cursor-pointer"
+                                                    >
+                                                        Clear Queue
+                                                    </button>
+                                                </div>
+                                            </div>
+
+                                            <div className="space-y-2 max-h-48 overflow-y-auto pr-1">
+                                                {offlineAuditNotesList.map((item, idx) => (
+                                                    <div
+                                                        key={item.id || idx}
+                                                        className="p-2.5 bg-slate-900/80 border border-slate-800 rounded-xl flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs"
+                                                    >
+                                                        <div className="flex-1 min-w-0">
+                                                            <p className="text-slate-200 font-sans text-xs break-words">{item.text}</p>
+                                                            <div className="flex flex-wrap items-center gap-2 text-[10px] text-slate-400 mt-1">
+                                                                <span>{new Date(item.timestamp).toLocaleTimeString()}</span>
+                                                                <span>•</span>
+                                                                <span>{item.terminalId || 'TERM-UNDERGROUND'}</span>
+                                                                <span>•</span>
+                                                                <span>{item.operator || 'Inspector'}</span>
+                                                                <span className="bg-amber-500/10 text-amber-400 border border-amber-500/20 px-1.5 py-0.2 rounded text-[9px]">
+                                                                    Buffered in localStorage
+                                                                </span>
+                                                            </div>
+                                                        </div>
+                                                        <button
+                                                            type="button"
+                                                            onClick={() => {
+                                                                const filtered = offlineAuditNotesList.filter(n => n.id !== item.id);
+                                                                localStorage.setItem('melotwo_offline_audit_notes', JSON.stringify(filtered));
+                                                                setOfflineAuditNotesList(filtered);
+                                                            }}
+                                                            className="text-slate-500 hover:text-rose-400 text-xs px-2 py-1 self-end sm:self-center cursor-pointer"
+                                                            title="Remove Note"
+                                                        >
+                                                            ✕
+                                                        </button>
+                                                    </div>
+                                                ))}
+                                            </div>
+
+                                            <div className="text-[10px] text-slate-400 flex flex-col sm:flex-row sm:items-center justify-between gap-1 pt-1">
+                                                <span>Notes remain safely preserved across page reloads in browser localStorage until connection is restored.</span>
+                                                {!isEffectivelyOnline && (
+                                                    <span className="text-amber-400 font-bold">Auto-sync armed: will flush to ledger upon reconnection</span>
+                                                )}
+                                            </div>
+                                        </div>
+                                    )}
+                                </div>
+
                                 {/* Digital Workplace Risk Assessment Matrix */}
                                 <WorkplaceHazardMatrix
                                     onHazardStateChange={(_states, criticalCount, penalty) => {
@@ -11859,6 +12558,7 @@ Safety index and terminal clearance verified. The audit record status has been u
                         {/* Zambian MHS & ZEMA Effluent Compliance Panel (Active for Mining / Zambian Operations) */}
                         {(selectedSector === 'mining' || (selectedSector as string) === 'zambia_mhs') && (
                             <ZambianMhsCompliancePanel 
+                                onOpenDiagnostic={() => setPage('zambia-assessment')}
                                 onApplyDirective={(directive) => {
                                     setParsedNotes((prev) => prev ? `${prev}\n\n${directive}` : directive);
                                     setTimeout(() => {
@@ -12989,6 +13689,22 @@ const App: React.FC = () => {
             if (rawPath.startsWith('/handover') || rawHash === '#handover') return 'handover';
             if (rawPath.startsWith('/outreach') || rawHash === '#outreach') return 'outreach';
             if (rawPath.startsWith('/solutions') || rawHash === '#solutions') return 'solutions';
+            if (
+                rawPath.startsWith('/zambia') || 
+                rawHash === '#zambia-assessment' || 
+                rawHash === '#zambia-diagnostic' || 
+                rawHash === '#zambia'
+            ) {
+                return 'zambia-assessment';
+            }
+            if (
+                rawPath.startsWith('/partner') || 
+                rawHash === '#partner-copilot' || 
+                rawHash === '#partner-admin' || 
+                rawHash === '#copilot'
+            ) {
+                return 'partner-copilot';
+            }
         }
         return 'home';
     });
@@ -13113,6 +13829,22 @@ const App: React.FC = () => {
                     new URLSearchParams(window.location.search).has('post')
                 ));
 
+            // 4. Check Zambia Diagnostic route / hash
+            const isZambiaRoute = 
+                rawHash === '#zambia-assessment' || 
+                rawHash === '#zambia-diagnostic' || 
+                rawHash === '#zambia' ||
+                rawHash.startsWith('#zambia') ||
+                (typeof window !== 'undefined' && window.location.pathname.startsWith('/zambia'));
+
+            // 5. Check Partner Co-Pilot route / hash
+            const isPartnerRoute = 
+                rawHash === '#partner-copilot' || 
+                rawHash === '#partner-admin' || 
+                rawHash === '#copilot' ||
+                rawHash.startsWith('#partner') ||
+                (typeof window !== 'undefined' && window.location.pathname.startsWith('/partner'));
+
             if (isTenderHash) {
                 setCurrentPage('home');
                 setIsCostModalOpen(false);
@@ -13133,6 +13865,14 @@ const App: React.FC = () => {
                 window.scrollTo({ top: 0, behavior: 'smooth' });
             } else if (isBlogRoute) {
                 setCurrentPage('blog');
+                setIsTenderWizardOpen(false);
+                setIsCostModalOpen(false);
+            } else if (isZambiaRoute) {
+                setCurrentPage('zambia-assessment');
+                setIsTenderWizardOpen(false);
+                setIsCostModalOpen(false);
+            } else if (isPartnerRoute) {
+                setCurrentPage('partner-copilot');
                 setIsTenderWizardOpen(false);
                 setIsCostModalOpen(false);
             }
@@ -13264,6 +14004,21 @@ const App: React.FC = () => {
         setPage={setCurrentPage}
         onOpenTenderWizard={handleOpenTenderWizard}
         onOpenCostCalculator={handleOpenCostModal}
+      />
+    );
+  } else if (currentPage === 'zambia-assessment') {
+    return (
+      <ZambiaComplianceAssessmentModal
+        onClose={() => setCurrentPage('home')}
+        onOpenTenderWizard={handleOpenTenderWizard}
+      />
+    );
+  } else if (currentPage === 'partner-copilot') {
+    return (
+      <PartnerCoPilotAdminView
+        onBack={() => setCurrentPage('home')}
+        onLaunchDiagnostic={() => setCurrentPage('zambia-assessment')}
+        onOpenTenderWizard={handleOpenTenderWizard}
       />
     );
   }

@@ -3,12 +3,18 @@
  * 
  * Statutory Configuration for:
  * - Mines and Minerals Development Act No. 11 of 2015
- * - Mining Regulations (MSR) under the Mines Safety Department (MSD)
+ * - Mining Regulations (MSR) under the Mines Safety Department (MSD Kitwe)
  * - Zambia Environmental Management Agency (ZEMA) SI 112 Effluent Standards
- * - Workers' Compensation & MBOD (Silicosis Bureau) Health Directives
+ * - Workers' Compensation (WCFCB) & MBOD (Silicosis Bureau) Health Directives
+ * - Citizen Economic Empowerment & Local Content Supply Chain Standards
+ * - Tier-1 Mining House Gate Pass & Contractor Access Rules
  */
 
 import zambianRulesJson from './regulatoryRules.zambia.json';
+
+export type ZambianAuthorityTag = 'ZEMA' | 'MSD' | 'OHS' | 'LOCAL_CONTENT' | 'TIER1_RULES';
+
+export type ComplianceVerificationStatus = 'VERIFIED' | 'PENDING_VALIDATION';
 
 export interface RegulatoryThreshold {
   [key: string]: number | string;
@@ -16,6 +22,9 @@ export interface RegulatoryThreshold {
 
 export interface SubterraneanHazardRule {
   rule_id: string;
+  jurisdiction?: string;
+  authority_tag?: ZambianAuthorityTag;
+  verification_status?: ComplianceVerificationStatus;
   category: 'ATMOSPHERE_AND_GASES' | 'SUBTERRANEAN_VENTILATION' | 'STRATA_CONTROL_AND_ROCKFALL' | 'HIGH_VOLTAGE_AND_ELECTRICAL' | 'BLASTING_AND_EXPLOSIVES' | 'EMERGENCY_PREPAREDNESS';
   name: string;
   parameter_code: string;
@@ -27,6 +36,9 @@ export interface SubterraneanHazardRule {
 
 export interface ZemaEffluentRule {
   rule_id: string;
+  jurisdiction?: string;
+  authority_tag?: ZambianAuthorityTag;
+  verification_status?: ComplianceVerificationStatus;
   category: 'WATER_QUALITY' | 'HEAVY_METALS' | 'SUSPENDED_SOLIDS' | 'TOXIC_COMPOUNDS' | 'TAILINGS_STORAGE_FACILITIES' | 'HAZARDOUS_SUBSTANCES';
   name: string;
   parameter_code: string;
@@ -51,6 +63,9 @@ export interface ContractorAppointment {
 
 export interface ContractorOnboardingRule {
   rule_id: string;
+  jurisdiction?: string;
+  authority_tag?: ZambianAuthorityTag;
+  verification_status?: ComplianceVerificationStatus;
   category: 'LOCAL_CONTENT_OWNERSHIP' | 'LOCAL_EMPLOYMENT' | 'CONTRACTOR_LEGAL_STANDING' | 'MINING_SAFETY_COMPETENCY' | 'OCCUPATIONAL_HEALTH' | 'SAFETY_FILE_COMPILATION';
   name: string;
   parameter_code: string;
@@ -65,6 +80,29 @@ export interface ContractorOnboardingRule {
   enforcement_protocol: Record<string, string>;
 }
 
+export interface Tier1AccessRule {
+  rule_id: string;
+  jurisdiction?: string;
+  authority_tag?: ZambianAuthorityTag;
+  verification_status?: ComplianceVerificationStatus;
+  category: string;
+  name: string;
+  parameter_code: string;
+  mandatory_checks?: string[];
+  statutory_reference?: string;
+  enforcement_protocol: Record<string, string>;
+}
+
+export interface ZambianRegulatoryAuthority {
+  code: string;
+  name: string;
+  ministry: string;
+  headquarters: string;
+  statutory_act: string;
+  authority_type?: string;
+  default_verification_status?: ComplianceVerificationStatus;
+}
+
 export interface ZambianRegulatoryConfig {
   jurisdiction: string;
   jurisdiction_name: string;
@@ -74,13 +112,7 @@ export interface ZambianRegulatoryConfig {
   last_updated: string;
   title: string;
   description: string;
-  regulatory_authorities: Array<{
-    code: string;
-    name: string;
-    ministry: string;
-    headquarters: string;
-    statutory_act: string;
-  }>;
+  regulatory_authorities: ZambianRegulatoryAuthority[];
   modules: {
     subterranean_hazards: {
       module_id: string;
@@ -103,6 +135,13 @@ export interface ZambianRegulatoryConfig {
       risk_severity: string;
       rules: ContractorOnboardingRule[];
     };
+    tier1_mining_house_access_rules?: {
+      module_id: string;
+      title: string;
+      statutory_basis: string;
+      risk_severity: string;
+      rules: Tier1AccessRule[];
+    };
   };
 }
 
@@ -110,6 +149,95 @@ export interface ZambianRegulatoryConfig {
  * Strongly typed raw JSON configuration
  */
 export const ZAMBIAN_REGULATORY_CONFIG: ZambianRegulatoryConfig = zambianRulesJson as unknown as ZambianRegulatoryConfig;
+
+/**
+ * Multi-Jurisdictional Query Helpers
+ */
+export function getZambianRulesByAuthority(authorityTag?: ZambianAuthorityTag): Array<{
+  rule_id: string;
+  authority_tag: ZambianAuthorityTag;
+  verification_status: ComplianceVerificationStatus;
+  name: string;
+  category: string;
+  statutory_reference: string;
+}> {
+  const all: Array<{
+    rule_id: string;
+    authority_tag: ZambianAuthorityTag;
+    verification_status: ComplianceVerificationStatus;
+    name: string;
+    category: string;
+    statutory_reference: string;
+  }> = [];
+
+  // Subterranean
+  ZAMBIAN_REGULATORY_CONFIG.modules.subterranean_hazards.rules.forEach(r => {
+    all.push({
+      rule_id: r.rule_id,
+      authority_tag: (r.authority_tag || 'MSD') as ZambianAuthorityTag,
+      verification_status: (r.verification_status || 'VERIFIED') as ComplianceVerificationStatus,
+      name: r.name,
+      category: r.category,
+      statutory_reference: r.statutory_reference
+    });
+  });
+
+  // ZEMA
+  ZAMBIAN_REGULATORY_CONFIG.modules.zema_environmental_effluent.rules.forEach(r => {
+    all.push({
+      rule_id: r.rule_id,
+      authority_tag: (r.authority_tag || 'ZEMA') as ZambianAuthorityTag,
+      verification_status: (r.verification_status || 'VERIFIED') as ComplianceVerificationStatus,
+      name: r.name,
+      category: r.category,
+      statutory_reference: r.statutory_reference
+    });
+  });
+
+  // Contractor / Local Content
+  ZAMBIAN_REGULATORY_CONFIG.modules.contractor_onboarding_and_local_content.rules.forEach(r => {
+    all.push({
+      rule_id: r.rule_id,
+      authority_tag: (r.authority_tag || 'LOCAL_CONTENT') as ZambianAuthorityTag,
+      verification_status: (r.verification_status || 'VERIFIED') as ComplianceVerificationStatus,
+      name: r.name,
+      category: r.category,
+      statutory_reference: r.statutory_reference || 'MMDA 2015'
+    });
+  });
+
+  // Tier 1
+  if (ZAMBIAN_REGULATORY_CONFIG.modules.tier1_mining_house_access_rules) {
+    ZAMBIAN_REGULATORY_CONFIG.modules.tier1_mining_house_access_rules.rules.forEach(r => {
+      all.push({
+        rule_id: r.rule_id,
+        authority_tag: (r.authority_tag || 'TIER1_RULES') as ZambianAuthorityTag,
+        verification_status: (r.verification_status || 'VERIFIED') as ComplianceVerificationStatus,
+        name: r.name,
+        category: r.category,
+        statutory_reference: r.statutory_reference || 'Tier-1 Standards'
+      });
+    });
+  }
+
+  if (authorityTag) {
+    return all.filter(r => r.authority_tag === authorityTag);
+  }
+  return all;
+}
+
+export function getZambianRulesByVerificationStatus(status: ComplianceVerificationStatus) {
+  return getZambianRulesByAuthority().filter(r => r.verification_status === status);
+}
+
+/**
+ * Platform Governance and Disclaimers
+ */
+export const ZAMBIAN_COMPLIANCE_DISCLAIMERS = {
+  regulatoryNotice: "Diagnostic results represent regulatory alignment indicators and do not constitute formal legal advice. Regulatory parameters are subject to local verification by authorized authorities.",
+  ipProtectionNotice: "MeloTwo Proprietary Compliance Engine, Multi-Jurisdictional Schema, Cryptographic Ledger Verification Algorithms, and Automated Binder Compiler are exclusive Intellectual Property of MeloTwo (Pty) Ltd. Partner-contributed intelligence provided under Co-Pilot Data Sharing Framework.",
+  zambianAuthoritiesCitation: "Statutory parameters benchmarked against Mines and Minerals Development Act No. 11 of 2015, Mining Regulations (MSR Kitwe), ZEMA SI 112 Aquatic Standards, and Workers' Compensation Act No. 10 of 1999."
+};
 
 /**
  * Subterranean Atmosphere Evaluation Helper
@@ -248,16 +376,16 @@ export function evaluateZemaEffluentDischarge(sample: EffluentSampleReading): Ef
   const breaches: EffluentEvaluationResult['breaches'] = [];
   let score = 100;
 
-  // pH (6.5 to 9.0)
+  // pH (6.5 - 9.0)
   if (sample.ph < 6.5 || sample.ph > 9.0) {
     breaches.push({
-      parameter: 'pH Level',
+      parameter: 'pH',
       observedValue: sample.ph,
-      statutoryLimit: '6.5 - 9.0 pH units',
-      enforcementAction: 'Automated shutoff of river discharge weir gate; redirect to lime neutralization.',
+      statutoryLimit: '6.5 - 9.0',
+      enforcementAction: 'Divert effluent stream to lime slurry neutralization reactor.',
       citation: 'ZEMA SI 112 Third Schedule'
     });
-    score -= 30;
+    score -= 25;
   }
 
   // Copper (<= 1.0 mg/L)
@@ -266,8 +394,8 @@ export function evaluateZemaEffluentDischarge(sample: EffluentSampleReading): Ef
       parameter: 'Total Dissolved Copper (Cu)',
       observedValue: sample.copper_mg_l,
       statutoryLimit: '<= 1.0 mg/L',
-      enforcementAction: 'Divert decant discharge to retention settling pond No. 3.',
-      citation: 'ZEMA SI 112 Heavy Metals Schedule'
+      enforcementAction: 'Halt river discharge; route through precipitation clarifier.',
+      citation: 'ZEMA SI 112 Third Schedule'
     });
     score -= 25;
   }
@@ -278,8 +406,8 @@ export function evaluateZemaEffluentDischarge(sample: EffluentSampleReading): Ef
       parameter: 'Total Suspended Solids (TSS)',
       observedValue: sample.tss_mg_l,
       statutoryLimit: '<= 100.0 mg/L',
-      enforcementAction: 'Increase flocculant dosing rate at thickener overflow ponds.',
-      citation: 'ZEMA SI 112 Effluent Standards'
+      enforcementAction: 'Increase flocculant dosing at thickener plant overflow.',
+      citation: 'ZEMA SI 112 Third Schedule'
     });
     score -= 20;
   }
@@ -287,13 +415,13 @@ export function evaluateZemaEffluentDischarge(sample: EffluentSampleReading): Ef
   // Cobalt (<= 1.0 mg/L)
   if (sample.cobalt_mg_l > 1.0) {
     breaches.push({
-      parameter: 'Total Cobalt (Co)',
+      parameter: 'Total Dissolved Cobalt (Co)',
       observedValue: sample.cobalt_mg_l,
       statutoryLimit: '<= 1.0 mg/L',
-      enforcementAction: 'Engage secondary precipitation reactor; notify catchment team.',
-      citation: 'ZEMA SI 112'
+      enforcementAction: 'Engage secondary cobalt recovery/precipitation loop.',
+      citation: 'ZEMA SI 112 Third Schedule'
     });
-    score -= 25;
+    score -= 20;
   }
 
   // WAD Cyanide (<= 0.2 mg/L)
@@ -302,10 +430,10 @@ export function evaluateZemaEffluentDischarge(sample: EffluentSampleReading): Ef
       parameter: 'WAD Cyanide',
       observedValue: sample.wad_cyanide_mg_l,
       statutoryLimit: '<= 0.2 mg/L',
-      enforcementAction: 'Initiate Caro\'s acid / sodium metabisulfite detox circuit immediately.',
-      citation: 'ZEMA SI 112 Hazardous Mining Effluent'
+      enforcementAction: 'CRITICAL: Trigger SO2/air cyanide detoxification reactor. Cease decant discharge.',
+      citation: 'ZEMA SI 112 Hazardous Waste Criteria'
     });
-    score -= 35;
+    score -= 40;
   }
 
   return {
@@ -316,7 +444,7 @@ export function evaluateZemaEffluentDischarge(sample: EffluentSampleReading): Ef
 }
 
 /**
- * Contractor Onboarding & Local Content Qualification Helper
+ * Contractor Onboarding & Local Content Compliance Helper
  */
 export interface ContractorOnboardingProfile {
   companyName: string;
@@ -331,19 +459,19 @@ export interface ContractorOnboardingProfile {
   safetyFileCompiled: boolean;
 }
 
-export interface ContractorQualificationResult {
-  tierClassification: 'TIER_1_CITIZEN_OWNED' | 'TIER_2_JOINT_VENTURE' | 'NON_COMPLIANT_FOREIGN';
+export interface OnboardingEvaluationResult {
+  tierClassification: 'TIER_1_CITIZEN_OWNED' | 'TIER_2_JOINT_VENTURE' | 'NON_COMPLIANT_EXPATRIATE';
   isOnboardingApproved: boolean;
   complianceScore: number;
   missingRequirements: string[];
 }
 
-export function evaluateContractorOnboarding(profile: ContractorOnboardingProfile): ContractorQualificationResult {
+export function evaluateContractorOnboarding(profile: ContractorOnboardingProfile): OnboardingEvaluationResult {
   const missingRequirements: string[] = [];
   let score = 100;
+  let tier: OnboardingEvaluationResult['tierClassification'] = 'NON_COMPLIANT_EXPATRIATE';
 
-  // Local Equity Check
-  let tier: ContractorQualificationResult['tierClassification'] = 'NON_COMPLIANT_FOREIGN';
+  // Citizen Equity Tier
   if (profile.citizenEquityPercent >= 51.0) {
     tier = 'TIER_1_CITIZEN_OWNED';
   } else if (profile.citizenEquityPercent >= 25.0) {

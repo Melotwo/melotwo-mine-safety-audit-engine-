@@ -3,49 +3,69 @@
   "jurisdiction_name": "Republic of Zambia",
   "country_code": "ZMB",
   "currency": "ZMW",
-  "version": "2026.3.0",
-  "last_updated": "2026-09-18",
-  "title": "MeloTwo Zambian Mining & Environmental Regulatory Ruleset",
-  "description": "Statutory rule configuration integrating the Mines and Minerals Development Act No. 11 of 2015, the Mining Regulations (MSR), and ZEMA Environmental Management Regulations for subterranean hazard enforcement and local contractor onboarding.",
+  "version": "2026.4.0",
+  "last_updated": "2026-09-26",
+  "title": "MeloTwo Zambian Mining & Environmental Multi-Jurisdictional Regulatory Ruleset",
+  "description": "Statutory rule configuration integrating the Mines and Minerals Development Act No. 11 of 2015, Mining Regulations (MSR), ZEMA SI 112 Effluent Standards, OHS / MBOD Silicosis directives, Local Content quotas, and Tier-1 Mining House site access protocols.",
   "regulatory_authorities": [
-    {
-      "code": "MSD",
-      "name": "Mines Safety Department",
-      "ministry": "Ministry of Mines and Minerals Development",
-      "headquarters": "Kitwe, Copperbelt Province, Zambia",
-      "statutory_act": "Mines and Minerals Development Act No. 11 of 2015 / Mining Regulations (MSR)"
-    },
     {
       "code": "ZEMA",
       "name": "Zambia Environmental Management Agency",
       "ministry": "Ministry of Green Economy and Environment",
-      "headquarters": "Lusaka / Ndola Regional Office, Zambia",
-      "statutory_act": "Environmental Management Act No. 12 of 2011 & Statutory Instrument No. 112"
+      "headquarters": "Corner of Church & Suez Roads, Lusaka / Ndola Regional Office, Zambia",
+      "statutory_act": "Environmental Management Act No. 12 of 2011 & Statutory Instrument No. 112",
+      "authority_type": "ENVIRONMENTAL_PROTECTION",
+      "default_verification_status": "VERIFIED"
     },
     {
-      "code": "MBOD",
-      "name": "Medical Bureau for Occupational Diseases (Silicosis Bureau)",
-      "ministry": "Ministry of Health",
-      "headquarters": "Ndola, Copperbelt Province, Zambia",
-      "statutory_act": "Occupational Health and Safety Act No. 36 of 2010"
+      "code": "MSD",
+      "name": "Mines Safety Department",
+      "ministry": "Ministry of Mines and Minerals Development",
+      "headquarters": "Independence Avenue, Kitwe, Copperbelt Province, Zambia",
+      "statutory_act": "Mines and Minerals Development Act No. 11 of 2015 / Mining Regulations (MSR)",
+      "authority_type": "MINING_SAFETY_INSPECTION",
+      "default_verification_status": "VERIFIED"
     },
     {
-      "code": "WCFCB",
-      "name": "Workers' Compensation Fund Control Board",
-      "ministry": "Ministry of Labour and Social Security",
-      "headquarters": "Ndola, Copperbelt Province, Zambia",
-      "statutory_act": "Workers' Compensation Act No. 10 of 1999"
+      "code": "OHS",
+      "name": "Occupational Health & Safety Directorate / MBOD Silicosis Bureau",
+      "ministry": "Ministry of Health & Ministry of Labour",
+      "headquarters": "Medical Bureau for Occupational Diseases (MBOD), Ndola, Copperbelt Province, Zambia",
+      "statutory_act": "Occupational Health and Safety Act No. 36 of 2010 & Workers' Compensation Act No. 10 of 1999",
+      "authority_type": "OCCUPATIONAL_HEALTH",
+      "default_verification_status": "VERIFIED"
+    },
+    {
+      "code": "LOCAL_CONTENT",
+      "name": "Local Content / SME Mining Supply Chain Compliance Directorate",
+      "ministry": "Ministry of Commerce, Trade and Industry / Chamber of Mines",
+      "headquarters": "Lusaka / Kitwe, Zambia",
+      "statutory_act": "Mines and Minerals Development (General) Regulations & Citizen Economic Empowerment Act No. 9 of 2006",
+      "authority_type": "SUPPLY_CHAIN_LOCALIZATION",
+      "default_verification_status": "VERIFIED"
+    },
+    {
+      "code": "TIER1_RULES",
+      "name": "Tier-1 Mining House Access Rules",
+      "ministry": "Industry Standard (Kansanshi, Sentinel, Lumwana, Mopani, KCM)",
+      "headquarters": "Copperbelt & North-Western Mining Concessions, Zambia",
+      "statutory_act": "Contractor High-Risk Site Access Framework & Mandatory Safety File Protocol",
+      "authority_type": "TIER1_MINING_HOUSE_ACCESS",
+      "default_verification_status": "VERIFIED"
     }
   ],
   "modules": {
     "subterranean_hazards": {
       "module_id": "ZM_MSR_SUBTERRANEAN_HAZARDS",
       "title": "Subterranean Hazards & Mining Safety Regulations (MSR)",
-      "statutory_basis": "Mining Regulations (MSR), Parts IX, XII, and XIV (Underground Working, Electricity, Explosives & Ventilation)",
+      "statutory_basis": "Mining Regulations (MSR), Parts IX, X, XII, and XIV (Underground Working, Electricity, Explosives & Ventilation)",
       "risk_severity": "CRITICAL_STOPPAGE_RISK",
       "rules": [
         {
           "rule_id": "MSR-VENT-GAS-CH4",
+          "jurisdiction": "ZM",
+          "authority_tag": "MSD",
+          "verification_status": "VERIFIED",
           "category": "ATMOSPHERE_AND_GASES",
           "name": "Methane (CH4) Flammable Gas Thresholds",
           "parameter_code": "ZM_GAS_CH4",
@@ -65,6 +85,9 @@
         },
         {
           "rule_id": "MSR-VENT-GAS-CO",
+          "jurisdiction": "ZM",
+          "authority_tag": "MSD",
+          "verification_status": "VERIFIED",
           "category": "ATMOSPHERE_AND_GASES",
           "name": "Carbon Monoxide (CO) Toxic Gas Thresholds",
           "parameter_code": "ZM_GAS_CO",
@@ -82,6 +105,9 @@
         },
         {
           "rule_id": "MSR-VENT-GAS-O2",
+          "jurisdiction": "ZM",
+          "authority_tag": "MSD",
+          "verification_status": "VERIFIED",
           "category": "ATMOSPHERE_AND_GASES",
           "name": "Oxygen (O2) Deficiency Minimum",
           "parameter_code": "ZM_GAS_O2",
@@ -97,6 +123,9 @@
         },
         {
           "rule_id": "MSR-VENT-AIRFLOW-VELOCITY",
+          "jurisdiction": "ZM",
+          "authority_tag": "MSD",
+          "verification_status": "VERIFIED",
           "category": "SUBTERRANEAN_VENTILATION",
           "name": "Minimum Air Velocity in Underground Working Faces",
           "parameter_code": "ZM_VENT_AIR_VEL",
@@ -113,6 +142,9 @@
         },
         {
           "rule_id": "MSR-STRATA-GROUND-SUPPORT",
+          "jurisdiction": "ZM",
+          "authority_tag": "MSD",
+          "verification_status": "VERIFIED",
           "category": "STRATA_CONTROL_AND_ROCKFALL",
           "name": "Underground Geotechnical Ground Support & Rock Bolt Integrity",
           "parameter_code": "ZM_STRATA_BOLT_PULL",
@@ -129,6 +161,9 @@
         },
         {
           "rule_id": "MSR-ELEC-UNDERGROUND-FLAMEPROOF",
+          "jurisdiction": "ZM",
+          "authority_tag": "MSD",
+          "verification_status": "VERIFIED",
           "category": "HIGH_VOLTAGE_AND_ELECTRICAL",
           "name": "Subterranean Substation Flameproof Enclosures & Grounding",
           "parameter_code": "ZM_ELEC_EARTH_RESIST",
@@ -145,6 +180,9 @@
         },
         {
           "rule_id": "MSR-EXPLOSIVES-REENTRY",
+          "jurisdiction": "ZM",
+          "authority_tag": "MSD",
+          "verification_status": "VERIFIED",
           "category": "BLASTING_AND_EXPLOSIVES",
           "name": "Subterranean Blast Clearance & Fume Re-entry Interval",
           "parameter_code": "ZM_BLAST_REENTRY_WAIT",
@@ -160,6 +198,9 @@
         },
         {
           "rule_id": "MSR-REFUGE-CHAMBER-READINESS",
+          "jurisdiction": "ZM",
+          "authority_tag": "MSD",
+          "verification_status": "VERIFIED",
           "category": "EMERGENCY_PREPAREDNESS",
           "name": "Subterranean Fresh Air Refuge Chamber Operational Readiness",
           "parameter_code": "ZM_REFUGE_AUTONOMY",
@@ -184,6 +225,9 @@
       "rules": [
         {
           "rule_id": "ZEMA-EFFLUENT-PH",
+          "jurisdiction": "ZM",
+          "authority_tag": "ZEMA",
+          "verification_status": "VERIFIED",
           "category": "WATER_QUALITY",
           "name": "Industrial Effluent & Decant Discharge pH Range",
           "parameter_code": "ZM_EFF_PH",
@@ -199,6 +243,9 @@
         },
         {
           "rule_id": "ZEMA-EFFLUENT-CU",
+          "jurisdiction": "ZM",
+          "authority_tag": "ZEMA",
+          "verification_status": "VERIFIED",
           "category": "HEAVY_METALS",
           "name": "Total Dissolved Copper (Cu) in Final Discharge",
           "parameter_code": "ZM_EFF_CU",
@@ -214,6 +261,9 @@
         },
         {
           "rule_id": "ZEMA-EFFLUENT-TSS",
+          "jurisdiction": "ZM",
+          "authority_tag": "ZEMA",
+          "verification_status": "VERIFIED",
           "category": "SUSPENDED_SOLIDS",
           "name": "Total Suspended Solids (TSS)",
           "parameter_code": "ZM_EFF_TSS",
@@ -229,6 +279,9 @@
         },
         {
           "rule_id": "ZEMA-EFFLUENT-CO",
+          "jurisdiction": "ZM",
+          "authority_tag": "ZEMA",
+          "verification_status": "VERIFIED",
           "category": "HEAVY_METALS",
           "name": "Total Cobalt (Co) in Aquatic Discharge",
           "parameter_code": "ZM_EFF_CO",
@@ -243,6 +296,9 @@
         },
         {
           "rule_id": "ZEMA-EFFLUENT-CYANIDE",
+          "jurisdiction": "ZM",
+          "authority_tag": "ZEMA",
+          "verification_status": "VERIFIED",
           "category": "TOXIC_COMPOUNDS",
           "name": "Weak Acid Dissociable (WAD) Cyanide in Tailings Decant",
           "parameter_code": "ZM_EFF_WAD_CN",
@@ -258,6 +314,9 @@
         },
         {
           "rule_id": "ZEMA-TSF-FREEBOARD-STABILITY",
+          "jurisdiction": "ZM",
+          "authority_tag": "ZEMA",
+          "verification_status": "VERIFIED",
           "category": "TAILINGS_STORAGE_FACILITIES",
           "name": "TSF Embankment Freeboard Margin & Factor of Safety",
           "parameter_code": "ZM_TSF_SAFETY_FACTOR",
@@ -273,6 +332,9 @@
         },
         {
           "rule_id": "ZEMA-CHEM-CONTAINMENT-BUNDING",
+          "jurisdiction": "ZM",
+          "authority_tag": "ZEMA",
+          "verification_status": "VERIFIED",
           "category": "HAZARDOUS_SUBSTANCES",
           "name": "Secondary Chemical Containment Bunding Capacity",
           "parameter_code": "ZM_CHEM_BUND_CAPACITY",
@@ -295,6 +357,9 @@
       "rules": [
         {
           "rule_id": "MMDA-CITIZEN-EQUITY-RATIO",
+          "jurisdiction": "ZM",
+          "authority_tag": "LOCAL_CONTENT",
+          "verification_status": "VERIFIED",
           "category": "LOCAL_CONTENT_OWNERSHIP",
           "name": "Citizen-Owned / Influenced Business Equity Requirement",
           "parameter_code": "ZM_CITIZEN_EQUITY",
@@ -315,6 +380,9 @@
         },
         {
           "rule_id": "MMDA-LOCAL-WORKFORCE-QUOTA",
+          "jurisdiction": "ZM",
+          "authority_tag": "LOCAL_CONTENT",
+          "verification_status": "VERIFIED",
           "category": "LOCAL_EMPLOYMENT",
           "name": "Zambian National Workforce Quota",
           "parameter_code": "ZM_LOCAL_WORKFORCE_PCT",
@@ -335,6 +403,9 @@
         },
         {
           "rule_id": "MMDA-STATUTORY-REGISTRATION-GATE",
+          "jurisdiction": "ZM",
+          "authority_tag": "LOCAL_CONTENT",
+          "verification_status": "VERIFIED",
           "category": "CONTRACTOR_LEGAL_STANDING",
           "name": "Mandatory Zambian Statutory Registrations",
           "parameter_code": "ZM_STATUTORY_REG_GATE",
@@ -366,6 +437,9 @@
         },
         {
           "rule_id": "MMDA-MSD-COMPETENCY-APPOINTMENTS",
+          "jurisdiction": "ZM",
+          "authority_tag": "MSD",
+          "verification_status": "VERIFIED",
           "category": "MINING_SAFETY_COMPETENCY",
           "name": "MSD Statutory Competency Licenses & Legal Appointments",
           "parameter_code": "ZM_MSD_LEGAL_APPOINTMENTS",
@@ -397,6 +471,9 @@
         },
         {
           "rule_id": "MMDA-MEDICAL-SURVEILLANCE-SILICOSIS",
+          "jurisdiction": "ZM",
+          "authority_tag": "OHS",
+          "verification_status": "VERIFIED",
           "category": "OCCUPATIONAL_HEALTH",
           "name": "Medical Bureau for Occupational Diseases (Silicosis) Fitness Certificate",
           "parameter_code": "ZM_MED_BUREAU_FITNESS",
@@ -413,6 +490,9 @@
         },
         {
           "rule_id": "MMDA-SHEQ-SAFETY-FILE-COMPLIANCE",
+          "jurisdiction": "ZM",
+          "authority_tag": "TIER1_RULES",
+          "verification_status": "VERIFIED",
           "category": "SAFETY_FILE_COMPILATION",
           "name": "MeloTwo 20-Section Zambian Mining Tender Safety File",
           "parameter_code": "ZM_SAFETY_FILE_INDEX",
@@ -440,6 +520,51 @@
           ],
           "enforcement_protocol": {
             "on_compile": "Export audit-ready cryptographically stamped PDF dossier in under 90 seconds via MeloTwo engine."
+          }
+        }
+      ]
+    },
+    "tier1_mining_house_access_rules": {
+      "module_id": "ZM_TIER1_MINING_HOUSE_ACCESS",
+      "title": "Tier-1 Mining House Gate Access & Contractor Onboarding Rules",
+      "statutory_basis": "Tier-1 Mining Concession Safety Directives (Barrick Lumwana, FQM Kansanshi/Sentinel, Mopani, KCM)",
+      "risk_severity": "SITE_ACCESS_DENIAL_AND_GATE_LOCKOUT",
+      "rules": [
+        {
+          "rule_id": "TIER1-ACCESS-PERMIT-CLEARANCE",
+          "jurisdiction": "ZM",
+          "authority_tag": "TIER1_RULES",
+          "verification_status": "VERIFIED",
+          "category": "GATE_PASS_VERIFICATION",
+          "name": "Tier-1 Site Entry Gate Pass & Contractor Safety Dossier",
+          "parameter_code": "ZM_TIER1_GATE_CLEARANCE",
+          "mandatory_checks": [
+            "Active MeloTwo Cryptographic Audit Stamped Binder",
+            "MSD Validated Legal Appointments Verified",
+            "MBOD Fit-for-Duty Passports for 100% of Mobilized Crew",
+            "Zero Environmental Non-Conformances under ZEMA SI 112"
+          ],
+          "statutory_reference": "Tier-1 Mining House Contractor Safety Standard",
+          "enforcement_protocol": {
+            "on_clearance_failure": "Permanent RFID gate turnstile lockout; access revoked until remediation sign-off."
+          }
+        },
+        {
+          "rule_id": "TIER1-SUB-CONTRACTOR-DISCLOSURE",
+          "jurisdiction": "ZM",
+          "authority_tag": "TIER1_RULES",
+          "verification_status": "PENDING_VALIDATION",
+          "category": "SUPPLY_CHAIN_TRANSPARENCY",
+          "name": "Sub-Contractor Secondary Supply Chain Verification",
+          "parameter_code": "ZM_TIER1_SUB_DISCLOSURE",
+          "mandatory_checks": [
+            "Tier-2 and Tier-3 supplier safety records disclosed",
+            "Secondary haulage driver medical fitness validations",
+            "Equipment mechanical condition roadworthiness certificates"
+          ],
+          "statutory_reference": "Mines Safety Department Directive MSD-2026/SME-04",
+          "enforcement_protocol": {
+            "on_pending": "Requires manual sign-off by Resident Safety Overseer prior to haulage authorization."
           }
         }
       ]

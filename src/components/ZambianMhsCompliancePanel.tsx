@@ -24,13 +24,16 @@ import {
   MhsChecklistItem,
   ZemaDischargeLimit
 } from '../config/zambianMhsCompliance';
+import { ZAMBIAN_COMPLIANCE_DISCLAIMERS } from '../config/regulatoryRules.zambia';
 
 interface ZambianMhsCompliancePanelProps {
   onApplyDirective?: (directive: string) => void;
+  onOpenDiagnostic?: () => void;
 }
 
 export const ZambianMhsCompliancePanel: React.FC<ZambianMhsCompliancePanelProps> = ({
-  onApplyDirective
+  onApplyDirective,
+  onOpenDiagnostic
 }) => {
   const [activeTab, setActiveTab] = useState<'SUBTERRANEAN' | 'ZEMA_EFFLUENT' | 'STATUTORY_SUMMARY'>('SUBTERRANEAN');
 
@@ -168,26 +171,38 @@ export const ZambianMhsCompliancePanel: React.FC<ZambianMhsCompliancePanelProps>
           </p>
         </div>
 
-        {/* Audit Scorecard */}
-        <div className="flex items-center gap-3 bg-slate-950 border border-slate-800 p-3 rounded-2xl">
-          <div className="text-right">
-            <div className="text-[10px] uppercase font-mono text-slate-400 font-bold">MHS Statutory Index</div>
-            <div className={`text-2xl font-black font-mono ${
-              auditScore.overallScore >= 95 ? 'text-emerald-400' : auditScore.overallScore >= 80 ? 'text-amber-400' : 'text-rose-400'
-            }`}>
-              {auditScore.overallScore}%
+        {/* Audit Scorecard & Actions */}
+        <div className="flex flex-wrap items-center gap-3">
+          {onOpenDiagnostic && (
+            <button
+              onClick={onOpenDiagnostic}
+              className="px-3.5 py-2 rounded-2xl bg-amber-600 hover:bg-amber-500 text-white text-xs font-black transition flex items-center gap-2 shadow-lg shadow-amber-950/40 cursor-pointer"
+            >
+              <Scale className="w-3.5 h-3.5" />
+              <span>15-Point Diagnostic Assessment</span>
+            </button>
+          )}
+
+          <div className="flex items-center gap-3 bg-slate-950 border border-slate-800 p-3 rounded-2xl">
+            <div className="text-right">
+              <div className="text-[10px] uppercase font-mono text-slate-400 font-bold">MHS Statutory Index</div>
+              <div className={`text-2xl font-black font-mono ${
+                auditScore.overallScore >= 95 ? 'text-emerald-400' : auditScore.overallScore >= 80 ? 'text-amber-400' : 'text-rose-400'
+              }`}>
+                {auditScore.overallScore}%
+              </div>
             </div>
+            <div className={`w-3 h-10 rounded-full ${
+              auditScore.overallScore >= 95 ? 'bg-emerald-500' : auditScore.overallScore >= 80 ? 'bg-amber-500' : 'bg-rose-500'
+            }`} />
+            <button
+              onClick={handleResetChecklist}
+              className="p-2 text-slate-400 hover:text-white bg-slate-900 border border-slate-800 rounded-xl hover:bg-slate-800 transition cursor-pointer"
+              title="Reset to baseline"
+            >
+              <RotateCcw className="w-4 h-4" />
+            </button>
           </div>
-          <div className={`w-3 h-10 rounded-full ${
-            auditScore.overallScore >= 95 ? 'bg-emerald-500' : auditScore.overallScore >= 80 ? 'bg-amber-500' : 'bg-rose-500'
-          }`} />
-          <button
-            onClick={handleResetChecklist}
-            className="p-2 text-slate-400 hover:text-white bg-slate-900 border border-slate-800 rounded-xl hover:bg-slate-800 transition cursor-pointer"
-            title="Reset to baseline"
-          >
-            <RotateCcw className="w-4 h-4" />
-          </button>
         </div>
       </div>
 
@@ -255,9 +270,18 @@ export const ZambianMhsCompliancePanel: React.FC<ZambianMhsCompliancePanelProps>
                 >
                   <div className="flex items-start justify-between gap-3 mb-2">
                     <div>
-                      <span className="text-[10px] font-mono font-bold text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded border border-emerald-500/20">
-                        {item.code}
-                      </span>
+                      <div className="flex items-center gap-1.5 flex-wrap mb-1">
+                        <span className="text-[10px] font-mono font-bold text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded border border-emerald-500/20">
+                          {item.code}
+                        </span>
+                        <span className="text-[9px] font-mono font-bold text-amber-300 bg-amber-950/60 px-1.5 py-0.5 rounded border border-amber-600/40">
+                          {item.authority}
+                        </span>
+                        <span className="text-[9px] font-mono font-bold text-emerald-300 bg-emerald-950/80 px-1.5 py-0.5 rounded border border-emerald-600/40 flex items-center gap-1">
+                          <ShieldCheck className="w-2.5 h-2.5 text-emerald-400" />
+                          {item.verificationStatus || 'VERIFIED'}
+                        </span>
+                      </div>
                       <h4 className="text-sm font-bold text-white mt-1">{item.title}</h4>
                       <p className="text-[11px] font-mono text-slate-400">{item.statutoryRegulation}</p>
                     </div>
@@ -348,10 +372,18 @@ export const ZambianMhsCompliancePanel: React.FC<ZambianMhsCompliancePanelProps>
                       : 'bg-slate-950/60 border-slate-800'
                   }`}
                 >
-                  <div className="flex items-center justify-between gap-2 mb-1.5">
-                    <span className="text-[10px] font-mono font-bold text-cyan-400 bg-cyan-500/10 px-2 py-0.5 rounded border border-cyan-500/20">
-                      {param.chemicalSymbol || param.parameterId}
-                    </span>
+                  <div className="flex items-center justify-between gap-2 mb-1.5 flex-wrap">
+                    <div className="flex items-center gap-1.5">
+                      <span className="text-[10px] font-mono font-bold text-cyan-400 bg-cyan-500/10 px-2 py-0.5 rounded border border-cyan-500/20">
+                        {param.chemicalSymbol || param.parameterId}
+                      </span>
+                      <span className="text-[9px] font-mono font-bold text-cyan-300 bg-cyan-950/60 px-1.5 py-0.5 rounded border border-cyan-600/40">
+                        {param.authority}
+                      </span>
+                      <span className="text-[9px] font-mono font-bold text-emerald-300 bg-emerald-950/80 px-1.5 py-0.5 rounded border border-emerald-600/40">
+                        {param.verificationStatus || 'VERIFIED'}
+                      </span>
+                    </div>
                     <span className={`text-[10px] font-mono font-bold px-2 py-0.5 rounded ${
                       isBreached ? 'bg-rose-500 text-white' : 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30'
                     }`}>
@@ -469,6 +501,14 @@ export const ZambianMhsCompliancePanel: React.FC<ZambianMhsCompliancePanelProps>
           </div>
         </div>
       )}
+
+      {/* Mandatory Statutory Disclaimer */}
+      <div className="mt-6 pt-4 border-t border-slate-800 flex items-start gap-2.5 text-[11px] text-slate-400 font-mono">
+        <Info className="w-4 h-4 text-amber-400 shrink-0 mt-0.5" />
+        <span>
+          <strong className="text-amber-300">Regulatory Disclaimer:</strong> {ZAMBIAN_COMPLIANCE_DISCLAIMERS.regulatoryNotice}
+        </span>
+      </div>
     </div>
   );
 };
