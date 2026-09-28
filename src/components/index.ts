@@ -38,4 +38,7 @@ export * from './QctoTrainingReportModal';
 export * from './ZambiaComplianceAssessmentModal';
 export * from './PartnerCoPilotAdminView';
 export * from './InspectorConflictResolver';
+export * from './OfflineSyncDashboard';
+export * from './PayPalKeyConfigModal';
+export * from './PayPalEFTCheckoutModal';
 

@@ -30,8 +30,8 @@ import { ZambianMhsCompliancePanel } from './components/ZambianMhsCompliancePane
 import { ZambiaComplianceAssessmentModal } from './components/ZambiaComplianceAssessmentModal';
 import { PartnerCoPilotAdminView } from './components/PartnerCoPilotAdminView';
 import { CsvImportModal } from './components/CsvImportModal';
-import { InspectorConflictResolver, OfflineAuditNoteItem, ConflictResolutionChoice } from './components/InspectorConflictResolver';
-import { Database, RefreshCw, Upload, LogOut, Sparkles, CheckCircle2, AlertOctagon, Download, ChevronRight, Lock, Terminal, Minimize2, Maximize2, Activity, Scale, Globe, CheckCircle, Target, ShieldAlert, ArrowRight, Check, Truck, Info, RotateCcw, Sliders, XCircle, Building2, MapPin, ChevronDown, ChevronUp, EyeOff, Filter, Layers, FileSpreadsheet, Calculator, BookOpen, Smartphone, Wifi, WifiOff, Save, HardDrive, Users, Droplets, GitCompare, Pencil, X } from 'lucide-react';
+import { InspectorConflictResolver, OfflineAuditNoteItem, ConflictResolutionChoice, OfflineSyncDashboard, PayPalKeyConfigModal, PayPalEFTCheckoutModal } from './components';
+import { Database, RefreshCw, Upload, LogOut, Sparkles, CheckCircle2, AlertOctagon, Download, ChevronRight, Lock, Terminal, Minimize2, Maximize2, Activity, Scale, Globe, CheckCircle, Target, ShieldAlert, ArrowRight, Check, Truck, Info, RotateCcw, Sliders, XCircle, Building2, MapPin, ChevronDown, ChevronUp, EyeOff, Filter, Layers, FileSpreadsheet, Calculator, BookOpen, Smartphone, Wifi, WifiOff, Save, HardDrive, Users, Droplets, GitCompare, Pencil, X, Key, CreditCard } from 'lucide-react';
 import jsPDF from 'jspdf';
 import { sanitizeInputText } from './utils/sanitizer';
 import { DailyComplianceData } from './types';
@@ -4482,6 +4482,7 @@ interface AppNavbarProps {
   onGetStarted?: () => void;
   onOpenCostCalculator?: () => void;
   onOpenTenderWizard?: () => void;
+  onOpenPaymentSettings?: () => void;
 }
 
 const AppNavbar: React.FC<AppNavbarProps> = ({
@@ -4492,7 +4493,8 @@ const AppNavbar: React.FC<AppNavbarProps> = ({
   isAdmin = false,
   onGetStarted,
   onOpenCostCalculator,
-  onOpenTenderWizard
+  onOpenTenderWizard,
+  onOpenPaymentSettings
 }) => {
   const [isSolutionsOpen, setIsSolutionsOpen] = useState<boolean>(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState<boolean>(false);
@@ -4762,6 +4764,20 @@ const AppNavbar: React.FC<AppNavbarProps> = ({
             </button>
           )}
 
+          {/* Action: PayPal & EFT Gateway Settings */}
+          {onOpenPaymentSettings && (
+            <button
+              id="paypal-gateway-nav-btn"
+              onClick={onOpenPaymentSettings}
+              className="inline-flex items-center justify-center gap-1 px-1.5 py-1 sm:px-2.5 sm:py-1.5 text-[10px] sm:text-xs font-bold text-amber-300 bg-amber-950/60 border border-amber-500/50 hover:bg-amber-900/60 hover:border-amber-400 rounded-lg sm:rounded-xl transition shadow-sm cursor-pointer shrink-0 whitespace-nowrap"
+              title="Configure PayPal API Key & EFT Gateway Settings"
+            >
+              <Key className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-amber-400 shrink-0" />
+              <span className="hidden md:inline">PayPal & EFT</span>
+              <span className="md:hidden">Gateway</span>
+            </button>
+          )}
+
           {/* Action 3: WhatsApp Icon Button - Scaled down, discreet */}
           <WhatsAppChatButton variant="nav" />
 
@@ -4779,6 +4795,21 @@ const AppNavbar: React.FC<AppNavbarProps> = ({
       {/* MOBILE EXPANDED MENU */}
       {isMobileMenuOpen && (
         <div className="lg:hidden border-t border-slate-800 bg-slate-900 px-4 py-3 space-y-2 shadow-inner">
+          {onOpenPaymentSettings && (
+            <button
+              onClick={() => {
+                setIsMobileMenuOpen(false);
+                onOpenPaymentSettings();
+              }}
+              className="w-full text-left px-3 py-2 rounded-xl text-xs font-bold flex items-center justify-between bg-amber-950/40 text-amber-300 border border-amber-500/40 hover:bg-amber-900/40 transition cursor-pointer mb-2"
+            >
+              <div className="flex items-center gap-2">
+                <Key className="w-4 h-4 text-amber-400" />
+                <span>PayPal & EFT Gateway (Key Setup)</span>
+              </div>
+              <ChevronRight className="w-3.5 h-3.5 text-amber-400" />
+            </button>
+          )}
           <div className="grid grid-cols-2 gap-2">
             <button
               onClick={() => {
@@ -5195,9 +5226,10 @@ interface EnterpriseDemoModalProps {
     isOpen: boolean;
     onClose: () => void;
     initialTier?: 'professional' | 'enterprise' | 'full_site' | 'audit';
+    onOpenCheckout?: (price: number, tier: string, company: string) => void;
 }
 
-const EnterpriseDemoModal: React.FC<EnterpriseDemoModalProps> = ({ isOpen, onClose, initialTier }) => {
+const EnterpriseDemoModal: React.FC<EnterpriseDemoModalProps> = ({ isOpen, onClose, initialTier, onOpenCheckout }) => {
     const [demoName, setDemoName] = useState('');
     const [demoEmail, setDemoEmail] = useState('');
     const [demoCompany, setDemoCompany] = useState('');
@@ -6047,6 +6079,23 @@ const EnterpriseDemoModal: React.FC<EnterpriseDemoModalProps> = ({ isOpen, onClo
                             </div>
 
                             <div className="mt-8 space-y-3.5">
+                                {onOpenCheckout && (
+                                    <button
+                                        type="button"
+                                        onClick={() => {
+                                            onOpenCheckout(
+                                                calculatedPrice,
+                                                MELOTWO_PRICING_MATRIX[selectedTier].name,
+                                                demoCompany || 'Industrial Mine Site'
+                                            );
+                                        }}
+                                        className="w-full py-3 px-4 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 font-black text-xs uppercase tracking-wider rounded-xl transition cursor-pointer flex items-center justify-center gap-2 shadow-lg shadow-amber-500/20"
+                                    >
+                                        <CreditCard className="w-4 h-4 text-slate-950" />
+                                        Pay via PayPal or EFT (R{calculatedPrice.toLocaleString('en-ZA')})
+                                    </button>
+                                )}
+
                                 <button
                                     type="button"
                                     onClick={handleDownloadQuotationPDF}
@@ -9424,6 +9473,20 @@ Safety index and terminal clearance verified. The audit record status has been u
         }
     };
 
+    // PayPal & EFT Payment Gateway Modal State for SafetyInspectorPage
+    const [isPaymentGatewayModalOpen, setIsPaymentGatewayModalOpen] = useState(false);
+    const [checkoutDetails, setCheckoutDetails] = useState<{
+        title: string;
+        description: string;
+        amountZar: number;
+        enterpriseName: string;
+    }>({
+        title: 'MeloTwo Pro SANS Compliance License',
+        description: 'Complete statutory SANS 10108 & 10142 compliance audit suite with infinite cognitive inspections.',
+        amountZar: 15000,
+        enterpriseName: 'Industrial Mine Site'
+    });
+
     // Administrative Demo Bypass Check (via URL query params or VIP Code)
     const isDemoMode = useMemo(() => {
         if (isVipUnlocked) return true;
@@ -9491,8 +9554,30 @@ Safety index and terminal clearance verified. The audit record status has been u
     const [offlineSyncFeedback, setOfflineSyncFeedback] = useState<string | null>(null);
     const [isSyncingOfflineNotes, setIsSyncingOfflineNotes] = useState<boolean>(false);
     const [isOfflineNoteSaving, setIsOfflineNoteSaving] = useState<boolean>(false);
+    const [showOfflineDashboard, setShowOfflineDashboard] = useState<boolean>(true);
 
     const isEffectivelyOnline = isOnline && !isSimulatedOffline;
+
+    // Granular Record Committer for Offline Sync Dashboard batch executor
+    const handleCommitRecordToLedger = useCallback(async (record: ComplianceLedgerRow): Promise<boolean> => {
+        try {
+            if (token && ledgerId) {
+                await appendLedgerRecord(token, ledgerId, record);
+                const fetched = await fetchLedgerRecords(token, ledgerId);
+                setLedgerLogs(fetched);
+            } else {
+                setLedgerLogs(prevLogs => {
+                    const updated = [record, ...prevLogs];
+                    localStorage.setItem('melotwo_sandbox_logs', JSON.stringify(updated));
+                    return updated;
+                });
+            }
+            return true;
+        } catch (err) {
+            console.error('[Commit Record Error]:', err);
+            return false;
+        }
+    }, [token, ledgerId]);
 
     // Conflict Resolution Handler: commits chosen version to ledger and purges from localStorage
     const handleResolveConflict = useCallback(async (
@@ -9761,31 +9846,48 @@ Safety index and terminal clearance verified. The audit record status has been u
         }
     }, [token, ledgerId, user?.displayName, onlineTransitionTimestamp]);
 
-    // Window event listener for network online restoration
+    // Window event listener for network online restoration - replaces individual auto-sync logic for better transparency
     useEffect(() => {
         const handleOnlineEvent = () => {
-            console.log('[OfflineSync] Browser online event fired.');
-            syncOfflineNotesToLedger();
+            console.log('[OfflineSync] Browser online event fired. Notifying user to review pending notes in Offline Sync Dashboard.');
+            setOnlineTransitionTimestamp(Date.now());
+            const rawStored = localStorage.getItem('melotwo_offline_audit_notes');
+            if (rawStored) {
+                try {
+                    const parsed = JSON.parse(rawStored);
+                    if (Array.isArray(parsed) && parsed.length > 0) {
+                        setOfflineSyncFeedback(`Connection restored! ${parsed.length} offline audit note${parsed.length === 1 ? '' : 's'} queued in localStorage. Review in the Offline Sync Dashboard and click 'Sync All'.`);
+                    }
+                } catch (e) {}
+            }
         };
 
         window.addEventListener('online', handleOnlineEvent);
         return () => {
             window.removeEventListener('online', handleOnlineEvent);
         };
-    }, [syncOfflineNotesToLedger]);
+    }, []);
 
-    // Trigger auto-sync when connection transitions to effectively online
+    // Transition to online state: notify user without auto-syncing silently
     const prevOnlineStateRef = useRef(isEffectivelyOnline);
     useEffect(() => {
         if (!prevOnlineStateRef.current && isEffectivelyOnline) {
-            console.log('[OfflineSync] Connection restored. Synchronizing queued offline notes to ledger.');
+            console.log('[OfflineSync] Connection restored. Notifying user to review pending notes in Offline Sync Dashboard.');
             setOnlineTransitionTimestamp(Date.now());
-            syncOfflineNotesToLedger();
+            const rawStored = localStorage.getItem('melotwo_offline_audit_notes');
+            if (rawStored) {
+                try {
+                    const parsed = JSON.parse(rawStored);
+                    if (Array.isArray(parsed) && parsed.length > 0) {
+                        setOfflineSyncFeedback(`Network active: ${parsed.length} offline audit note${parsed.length === 1 ? '' : 's'} waiting in localStorage. Open Offline Sync Dashboard to Sync All.`);
+                    }
+                } catch (e) {}
+            }
         }
         prevOnlineStateRef.current = isEffectivelyOnline;
-    }, [isEffectivelyOnline, syncOfflineNotesToLedger]);
+    }, [isEffectivelyOnline]);
 
-    // Initial mount sync check if online and pending notes exist in localStorage
+    // Initial mount sync check: informs user of pending offline notes instead of silent auto-sync
     useEffect(() => {
         if (isEffectivelyOnline) {
             const rawStored = localStorage.getItem('melotwo_offline_audit_notes');
@@ -9793,12 +9895,12 @@ Safety index and terminal clearance verified. The audit record status has been u
                 try {
                     const parsed = JSON.parse(rawStored);
                     if (Array.isArray(parsed) && parsed.length > 0) {
-                        syncOfflineNotesToLedger();
+                        setOfflineSyncFeedback(`${parsed.length} pending offline audit note${parsed.length === 1 ? '' : 's'} stored in localStorage. Open Offline Sync Dashboard to review and Sync All.`);
                     }
                 } catch (e) {}
             }
         }
-    }, [isEffectivelyOnline, syncOfflineNotesToLedger]);
+    }, [isEffectivelyOnline]);
 
     // Continuously monitor localStorage for pending offline audit notes across browser sessions & tabs
     useEffect(() => {
@@ -12038,8 +12140,10 @@ Safety index and terminal clearance verified. The audit record status has been u
                                                     const nextSim = !isSimulatedOffline;
                                                     setIsSimulatedOffline(nextSim);
                                                     if (!nextSim) {
-                                                        // Turning back online: trigger sync
-                                                        setTimeout(() => syncOfflineNotesToLedger(), 100);
+                                                        setOnlineTransitionTimestamp(Date.now());
+                                                        if (offlineAuditNotesList.length > 0) {
+                                                            setOfflineSyncFeedback(`Connection restored! ${offlineAuditNotesList.length} offline audit note(s) queued in localStorage. Review in Offline Sync Dashboard to Sync All.`);
+                                                        }
                                                     }
                                                 }}
                                                 className={`text-[10px] font-mono font-bold px-3 py-1.5 rounded-xl border transition-all cursor-pointer flex items-center gap-1.5 ${
@@ -12047,7 +12151,7 @@ Safety index and terminal clearance verified. The audit record status has been u
                                                         ? 'bg-rose-500/20 text-rose-300 border-rose-500/50 hover:bg-rose-500/30'
                                                         : 'bg-slate-950 text-slate-400 hover:text-slate-200 border-slate-800 hover:border-slate-700'
                                                 }`}
-                                                title="Toggle simulated underground network disconnect to test offline localStorage saving and automatic ledger synchronization upon reconnection"
+                                                title="Toggle simulated underground network disconnect to test offline localStorage saving and batch ledger synchronization"
                                             >
                                                 {isSimulatedOffline ? (
                                                     <>
@@ -12061,35 +12165,52 @@ Safety index and terminal clearance verified. The audit record status has been u
                                                 )}
                                             </button>
 
-                                            {/* Sync Now Button if pending offline notes */}
-                                            {offlineAuditNotesList.length > 0 && (
-                                                <button
-                                                    type="button"
-                                                    onClick={syncOfflineNotesToLedger}
-                                                    disabled={isSyncingOfflineNotes || !isEffectivelyOnline}
-                                                    className="text-[10px] font-bold font-mono px-3 py-1.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 transition-all cursor-pointer flex items-center gap-1.5 disabled:opacity-40 disabled:cursor-not-allowed shadow-md shadow-amber-500/10"
-                                                >
-                                                    <RefreshCw className={`w-3 h-3 ${isSyncingOfflineNotes ? 'animate-spin' : ''}`} />
-                                                    <span>Sync {offlineAuditNotesList.length} Stored to Ledger</span>
-                                                </button>
-                                            )}
+                                            {/* Offline Sync Dashboard Toggle Button */}
+                                            <button
+                                                type="button"
+                                                id="btn-toggle-offline-dashboard"
+                                                onClick={() => setShowOfflineDashboard(!showOfflineDashboard)}
+                                                className={`text-[10px] font-bold font-mono px-3 py-1.5 rounded-xl border transition-all cursor-pointer flex items-center gap-1.5 shadow-md ${
+                                                    showOfflineDashboard
+                                                        ? 'bg-amber-500/20 text-amber-300 border-amber-500/50 shadow-amber-500/10'
+                                                        : 'bg-slate-950 hover:bg-slate-900 text-slate-300 border-slate-800'
+                                                }`}
+                                                title="Open Offline Sync Dashboard to inspect notes, monitor progress bars, and batch sync to ledger"
+                                            >
+                                                <Layers className="w-3.5 h-3.5 text-amber-400" />
+                                                <span>Offline Sync Dashboard</span>
+                                                {offlineAuditNotesList.length > 0 && (
+                                                    <span className="bg-amber-500 text-slate-950 font-extrabold text-[9px] px-1.5 py-0.2 rounded-full">
+                                                        {offlineAuditNotesList.length}
+                                                    </span>
+                                                )}
+                                            </button>
                                         </div>
                                     </div>
 
                                     {/* Real-time Feedback Banner */}
                                     {offlineSyncFeedback && (
-                                        <div className="p-3 bg-amber-500/10 border border-amber-500/30 rounded-xl text-xs font-mono text-amber-200 flex items-center justify-between gap-2 animate-fade-in">
+                                        <div className="p-3 bg-amber-500/10 border border-amber-500/30 rounded-xl text-xs font-mono text-amber-200 flex items-center justify-between gap-2 animate-fade-in flex-wrap">
                                             <div className="flex items-center gap-2">
                                                 <CheckCircle2 className="w-4 h-4 text-amber-400 shrink-0" />
                                                 <span>{offlineSyncFeedback}</span>
                                             </div>
-                                            <button
-                                                type="button"
-                                                onClick={() => setOfflineSyncFeedback(null)}
-                                                className="text-amber-400 hover:text-white text-xs font-bold px-1.5 cursor-pointer"
-                                            >
-                                                ✕
-                                            </button>
+                                            <div className="flex items-center gap-2">
+                                                <button
+                                                    type="button"
+                                                    onClick={() => setShowOfflineDashboard(true)}
+                                                    className="text-[10px] font-bold font-mono bg-amber-500 hover:bg-amber-400 text-slate-950 px-2.5 py-1 rounded-lg cursor-pointer transition-colors"
+                                                >
+                                                    Open Dashboard
+                                                </button>
+                                                <button
+                                                    type="button"
+                                                    onClick={() => setOfflineSyncFeedback(null)}
+                                                    className="text-amber-400 hover:text-white text-xs font-bold px-1.5 cursor-pointer"
+                                                >
+                                                    ✕
+                                                </button>
+                                            </div>
                                         </div>
                                     )}
 
@@ -12202,214 +12323,35 @@ Safety index and terminal clearance verified. The audit record status has been u
                                         </div>
                                     </div>
 
-                                    {/* Stored Offline Audit Notes Buffer Drawer */}
-                                    {offlineAuditNotesList.length > 0 && (
-                                        <div className="mt-4 p-4 bg-slate-950/90 border border-amber-500/25 rounded-2xl flex flex-col gap-3 font-mono">
-                                            <div className="flex flex-col sm:flex-row sm:items-center justify-between border-b border-slate-800/80 pb-3 gap-3">
-                                                <div className="flex items-center gap-2 flex-wrap">
-                                                    <span className="w-2 h-2 rounded-full bg-amber-400 animate-pulse" />
-                                                    <span className="text-xs font-bold text-amber-300">
-                                                        {offlineAuditNotesList.length} Offline Audit Note{offlineAuditNotesList.length === 1 ? '' : 's'} Stored in localStorage
-                                                    </span>
-                                                    <span className="text-[9px] bg-amber-500/20 border border-amber-500/40 text-amber-300 px-2 py-0.5 rounded font-bold uppercase tracking-wider">
-                                                        Offline Sync Pending
-                                                    </span>
-                                                    {offlineAuditNotesList.some(n => n.conflictDetected || n.modifiedPostOnline) && (
-                                                        <span className="text-[9px] bg-rose-500/20 border border-rose-500/40 text-rose-300 px-2 py-0.5 rounded font-bold uppercase tracking-wider flex items-center gap-1 animate-pulse">
-                                                            <AlertTriangle className="w-2.5 h-2.5" />
-                                                            Conflict Detected
-                                                        </span>
-                                                    )}
-                                                </div>
-                                                <div className="flex flex-wrap items-center gap-2">
-                                                    <button
-                                                        type="button"
-                                                        onClick={handleSimulatePostOnlineConflict}
-                                                        title="Simulate an audit note modified in localStorage post-online to test and inspect conflict resolution"
-                                                        className="text-[10px] font-bold text-amber-300 hover:text-amber-200 bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/30 px-2.5 py-1 rounded-lg transition-colors cursor-pointer flex items-center gap-1.5"
-                                                    >
-                                                        <GitCompare className="w-3 h-3 text-amber-400" />
-                                                        <span>Simulate Post-Online Conflict</span>
-                                                    </button>
-                                                    {isEffectivelyOnline && (
-                                                        <button
-                                                            type="button"
-                                                            onClick={syncOfflineNotesToLedger}
-                                                            disabled={isSyncingOfflineNotes}
-                                                            className="text-[10px] font-bold text-slate-950 bg-amber-500 hover:bg-amber-400 px-3 py-1 rounded-lg transition-colors cursor-pointer flex items-center gap-1"
-                                                        >
-                                                            <RefreshCw className={`w-3 h-3 ${isSyncingOfflineNotes ? 'animate-spin' : ''}`} />
-                                                            Sync All Now
-                                                        </button>
-                                                    )}
-                                                    <button
-                                                        type="button"
-                                                        onClick={() => {
-                                                            if (confirm('Clear all offline audit notes currently queued in localStorage?')) {
-                                                                localStorage.removeItem('melotwo_offline_audit_notes');
-                                                                setOfflineAuditNotesList([]);
-                                                                setActiveConflictNote(null);
-                                                            }
-                                                        }}
-                                                        className="text-[10px] text-slate-500 hover:text-rose-400 transition-colors cursor-pointer"
-                                                    >
-                                                        Clear Queue
-                                                    </button>
-                                                </div>
-                                            </div>
-
-                                            {/* Conflict Alert Banner if any conflicts exist */}
-                                            {offlineAuditNotesList.some(n => n.conflictDetected || n.modifiedPostOnline) && !activeConflictNote && (
-                                                <div className="p-3 bg-amber-500/10 border border-amber-500/30 rounded-xl flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs font-mono text-amber-200">
-                                                    <div className="flex items-center gap-2">
-                                                        <AlertTriangle className="w-4 h-4 text-amber-400 shrink-0 animate-pulse" />
-                                                        <span>
-                                                            Post-Online Modification Conflict Detected: {offlineAuditNotesList.filter(n => n.conflictDetected || n.modifiedPostOnline).length} note(s) modified in localStorage after reconnecting.
-                                                        </span>
-                                                    </div>
-                                                    <button
-                                                        type="button"
-                                                        onClick={() => {
-                                                            const firstConflict = offlineAuditNotesList.find(n => n.conflictDetected || n.modifiedPostOnline);
-                                                            if (firstConflict) setActiveConflictNote(firstConflict);
-                                                        }}
-                                                        className="text-[10px] font-bold bg-amber-500 hover:bg-amber-400 text-slate-950 px-3 py-1 rounded-lg transition-colors cursor-pointer shrink-0 self-start sm:self-center"
-                                                    >
-                                                        Open Conflict Resolver
-                                                    </button>
-                                                </div>
-                                            )}
-
-                                            <div className="space-y-2 max-h-56 overflow-y-auto pr-1">
-                                                {offlineAuditNotesList.map((item, idx) => {
-                                                    const isEditing = editingOfflineNoteId === item.id;
-                                                    const isConflicted = item.conflictDetected || item.modifiedPostOnline;
-
-                                                    if (isEditing) {
-                                                        return (
-                                                            <div key={item.id || idx} className="p-3 bg-slate-900 border border-indigo-500/40 rounded-xl space-y-2.5">
-                                                                <div className="flex items-center justify-between text-[11px] font-mono text-slate-300">
-                                                                    <span className="font-bold flex items-center gap-1.5 text-indigo-300">
-                                                                        <Pencil className="w-3.5 h-3.5" />
-                                                                        Edit Audit Note in LocalStorage
-                                                                    </span>
-                                                                    {isEffectivelyOnline && (
-                                                                        <span className="text-[10px] text-amber-400 bg-amber-500/10 border border-amber-500/30 px-2 py-0.5 rounded">
-                                                                            App Online: Saving will trigger post-online conflict resolver
-                                                                        </span>
-                                                                    )}
-                                                                </div>
-                                                                <textarea
-                                                                    value={editingOfflineNoteText}
-                                                                    onChange={(e) => setEditingOfflineNoteText(e.target.value)}
-                                                                    rows={3}
-                                                                    className="w-full bg-slate-950 border border-slate-700 focus:border-indigo-400 rounded-lg p-2.5 text-xs text-white font-mono focus:outline-none leading-relaxed"
-                                                                />
-                                                                <div className="flex items-center justify-end gap-2">
-                                                                    <button
-                                                                        type="button"
-                                                                        onClick={() => {
-                                                                            setEditingOfflineNoteId(null);
-                                                                            setEditingOfflineNoteText('');
-                                                                        }}
-                                                                        className="text-[10px] font-mono text-slate-400 hover:text-slate-200 px-2.5 py-1 cursor-pointer"
-                                                                    >
-                                                                        Cancel
-                                                                    </button>
-                                                                    <button
-                                                                        type="button"
-                                                                        onClick={() => handleSaveEditedOfflineNote(item.id, editingOfflineNoteText)}
-                                                                        className="text-[10px] font-mono font-bold bg-indigo-600 hover:bg-indigo-500 text-white px-3 py-1.5 rounded-lg transition-colors cursor-pointer shadow-md"
-                                                                    >
-                                                                        Save Local Edit
-                                                                    </button>
-                                                                </div>
-                                                            </div>
-                                                        );
+                                    {/* Offline Sync Dashboard Panel - Full list, visual progress bar, granular status indicators */}
+                                    {showOfflineDashboard && (
+                                        <div className="mt-4 animate-fade-in">
+                                            <OfflineSyncDashboard
+                                                offlineNotes={offlineAuditNotesList}
+                                                isOnline={isOnline}
+                                                isSimulatedOffline={isSimulatedOffline}
+                                                onCommitRecord={handleCommitRecordToLedger}
+                                                onUpdateNotesList={(updated) => {
+                                                    setOfflineAuditNotesList(updated);
+                                                }}
+                                                onRequestResolveConflict={(note) => {
+                                                    setActiveConflictNote(note);
+                                                }}
+                                                onToggleSimulateOffline={() => {
+                                                    const nextSim = !isSimulatedOffline;
+                                                    setIsSimulatedOffline(nextSim);
+                                                    if (!nextSim) {
+                                                        setOnlineTransitionTimestamp(Date.now());
+                                                        if (offlineAuditNotesList.length > 0) {
+                                                            setOfflineSyncFeedback(`Connection restored! ${offlineAuditNotesList.length} offline audit note(s) queued in localStorage. Review in Offline Sync Dashboard to Sync All.`);
+                                                        }
                                                     }
-
-                                                    return (
-                                                        <div
-                                                            key={item.id || idx}
-                                                            className={`p-2.5 border rounded-xl flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs transition-all ${
-                                                                isConflicted
-                                                                    ? 'bg-amber-950/20 border-amber-500/40 shadow-sm shadow-amber-500/5'
-                                                                    : 'bg-slate-900/80 border-slate-800'
-                                                            }`}
-                                                        >
-                                                            <div className="flex-1 min-w-0">
-                                                                <p className="text-slate-200 font-sans text-xs break-words">{item.text}</p>
-                                                                <div className="flex flex-wrap items-center gap-2 text-[10px] text-slate-400 mt-1">
-                                                                    <span>{new Date(item.timestamp).toLocaleTimeString()}</span>
-                                                                    <span>•</span>
-                                                                    <span>{item.terminalId || 'TERM-UNDERGROUND'}</span>
-                                                                    <span>•</span>
-                                                                    <span>{item.operator || 'Inspector'}</span>
-                                                                    {isConflicted ? (
-                                                                        <span className="bg-amber-500/20 text-amber-300 border border-amber-500/40 px-2 py-0.5 rounded text-[9px] font-bold flex items-center gap-1 animate-pulse">
-                                                                            <AlertTriangle className="w-2.5 h-2.5" />
-                                                                            Modified Post-Online (Conflict)
-                                                                        </span>
-                                                                    ) : (
-                                                                        <span className="bg-amber-500/10 text-amber-400 border border-amber-500/20 px-1.5 py-0.2 rounded text-[9px]">
-                                                                            Buffered in localStorage
-                                                                        </span>
-                                                                    )}
-                                                                </div>
-                                                            </div>
-
-                                                            <div className="flex items-center gap-1.5 self-end sm:self-center shrink-0">
-                                                                {isConflicted && (
-                                                                    <button
-                                                                        type="button"
-                                                                        onClick={() => setActiveConflictNote(item)}
-                                                                        className="text-[10px] font-mono font-bold bg-amber-500 hover:bg-amber-400 text-slate-950 px-2.5 py-1 rounded-lg transition-colors cursor-pointer flex items-center gap-1 shadow-sm"
-                                                                        title="Resolve version conflict"
-                                                                    >
-                                                                        <GitCompare className="w-3 h-3" />
-                                                                        <span>Resolve Conflict</span>
-                                                                    </button>
-                                                                )}
-                                                                <button
-                                                                    type="button"
-                                                                    onClick={() => {
-                                                                        setEditingOfflineNoteId(item.id);
-                                                                        setEditingOfflineNoteText(item.text);
-                                                                    }}
-                                                                    className="p-1.5 text-slate-400 hover:text-indigo-300 hover:bg-slate-800 rounded transition-colors cursor-pointer"
-                                                                    title="Edit note in localStorage"
-                                                                >
-                                                                    <Pencil className="w-3.5 h-3.5" />
-                                                                </button>
-                                                                <button
-                                                                    type="button"
-                                                                    onClick={() => {
-                                                                        const filtered = offlineAuditNotesList.filter(n => n.id !== item.id);
-                                                                        localStorage.setItem('melotwo_offline_audit_notes', JSON.stringify(filtered));
-                                                                        setOfflineAuditNotesList(filtered);
-                                                                        if (activeConflictNote?.id === item.id) {
-                                                                            setActiveConflictNote(null);
-                                                                        }
-                                                                    }}
-                                                                    className="p-1.5 text-slate-400 hover:text-rose-400 hover:bg-slate-800 rounded transition-colors cursor-pointer"
-                                                                    title="Remove Note"
-                                                                >
-                                                                    <X className="w-3.5 h-3.5" />
-                                                                </button>
-                                                            </div>
-                                                        </div>
-                                                    );
-                                                })}
-                                            </div>
-
-                                            <div className="text-[10px] text-slate-400 flex flex-col sm:flex-row sm:items-center justify-between gap-1 pt-1">
-                                                <span>Notes remain safely preserved across page reloads in browser localStorage until connection is restored.</span>
-                                                {!isEffectivelyOnline && (
-                                                    <span className="text-amber-400 font-bold">Auto-sync armed: will flush to ledger upon reconnection</span>
-                                                )}
-                                            </div>
+                                                }}
+                                                currentUserDisplayName={user?.displayName || 'Statutory Field Inspector'}
+                                            />
                                         </div>
                                     )}
+
                                 </div>
 
                                 {/* Digital Workplace Risk Assessment Matrix */}
@@ -14021,11 +13963,18 @@ Safety index and terminal clearance verified. The audit record status has been u
                             <button
                                 type="button"
                                 onClick={() => {
-                                    alert('Upgrade Checkout Simulated. Pro licensing covers high-frequency multi-terminal audits under certified ISO frameworks.');
+                                    setShowUpgradeModal(false);
+                                    setCheckoutDetails({
+                                        title: 'MeloTwo Pro SANS Compliance License',
+                                        description: 'Uncapped cognitive multi-terminal audits under certified ISO & SANS frameworks with immediate ledger integration.',
+                                        amountZar: 15000,
+                                        enterpriseName: 'Industrial Mine Site'
+                                    });
+                                    setIsPaymentGatewayModalOpen(true);
                                 }}
                                 className="w-full inline-flex items-center justify-center px-6 py-3 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-slate-950 font-black text-sm uppercase tracking-wider rounded-xl shadow-lg shadow-amber-500/10 transition-all cursor-pointer"
                             >
-                                Upgrade to Premium
+                                Upgrade with PayPal or EFT
                             </button>
                             <button
                                 type="button"
@@ -14077,6 +14026,25 @@ Safety index and terminal clearance verified. The audit record status has been u
                     </div>
                 </div>
             )}
+
+            {/* PayPal & EFT Payment Checkout Modal for SafetyInspectorPage */}
+            <PayPalEFTCheckoutModal
+                isOpen={isPaymentGatewayModalOpen}
+                onClose={() => setIsPaymentGatewayModalOpen(false)}
+                itemTitle={checkoutDetails.title}
+                itemDescription={checkoutDetails.description}
+                amountZar={checkoutDetails.amountZar}
+                enterpriseName={checkoutDetails.enterpriseName}
+                userEmail="turoka15@gmail.com"
+                onSuccess={(result) => {
+                    setIsVipUnlocked(true);
+                    try {
+                        localStorage.setItem('melotwo_vip_unlocked', 'true');
+                        localStorage.setItem('sans_trial_active', 'true');
+                    } catch (e) {}
+                    setIsPaymentGatewayModalOpen(false);
+                }}
+            />
 
             {/* CSV Ledger Import Modal */}
             <CsvImportModal
@@ -14137,6 +14105,19 @@ const App: React.FC = () => {
     const [isCostModalOpen, setIsCostModalOpen] = useState(false);
     const [isTenderWizardOpen, setIsTenderWizardOpen] = useState(false);
     const [demoModalTier, setDemoModalTier] = useState<'professional' | 'enterprise' | 'full_site' | 'audit'>('professional');
+    const [isPaymentGatewayModalOpen, setIsPaymentGatewayModalOpen] = useState(false);
+    const [isPayPalKeyConfigOpen, setIsPayPalKeyConfigOpen] = useState(false);
+    const [checkoutDetails, setCheckoutDetails] = useState<{
+        title: string;
+        description: string;
+        amountZar: number;
+        enterpriseName: string;
+    }>({
+        title: 'MeloTwo Pro SANS Compliance License',
+        description: 'Complete statutory SANS 10108 & 10142 compliance audit suite with infinite cognitive inspections.',
+        amountZar: 15000,
+        enterpriseName: 'Industrial Mine Site'
+    });
     const [showLinkedInToast, setShowLinkedInToast] = useState(false);
     const [isAdmin, setIsAdmin] = useState<boolean>(() => {
         if (typeof window !== 'undefined') {
@@ -14460,6 +14441,7 @@ const App: React.FC = () => {
                         isAdmin={isAdmin}
                         onOpenCostCalculator={handleOpenCostModal}
                         onOpenTenderWizard={handleOpenTenderWizard}
+                        onOpenPaymentSettings={() => setIsPayPalKeyConfigOpen(true)}
                         onGetStarted={() => {
                             setDemoModalTier('professional');
                             setIsDemoModalOpen(true);
@@ -14484,6 +14466,16 @@ const App: React.FC = () => {
                         isOpen={isDemoModalOpen} 
                         onClose={() => setIsDemoModalOpen(false)} 
                         initialTier={demoModalTier}
+                        onOpenCheckout={(price, tier, company) => {
+                            setIsDemoModalOpen(false);
+                            setCheckoutDetails({
+                                title: `${tier} Compliance License`,
+                                description: `Official SANS compliance subscription for ${company}`,
+                                amountZar: price,
+                                enterpriseName: company
+                            });
+                            setIsPaymentGatewayModalOpen(true);
+                        }}
                     />
                 </ErrorBoundary>
 
@@ -14505,6 +14497,31 @@ const App: React.FC = () => {
                         onClose={handleCloseTenderWizard}
                     />
                 </ErrorBoundary>
+
+                {/* PayPal & EFT Payment Checkout Modal */}
+                <PayPalEFTCheckoutModal
+                    isOpen={isPaymentGatewayModalOpen}
+                    onClose={() => setIsPaymentGatewayModalOpen(false)}
+                    itemTitle={checkoutDetails.title}
+                    itemDescription={checkoutDetails.description}
+                    amountZar={checkoutDetails.amountZar}
+                    enterpriseName={checkoutDetails.enterpriseName}
+                    userEmail="turoka15@gmail.com"
+                    onSuccess={(result) => {
+                        try {
+                            localStorage.setItem('sans_trial_active', 'true');
+                            localStorage.setItem('melotwo_vip_unlocked', 'true');
+                            localStorage.setItem('sans_vip_unlocked', 'true');
+                        } catch (e) {}
+                        setIsPaymentGatewayModalOpen(false);
+                    }}
+                />
+
+                {/* PayPal Gateway Key Configuration Modal */}
+                <PayPalKeyConfigModal
+                    isOpen={isPayPalKeyConfigOpen}
+                    onClose={() => setIsPayPalKeyConfigOpen(false)}
+                />
 
                 {/* Progressive Web App (PWA) Install Prompt (Bottom-Right Positioned) */}
                 <PWAInstallPrompt />

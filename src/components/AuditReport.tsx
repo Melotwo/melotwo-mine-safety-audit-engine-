@@ -5,6 +5,7 @@ import {
   Building, Copy, Check, Printer, FileText, Landmark, RefreshCcw, Briefcase
 } from "lucide-react";
 import { motion } from "motion/react";
+import { PayPalEFTCheckoutModal } from "./PayPalEFTCheckoutModal";
 
 interface AuditReportProps {
   report: AuditReportResponse;
@@ -20,53 +21,6 @@ export function AuditReport({ report, originalParams, onRunAuditAgain, historyLo
     return localStorage.getItem("sans_trial_active") === "true";
   });
   const [showModal, setShowModal] = useState(false);
-  const [enterpriseName, setEnterpriseName] = useState("");
-  const [operationType, setOperationType] = useState("Mining");
-  const [workforceSize, setWorkforceSize] = useState("");
-  const [submitting, setSubmitting] = useState(false);
-  const [errorMessage, setErrorMessage] = useState("");
-
-  const handleStartTrial = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!enterpriseName.trim() || !workforceSize.trim()) {
-      setErrorMessage("Please fill in all fields.");
-      return;
-    }
-    setSubmitting(true);
-    setErrorMessage("");
-
-    try {
-      const response = await fetch("/api/paystack/initialize-trial", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          enterpriseName,
-          operationType,
-          workforceSize,
-          email: "turoka15@gmail.com",
-        }),
-      });
-
-      if (!response.ok) {
-        throw new Error("Failed to initialize free trial subscription.");
-      }
-
-      const data = await response.json();
-      if (data.success) {
-        localStorage.setItem("sans_trial_active", "true");
-        setIsTrialActive(true);
-        setShowModal(false);
-      } else {
-        setErrorMessage(data.error || "An error occurred.");
-      }
-    } catch (err: any) {
-      setErrorMessage(err.message || "Network error. Please try again.");
-    } finally {
-      setSubmitting(false);
-    }
-  };
 
   const { auditSummary, riskAnalysis, complianceActionPlan, vendorMatchingCriteria, _fallback } = report;
 
@@ -947,90 +901,21 @@ Bulk specs summary: ${vendorMatchingCriteria.bulkOrderSpecsSummary}`;
         </div>
       </div>
 
-      {showModal && (
-        <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-md flex items-center justify-center p-4 z-50">
-          <div className="bg-[#1e293b] border border-slate-700 rounded-2xl w-full max-w-md p-6 shadow-2xl relative overflow-hidden">
-            {/* Visual Sky Accent Line */}
-            <div className="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-sky-400 to-blue-500" />
-            
-            <h3 className="text-lg font-black text-slate-100 uppercase tracking-wider mb-2 font-display flex items-center gap-2 mt-2">
-              <ShieldCheck className="w-5 h-5 text-sky-400" />
-              Activate SANS Beta Access
-            </h3>
-            
-            <p className="text-xs text-slate-400 mb-4 leading-relaxed font-sans">
-              Enter your corporate operational scope to register your 14-day deferred billing trial and generate official procurement blueprints.
-            </p>
-
-            <form onSubmit={handleStartTrial} className="space-y-4">
-              <div>
-                <label className="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-1 font-sans">
-                  Enterprise Name
-                </label>
-                <input
-                  type="text"
-                  required
-                  placeholder="e.g. Anglo American Platinum"
-                  value={enterpriseName}
-                  onChange={(e) => setEnterpriseName(e.target.value)}
-                  className="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-100 placeholder-slate-500 focus:outline-none focus:ring-1 focus:ring-sky-500/50 font-sans"
-                />
-              </div>
-
-              <div>
-                <label className="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-1 font-sans">
-                  Primary Operation Type
-                </label>
-                <select
-                  value={operationType}
-                  onChange={(e) => setOperationType(e.target.value)}
-                  className="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-100 focus:outline-none focus:ring-1 focus:ring-sky-500/50 cursor-pointer font-sans"
-                >
-                  <option value="Mining">Mining Operations (Deep/Open-Cast)</option>
-                  <option value="Construction">Civil Engineering & Construction</option>
-                </select>
-              </div>
-
-              <div>
-                <label className="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-1 font-sans">
-                  Workforce Size
-                </label>
-                <input
-                  type="text"
-                  required
-                  placeholder="e.g. 1500 personnel"
-                  value={workforceSize}
-                  onChange={(e) => setWorkforceSize(e.target.value)}
-                  className="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-100 placeholder-slate-500 focus:outline-none focus:ring-1 focus:ring-sky-500/50 font-sans"
-                />
-              </div>
-
-              {errorMessage && (
-                <div className="text-xs text-rose-400 font-sans bg-rose-950/20 border border-rose-500/20 p-2.5 rounded-lg">
-                  {errorMessage}
-                </div>
-              )}
-
-              <div className="flex gap-2 pt-2">
-                <button
-                  type="button"
-                  onClick={() => setShowModal(false)}
-                  className="w-1/2 bg-slate-950 hover:bg-slate-900 border border-slate-700 text-slate-400 font-bold px-4 py-2.5 rounded-xl text-xs uppercase tracking-wider transition-colors cursor-pointer font-sans"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  disabled={submitting}
-                  className="w-1/2 bg-gradient-to-r from-sky-400 to-blue-600 hover:from-sky-300 hover:to-blue-500 text-slate-950 font-black px-4 py-2.5 rounded-xl text-xs uppercase tracking-wider transition-all disabled:opacity-50 cursor-pointer font-sans"
-                >
-                  {submitting ? "Activating..." : "Confirm & Unlock"}
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
+      {/* Modern PayPal & EFT Payment / Trial Gateway Checkout Modal */}
+      <PayPalEFTCheckoutModal
+        isOpen={showModal}
+        onClose={() => setShowModal(false)}
+        itemTitle="SANS 14-Day Full Compliance Shield & Tender Blueprint"
+        itemDescription="Instant unlock of official SANS compliance specification generator, Section 54 proof defense, and tender procurement blueprints."
+        amountZar={1500}
+        enterpriseName={originalParams?.mineName || "Industrial Mine Site"}
+        userEmail="turoka15@gmail.com"
+        onSuccess={(result) => {
+          localStorage.setItem("sans_trial_active", "true");
+          setIsTrialActive(true);
+          setShowModal(false);
+        }}
+      />
 
     </div>
   );

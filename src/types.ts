@@ -210,3 +210,48 @@ export interface AuditReportResponse {
 }
 
 export * from './config/regulatoryRules.zambia';
+
+export type PaymentGatewayType = 'paypal' | 'eft';
+
+export interface PayPalConfig {
+  clientId: string;
+  clientSecret?: string;
+  mode: 'sandbox' | 'live';
+  currency: 'USD' | 'EUR' | 'GBP';
+  isConfigured: boolean;
+}
+
+export interface EftBankDetails {
+  bankName: string;
+  accountName: string;
+  accountNumber: string;
+  branchCode: string;
+  accountType: string;
+  swiftCode: string;
+  country: string;
+}
+
+export interface EftOrderSubmission {
+  id: string;
+  reference: string;
+  amountZar: number;
+  enterpriseName: string;
+  email: string;
+  tierOrItem: string;
+  notes?: string;
+  popFileName?: string;
+  status: 'PENDING_VERIFICATION' | 'VERIFIED' | 'PROVISIONALLY_APPROVED';
+  createdAt: string;
+}
+
+export interface PaymentSuccessResult {
+  gateway: 'paypal' | 'eft';
+  transactionId: string;
+  amount: number;
+  currency: string;
+  item: string;
+  customerName?: string;
+  customerEmail?: string;
+  timestamp: string;
+  status: 'COMPLETED' | 'PENDING_EFT_CLEARANCE';
+}
