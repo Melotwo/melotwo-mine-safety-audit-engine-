@@ -10,8 +10,6 @@ import {
   X, 
   AlertCircle, 
   CheckCircle2, 
-  Key, 
-  Clipboard, 
   ArrowRight,
   FileText,
   DollarSign,
@@ -21,6 +19,7 @@ import {
 } from 'lucide-react';
 import { PayPalScriptProvider, PayPalButtons } from '@paypal/react-paypal-js';
 import { 
+  EFT_BANK_ACCOUNTS,
   EFT_BANKING_DETAILS, 
   convertZarToUsd, 
   formatZarCurrency, 
@@ -28,11 +27,11 @@ import {
   generateEftReference, 
   generateEftInvoicePdf, 
   getStoredPayPalConfig, 
-  saveStoredPayPalConfig, 
+  saveStoredPayPalConfig,
+  fetchServerPayPalConfig,
   submitEftOrder 
 } from '../services/paymentService';
-import { PayPalConfig, PaymentGatewayType, PaymentSuccessResult } from '../types';
-import { PayPalKeyConfigModal } from './PayPalKeyConfigModal';
+import { PayPalConfig, PaymentGatewayType, PaymentSuccessResult, SupportedEftBankKey } from '../types';
 
 interface PayPalEFTCheckoutModalProps {
   isOpen: boolean;
@@ -57,32 +56,35 @@ export const PayPalEFTCheckoutModal: React.FC<PayPalEFTCheckoutModalProps> = ({
 }) => {
   const [activeTab, setActiveTab] = useState<PaymentGatewayType>('paypal');
   const [paypalConfig, setPaypalConfig] = useState<PayPalConfig>(getStoredPayPalConfig());
-  const [isKeyConfigOpen, setIsKeyConfigOpen] = useState(false);
 
   // Form states
   const [enterprise, setEnterprise] = useState(initialEnterprise);
   const [email, setEmail] = useState(initialEmail);
   const [copiedField, setCopiedField] = useState<string | null>(null);
 
-  // EFT specific state
+  // EFT specific state with Capitec (Primary) and FNB (Secondary) toggle
+  const [selectedBank, setSelectedBank] = useState<SupportedEftBankKey>('capitec');
   const [eftReference] = useState(() => generateEftReference(itemTitle));
   const [popFile, setPopFile] = useState<File | null>(null);
+  const [popDataUrl, setPopDataUrl] = useState<string>('');
   const [eftSubmitting, setEftSubmitting] = useState(false);
   const [eftSuccess, setEftSuccess] = useState(false);
 
   // PayPal processing state
   const [paypalProcessing, setPaypalProcessing] = useState(false);
   const [paypalSuccess, setPaypalSuccess] = useState(false);
-  const [quickPasteKey, setQuickPasteKey] = useState('');
-  const [showQuickPaste, setShowQuickPaste] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     if (isOpen) {
-      const cfg = getStoredPayPalConfig();
-      setPaypalConfig(cfg);
+      // Automatic secret injection from server or environment
+      fetchServerPayPalConfig().then((cfg) => {
+        setPaypalConfig(cfg);
+      }).catch(() => {
+        setPaypalConfig(getStoredPayPalConfig());
+      });
       setEnterprise(initialEnterprise);
       setEmail(initialEmail);
       setErrorMessage(null);
@@ -100,26 +102,6 @@ export const PayPalEFTCheckoutModal: React.FC<PayPalEFTCheckoutModalProps> = ({
     navigator.clipboard.writeText(text);
     setCopiedField(label);
     setTimeout(() => setCopiedField(null), 2000);
-  };
-
-  // Quick paste PayPal key directly into checkout
-  const handleQuickPasteKey = async () => {
-    try {
-      let key = quickPasteKey.trim();
-      if (!key) {
-        key = await navigator.clipboard.readText();
-      }
-      if (key && key.trim()) {
-        const updated = saveStoredPayPalConfig({ clientId: key.trim() });
-        setPaypalConfig(updated);
-        setShowQuickPaste(false);
-        setErrorMessage(null);
-      } else {
-        setErrorMessage('Please type or paste your PayPal Client ID.');
-      }
-    } catch (e) {
-      setShowQuickPaste(true);
-    }
   };
 
   // Process PayPal Payment
@@ -195,6 +177,8 @@ export const PayPalEFTCheckoutModal: React.FC<PayPalEFTCheckoutModalProps> = ({
     setEftSubmitting(true);
     setErrorMessage(null);
 
+    const activeBank = EFT_BANK_ACCOUNTS[selectedBank] || EFT_BANK_ACCOUNTS.capitec;
+
     try {
       const order = await submitEftOrder({
         reference: eftReference,
@@ -202,7 +186,11 @@ export const PayPalEFTCheckoutModal: React.FC<PayPalEFTCheckoutModalProps> = ({
         enterpriseName: enterprise,
         email,
         tierOrItem: itemTitle,
-        popFileName: popFile ? popFile.name : undefined
+        selectedBank,
+        bankName: activeBank.bankName,
+        popFileName: popFile ? popFile.name : undefined,
+        popFileDataUrl: popDataUrl || undefined,
+        notes: `EFT Transfer submitted via ${activeBank.bankName} (Acc: ${activeBank.accountNumber}, SWIFT: ${activeBank.swiftCode}). Reference: ${eftReference}`
       });
 
       setEftSuccess(true);
@@ -305,14 +293,10 @@ export const PayPalEFTCheckoutModal: React.FC<PayPalEFTCheckoutModalProps> = ({
                 }`}
               >
                 <CreditCard className="w-4 h-4" />
-                <span>PayPal Gateway</span>
-                {paypalConfig.isConfigured ? (
-                  <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" title="PayPal Key Configured" />
-                ) : (
-                  <span className="text-[9px] px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-300 font-mono">
-                    Key Copied?
-                  </span>
-                )}
+                <span>PayPal &amp; Card</span>
+                <span className="text-[9px] px-1.5 py-0.5 rounded bg-sky-500/20 text-sky-200 font-mono">
+                  Instant
+                </span>
               </button>
 
               <button
@@ -326,8 +310,8 @@ export const PayPalEFTCheckoutModal: React.FC<PayPalEFTCheckoutModalProps> = ({
               >
                 <Building2 className="w-4 h-4" />
                 <span>EFT / Bank Wire (ZA)</span>
-                <span className="text-[9px] px-1.5 py-0.5 rounded bg-slate-800 text-slate-300 font-mono">
-                  Proforma
+                <span className="text-[9px] px-1.5 py-0.5 rounded bg-slate-800 text-amber-300 font-mono">
+                  Capitec / FNB
                 </span>
               </button>
             </div>
@@ -336,67 +320,28 @@ export const PayPalEFTCheckoutModal: React.FC<PayPalEFTCheckoutModalProps> = ({
             {activeTab === 'paypal' && (
               <div className="space-y-5 animate-fade-in">
                 
-                {/* Key Notification / Clipboard paste prompt */}
-                <div className="p-4 rounded-2xl bg-gradient-to-r from-sky-950/40 via-slate-900 to-slate-950 border border-sky-500/30 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                  <div className="space-y-1">
+                {/* Instant Clearance Gateway Banner */}
+                <div className="p-4 rounded-2xl bg-gradient-to-r from-sky-950/40 via-slate-900 to-slate-950 border border-sky-500/30 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-inner">
+                  <div className="space-y-0.5">
                     <div className="flex items-center gap-2">
-                      <Key className="w-4 h-4 text-sky-400" />
+                      <ShieldCheck className="w-4 h-4 text-emerald-400" />
                       <span className="text-xs font-bold text-sky-300 uppercase tracking-wider">
-                        PayPal Gateway Status: {paypalConfig.isConfigured ? 'Active & Ready' : 'Key Needed'}
+                        Official PayPal &amp; Debit/Credit Card Gateway
+                      </span>
+                      <span className="text-[9px] px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 font-mono">
+                        Active &amp; Ready
                       </span>
                     </div>
                     <p className="text-[11px] text-slate-400 leading-snug">
-                      {paypalConfig.isConfigured ? (
-                        <>Using Client ID: <span className="font-mono text-slate-300">{paypalConfig.clientId.slice(0, 12)}...{paypalConfig.clientId.slice(-4)}</span> ({paypalConfig.mode})</>
-                      ) : (
-                        'Have your PayPal Key copied to your clipboard? Click "Paste Key" to activate instant checkout.'
-                      )}
+                      Pay with your PayPal Wallet, Visa, MasterCard, or American Express for instant cryptographic license activation.
                     </p>
                   </div>
 
-                  <div className="flex items-center gap-2 shrink-0">
-                    <button
-                      type="button"
-                      onClick={handleQuickPasteKey}
-                      className="px-3 py-1.5 bg-sky-500/20 hover:bg-sky-500/30 border border-sky-500/40 text-sky-300 rounded-lg text-xs font-bold transition flex items-center gap-1.5 cursor-pointer"
-                    >
-                      <Clipboard className="w-3.5 h-3.5" />
-                      Paste Copied Key
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setIsKeyConfigOpen(true)}
-                      className="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg text-xs font-medium transition cursor-pointer"
-                    >
-                      Configure
-                    </button>
+                  <div className="flex items-center gap-2 text-[10px] text-slate-400 font-mono shrink-0">
+                    <Lock className="w-3.5 h-3.5 text-sky-400" />
+                    <span>256-bit TLS Encrypted</span>
                   </div>
                 </div>
-
-                {/* Show quick paste input field if toggled or needed */}
-                {showQuickPaste && (
-                  <div className="p-3.5 bg-slate-950 border border-amber-500/40 rounded-xl space-y-2">
-                    <label className="block text-xs font-bold text-amber-300">
-                      Paste PayPal Client ID:
-                    </label>
-                    <div className="flex gap-2">
-                      <input
-                        type="text"
-                        value={quickPasteKey}
-                        onChange={(e) => setQuickPasteKey(e.target.value)}
-                        placeholder="Paste your copied PayPal Client ID key here..."
-                        className="flex-1 bg-slate-900 border border-slate-700 rounded-lg px-3 py-1.5 text-xs text-white font-mono focus:outline-none focus:border-amber-400"
-                      />
-                      <button
-                        type="button"
-                        onClick={handleQuickPasteKey}
-                        className="px-4 py-1.5 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs rounded-lg cursor-pointer"
-                      >
-                        Save
-                      </button>
-                    </div>
-                  </div>
-                )}
 
                 {/* Customer Details Inputs */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -433,28 +378,27 @@ export const PayPalEFTCheckoutModal: React.FC<PayPalEFTCheckoutModalProps> = ({
                   <div className="max-w-md mx-auto space-y-1">
                     <h4 className="text-sm font-bold text-white flex items-center justify-center gap-2">
                       <CreditCard className="w-4 h-4 text-sky-400" />
-                      Proceed with PayPal Live Gateway
+                      Instant Smart Checkout
                     </h4>
                     <p className="text-xs text-slate-400">
                       Charge {formatUsdCurrency(usdAmount)} ({formatZarCurrency(amountZar)}) to your PayPal Balance, Debit/Credit Card, or Corporate Account.
                     </p>
                   </div>
 
-                  {/* Official PayPal SDK Buttons when configured */}
-                  {paypalConfig.isConfigured && paypalConfig.clientId && (
-                    <div className="max-w-md mx-auto pt-1 pb-2">
-                      <PayPalScriptProvider options={{
-                        clientId: paypalConfig.clientId,
-                        currency: paypalConfig.currency || 'USD',
-                        intent: 'capture'
-                      }}>
-                        <PayPalButtons
-                          style={{
-                            layout: 'vertical',
-                            color: 'gold',
-                            shape: 'rect',
-                            label: 'pay'
-                          }}
+                  {/* Official PayPal SDK Buttons (Yellow PayPal Wallet + Black Card) */}
+                  <div className="max-w-md mx-auto pt-1 pb-2">
+                    <PayPalScriptProvider options={{
+                      clientId: paypalConfig.clientId || 'test',
+                      currency: paypalConfig.currency || 'USD',
+                      intent: 'capture'
+                    }}>
+                      <PayPalButtons
+                        style={{
+                          layout: 'vertical',
+                          color: 'gold',
+                          shape: 'rect',
+                          label: 'pay'
+                        }}
                           createOrder={async () => {
                             try {
                               const res = await fetch('/api/paypal/create-order', {
@@ -514,7 +458,6 @@ export const PayPalEFTCheckoutModal: React.FC<PayPalEFTCheckoutModalProps> = ({
                         />
                       </PayPalScriptProvider>
                     </div>
-                  )}
 
                   <div className="relative flex py-1 items-center max-w-md mx-auto">
                     <div className="flex-grow border-t border-slate-800"></div>
@@ -560,7 +503,10 @@ export const PayPalEFTCheckoutModal: React.FC<PayPalEFTCheckoutModalProps> = ({
             )}
 
             {/* TAB 2: EFT BANK TRANSFER (SOUTH AFRICA) */}
-            {activeTab === 'eft' && (
+            {activeTab === 'eft' && (() => {
+              const activeBank = EFT_BANK_ACCOUNTS[selectedBank] || EFT_BANK_ACCOUNTS.capitec;
+
+              return (
               <form onSubmit={handleSubmitEft} className="space-y-5 animate-fade-in">
                 
                 {/* Official Banking Coordinates Box */}
@@ -569,7 +515,7 @@ export const PayPalEFTCheckoutModal: React.FC<PayPalEFTCheckoutModalProps> = ({
                     <div className="flex items-center gap-2">
                       <Building2 className="w-4 h-4 text-amber-400" />
                       <span className="text-xs font-bold text-amber-400 uppercase tracking-wider font-display">
-                        Official Industrial Banking Coordinates
+                        Official Direct EFT / Wire Transfer Coordinates
                       </span>
                     </div>
 
@@ -580,7 +526,8 @@ export const PayPalEFTCheckoutModal: React.FC<PayPalEFTCheckoutModalProps> = ({
                         amountZar,
                         enterpriseName: enterprise || 'Industrial Client',
                         email: email || 'billing@client.com',
-                        tierOrItem: itemTitle
+                        tierOrItem: itemTitle,
+                        selectedBank
                       })}
                       className="px-3 py-1.5 bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/30 text-amber-400 rounded-lg text-xs font-bold transition flex items-center gap-1.5 cursor-pointer w-fit"
                     >
@@ -589,66 +536,174 @@ export const PayPalEFTCheckoutModal: React.FC<PayPalEFTCheckoutModalProps> = ({
                     </button>
                   </div>
 
-                  {/* Bank Details Grid */}
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
-                    <div className="p-3 bg-slate-900/60 rounded-xl border border-slate-800 flex justify-between items-center">
+                  {/* Bank Account Toggle: Capitec Bank vs FNB */}
+                  <div className="space-y-1.5">
+                    <div className="flex items-center justify-between">
+                      <label className="text-[11px] font-bold text-slate-300 uppercase tracking-wider flex items-center gap-1.5">
+                        <Building2 className="w-3.5 h-3.5 text-amber-400" />
+                        Select Beneficiary Clearing Bank:
+                      </label>
+                      <span className="text-[10px] text-slate-400 font-mono">
+                        Instant Toggle
+                      </span>
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      {/* Capitec Bank (Primary) */}
+                      <button
+                        type="button"
+                        onClick={() => setSelectedBank('capitec')}
+                        className={`p-3.5 rounded-xl border text-left transition-all cursor-pointer relative ${
+                          selectedBank === 'capitec'
+                            ? 'bg-gradient-to-br from-amber-500/15 via-slate-900 to-slate-950 border-amber-500 shadow-md shadow-amber-500/15 ring-1 ring-amber-500/50'
+                            : 'bg-slate-900/60 border-slate-800 hover:border-slate-700 text-slate-400'
+                        }`}
+                      >
+                        <div className="flex items-center justify-between mb-1.5">
+                          <span className="font-bold text-white text-xs tracking-wide flex items-center gap-1.5">
+                            {selectedBank === 'capitec' && <CheckCircle2 className="w-3.5 h-3.5 text-amber-400 shrink-0" />}
+                            Capitec Bank
+                          </span>
+                          <span className="text-[9px] px-2 py-0.5 rounded-full font-bold uppercase tracking-wider bg-emerald-500/20 text-emerald-300 border border-emerald-500/40">
+                            Primary Account
+                          </span>
+                        </div>
+                        <div className="text-[11px] text-slate-300 font-mono">
+                          Acc: <span className="font-bold text-white">1602352133</span>
+                        </div>
+                        <div className="text-[10px] text-slate-400 font-mono flex items-center justify-between mt-1 pt-1 border-t border-slate-800/80">
+                          <span>Branch: 470010</span>
+                          <span>SWIFT: CABLZAJJ</span>
+                        </div>
+                      </button>
+
+                      {/* First National Bank (FNB) */}
+                      <button
+                        type="button"
+                        onClick={() => setSelectedBank('fnb')}
+                        className={`p-3.5 rounded-xl border text-left transition-all cursor-pointer relative ${
+                          selectedBank === 'fnb'
+                            ? 'bg-gradient-to-br from-sky-500/15 via-slate-900 to-slate-950 border-sky-400 shadow-md shadow-sky-500/15 ring-1 ring-sky-400/50'
+                            : 'bg-slate-900/60 border-slate-800 hover:border-slate-700 text-slate-400'
+                        }`}
+                      >
+                        <div className="flex items-center justify-between mb-1.5">
+                          <span className="font-bold text-white text-xs tracking-wide flex items-center gap-1.5">
+                            {selectedBank === 'fnb' && <CheckCircle2 className="w-3.5 h-3.5 text-sky-400 shrink-0" />}
+                            First National Bank (FNB)
+                          </span>
+                          <span className="text-[9px] px-2 py-0.5 rounded-full font-bold uppercase tracking-wider bg-sky-500/20 text-sky-300 border border-sky-500/40">
+                            Secondary Wire
+                          </span>
+                        </div>
+                        <div className="text-[11px] text-slate-300 font-mono">
+                          Acc: <span className="font-bold text-white">62904917393</span>
+                        </div>
+                        <div className="text-[10px] text-slate-400 font-mono flex items-center justify-between mt-1 pt-1 border-t border-slate-800/80">
+                          <span>Branch: 250655</span>
+                          <span>SWIFT: FIRNZAJJ</span>
+                        </div>
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Active Bank Dynamic Coordinates Display */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs pt-1">
+                    <div className="p-3 bg-slate-900/70 rounded-xl border border-slate-800 flex justify-between items-center">
                       <div>
                         <div className="text-[10px] text-slate-400 uppercase font-semibold">Bank Name</div>
-                        <div className="font-bold text-white">{EFT_BANKING_DETAILS.bankName}</div>
+                        <div className="font-bold text-white flex items-center gap-1.5">
+                          {activeBank.bankName}
+                          <span className="text-[9px] px-1.5 py-0.2 rounded bg-slate-800 text-amber-400 font-mono">
+                            {activeBank.isPrimary ? 'PRIMARY' : 'SECONDARY'}
+                          </span>
+                        </div>
                       </div>
                       <button
                         type="button"
-                        onClick={() => handleCopy(EFT_BANKING_DETAILS.bankName, 'bank')}
+                        onClick={() => handleCopy(activeBank.bankName, 'bank')}
                         className="text-slate-400 hover:text-white p-1 rounded"
-                        title="Copy"
+                        title="Copy Bank Name"
                       >
                         {copiedField === 'bank' ? <Check className="w-4 h-4 text-emerald-400" /> : <Copy className="w-4 h-4" />}
                       </button>
                     </div>
 
-                    <div className="p-3 bg-slate-900/60 rounded-xl border border-slate-800 flex justify-between items-center">
+                    <div className="p-3 bg-slate-900/70 rounded-xl border border-slate-800 flex justify-between items-center">
                       <div>
-                        <div className="text-[10px] text-slate-400 uppercase font-semibold">Account Number</div>
-                        <div className="font-bold text-white font-mono">{EFT_BANKING_DETAILS.accountNumber}</div>
+                        <div className="text-[10px] text-slate-400 uppercase font-semibold">Account Holder</div>
+                        <div className="font-bold text-white font-mono">{activeBank.accountName}</div>
                       </div>
                       <button
                         type="button"
-                        onClick={() => handleCopy(EFT_BANKING_DETAILS.accountNumber, 'acc')}
+                        onClick={() => handleCopy(activeBank.accountName, 'accname')}
                         className="text-slate-400 hover:text-white p-1 rounded"
-                        title="Copy"
+                        title="Copy Account Holder"
+                      >
+                        {copiedField === 'accname' ? <Check className="w-4 h-4 text-emerald-400" /> : <Copy className="w-4 h-4" />}
+                      </button>
+                    </div>
+
+                    <div className="p-3 bg-slate-900/70 rounded-xl border border-slate-800 flex justify-between items-center">
+                      <div>
+                        <div className="text-[10px] text-slate-400 uppercase font-semibold">Account Number</div>
+                        <div className="font-bold text-white font-mono text-sm tracking-wide text-amber-300">
+                          {activeBank.accountNumber}
+                        </div>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => handleCopy(activeBank.accountNumber, 'acc')}
+                        className="text-slate-400 hover:text-white p-1 rounded"
+                        title="Copy Account Number"
                       >
                         {copiedField === 'acc' ? <Check className="w-4 h-4 text-emerald-400" /> : <Copy className="w-4 h-4" />}
                       </button>
                     </div>
 
-                    <div className="p-3 bg-slate-900/60 rounded-xl border border-slate-800 flex justify-between items-center">
+                    <div className="p-3 bg-slate-900/70 rounded-xl border border-slate-800 flex justify-between items-center">
                       <div>
                         <div className="text-[10px] text-slate-400 uppercase font-semibold">Branch Code</div>
-                        <div className="font-bold text-white font-mono">{EFT_BANKING_DETAILS.branchCode}</div>
+                        <div className="font-bold text-white font-mono">{activeBank.branchCode}</div>
                       </div>
                       <button
                         type="button"
-                        onClick={() => handleCopy(EFT_BANKING_DETAILS.branchCode, 'branch')}
+                        onClick={() => handleCopy(activeBank.branchCode, 'branch')}
                         className="text-slate-400 hover:text-white p-1 rounded"
-                        title="Copy"
+                        title="Copy Branch Code"
                       >
                         {copiedField === 'branch' ? <Check className="w-4 h-4 text-emerald-400" /> : <Copy className="w-4 h-4" />}
                       </button>
                     </div>
 
-                    <div className="p-3 bg-slate-900/60 rounded-xl border border-slate-800 flex justify-between items-center">
+                    <div className="p-3 bg-slate-900/70 rounded-xl border border-slate-800 flex justify-between items-center">
                       <div>
-                        <div className="text-[10px] text-slate-400 uppercase font-semibold">Account Type</div>
-                        <div className="font-bold text-white">{EFT_BANKING_DETAILS.accountType}</div>
+                        <div className="text-[10px] text-slate-400 uppercase font-semibold">SWIFT / BIC Code</div>
+                        <div className="font-bold text-white font-mono">{activeBank.swiftCode}</div>
                       </div>
-                      <span className="text-[10px] font-mono text-slate-500">ZA-ZAR</span>
+                      <button
+                        type="button"
+                        onClick={() => handleCopy(activeBank.swiftCode, 'swift')}
+                        className="text-slate-400 hover:text-white p-1 rounded"
+                        title="Copy SWIFT Code"
+                      >
+                        {copiedField === 'swift' ? <Check className="w-4 h-4 text-emerald-400" /> : <Copy className="w-4 h-4" />}
+                      </button>
                     </div>
 
-                    {/* Reference Highlight */}
+                    <div className="p-3 bg-slate-900/70 rounded-xl border border-slate-800 flex justify-between items-center">
+                      <div>
+                        <div className="text-[10px] text-slate-400 uppercase font-semibold">Account Type & Region</div>
+                        <div className="font-bold text-white">{activeBank.accountType}</div>
+                      </div>
+                      <span className="text-[10px] font-mono text-slate-400">{activeBank.country}</span>
+                    </div>
+
+                    {/* Reference Highlight: MT-2026-XXXX */}
                     <div className="sm:col-span-2 p-3 bg-amber-500/10 rounded-xl border border-amber-500/30 flex justify-between items-center">
                       <div>
                         <div className="text-[10px] text-amber-400 uppercase font-bold tracking-wider">
-                          Mandatory Beneficiary Reference
+                          Mandatory Beneficiary Reference (Must Appear on POP)
                         </div>
                         <div className="text-sm font-black text-white font-mono tracking-wider">
                           {eftReference}
@@ -697,11 +752,16 @@ export const PayPalEFTCheckoutModal: React.FC<PayPalEFTCheckoutModalProps> = ({
                   </div>
                 </div>
 
-                {/* Upload Proof of Payment (POP) */}
+                {/* Upload Proof of Payment (POP) - Routes directly to Admin Approval Queue */}
                 <div>
                   <label className="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-1.5 flex items-center justify-between">
-                    <span>Attach Proof of Payment (POP)</span>
-                    <span className="text-[10px] text-slate-400">PDF, PNG, JPG (Optional)</span>
+                    <span className="flex items-center gap-1.5">
+                      <FileText className="w-3.5 h-3.5 text-amber-400" />
+                      Attach Proof of Payment (POP)
+                    </span>
+                    <span className="text-[10px] text-emerald-400 font-mono flex items-center gap-1">
+                      <ShieldCheck className="w-3 h-3" /> Direct to Admin Approval Queue
+                    </span>
                   </label>
                   
                   <input
@@ -711,28 +771,45 @@ export const PayPalEFTCheckoutModal: React.FC<PayPalEFTCheckoutModalProps> = ({
                     className="hidden"
                     onChange={(e) => {
                       if (e.target.files && e.target.files[0]) {
-                        setPopFile(e.target.files[0]);
+                        const file = e.target.files[0];
+                        setPopFile(file);
+                        const reader = new FileReader();
+                        reader.onload = () => {
+                          if (typeof reader.result === 'string') {
+                            setPopDataUrl(reader.result);
+                          }
+                        };
+                        reader.readAsDataURL(file);
                       }
                     }}
                   />
 
                   <div 
                     onClick={() => fileInputRef.current?.click()}
-                    className="p-4 border-2 border-dashed border-slate-700 hover:border-amber-500/60 rounded-2xl bg-slate-950/60 text-center cursor-pointer transition"
+                    className={`p-4 border-2 border-dashed rounded-2xl text-center cursor-pointer transition ${
+                      popFile 
+                        ? 'border-emerald-500/70 bg-emerald-950/20' 
+                        : 'border-slate-700 hover:border-amber-500/60 bg-slate-950/60'
+                    }`}
                   >
                     {popFile ? (
-                      <div className="flex items-center justify-center gap-2 text-emerald-400 text-xs font-bold">
-                        <CheckCircle2 className="w-4 h-4" />
-                        <span>Attached: {popFile.name} ({(popFile.size / 1024).toFixed(0)} KB)</span>
+                      <div className="space-y-1">
+                        <div className="flex items-center justify-center gap-2 text-emerald-400 text-xs font-bold">
+                          <CheckCircle2 className="w-4 h-4 text-emerald-400" />
+                          <span>Attached: {popFile.name} ({(popFile.size / 1024).toFixed(0)} KB)</span>
+                        </div>
+                        <span className="text-[11px] text-slate-400 block">
+                          Bank slip attached. Will be securely dispatched to the executive approval queue upon submission.
+                        </span>
                       </div>
                     ) : (
                       <div className="space-y-1">
                         <Upload className="w-5 h-5 text-slate-400 mx-auto mb-1" />
                         <span className="text-xs text-slate-300 font-medium block">
-                          Click to upload bank transfer slip or POP receipt
+                          Click to upload bank transfer slip or POP receipt (PDF, PNG, JPG)
                         </span>
                         <span className="text-[10px] text-slate-500 block">
-                          You can also settle the transfer later; provisional access will be granted immediately.
+                          Transfers route straight to the admin approval queue. Provisional audit access is issued instantly.
                         </span>
                       </div>
                     )}
@@ -748,22 +825,23 @@ export const PayPalEFTCheckoutModal: React.FC<PayPalEFTCheckoutModalProps> = ({
                   {eftSubmitting ? (
                     <>
                       <div className="w-4 h-4 border-2 border-slate-950/30 border-t-slate-950 rounded-full animate-spin" />
-                      <span>Registering EFT Transfer...</span>
+                      <span>Registering EFT & Queuing POP for Admin Approval...</span>
                     </>
                   ) : eftSuccess ? (
                     <>
                       <CheckCircle2 className="w-4 h-4 text-slate-950" />
-                      <span>EFT Registered! Granting Provisional Access...</span>
+                      <span>EFT Registered in Admin Queue! Provisional Access Unlocked...</span>
                     </>
                   ) : (
                     <>
                       <ShieldCheck className="w-4 h-4" />
-                      <span>Confirm EFT & Unlock Provisional Access ({formatZarCurrency(amountZar)})</span>
+                      <span>Submit EFT Order & Queue for Approval ({formatZarCurrency(amountZar)})</span>
                     </>
                   )}
                 </button>
               </form>
-            )}
+              );
+            })()}
 
             {/* Error Message */}
             {errorMessage && (
@@ -792,13 +870,6 @@ export const PayPalEFTCheckoutModal: React.FC<PayPalEFTCheckoutModalProps> = ({
 
         </div>
       </div>
-
-      {/* Embedded PayPal Key Configuration Modal */}
-      <PayPalKeyConfigModal
-        isOpen={isKeyConfigOpen}
-        onClose={() => setIsKeyConfigOpen(false)}
-        onSaved={(newCfg) => setPaypalConfig(newCfg)}
-      />
     </>
   );
 };

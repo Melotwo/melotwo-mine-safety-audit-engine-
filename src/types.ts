@@ -221,7 +221,10 @@ export interface PayPalConfig {
   isConfigured: boolean;
 }
 
+export type SupportedEftBankKey = 'capitec' | 'fnb';
+
 export interface EftBankDetails {
+  bankKey: SupportedEftBankKey;
   bankName: string;
   accountName: string;
   accountNumber: string;
@@ -229,6 +232,12 @@ export interface EftBankDetails {
   accountType: string;
   swiftCode: string;
   country: string;
+  isPrimary?: boolean;
+}
+
+export interface EftBankAccountsConfig {
+  capitec: EftBankDetails;
+  fnb: EftBankDetails;
 }
 
 export interface EftOrderSubmission {
@@ -238,10 +247,14 @@ export interface EftOrderSubmission {
   enterpriseName: string;
   email: string;
   tierOrItem: string;
+  selectedBank?: SupportedEftBankKey;
+  bankName?: string;
   notes?: string;
   popFileName?: string;
-  status: 'PENDING_VERIFICATION' | 'VERIFIED' | 'PROVISIONALLY_APPROVED';
+  popFileDataUrl?: string;
+  status: 'PENDING_VERIFICATION' | 'VERIFIED' | 'PROVISIONALLY_APPROVED' | 'REJECTED';
   createdAt: string;
+  verifiedAt?: string;
 }
 
 export interface PaymentSuccessResult {

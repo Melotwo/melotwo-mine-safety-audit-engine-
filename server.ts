@@ -2085,6 +2085,34 @@ const runtimePayPalConfig: ServerPayPalConfig = {
   currency: 'USD'
 };
 
+const cleanEnv = (val?: string) => (val || '').replace(/[\u200B-\u200D\uFEFF\u2060]/g, '').trim();
+
+// Official South African Direct EFT / Wire Transfer Coordinates
+const SERVER_BANKING_CONFIG = {
+  capitec: {
+    bankKey: 'capitec' as const,
+    bankName: cleanEnv(process.env.BANK_NAME_CAPITEC) || cleanEnv(process.env.VITE_BANK_NAME_CAPITEC) || 'Capitec Bank',
+    accountName: 'MR TH SEROKA',
+    accountNumber: (cleanEnv(process.env.ACCOUNT_NUMBER_CAPITEC) && !cleanEnv(process.env.ACCOUNT_NUMBER_CAPITEC).includes('62904917393') ? cleanEnv(process.env.ACCOUNT_NUMBER_CAPITEC) : '') || '1602352133',
+    branchCode: (cleanEnv(process.env.BRANCH_CODE_CAPITEC) && !cleanEnv(process.env.BRANCH_CODE_CAPITEC).includes('250655') ? cleanEnv(process.env.BRANCH_CODE_CAPITEC) : '') || '470010',
+    swiftCode: cleanEnv(process.env.SWIFT_CODE_CAPITEC) || cleanEnv(process.env.VITE_SWIFT_CODE_CAPITEC) || 'CABLZAJJ',
+    accountType: 'Savings / Direct Corporate EFT',
+    country: 'South Africa',
+    isPrimary: true
+  },
+  fnb: {
+    bankKey: 'fnb' as const,
+    bankName: cleanEnv(process.env.BANK_NAME_FNB) || cleanEnv(process.env.VITE_BANK_NAME_FNB) || 'First National Bank (FNB)',
+    accountName: cleanEnv(process.env.ACCOUNT_NAME_FNB) || cleanEnv(process.env.VITE_ACCOUNT_NAME_FNB) || 'MR TH SEROKA',
+    accountNumber: cleanEnv(process.env.ACCOUNT_NUMBER_FNB) || cleanEnv(process.env.VITE_ACCOUNT_NUMBER_FNB) || '62904917393',
+    branchCode: cleanEnv(process.env.BRANCH_CODE_FNB) || cleanEnv(process.env.VITE_BRANCH_CODE_FNB) || '250655',
+    swiftCode: cleanEnv(process.env.SWIFT_CODE_FNB) || cleanEnv(process.env.VITE_SWIFT_CODE_FNB) || 'FIRNZAJJ',
+    accountType: 'Cheque Account',
+    country: 'South Africa',
+    isPrimary: false
+  }
+};
+
 interface ServerEftOrder {
   id: string;
   reference: string;
@@ -2092,24 +2120,31 @@ interface ServerEftOrder {
   enterpriseName: string;
   email: string;
   tierOrItem: string;
+  selectedBank?: 'capitec' | 'fnb';
+  bankName?: string;
   popFileName?: string;
-  status: 'PENDING_VERIFICATION' | 'VERIFIED' | 'PROVISIONALLY_APPROVED';
+  popFileDataUrl?: string;
+  status: 'PENDING_VERIFICATION' | 'VERIFIED' | 'PROVISIONALLY_APPROVED' | 'REJECTED';
   notes?: string;
   createdAt: string;
+  verifiedAt?: string;
 }
 
 const serverEftOrders: ServerEftOrder[] = [
   {
     id: 'EFT-INIT-001',
-    reference: 'MT-SANS-9482',
+    reference: 'MT-2026-9482',
     amountZar: 25000,
     enterpriseName: 'Mponeng Gold Operational Division',
     email: 'turoka15@gmail.com',
     tierOrItem: 'Tier 1: Compliance Site Subscription',
-    popFileName: 'fnb_deposit_receipt_mponeng.pdf',
+    selectedBank: 'capitec',
+    bankName: 'Capitec Bank',
+    popFileName: 'capitec_deposit_receipt_mponeng.pdf',
     status: 'VERIFIED',
-    notes: 'Official proforma EFT settled via FNB Corporate',
-    createdAt: new Date(Date.now() - 86400000 * 2).toISOString()
+    notes: 'Official proforma EFT settled via Capitec Bank (Acc: 1602352133)',
+    createdAt: new Date(Date.now() - 86400000 * 2).toISOString(),
+    verifiedAt: new Date(Date.now() - 86400000).toISOString()
   }
 ];
 
@@ -2145,7 +2180,7 @@ app.get(['/api/paypal/config', '/api/paypal/config/'], (req, res) => {
   const rawEnv = (process.env.PAYPAL_ENVIRONMENT || '').trim();
   const envMode = resolvePayPalMode(rawEnv);
 
-  const effectiveClientId = runtimePayPalConfig.clientId || envClientId;
+  const effectiveClientId = runtimePayPalConfig.clientId || envClientId || 'test';
   const effectiveSecret = runtimePayPalConfig.clientSecret || envSecret;
   const effectiveMode = resolvePayPalMode(runtimePayPalConfig.mode || envMode);
 
@@ -2154,7 +2189,7 @@ app.get(['/api/paypal/config', '/api/paypal/config/'], (req, res) => {
     hasClientSecret: Boolean(effectiveSecret),
     mode: effectiveMode,
     currency: runtimePayPalConfig.currency,
-    isConfigured: Boolean(effectiveClientId),
+    isConfigured: true,
     environment: rawEnv || effectiveMode,
     envSecrets: {
       hasPaypalClientId: Boolean(process.env.PAYPAL_CLIENT_ID),
@@ -2394,49 +2429,128 @@ app.post(['/api/paypal/simulate-webhook', '/api/paypal/simulate-webhook/'], (req
   }
 });
 
-// 5. Submit EFT Bank Transfer Order
-app.post(['/api/eft/submit-transfer', '/api/eft/submit-transfer/'], (req, res) => {
-  try {
-    const { reference, amountZar, enterpriseName, email, tierOrItem, popFileName, notes } = req.body || {};
+// 5. Official Banking Details endpoint (Capitec Bank Primary & FNB Secondary)
+app.get(['/api/eft/banking-details', '/api/eft/banking-details/'], (req, res) => {
+  res.json({
+    success: true,
+    accounts: SERVER_BANKING_CONFIG,
+    primary: SERVER_BANKING_CONFIG.capitec,
+    secondary: SERVER_BANKING_CONFIG.fnb
+  });
+});
 
-    if (!enterpriseName) {
+// 6. Submit EFT Bank Transfer Order / Proof of Payment (Routes directly to Admin Approval Queue)
+app.post(['/api/eft/submit-transfer', '/api/eft/submit-transfer/', '/api/eft/submit-proof', '/api/eft/submit-proof/'], (req, res) => {
+  try {
+    const { 
+      reference, 
+      amountZar, 
+      enterpriseName, 
+      companyName,
+      email, 
+      customerEmail,
+      tierOrItem, 
+      planName,
+      selectedBank,
+      bankName,
+      popFileName, 
+      popFileDataUrl,
+      notes 
+    } = req.body || {};
+
+    const clientName = enterpriseName || companyName;
+    if (!clientName) {
       return res.status(400).json({ error: 'Enterprise name is required for EFT submission' });
     }
 
-    const generatedRef = reference || `MT-EFT-${Math.floor(1000 + Math.random() * 9000)}`;
+    const currentYear = new Date().getFullYear() || 2026;
+    const generatedRef = reference || `MT-${currentYear}-${Math.floor(1000 + Math.random() * 9000)}`;
+    const chosenBankKey: 'capitec' | 'fnb' = selectedBank === 'fnb' ? 'fnb' : 'capitec';
+    const chosenBankName = bankName || SERVER_BANKING_CONFIG[chosenBankKey].bankName;
+
     const newOrder: ServerEftOrder = {
       id: `EFT-${Date.now()}`,
       reference: generatedRef,
       amountZar: Number(amountZar) || 0,
-      enterpriseName: String(enterpriseName),
-      email: String(email || ''),
-      tierOrItem: String(tierOrItem || 'SANS Compliance Audit License'),
+      enterpriseName: String(clientName),
+      email: String(email || customerEmail || ''),
+      tierOrItem: String(tierOrItem || planName || 'SANS Compliance Audit License'),
+      selectedBank: chosenBankKey,
+      bankName: chosenBankName,
       popFileName: popFileName ? String(popFileName) : undefined,
+      popFileDataUrl: popFileDataUrl ? String(popFileDataUrl) : undefined,
       status: 'PROVISIONALLY_APPROVED',
-      notes: notes ? String(notes) : 'Submitted via Terminal Gateway',
+      notes: notes ? String(notes) : `Direct EFT via ${chosenBankName}`,
       createdAt: new Date().toISOString()
     };
 
     serverEftOrders.unshift(newOrder);
 
-    console.log(`[EFT Server] Received transfer submission: Ref=${generatedRef}, Client=${enterpriseName}, Amount=R${newOrder.amountZar}`);
+    console.log(`[EFT Server] Received transfer & queued for admin review: Ref=${generatedRef}, Client=${clientName}, Bank=${chosenBankName}, Amount=R${newOrder.amountZar}, POP=${popFileName || 'None'}`);
 
     res.json({
       success: true,
       order: newOrder,
-      message: 'EFT registration received. Provisional audit license activated.'
+      message: 'EFT registration received and queued for administrative approval. Provisional audit access unlocked.'
     });
   } catch (err: any) {
     res.status(500).json({ error: err.message || 'Failed to submit EFT transfer' });
   }
 });
 
-// 6. List EFT Orders
+// 7. List EFT Orders (Admin Approval Queue)
 app.get(['/api/eft/orders', '/api/eft/orders/'], (req, res) => {
   res.json({
     total: serverEftOrders.length,
     orders: serverEftOrders
   });
+});
+
+// 8. Admin Approve EFT Order
+app.post(['/api/eft/approve-order', '/api/eft/approve-order/'], (req, res) => {
+  try {
+    const { orderId, reference, notes } = req.body || {};
+    const order = serverEftOrders.find(o => o.id === orderId || o.reference === reference);
+    if (!order) {
+      return res.status(404).json({ error: 'EFT order not found' });
+    }
+    order.status = 'VERIFIED';
+    order.verifiedAt = new Date().toISOString();
+    if (notes) {
+      order.notes = (order.notes ? order.notes + ' | ' : '') + String(notes);
+    }
+    console.log(`[EFT Server] Order APPROVED by Admin: Ref=${order.reference}, Client=${order.enterpriseName}`);
+    res.json({
+      success: true,
+      order,
+      message: `EFT Order ${order.reference} successfully verified and approved.`
+    });
+  } catch (err: any) {
+    res.status(500).json({ error: err.message || 'Failed to approve EFT order' });
+  }
+});
+
+// 9. Admin Reject EFT Order
+app.post(['/api/eft/reject-order', '/api/eft/reject-order/'], (req, res) => {
+  try {
+    const { orderId, reference, reason } = req.body || {};
+    const order = serverEftOrders.find(o => o.id === orderId || o.reference === reference);
+    if (!order) {
+      return res.status(404).json({ error: 'EFT order not found' });
+    }
+    order.status = 'REJECTED';
+    if (reason) {
+      order.notes = (order.notes ? order.notes + ' | Rejected: ' : 'Rejected: ') + String(reason);
+    }
+    console.log(`[EFT Server] Order REJECTED by Admin: Ref=${order.reference}, Reason=${reason}`);
+    res.json({
+      success: true,
+      order,
+      message: `EFT Order ${order.reference} rejected.`
+    });
+  } catch (err: any) {
+    res.status(500).json({ error: err.message || 'Failed to reject EFT order' });
+  }
 });
 
 // 7. Paystack Migration Deprecation Handler

@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { 
   Users, 
   TrendingUp, 
@@ -23,15 +23,25 @@ import {
   Clock,
   Flame,
   Droplets,
-  DollarSign
+  DollarSign,
+  FileText,
+  Eye,
+  X,
+  RefreshCw,
+  XCircle,
+  Key
 } from 'lucide-react';
 import { ZAMBIAN_COMPLIANCE_DISCLAIMERS, getZambianRulesByVerificationStatus, getZambianRulesByAuthority } from '../config/regulatoryRules.zambia';
 import { MeloTwoLogo } from './MeloTwoLogo';
+import { EftOrderSubmission } from '../types';
+import { EFT_BANK_ACCOUNTS, generateEftInvoicePdf } from '../services/paymentService';
+import { PayPalKeyConfigModal } from './PayPalKeyConfigModal';
 
 export interface PartnerCoPilotAdminViewProps {
   onBack?: () => void;
   onLaunchDiagnostic?: () => void;
   onOpenTenderWizard?: () => void;
+  onOpenPayPalKeyConfig?: () => void;
 }
 
 interface ContractorLeadRecord {
@@ -51,14 +61,109 @@ interface ContractorLeadRecord {
 export const PartnerCoPilotAdminView: React.FC<PartnerCoPilotAdminViewProps> = ({
   onBack,
   onLaunchDiagnostic,
-  onOpenTenderWizard
+  onOpenTenderWizard,
+  onOpenPayPalKeyConfig
 }) => {
   const [partnerOrg, setPartnerOrg] = useState<string>('Zambia Chamber of Mines - Copperbelt Chapter');
   const [partnerCode, setPartnerCode] = useState<string>('CHAMBER-KITWE');
   const [selectedDistrict, setSelectedDistrict] = useState<string>('ALL');
   const [selectedTier, setSelectedTier] = useState<string>('ALL');
   const [isCopied, setIsCopied] = useState<boolean>(false);
-  const [activeTab, setActiveTab] = useState<'INTELLIGENCE' | 'REFERRAL_PIPELINE' | 'GOVERNANCE'>('INTELLIGENCE');
+  const [activeTab, setActiveTab] = useState<'INTELLIGENCE' | 'REFERRAL_PIPELINE' | 'EFT_APPROVALS' | 'GOVERNANCE'>('INTELLIGENCE');
+  const [isAdminPayPalModalOpen, setIsAdminPayPalModalOpen] = useState(false);
+
+  // Direct EFT & POP Admin Approval Queue State
+  const [eftOrders, setEftOrders] = useState<EftOrderSubmission[]>([]);
+  const [isLoadingEft, setIsLoadingEft] = useState(false);
+  const [eftFilter, setEftFilter] = useState<'ALL' | 'PENDING' | 'VERIFIED' | 'REJECTED'>('ALL');
+  const [previewPopOrder, setPreviewPopOrder] = useState<EftOrderSubmission | null>(null);
+
+  // Load EFT Orders from server & localStorage
+  const loadEftOrders = async () => {
+    setIsLoadingEft(true);
+    try {
+      const res = await fetch('/api/eft/orders');
+      let serverList: EftOrderSubmission[] = [];
+      if (res.ok) {
+        const data = await res.json();
+        serverList = data.orders || [];
+      }
+      const localList: EftOrderSubmission[] = typeof localStorage !== 'undefined'
+        ? JSON.parse(localStorage.getItem('melotwo_eft_orders') || '[]')
+        : [];
+
+      const map = new Map<string, EftOrderSubmission>();
+      localList.forEach(o => map.set(o.reference || o.id, o));
+      serverList.forEach(o => map.set(o.reference || o.id, { ...map.get(o.reference || o.id), ...o }));
+      setEftOrders(Array.from(map.values()));
+    } catch (e) {
+      console.warn('Failed to load EFT orders:', e);
+    } finally {
+      setIsLoadingEft(false);
+    }
+  };
+
+  useEffect(() => {
+    loadEftOrders();
+  }, []);
+
+  const handleApproveOrder = async (order: EftOrderSubmission) => {
+    try {
+      await fetch('/api/eft/approve-order', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ 
+          orderId: order.id, 
+          reference: order.reference, 
+          notes: 'Verified & Approved via Executive Admin Console' 
+        })
+      });
+      setEftOrders(prev => prev.map(o => (o.reference === order.reference || o.id === order.id) ? { ...o, status: 'VERIFIED', verifiedAt: new Date().toISOString() } : o));
+      
+      // Update local storage
+      if (typeof localStorage !== 'undefined') {
+        const localList: EftOrderSubmission[] = JSON.parse(localStorage.getItem('melotwo_eft_orders') || '[]');
+        const updated = localList.map(o => (o.reference === order.reference || o.id === order.id) ? { ...o, status: 'VERIFIED', verifiedAt: new Date().toISOString() } : o);
+        localStorage.setItem('melotwo_eft_orders', JSON.stringify(updated));
+        localStorage.setItem('sans_trial_active', 'true');
+        localStorage.setItem('melotwo_vip_unlocked', 'true');
+        localStorage.setItem('sans_vip_unlocked', 'true');
+      }
+
+      if (previewPopOrder && (previewPopOrder.reference === order.reference || previewPopOrder.id === order.id)) {
+        setPreviewPopOrder(prev => prev ? { ...prev, status: 'VERIFIED' } : null);
+      }
+    } catch (e) {
+      console.error('Failed to approve EFT order:', e);
+    }
+  };
+
+  const handleRejectOrder = async (order: EftOrderSubmission) => {
+    try {
+      await fetch('/api/eft/reject-order', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ 
+          orderId: order.id, 
+          reference: order.reference, 
+          reason: 'Incomplete or unverified bank deposit slip' 
+        })
+      });
+      setEftOrders(prev => prev.map(o => (o.reference === order.reference || o.id === order.id) ? { ...o, status: 'REJECTED' } : o));
+      
+      if (typeof localStorage !== 'undefined') {
+        const localList: EftOrderSubmission[] = JSON.parse(localStorage.getItem('melotwo_eft_orders') || '[]');
+        const updated = localList.map(o => (o.reference === order.reference || o.id === order.id) ? { ...o, status: 'REJECTED' } : o);
+        localStorage.setItem('melotwo_eft_orders', JSON.stringify(updated));
+      }
+
+      if (previewPopOrder && (previewPopOrder.reference === order.reference || previewPopOrder.id === order.id)) {
+        setPreviewPopOrder(prev => prev ? { ...prev, status: 'REJECTED' } : null);
+      }
+    } catch (e) {
+      console.error('Failed to reject EFT order:', e);
+    }
+  };
 
   // Dynamic Origin Link Generation
   const baseUrl = typeof window !== 'undefined' ? window.location.origin : 'https://melotwo.com';
@@ -321,6 +426,17 @@ export const PartnerCoPilotAdminView: React.FC<PartnerCoPilotAdminViewProps> = (
                 <span>Compile Binder</span>
               </button>
             )}
+            <button
+              onClick={() => {
+                if (onOpenPayPalKeyConfig) onOpenPayPalKeyConfig();
+                else setIsAdminPayPalModalOpen(true);
+              }}
+              className="px-3.5 py-1.5 rounded-xl bg-slate-900 hover:bg-slate-800 border border-amber-500/40 text-amber-300 text-xs font-bold transition flex items-center gap-1.5 cursor-pointer shadow-sm"
+              title="Admin Only: Configure PayPal Client ID, Secret, and Mode"
+            >
+              <Key className="w-3.5 h-3.5 text-amber-400" />
+              <span>PayPal API Keys (Admin)</span>
+            </button>
           </div>
         </div>
 
@@ -455,6 +571,25 @@ export const PartnerCoPilotAdminView: React.FC<PartnerCoPilotAdminViewProps> = (
           >
             <Users className="w-3.5 h-3.5" />
             <span>Referral Attribution Pipeline ({filteredLeads.length})</span>
+          </button>
+
+          <button
+            onClick={() => setActiveTab('EFT_APPROVALS')}
+            className={`px-4 py-2 rounded-xl text-xs font-bold transition cursor-pointer flex items-center gap-2 ${
+              activeTab === 'EFT_APPROVALS'
+                ? 'bg-gradient-to-r from-amber-500 to-amber-600 text-slate-950 font-black shadow-md shadow-amber-950/40'
+                : 'bg-slate-900 text-slate-300 hover:bg-slate-800'
+            }`}
+          >
+            <Building2 className={`w-3.5 h-3.5 ${activeTab === 'EFT_APPROVALS' ? 'text-slate-950' : 'text-amber-400'}`} />
+            <span>Direct EFT &amp; POP Approval Queue ({eftOrders.length})</span>
+            {eftOrders.filter(o => o.status === 'PROVISIONALLY_APPROVED' || o.status === 'PENDING_VERIFICATION').length > 0 && (
+              <span className={`px-1.5 py-0.2 text-[10px] rounded-full font-black ${
+                activeTab === 'EFT_APPROVALS' ? 'bg-slate-950 text-amber-300' : 'bg-amber-400 text-slate-950'
+              }`}>
+                {eftOrders.filter(o => o.status === 'PROVISIONALLY_APPROVED' || o.status === 'PENDING_VERIFICATION').length}
+              </span>
+            )}
           </button>
 
           <button
@@ -751,7 +886,436 @@ export const PartnerCoPilotAdminView: React.FC<PartnerCoPilotAdminViewProps> = (
           </div>
         )}
 
+        {/* TAB 4: DIRECT EFT & POP APPROVAL QUEUE */}
+        {activeTab === 'EFT_APPROVALS' && (() => {
+          const filteredEftOrders = eftOrders.filter(o => {
+            if (eftFilter === 'PENDING') return o.status === 'PROVISIONALLY_APPROVED' || o.status === 'PENDING_VERIFICATION';
+            if (eftFilter === 'VERIFIED') return o.status === 'VERIFIED';
+            if (eftFilter === 'REJECTED') return o.status === 'REJECTED';
+            return true;
+          });
+
+          const totalVolumeZar = eftOrders.reduce((acc, o) => acc + (Number(o.amountZar) || 0), 0);
+          const pendingCount = eftOrders.filter(o => o.status === 'PROVISIONALLY_APPROVED' || o.status === 'PENDING_VERIFICATION').length;
+          const verifiedCount = eftOrders.filter(o => o.status === 'VERIFIED').length;
+          const capitecCount = eftOrders.filter(o => o.selectedBank === 'capitec' || (o.bankName && o.bankName.includes('Capitec'))).length;
+          const fnbCount = eftOrders.filter(o => o.selectedBank === 'fnb' || (o.bankName && o.bankName.includes('FNB'))).length;
+
+          return (
+            <div className="space-y-6">
+              
+              {/* Header Banner & Official Banking Coordinate Review */}
+              <div className="bg-slate-900 border border-slate-800 rounded-3xl p-5 sm:p-6 space-y-4">
+                <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                  <div className="space-y-1">
+                    <h3 className="text-base font-bold text-white flex items-center gap-2">
+                      <Building2 className="w-4 h-4 text-amber-400" />
+                      Direct EFT &amp; Wire Transfer Executive Approval Queue
+                    </h3>
+                    <p className="text-xs text-slate-400">
+                      Real-time ledger of industrial transfers and submitted Proofs of Payment (POP) awaiting clearance.
+                    </p>
+                  </div>
+
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={loadEftOrders}
+                      disabled={isLoadingEft}
+                      className="px-3.5 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-xl text-xs font-bold transition flex items-center gap-2 cursor-pointer"
+                    >
+                      <RefreshCw className={`w-3.5 h-3.5 ${isLoadingEft ? 'animate-spin' : ''}`} />
+                      Refresh Ledger
+                    </button>
+                  </div>
+                </div>
+
+                {/* Official Bank Coordinates Summary Bar */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3 pt-2">
+                  <div className="p-3.5 bg-slate-950/80 rounded-2xl border border-amber-500/30 flex items-start justify-between">
+                    <div>
+                      <div className="flex items-center gap-2 mb-1">
+                        <span className="text-xs font-bold text-white">{EFT_BANK_ACCOUNTS.capitec.bankName}</span>
+                        <span className="text-[9px] px-2 py-0.5 rounded-full font-bold uppercase bg-emerald-500/20 text-emerald-300 border border-emerald-500/40">
+                          Primary Account
+                        </span>
+                      </div>
+                      <div className="text-[11px] font-mono text-slate-300">
+                        Holder: <strong className="text-white">{EFT_BANK_ACCOUNTS.capitec.accountName}</strong> &bull; Acc: <strong className="text-amber-400">{EFT_BANK_ACCOUNTS.capitec.accountNumber}</strong>
+                      </div>
+                      <div className="text-[10px] font-mono text-slate-400 mt-0.5">
+                        Branch: {EFT_BANK_ACCOUNTS.capitec.branchCode} &bull; SWIFT: {EFT_BANK_ACCOUNTS.capitec.swiftCode} &bull; {EFT_BANK_ACCOUNTS.capitec.accountType}
+                      </div>
+                    </div>
+                    <span className="text-xs font-bold text-amber-400 font-mono">
+                      {capitecCount} orders
+                    </span>
+                  </div>
+
+                  <div className="p-3.5 bg-slate-950/80 rounded-2xl border border-sky-500/30 flex items-start justify-between">
+                    <div>
+                      <div className="flex items-center gap-2 mb-1">
+                        <span className="text-xs font-bold text-white">{EFT_BANK_ACCOUNTS.fnb.bankName}</span>
+                        <span className="text-[9px] px-2 py-0.5 rounded-full font-bold uppercase bg-sky-500/20 text-sky-300 border border-sky-500/40">
+                          Secondary Wire
+                        </span>
+                      </div>
+                      <div className="text-[11px] font-mono text-slate-300">
+                        Holder: <strong className="text-white">{EFT_BANK_ACCOUNTS.fnb.accountName}</strong> &bull; Acc: <strong className="text-sky-300">{EFT_BANK_ACCOUNTS.fnb.accountNumber}</strong>
+                      </div>
+                      <div className="text-[10px] font-mono text-slate-400 mt-0.5">
+                        Branch: {EFT_BANK_ACCOUNTS.fnb.branchCode} &bull; SWIFT: {EFT_BANK_ACCOUNTS.fnb.swiftCode} &bull; {EFT_BANK_ACCOUNTS.fnb.accountType}
+                      </div>
+                    </div>
+                    <span className="text-xs font-bold text-sky-400 font-mono">
+                      {fnbCount} orders
+                    </span>
+                  </div>
+                </div>
+
+                {/* Metrics Highlights */}
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-2">
+                  <div className="bg-slate-950 p-3.5 rounded-xl border border-slate-800">
+                    <span className="text-[10px] uppercase font-bold text-slate-400 block tracking-wider">Total Volume</span>
+                    <span className="text-lg font-black text-white font-mono">
+                      R{totalVolumeZar.toLocaleString('en-ZA')}
+                    </span>
+                  </div>
+
+                  <div className="bg-slate-950 p-3.5 rounded-xl border border-amber-500/30">
+                    <span className="text-[10px] uppercase font-bold text-amber-400 block tracking-wider">Pending Review</span>
+                    <span className="text-lg font-black text-amber-400 font-mono">
+                      {pendingCount}
+                    </span>
+                  </div>
+
+                  <div className="bg-slate-950 p-3.5 rounded-xl border border-emerald-500/30">
+                    <span className="text-[10px] uppercase font-bold text-emerald-400 block tracking-wider">Verified VIPs</span>
+                    <span className="text-lg font-black text-emerald-400 font-mono">
+                      {verifiedCount}
+                    </span>
+                  </div>
+
+                  <div className="bg-slate-950 p-3.5 rounded-xl border border-slate-800">
+                    <span className="text-[10px] uppercase font-bold text-slate-400 block tracking-wider">Total Records</span>
+                    <span className="text-lg font-black text-slate-200 font-mono">
+                      {eftOrders.length}
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Approval Filter Strip */}
+              <div className="flex items-center justify-between gap-3">
+                <div className="flex items-center gap-2">
+                  <span className="text-xs font-bold text-slate-400 uppercase tracking-wider flex items-center gap-1.5">
+                    <Filter className="w-3.5 h-3.5 text-slate-400" /> Filter:
+                  </span>
+                  {(['ALL', 'PENDING', 'VERIFIED', 'REJECTED'] as const).map(filterOption => (
+                    <button
+                      key={filterOption}
+                      type="button"
+                      onClick={() => setEftFilter(filterOption)}
+                      className={`px-3 py-1 rounded-lg text-xs font-bold transition cursor-pointer ${
+                        eftFilter === filterOption
+                          ? 'bg-amber-500 text-slate-950 font-black'
+                          : 'bg-slate-900 text-slate-400 hover:text-white hover:bg-slate-800'
+                      }`}
+                    >
+                      {filterOption === 'ALL' && `All (${eftOrders.length})`}
+                      {filterOption === 'PENDING' && `Pending POP (${pendingCount})`}
+                      {filterOption === 'VERIFIED' && `Verified (${verifiedCount})`}
+                      {filterOption === 'REJECTED' && `Rejected (${eftOrders.filter(o => o.status === 'REJECTED').length})`}
+                    </button>
+                  ))}
+                </div>
+
+                <div className="text-[11px] text-slate-400 font-mono">
+                  Showing {filteredEftOrders.length} submission{filteredEftOrders.length === 1 ? '' : 's'}
+                </div>
+              </div>
+
+              {/* Orders Table */}
+              <div className="bg-slate-900/90 border border-slate-800 rounded-3xl overflow-hidden shadow-xl">
+                {filteredEftOrders.length === 0 ? (
+                  <div className="p-12 text-center space-y-3">
+                    <Building2 className="w-8 h-8 text-slate-600 mx-auto" />
+                    <p className="text-sm font-bold text-slate-400">No EFT orders matching filter.</p>
+                    <p className="text-xs text-slate-500 max-w-sm mx-auto">
+                      Direct EFT orders and uploaded POP slips will appear here for review and one-click VIP approval.
+                    </p>
+                  </div>
+                ) : (
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-left text-xs">
+                      <thead className="bg-slate-950/80 text-[10px] uppercase font-bold text-slate-400 tracking-wider border-b border-slate-800">
+                        <tr>
+                          <th className="py-3.5 px-4">Payment Ref</th>
+                          <th className="py-3.5 px-4">Enterprise &amp; Email</th>
+                          <th className="py-3.5 px-4">Settlement Bank</th>
+                          <th className="py-3.5 px-4">Amount (ZAR)</th>
+                          <th className="py-3.5 px-4">Proof of Payment (POP)</th>
+                          <th className="py-3.5 px-4">Status</th>
+                          <th className="py-3.5 px-4 text-right">Admin Actions</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-slate-800/80">
+                        {filteredEftOrders.map((order) => {
+                          const isCapitec = order.selectedBank === 'capitec' || (order.bankName && order.bankName.includes('Capitec'));
+                          const isVerified = order.status === 'VERIFIED';
+                          const isRejected = order.status === 'REJECTED';
+
+                          return (
+                            <tr key={order.reference || order.id} className="hover:bg-slate-800/40 transition">
+                              <td className="py-3.5 px-4 font-mono font-bold text-amber-400">
+                                {order.reference}
+                                <div className="text-[10px] text-slate-500 font-sans">
+                                  {order.createdAt ? new Date(order.createdAt).toLocaleDateString('en-ZA') : 'Recent'}
+                                </div>
+                              </td>
+
+                              <td className="py-3.5 px-4">
+                                <div className="font-bold text-white">{order.enterpriseName}</div>
+                                <div className="text-[11px] text-slate-400 font-mono">{order.email || 'N/A'}</div>
+                                <div className="text-[10px] text-slate-500">{order.tierOrItem}</div>
+                              </td>
+
+                              <td className="py-3.5 px-4">
+                                <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[11px] font-bold ${
+                                  isCapitec 
+                                    ? 'bg-amber-500/10 text-amber-300 border border-amber-500/30' 
+                                    : 'bg-sky-500/10 text-sky-300 border border-sky-500/30'
+                                }`}>
+                                  <Building2 className="w-3 h-3" />
+                                  {isCapitec ? 'Capitec Bank (Primary)' : 'FNB (Secondary Wire)'}
+                                </span>
+                              </td>
+
+                              <td className="py-3.5 px-4 font-mono font-bold text-white text-sm">
+                                R{Number(order.amountZar).toLocaleString('en-ZA')}
+                              </td>
+
+                              <td className="py-3.5 px-4">
+                                {order.popFileName ? (
+                                  <button
+                                    type="button"
+                                    onClick={() => setPreviewPopOrder(order)}
+                                    className="px-2.5 py-1 bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/30 text-emerald-400 rounded-lg text-xs font-bold transition flex items-center gap-1.5 cursor-pointer"
+                                  >
+                                    <Eye className="w-3.5 h-3.5" />
+                                    <span>{order.popFileName.slice(0, 18)}</span>
+                                  </button>
+                                ) : (
+                                  <span className="text-[11px] text-slate-500 italic flex items-center gap-1">
+                                    <Clock className="w-3 h-3" /> Slip Pending
+                                  </span>
+                                )}
+                              </td>
+
+                              <td className="py-3.5 px-4">
+                                {isVerified ? (
+                                  <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 text-[10px] font-bold uppercase tracking-wider">
+                                    <CheckCircle2 className="w-3 h-3" /> Verified &bull; VIP Unlocked
+                                  </span>
+                                ) : isRejected ? (
+                                  <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-rose-500/20 text-rose-300 border border-rose-500/30 text-[10px] font-bold uppercase tracking-wider">
+                                    <XCircle className="w-3 h-3" /> Rejected
+                                  </span>
+                                ) : (
+                                  <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/30 text-[10px] font-bold uppercase tracking-wider animate-pulse">
+                                    <Clock className="w-3 h-3" /> Pending Admin Action
+                                  </span>
+                                )}
+                              </td>
+
+                              <td className="py-3.5 px-4 text-right">
+                                <div className="flex items-center justify-end gap-1.5">
+                                  {!isVerified && (
+                                    <button
+                                      type="button"
+                                      onClick={() => handleApproveOrder(order)}
+                                      title="Approve Order & Grant VIP"
+                                      className="px-2.5 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-lg text-xs transition flex items-center gap-1 cursor-pointer shadow"
+                                    >
+                                      <Check className="w-3.5 h-3.5" />
+                                      <span>Approve</span>
+                                    </button>
+                                  )}
+
+                                  {!isRejected && (
+                                    <button
+                                      type="button"
+                                      onClick={() => handleRejectOrder(order)}
+                                      title="Reject Order"
+                                      className="p-1.5 bg-slate-800 hover:bg-rose-950/60 hover:text-rose-400 text-slate-400 rounded-lg text-xs transition cursor-pointer"
+                                    >
+                                      <X className="w-3.5 h-3.5" />
+                                    </button>
+                                  )}
+
+                                  <button
+                                    type="button"
+                                    onClick={() => generateEftInvoicePdf({
+                                      reference: order.reference,
+                                      amountZar: order.amountZar,
+                                      enterpriseName: order.enterpriseName,
+                                      email: order.email,
+                                      tierOrItem: order.tierOrItem,
+                                      selectedBank: isCapitec ? 'capitec' : 'fnb'
+                                    })}
+                                    title="Download Proforma PDF"
+                                    className="p-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg text-xs transition cursor-pointer"
+                                  >
+                                    <Download className="w-3.5 h-3.5" />
+                                  </button>
+                                </div>
+                              </td>
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+              </div>
+
+              {/* POP Inspection Modal */}
+              {previewPopOrder && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/85 backdrop-blur-md">
+                  <div className="bg-slate-900 border border-slate-700 rounded-3xl max-w-lg w-full p-6 space-y-4 shadow-2xl animate-fade-in text-slate-200">
+                    <div className="flex items-center justify-between pb-3 border-b border-slate-800">
+                      <div className="flex items-center gap-2">
+                        <FileText className="w-5 h-5 text-amber-400" />
+                        <div>
+                          <h4 className="text-sm font-bold text-white">Proof of Payment Review</h4>
+                          <span className="text-[11px] font-mono text-amber-400">{previewPopOrder.reference}</span>
+                        </div>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => setPreviewPopOrder(null)}
+                        className="p-1.5 text-slate-400 hover:text-white rounded-lg hover:bg-slate-800 cursor-pointer"
+                      >
+                        <X className="w-4 h-4" />
+                      </button>
+                    </div>
+
+                    {/* Order Details Preview */}
+                    <div className="bg-slate-950 p-4 rounded-2xl border border-slate-800 text-xs space-y-2">
+                      <div className="flex justify-between">
+                        <span className="text-slate-400">Enterprise:</span>
+                        <strong className="text-white">{previewPopOrder.enterpriseName}</strong>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-slate-400">Email:</span>
+                        <span className="font-mono text-slate-300">{previewPopOrder.email || 'N/A'}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-slate-400">Amount Due:</span>
+                        <strong className="text-amber-400 font-mono">R{Number(previewPopOrder.amountZar).toLocaleString('en-ZA')}</strong>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-slate-400">Clearing Bank:</span>
+                        <span className="font-bold text-white">
+                          {previewPopOrder.selectedBank === 'fnb' ? 'First National Bank (FNB)' : 'Capitec Bank (Primary)'}
+                        </span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-slate-400">Attached File:</span>
+                        <span className="font-mono text-emerald-400">{previewPopOrder.popFileName || 'N/A'}</span>
+                      </div>
+                    </div>
+
+                    {/* File Preview Area */}
+                    <div className="bg-slate-950/70 border border-slate-800 rounded-2xl p-4 text-center min-h-[160px] flex items-center justify-center">
+                      {previewPopOrder.popFileDataUrl ? (
+                        previewPopOrder.popFileDataUrl.startsWith('data:image') ? (
+                          <img
+                            src={previewPopOrder.popFileDataUrl}
+                            alt="Uploaded POP"
+                            className="max-h-64 mx-auto rounded-xl border border-slate-800 object-contain shadow"
+                          />
+                        ) : (
+                          <div className="space-y-2">
+                            <FileText className="w-12 h-12 text-amber-400 mx-auto" />
+                            <p className="text-xs font-bold text-white">{previewPopOrder.popFileName}</p>
+                            <p className="text-[11px] text-slate-400">Audit-grade document submitted for verification.</p>
+                            <a
+                              href={previewPopOrder.popFileDataUrl}
+                              download={previewPopOrder.popFileName}
+                              className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-amber-500 text-slate-950 font-bold rounded-lg text-xs mt-2"
+                            >
+                              <Download className="w-3.5 h-3.5" /> Download Uploaded Slip
+                            </a>
+                          </div>
+                        )
+                      ) : (
+                        <div className="space-y-1 text-slate-400">
+                          <CheckCircle2 className="w-8 h-8 text-amber-400 mx-auto" />
+                          <p className="text-xs font-bold text-slate-300">File record: {previewPopOrder.popFileName || 'Manual Wire Reference'}</p>
+                          <p className="text-[11px] text-slate-500">Transferred via South African Interbank EFT Clearing (SABS/SARB standards).</p>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Actions */}
+                    <div className="flex items-center justify-between pt-2">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          generateEftInvoicePdf({
+                            reference: previewPopOrder.reference,
+                            amountZar: previewPopOrder.amountZar,
+                            enterpriseName: previewPopOrder.enterpriseName,
+                            email: previewPopOrder.email,
+                            tierOrItem: previewPopOrder.tierOrItem,
+                            selectedBank: previewPopOrder.selectedBank || 'capitec'
+                          });
+                        }}
+                        className="px-3 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-xl text-xs font-bold flex items-center gap-1.5 cursor-pointer"
+                      >
+                        <Download className="w-3.5 h-3.5" />
+                        Proforma PDF
+                      </button>
+
+                      <div className="flex items-center gap-2">
+                        {previewPopOrder.status !== 'REJECTED' && (
+                          <button
+                            type="button"
+                            onClick={() => handleRejectOrder(previewPopOrder)}
+                            className="px-3.5 py-2 bg-rose-950/60 hover:bg-rose-900/60 text-rose-300 border border-rose-500/40 rounded-xl text-xs font-bold transition cursor-pointer"
+                          >
+                            Reject
+                          </button>
+                        )}
+                        {previewPopOrder.status !== 'VERIFIED' && (
+                          <button
+                            type="button"
+                            onClick={() => handleApproveOrder(previewPopOrder)}
+                            className="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-xl text-xs transition flex items-center gap-1.5 cursor-pointer shadow-lg shadow-emerald-950/40"
+                          >
+                            <Check className="w-4 h-4" />
+                            Approve &amp; Unlock VIP
+                          </button>
+                        )}
+                      </div>
+                    </div>
+
+                  </div>
+                </div>
+              )}
+
+            </div>
+          );
+        })()}
+
       </div>
+
+      {/* Admin-Restricted PayPal Gateway Key Configuration Modal */}
+      <PayPalKeyConfigModal
+        isOpen={isAdminPayPalModalOpen}
+        onClose={() => setIsAdminPayPalModalOpen(false)}
+      />
     </div>
   );
 };

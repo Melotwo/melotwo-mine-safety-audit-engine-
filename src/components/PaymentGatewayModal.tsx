@@ -29,12 +29,12 @@ export const PAYPAL_CLIENT_ID =
   'BAA1MwPlJ3TjWOFfwzsg0WtZ6WHrdlKnJWro_anmE9dJJnNuqTw4P2PA5Fxfy13MfLtGSEsg48oXr20eng';
 
 export const EFT_BANK_DETAILS = {
-  bankName: 'First National Bank (FNB)',
-  accountName: 'Melotwo Compliance Solutions (Pty) Ltd',
-  accountNumber: '6304 9821 042',
-  accountType: 'Business Cheque / Current',
-  branchCode: '250655',
-  swiftCode: 'FIRNZAJJ',
+  bankName: (typeof import.meta !== 'undefined' && import.meta.env?.VITE_BANK_NAME_CAPITEC) || 'Capitec Bank',
+  accountName: (typeof import.meta !== 'undefined' && import.meta.env?.VITE_ACCOUNT_NAME_CAPITEC) || 'MR TH SEROKA',
+  accountNumber: (typeof import.meta !== 'undefined' && import.meta.env?.VITE_ACCOUNT_NUMBER_CAPITEC) || '1602352133',
+  accountType: 'Savings / Direct Corporate EFT',
+  branchCode: (typeof import.meta !== 'undefined' && import.meta.env?.VITE_BRANCH_CODE_CAPITEC) || '470010',
+  swiftCode: (typeof import.meta !== 'undefined' && import.meta.env?.VITE_SWIFT_CODE_CAPITEC) || 'CABLZAJJ',
   vatNumber: '4820291845',
   recipientEmail: 'billing@melotwo.co.za',
   adminNotifyEmail: 'turoka15@gmail.com'

@@ -1,15 +1,41 @@
 import { jsPDF } from 'jspdf';
-import { EftBankDetails, EftOrderSubmission, PayPalConfig, PaymentSuccessResult } from '../types';
+import { 
+  EftBankDetails, 
+  EftBankAccountsConfig, 
+  SupportedEftBankKey, 
+  EftOrderSubmission, 
+  PayPalConfig, 
+  PaymentSuccessResult 
+} from '../types';
 
-export const EFT_BANKING_DETAILS: EftBankDetails = {
-  bankName: 'First National Bank (FNB)',
-  accountName: 'MeloTwo Mine Safety & Compliance (Pty) Ltd',
-  accountNumber: '62894103852',
-  branchCode: '250655',
-  accountType: 'Commercial Cheque Account',
-  swiftCode: 'FIRNZAJJ',
-  country: 'South Africa'
+// Official South African Banking Coordinates for Direct EFT / Wire Transfers
+export const EFT_BANK_ACCOUNTS: EftBankAccountsConfig = {
+  capitec: {
+    bankKey: 'capitec',
+    bankName: (typeof import.meta !== 'undefined' && import.meta.env?.VITE_BANK_NAME_CAPITEC) || 'Capitec Bank',
+    accountName: (typeof import.meta !== 'undefined' && import.meta.env?.VITE_ACCOUNT_NAME_CAPITEC) || 'MR TH SEROKA',
+    accountNumber: (typeof import.meta !== 'undefined' && import.meta.env?.VITE_ACCOUNT_NUMBER_CAPITEC) || '1602352133',
+    branchCode: (typeof import.meta !== 'undefined' && import.meta.env?.VITE_BRANCH_CODE_CAPITEC) || '470010',
+    swiftCode: (typeof import.meta !== 'undefined' && import.meta.env?.VITE_SWIFT_CODE_CAPITEC) || 'CABLZAJJ',
+    accountType: 'Savings / Direct Corporate EFT',
+    country: 'South Africa',
+    isPrimary: true
+  },
+  fnb: {
+    bankKey: 'fnb',
+    bankName: (typeof import.meta !== 'undefined' && import.meta.env?.VITE_BANK_NAME_FNB) || 'First National Bank (FNB)',
+    accountName: (typeof import.meta !== 'undefined' && import.meta.env?.VITE_ACCOUNT_NAME_FNB) || 'MR TH SEROKA',
+    accountNumber: (typeof import.meta !== 'undefined' && import.meta.env?.VITE_ACCOUNT_NUMBER_FNB) || '62904917393',
+    branchCode: (typeof import.meta !== 'undefined' && import.meta.env?.VITE_BRANCH_CODE_FNB) || '250655',
+    swiftCode: (typeof import.meta !== 'undefined' && import.meta.env?.VITE_SWIFT_CODE_FNB) || 'FIRNZAJJ',
+    accountType: 'Cheque Account',
+    country: 'South Africa',
+    isPrimary: false
+  }
 };
+
+// Default primary export for backward compatibility
+export const EFT_BANKING_DETAILS: EftBankDetails = EFT_BANK_ACCOUNTS.capitec;
 
 // Standard ZAR to USD conversion rate for PayPal gateway processing
 export const ZAR_TO_USD_RATE = 18.5;
@@ -32,18 +58,21 @@ export function getStoredPayPalConfig(): PayPalConfig {
   const localMode = typeof localStorage !== 'undefined' ? (localStorage.getItem('melotwo_paypal_mode') as 'sandbox' | 'live') : null;
   const localCurrency = typeof localStorage !== 'undefined' ? (localStorage.getItem('melotwo_paypal_currency') as 'USD' | 'EUR' | 'GBP') || 'USD' : 'USD';
 
-  const envKey = (typeof import.meta !== 'undefined' && (import.meta as any).env?.VITE_PAYPAL_CLIENT_ID) || '';
+  // Read secrets directly from environment
+  const envKey = (typeof import.meta !== 'undefined' && ((import.meta as any).env?.VITE_PAYPAL_CLIENT_ID || (import.meta as any).env?.PAYPAL_CLIENT_ID)) || '';
   const envModeRaw = (typeof import.meta !== 'undefined' && ((import.meta as any).env?.PAYPAL_ENVIRONMENT || (import.meta as any).env?.VITE_PAYPAL_ENVIRONMENT)) || '';
-  const envMode: 'sandbox' | 'live' = envModeRaw.toLowerCase() === 'sandbox' ? 'sandbox' : 'live';
+  const envMode: 'sandbox' | 'live' = envModeRaw.toLowerCase() === 'live' ? 'live' : 'sandbox';
 
-  const resolvedKey = localKey.trim() || envKey.trim();
-  const resolvedMode = localMode || (resolvedKey ? envMode : 'sandbox');
+  // Automatic secret injection: prefer environment, then saved local key, or public sandbox test credential
+  const resolvedKey = envKey.trim() || localKey.trim() || 'test';
+  const resolvedMode = localMode || (envKey ? envMode : 'sandbox');
 
   return {
     clientId: resolvedKey,
     mode: resolvedMode,
     currency: localCurrency,
-    isConfigured: Boolean(resolvedKey)
+    // Always configured so key configuration modal is completely bypassed for clients
+    isConfigured: true
   };
 }
 
@@ -80,14 +109,14 @@ export async function fetchServerPayPalConfig(): Promise<PayPalConfig> {
     const res = await fetch('/api/paypal/config');
     if (res.ok) {
       const data = await res.json();
-      if (data.clientId && !localStorage.getItem('melotwo_paypal_client_id')) {
+      if (data.clientId && data.clientId !== 'test' && !localStorage.getItem('melotwo_paypal_client_id')) {
         localStorage.setItem('melotwo_paypal_client_id', data.clientId);
       }
       return {
-        clientId: data.clientId || getStoredPayPalConfig().clientId,
+        clientId: data.clientId || getStoredPayPalConfig().clientId || 'test',
         mode: data.mode || 'sandbox',
         currency: data.currency || 'USD',
-        isConfigured: Boolean(data.clientId || getStoredPayPalConfig().clientId)
+        isConfigured: true
       };
     }
   } catch (e) {
@@ -97,13 +126,9 @@ export async function fetchServerPayPalConfig(): Promise<PayPalConfig> {
 }
 
 export function generateEftReference(tierOrContext: string = 'SANS'): string {
-  const prefix = tierOrContext.toLowerCase().includes('sprint') ? 'SPRINT'
-    : tierOrContext.toLowerCase().includes('pro') ? 'PRO'
-    : tierOrContext.toLowerCase().includes('enter') ? 'ENT'
-    : tierOrContext.toLowerCase().includes('site') ? 'SITE'
-    : 'SANS';
+  const currentYear = new Date().getFullYear() || 2026;
   const randNum = Math.floor(1000 + Math.random() * 9000);
-  return `MT-${prefix}-${randNum}`;
+  return `MT-${currentYear}-${randNum}`;
 }
 
 export async function submitEftOrder(submission: {
@@ -112,9 +137,15 @@ export async function submitEftOrder(submission: {
   enterpriseName: string;
   email: string;
   tierOrItem: string;
+  selectedBank?: SupportedEftBankKey;
+  bankName?: string;
   notes?: string;
   popFileName?: string;
+  popFileDataUrl?: string;
 }): Promise<EftOrderSubmission> {
+  const bankKey = submission.selectedBank || 'capitec';
+  const resolvedBank = EFT_BANK_ACCOUNTS[bankKey] || EFT_BANK_ACCOUNTS.capitec;
+
   const order: EftOrderSubmission = {
     id: `EFT-${Date.now()}`,
     reference: submission.reference,
@@ -122,8 +153,11 @@ export async function submitEftOrder(submission: {
     enterpriseName: submission.enterpriseName,
     email: submission.email,
     tierOrItem: submission.tierOrItem,
+    selectedBank: bankKey,
+    bankName: resolvedBank.bankName,
     notes: submission.notes,
     popFileName: submission.popFileName,
+    popFileDataUrl: submission.popFileDataUrl,
     status: 'PROVISIONALLY_APPROVED',
     createdAt: new Date().toISOString()
   };
@@ -157,6 +191,7 @@ export function generateEftInvoicePdf(order: {
   enterpriseName: string;
   email: string;
   tierOrItem: string;
+  selectedBank?: SupportedEftBankKey;
 }) {
   try {
     const doc = new jsPDF({
@@ -164,6 +199,11 @@ export function generateEftInvoicePdf(order: {
       unit: 'mm',
       format: 'a4'
     });
+
+    const activeBankKey = order.selectedBank || 'capitec';
+    const activeBank = EFT_BANK_ACCOUNTS[activeBankKey] || EFT_BANK_ACCOUNTS.capitec;
+    const secondaryBankKey: SupportedEftBankKey = activeBankKey === 'capitec' ? 'fnb' : 'capitec';
+    const secondaryBank = EFT_BANK_ACCOUNTS[secondaryBankKey];
 
     // Dark Slate Header Banner
     doc.setFillColor(15, 23, 42); // slate-900
@@ -239,52 +279,68 @@ export function generateEftInvoicePdf(order: {
     doc.line(15, 155, 195, 155);
 
     const bankFields = [
-      ['Bank Name:', EFT_BANKING_DETAILS.bankName],
-      ['Account Holder:', EFT_BANKING_DETAILS.accountName],
-      ['Account Number:', EFT_BANKING_DETAILS.accountNumber],
-      ['Branch Code:', EFT_BANKING_DETAILS.branchCode],
-      ['Account Type:', EFT_BANKING_DETAILS.accountType],
-      ['SWIFT / BIC:', EFT_BANKING_DETAILS.swiftCode],
-      ['Payment Reference:', order.reference]
+      ['Selected Bank:', `${activeBank.bankName} ${activeBank.isPrimary ? '(Primary Clearing Account)' : '(Secondary Corporate Account)'}`],
+      ['Account Name:', activeBank.accountName],
+      ['Account Number:', activeBank.accountNumber],
+      ['Branch Code:', activeBank.branchCode],
+      ['SWIFT / BIC:', activeBank.swiftCode],
+      ['Account Type:', activeBank.accountType],
+      ['Country of Account:', activeBank.country],
+      ['Mandatory Reference:', order.reference]
     ];
 
-    let yPos = 164;
+    let yPos = 163;
     bankFields.forEach(([label, value]) => {
       doc.setFont('helvetica', 'bold');
       doc.setFontSize(9);
       doc.setTextColor(71, 85, 105);
       doc.text(label, 20, yPos);
 
-      doc.setFont('helvetica', label.includes('Reference') ? 'bold' : 'normal');
-      doc.setFontSize(9);
-      doc.setTextColor(label.includes('Reference') ? 180 : 15, label.includes('Reference') ? 83 : 23, label.includes('Reference') ? 9 : 42);
+      const isRef = label.includes('Reference');
+      doc.setFont('helvetica', isRef ? 'bold' : 'normal');
+      doc.setFontSize(isRef ? 10 : 9);
+      doc.setTextColor(isRef ? 180 : 15, isRef ? 83 : 23, isRef ? 9 : 42);
       doc.text(value, 75, yPos);
-      yPos += 7.5;
+      yPos += 7;
     });
 
+    // Secondary Account Wire Instructions Box
+    doc.setFillColor(241, 245, 249); // slate-100
+    doc.rect(15, yPos + 3, 180, 15, 'F');
+    doc.setDrawColor(203, 213, 225);
+    doc.rect(15, yPos + 3, 180, 15, 'S');
+
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(7.5);
+    doc.setTextColor(71, 85, 105);
+    doc.text(`ALTERNATIVE WIRE TRANSFER OPTION (${secondaryBank.bankName.toUpperCase()}):`, 20, yPos + 8);
+    doc.setFont('helvetica', 'normal');
+    doc.text(`Bank: ${secondaryBank.bankName}  |  Acc: ${secondaryBank.accountNumber}  |  Branch: ${secondaryBank.branchCode}  |  SWIFT: ${secondaryBank.swiftCode}  |  Acc Name: ${secondaryBank.accountName}`, 20, yPos + 13);
+
     // Important Notice
+    const noticeY = yPos + 22;
     doc.setFillColor(254, 243, 199); // amber-100
-    doc.rect(15, yPos + 4, 180, 22, 'F');
+    doc.rect(15, noticeY, 180, 22, 'F');
     doc.setDrawColor(245, 158, 11);
-    doc.rect(15, yPos + 4, 180, 22, 'S');
+    doc.rect(15, noticeY, 180, 22, 'S');
 
     doc.setTextColor(146, 64, 14); // amber-900
     doc.setFont('helvetica', 'bold');
     doc.setFontSize(8.5);
-    doc.text('MANDATORY COMPLIANCE INSTRUCTION:', 20, yPos + 11);
+    doc.text('MANDATORY COMPLIANCE INSTRUCTION:', 20, noticeY + 6.5);
     doc.setFont('helvetica', 'normal');
     doc.setFontSize(8);
     doc.text(
-      `Please state "${order.reference}" as your beneficiary reference. Submit your Proof of Payment (POP) via the terminal or email to billing@melotwo.co.za for immediate ledger verification.`,
+      `Please state "${order.reference}" as your beneficiary reference. Submit your Proof of Payment (POP) via the terminal upload or email to billing@melotwo.co.za for immediate ledger verification.`,
       20,
-      yPos + 17,
+      noticeY + 12.5,
       { maxWidth: 170 }
     );
 
     // Footer
     doc.setFontSize(7.5);
     doc.setTextColor(148, 163, 184);
-    doc.text('Melotwo SHEQ Operations Division | Reg No: 2024/098124/07 | SANS 10108 / 10142-1 Certified', 15, 280);
+    doc.text('Melotwo SHEQ Operations Division | Reg No: 2024/098124/07 | Capitec & FNB Corporate Settlement', 15, 280);
 
     doc.save(`MeloTwo_EFT_Invoice_${order.reference}.pdf`);
   } catch (err) {

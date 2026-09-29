@@ -4764,17 +4764,17 @@ const AppNavbar: React.FC<AppNavbarProps> = ({
             </button>
           )}
 
-          {/* Action: PayPal & EFT Gateway Settings */}
+          {/* Action: PayPal & EFT Checkout (Customer-facing) */}
           {onOpenPaymentSettings && (
             <button
               id="paypal-gateway-nav-btn"
               onClick={onOpenPaymentSettings}
-              className="inline-flex items-center justify-center gap-1 px-1.5 py-1 sm:px-2.5 sm:py-1.5 text-[10px] sm:text-xs font-bold text-amber-300 bg-amber-950/60 border border-amber-500/50 hover:bg-amber-900/60 hover:border-amber-400 rounded-lg sm:rounded-xl transition shadow-sm cursor-pointer shrink-0 whitespace-nowrap"
-              title="Configure PayPal API Key & EFT Gateway Settings"
+              className="inline-flex items-center justify-center gap-1.5 px-2 py-1 sm:px-2.5 sm:py-1.5 text-[10px] sm:text-xs font-bold text-amber-300 bg-amber-950/60 border border-amber-500/50 hover:bg-amber-900/60 hover:border-amber-400 rounded-lg sm:rounded-xl transition shadow-sm cursor-pointer shrink-0 whitespace-nowrap"
+              title="Instant SANS License Checkout (PayPal & EFT)"
             >
-              <Key className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-amber-400 shrink-0" />
+              <CreditCard className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-amber-400 shrink-0" />
               <span className="hidden md:inline">PayPal & EFT</span>
-              <span className="md:hidden">Gateway</span>
+              <span className="md:hidden">Pay</span>
             </button>
           )}
 
@@ -4804,8 +4804,8 @@ const AppNavbar: React.FC<AppNavbarProps> = ({
               className="w-full text-left px-3 py-2 rounded-xl text-xs font-bold flex items-center justify-between bg-amber-950/40 text-amber-300 border border-amber-500/40 hover:bg-amber-900/40 transition cursor-pointer mb-2"
             >
               <div className="flex items-center gap-2">
-                <Key className="w-4 h-4 text-amber-400" />
-                <span>PayPal & EFT Gateway (Key Setup)</span>
+                <CreditCard className="w-4 h-4 text-amber-400" />
+                <span>PayPal & EFT Checkout</span>
               </div>
               <ChevronRight className="w-3.5 h-3.5 text-amber-400" />
             </button>
@@ -14432,6 +14432,7 @@ const App: React.FC = () => {
         onBack={() => setCurrentPage('home')}
         onLaunchDiagnostic={() => setCurrentPage('zambia-assessment')}
         onOpenTenderWizard={handleOpenTenderWizard}
+        onOpenPayPalKeyConfig={() => setIsPayPalKeyConfigOpen(true)}
       />
     );
   }
@@ -14450,7 +14451,15 @@ const App: React.FC = () => {
                         isAdmin={isAdmin}
                         onOpenCostCalculator={handleOpenCostModal}
                         onOpenTenderWizard={handleOpenTenderWizard}
-                        onOpenPaymentSettings={() => setIsPayPalKeyConfigOpen(true)}
+                        onOpenPaymentSettings={() => {
+                            setCheckoutDetails({
+                                title: 'MeloTwo Pro SANS Compliance License',
+                                description: 'Instant unlock of official SANS compliance specification generator, Section 54 proof defense, and tender procurement blueprints.',
+                                amountZar: 1500,
+                                enterpriseName: 'Industrial Mining Site'
+                            });
+                            setIsPaymentGatewayModalOpen(true);
+                        }}
                         onGetStarted={() => {
                             setDemoModalTier('professional');
                             setIsDemoModalOpen(true);
