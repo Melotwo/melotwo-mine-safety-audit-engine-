@@ -2071,10 +2071,17 @@ interface ServerPayPalConfig {
   currency: string;
 }
 
+const resolvePayPalMode = (val?: string): 'sandbox' | 'live' => {
+  if (!val) return 'sandbox';
+  const lower = val.trim().toLowerCase();
+  if (lower === 'sandbox' || lower === 'test' || lower === 'dev') return 'sandbox';
+  return 'live';
+};
+
 const runtimePayPalConfig: ServerPayPalConfig = {
   clientId: process.env.PAYPAL_CLIENT_ID || process.env.VITE_PAYPAL_CLIENT_ID || '',
   clientSecret: process.env.PAYPAL_CLIENT_SECRET || '',
-  mode: (process.env.PAYPAL_ENVIRONMENT as 'sandbox' | 'live') || 'sandbox',
+  mode: resolvePayPalMode(process.env.PAYPAL_ENVIRONMENT),
   currency: 'USD'
 };
 
@@ -2119,14 +2126,42 @@ interface ServerPayPalOrderRecord {
 
 const serverPayPalOrders: ServerPayPalOrderRecord[] = [];
 
+interface ServerPayPalWebhookRecord {
+  id: string;
+  eventType: string;
+  summary: string;
+  resourceId?: string;
+  status: string;
+  payload: any;
+  receivedAt: string;
+}
+
+const serverPayPalWebhooks: ServerPayPalWebhookRecord[] = [];
+
 // 1. Get PayPal Configuration
 app.get(['/api/paypal/config', '/api/paypal/config/'], (req, res) => {
+  const envClientId = process.env.PAYPAL_CLIENT_ID || process.env.VITE_PAYPAL_CLIENT_ID || '';
+  const envSecret = process.env.PAYPAL_CLIENT_SECRET || '';
+  const rawEnv = (process.env.PAYPAL_ENVIRONMENT || '').trim();
+  const envMode = resolvePayPalMode(rawEnv);
+
+  const effectiveClientId = runtimePayPalConfig.clientId || envClientId;
+  const effectiveSecret = runtimePayPalConfig.clientSecret || envSecret;
+  const effectiveMode = resolvePayPalMode(runtimePayPalConfig.mode || envMode);
+
   res.json({
-    clientId: runtimePayPalConfig.clientId,
-    hasClientSecret: Boolean(runtimePayPalConfig.clientSecret),
-    mode: runtimePayPalConfig.mode,
+    clientId: effectiveClientId,
+    hasClientSecret: Boolean(effectiveSecret),
+    mode: effectiveMode,
     currency: runtimePayPalConfig.currency,
-    isConfigured: Boolean(runtimePayPalConfig.clientId)
+    isConfigured: Boolean(effectiveClientId),
+    environment: rawEnv || effectiveMode,
+    envSecrets: {
+      hasPaypalClientId: Boolean(process.env.PAYPAL_CLIENT_ID),
+      hasVitePaypalClientId: Boolean(process.env.VITE_PAYPAL_CLIENT_ID),
+      hasPaypalClientSecret: Boolean(process.env.PAYPAL_CLIENT_SECRET),
+      environment: rawEnv || effectiveMode
+    }
   });
 });
 
@@ -2224,6 +2259,138 @@ app.post(['/api/paypal/capture-order', '/api/paypal/capture-order/'], async (req
     });
   } catch (err: any) {
     res.status(500).json({ error: err.message || 'Failed to capture PayPal order' });
+  }
+});
+
+// 4a. PayPal Webhook Listener (IPN / Webhook Event Receiver)
+app.post(['/api/paypal/webhook', '/api/paypal/webhook/'], (req, res) => {
+  try {
+    const event = req.body || {};
+    const eventType = event.event_type || 'UNKNOWN';
+    const resource = event.resource || {};
+    const resourceId = resource.id || resource.order_id || 'RES-' + Date.now();
+
+    console.log(`[PayPal Webhook] Received ${eventType} event for resource ${resourceId}`);
+
+    const webhookRecord: ServerPayPalWebhookRecord = {
+      id: event.id || `WH-${Date.now()}`,
+      eventType,
+      summary: event.summary || `PayPal event: ${eventType}`,
+      resourceId,
+      status: 'PROCESSED',
+      payload: event,
+      receivedAt: new Date().toISOString()
+    };
+    serverPayPalWebhooks.unshift(webhookRecord);
+
+    // If order approved or captured, sync order record
+    if (eventType === 'CHECKOUT.ORDER.APPROVED' || eventType === 'PAYMENT.CAPTURE.COMPLETED') {
+      const existing = serverPayPalOrders.find(o => o.orderId === resourceId);
+      if (existing) {
+        existing.status = 'COMPLETED';
+        if (resource.payer?.email_address) existing.payerEmail = resource.payer.email_address;
+      } else {
+        serverPayPalOrders.push({
+          orderId: resourceId,
+          amount: Number(resource.amount?.value) || 0,
+          currency: resource.amount?.currency_code || 'USD',
+          tierOrItem: 'PayPal Webhook Captured License',
+          payerEmail: resource.payer?.email_address,
+          status: 'COMPLETED',
+          createdAt: new Date().toISOString()
+        });
+      }
+    }
+
+    res.status(200).json({
+      received: true,
+      event_type: eventType,
+      webhook_id: webhookRecord.id,
+      timestamp: webhookRecord.receivedAt
+    });
+  } catch (err: any) {
+    console.error('[PayPal Webhook] Processing error:', err);
+    res.status(500).json({ error: err.message || 'Webhook processing failed' });
+  }
+});
+
+// 4b. Webhook History & Verification Endpoint
+app.get(['/api/paypal/webhooks/history', '/api/paypal/webhooks/history/'], (req, res) => {
+  res.json({
+    total: serverPayPalWebhooks.length,
+    webhooks: serverPayPalWebhooks
+  });
+});
+
+// 4c. PayPal Orders Query
+app.get(['/api/paypal/orders', '/api/paypal/orders/'], (req, res) => {
+  res.json({
+    total: serverPayPalOrders.length,
+    orders: serverPayPalOrders
+  });
+});
+
+// 4d. Simulate PayPal Webhook
+app.post(['/api/paypal/simulate-webhook', '/api/paypal/simulate-webhook/'], (req, res) => {
+  try {
+    const { eventType = 'PAYMENT.CAPTURE.COMPLETED', orderId, amount = 135, currency = 'USD', payerEmail = 'turoka15@gmail.com' } = req.body || {};
+    const effectiveOrderId = orderId || `PAYID-${crypto.randomBytes(6).toString('hex').toUpperCase()}`;
+
+    const syntheticPayload = {
+      id: `WH-SIM-${Date.now()}`,
+      event_version: '1.0',
+      create_time: new Date().toISOString(),
+      event_type: eventType,
+      summary: `Payment completed for ${effectiveOrderId}`,
+      resource: {
+        id: effectiveOrderId,
+        status: 'COMPLETED',
+        amount: {
+          value: String(amount),
+          currency_code: currency
+        },
+        payer: {
+          email_address: payerEmail,
+          name: { given_name: 'MeloTwo', surname: 'Enterprise Inspector' }
+        }
+      }
+    };
+
+    const webhookRecord: ServerPayPalWebhookRecord = {
+      id: syntheticPayload.id,
+      eventType,
+      summary: syntheticPayload.summary,
+      resourceId: effectiveOrderId,
+      status: 'PROCESSED',
+      payload: syntheticPayload,
+      receivedAt: new Date().toISOString()
+    };
+    serverPayPalWebhooks.unshift(webhookRecord);
+
+    const existing = serverPayPalOrders.find(o => o.orderId === effectiveOrderId);
+    if (existing) {
+      existing.status = 'COMPLETED';
+      existing.payerEmail = payerEmail;
+    } else {
+      serverPayPalOrders.push({
+        orderId: effectiveOrderId,
+        amount: Number(amount),
+        currency,
+        tierOrItem: 'Simulated Webhook Order',
+        payerEmail,
+        status: 'COMPLETED',
+        createdAt: new Date().toISOString()
+      });
+    }
+
+    res.json({
+      success: true,
+      simulatedEvent: eventType,
+      orderId: effectiveOrderId,
+      webhookRecord
+    });
+  } catch (err: any) {
+    res.status(500).json({ error: err.message || 'Simulation failed' });
   }
 });
 

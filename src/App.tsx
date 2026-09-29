@@ -14415,6 +14415,15 @@ const App: React.FC = () => {
       <ZambiaComplianceAssessmentModal
         onClose={() => setCurrentPage('home')}
         onOpenTenderWizard={handleOpenTenderWizard}
+        onOpenCheckout={(details) => {
+          setCheckoutDetails({
+            title: details.title,
+            description: details.description,
+            amountZar: details.amountZar,
+            enterpriseName: details.companyName
+          });
+          setIsPaymentGatewayModalOpen(true);
+        }}
       />
     );
   } else if (currentPage === 'partner-copilot') {

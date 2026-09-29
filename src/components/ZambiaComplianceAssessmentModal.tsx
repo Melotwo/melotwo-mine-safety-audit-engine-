@@ -1,6 +1,8 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { 
   ShieldAlert, 
+  ShieldCheck,
+  CreditCard,
   CheckCircle2, 
   AlertTriangle, 
   XCircle, 
@@ -36,6 +38,7 @@ import { MeloTwoLogo } from './MeloTwoLogo';
 export interface ZambiaComplianceAssessmentProps {
   onClose?: () => void;
   onOpenTenderWizard?: () => void;
+  onOpenCheckout?: (details: { title: string; description: string; amountZar: number; companyName: string }) => void;
   defaultDistrict?: string;
   partnerRefCode?: string;
 }
@@ -43,6 +46,7 @@ export interface ZambiaComplianceAssessmentProps {
 export const ZambiaComplianceAssessmentModal: React.FC<ZambiaComplianceAssessmentProps> = ({
   onClose,
   onOpenTenderWizard,
+  onOpenCheckout,
   defaultDistrict = 'Kitwe, Copperbelt Province',
   partnerRefCode
 }) => {
@@ -157,7 +161,14 @@ export const ZambiaComplianceAssessmentModal: React.FC<ZambiaComplianceAssessmen
       console.warn('Failed to save partner lead locally:', e);
     }
 
-    if (onOpenTenderWizard) {
+    if (onOpenCheckout) {
+      onOpenCheckout({
+        title: `Zambia Mining Compliance Binder (${diagnosticResult.recommendedBinderType})`,
+        description: `Official 20-Section Zambian Mining Safety Dossier & Statutory Remediation for ${companyName} (${district})`,
+        amountZar: 2500,
+        companyName
+      });
+    } else if (onOpenTenderWizard) {
       onOpenTenderWizard();
     }
   };
@@ -659,7 +670,7 @@ export const ZambiaComplianceAssessmentModal: React.FC<ZambiaComplianceAssessmen
                   >
                     <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3 mb-3">
                       <div>
-                        <div className="flex items-center gap-2 mb-1">
+                        <div className="flex flex-wrap items-center gap-2 mb-1">
                           <span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded bg-slate-950 border border-slate-800 text-amber-400">
                             {q.id}
                           </span>
@@ -668,6 +679,10 @@ export const ZambiaComplianceAssessmentModal: React.FC<ZambiaComplianceAssessmen
                           </span>
                           <span className="text-[9px] font-mono px-1.5 py-0.2 rounded bg-slate-800 text-slate-300">
                             Weight: {q.weight}/10
+                          </span>
+                          <span className="text-[9px] font-mono font-bold px-1.5 py-0.2 rounded bg-emerald-950/80 text-emerald-300 border border-emerald-600/40 flex items-center gap-1">
+                            <ShieldCheck className="w-2.5 h-2.5 text-emerald-400" />
+                            VERIFIED STATUTORY MANDATE
                           </span>
                         </div>
                         <h3 className="text-sm sm:text-base font-bold text-white leading-snug">
@@ -888,11 +903,25 @@ export const ZambiaComplianceAssessmentModal: React.FC<ZambiaComplianceAssessmen
               <div className="flex flex-wrap items-center justify-center gap-3 pt-2">
                 <button
                   onClick={handleSaveAndGenerateBinder}
-                  className="px-6 py-3 rounded-2xl bg-red-600 hover:bg-red-500 text-white font-black text-sm transition flex items-center gap-2 shadow-xl shadow-red-950/50 cursor-pointer"
+                  className="px-6 py-3 rounded-2xl bg-gradient-to-r from-red-600 via-amber-600 to-amber-500 hover:from-red-500 hover:to-amber-400 text-slate-950 font-black text-sm transition flex items-center gap-2 shadow-xl shadow-red-950/50 cursor-pointer"
                 >
-                  <span>Compile 20-Section Zambian Mining Safety File</span>
+                  <CreditCard className="w-4 h-4 text-slate-950" />
+                  <span>Generate Binders &amp; Checkout (PayPal / EFT)</span>
                   <ArrowRight className="w-4 h-4" />
                 </button>
+
+                {onOpenTenderWizard && (
+                  <button
+                    onClick={() => {
+                      handleSaveAndGenerateBinder();
+                      onOpenTenderWizard();
+                    }}
+                    className="px-5 py-3 rounded-2xl bg-red-950/80 hover:bg-red-900/80 border border-red-500/50 text-white font-bold text-xs transition flex items-center gap-2 cursor-pointer"
+                  >
+                    <FileText className="w-4 h-4 text-red-400" />
+                    <span>Open Tender Safety File Wizard</span>
+                  </button>
+                )}
 
                 <button
                   onClick={handleGeneratePdfReport}

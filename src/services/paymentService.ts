@@ -28,16 +28,20 @@ export function formatUsdCurrency(amount: number): string {
 }
 
 export function getStoredPayPalConfig(): PayPalConfig {
-  const localKey = localStorage.getItem('melotwo_paypal_client_id') || '';
-  const localMode = (localStorage.getItem('melotwo_paypal_mode') as 'sandbox' | 'live') || 'sandbox';
-  const localCurrency = (localStorage.getItem('melotwo_paypal_currency') as 'USD' | 'EUR' | 'GBP') || 'USD';
+  const localKey = typeof localStorage !== 'undefined' ? localStorage.getItem('melotwo_paypal_client_id') || '' : '';
+  const localMode = typeof localStorage !== 'undefined' ? (localStorage.getItem('melotwo_paypal_mode') as 'sandbox' | 'live') : null;
+  const localCurrency = typeof localStorage !== 'undefined' ? (localStorage.getItem('melotwo_paypal_currency') as 'USD' | 'EUR' | 'GBP') || 'USD' : 'USD';
 
-  const envKey = (import.meta as any).env?.VITE_PAYPAL_CLIENT_ID || '';
+  const envKey = (typeof import.meta !== 'undefined' && (import.meta as any).env?.VITE_PAYPAL_CLIENT_ID) || '';
+  const envModeRaw = (typeof import.meta !== 'undefined' && ((import.meta as any).env?.PAYPAL_ENVIRONMENT || (import.meta as any).env?.VITE_PAYPAL_ENVIRONMENT)) || '';
+  const envMode: 'sandbox' | 'live' = envModeRaw.toLowerCase() === 'sandbox' ? 'sandbox' : 'live';
+
   const resolvedKey = localKey.trim() || envKey.trim();
+  const resolvedMode = localMode || (resolvedKey ? envMode : 'sandbox');
 
   return {
     clientId: resolvedKey,
-    mode: localMode,
+    mode: resolvedMode,
     currency: localCurrency,
     isConfigured: Boolean(resolvedKey)
   };
