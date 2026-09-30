@@ -15,6 +15,7 @@ import {
   Sparkles,
   AlertTriangle
 } from 'lucide-react';
+import { generateQrCodeDataUrl } from '../services/qrVerificationService';
 
 export interface ProofBlockData {
   block_index: number;
@@ -51,7 +52,17 @@ export const ComplianceProofViewer: React.FC<ComplianceProofViewerProps> = ({
   const [copiedHash, setCopiedHash] = useState<string | null>(null);
   const [selectedBlock, setSelectedBlock] = useState<ProofBlockData | null>(null);
   const [showQrModal, setShowQrModal] = useState<boolean>(false);
+  const [qrCodeDataUrl, setQrCodeDataUrl] = useState<string>('');
 
+  const verificationUrl = typeof window !== 'undefined' 
+    ? `${window.location.origin}/#verify?siteId=${encodeURIComponent(siteId)}`
+    : `https://melotwo.co.za/proof/${siteId.toLowerCase()}`;
+
+  useEffect(() => {
+    generateQrCodeDataUrl(verificationUrl, { width: 320, margin: 1 })
+      .then(url => setQrCodeDataUrl(url))
+      .catch(e => console.warn('QR code generation error:', e));
+  }, [verificationUrl]);
   const fetchVerification = useCallback(async () => {
     setIsLoading(true);
     try {
@@ -127,8 +138,6 @@ export const ComplianceProofViewer: React.FC<ComplianceProofViewerProps> = ({
     setCopiedHash(hashId);
     setTimeout(() => setCopiedHash(null), 2000);
   };
-
-  const verificationUrl = `https://melotwo.co.za/proof/${siteId.toLowerCase()}`;
 
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 font-sans pb-20">
@@ -459,69 +468,23 @@ export const ComplianceProofViewer: React.FC<ComplianceProofViewerProps> = ({
             </div>
 
             <div className="text-center space-y-3">
-              {/* High-Contrast SVG QR Code Visual */}
-              <div className="inline-block p-4 bg-white rounded-2xl shadow-xl">
-                <svg
-                  className="w-48 h-48 mx-auto"
-                  viewBox="0 0 100 100"
-                  fill="currentColor"
-                  xmlns="http://www.w3.org/2000/svg"
-                >
-                  {/* Outer Frame */}
-                  <rect x="0" y="0" width="100" height="100" fill="white" />
-                  
-                  {/* Top-Left Finder */}
-                  <rect x="10" y="10" width="24" height="24" fill="#020617" />
-                  <rect x="14" y="14" width="16" height="16" fill="white" />
-                  <rect x="18" y="18" width="8" height="8" fill="#020617" />
-
-                  {/* Top-Right Finder */}
-                  <rect x="66" y="10" width="24" height="24" fill="#020617" />
-                  <rect x="70" y="14" width="16" height="16" fill="white" />
-                  <rect x="74" y="18" width="8" height="8" fill="#020617" />
-
-                  {/* Bottom-Left Finder */}
-                  <rect x="10" y="66" width="24" height="24" fill="#020617" />
-                  <rect x="14" y="70" width="16" height="16" fill="white" />
-                  <rect x="18" y="74" width="8" height="8" fill="#020617" />
-
-                  {/* Data Pattern Mock */}
-                  <rect x="38" y="10" width="4" height="4" fill="#020617" />
-                  <rect x="46" y="10" width="4" height="4" fill="#020617" />
-                  <rect x="54" y="14" width="4" height="4" fill="#020617" />
-                  <rect x="42" y="22" width="4" height="4" fill="#020617" />
-                  <rect x="50" y="26" width="4" height="4" fill="#020617" />
-                  <rect x="10" y="38" width="4" height="4" fill="#020617" />
-                  <rect x="18" y="42" width="4" height="4" fill="#020617" />
-                  <rect x="26" y="38" width="4" height="4" fill="#020617" />
-                  <rect x="38" y="38" width="8" height="8" fill="#020617" />
-                  <rect x="50" y="38" width="4" height="4" fill="#020617" />
-                  <rect x="58" y="42" width="4" height="4" fill="#020617" />
-                  <rect x="66" y="38" width="4" height="4" fill="#020617" />
-                  <rect x="74" y="42" width="4" height="4" fill="#020617" />
-                  <rect x="82" y="38" width="4" height="4" fill="#020617" />
-                  <rect x="42" y="50" width="4" height="4" fill="#020617" />
-                  <rect x="50" y="54" width="4" height="4" fill="#020617" />
-                  <rect x="58" y="50" width="4" height="4" fill="#020617" />
-                  <rect x="66" y="54" width="4" height="4" fill="#020617" />
-                  <rect x="78" y="50" width="4" height="4" fill="#020617" />
-                  <rect x="38" y="66" width="4" height="4" fill="#020617" />
-                  <rect x="46" y="70" width="4" height="4" fill="#020617" />
-                  <rect x="54" y="66" width="4" height="4" fill="#020617" />
-                  <rect x="62" y="74" width="4" height="4" fill="#020617" />
-                  <rect x="70" y="70" width="4" height="4" fill="#020617" />
-                  <rect x="78" y="66" width="4" height="4" fill="#020617" />
-                  <rect x="86" y="74" width="4" height="4" fill="#020617" />
-                  <rect x="42" y="82" width="4" height="4" fill="#020617" />
-                  <rect x="50" y="86" width="4" height="4" fill="#020617" />
-                  <rect x="66" y="82" width="4" height="4" fill="#020617" />
-                  <rect x="74" y="86" width="4" height="4" fill="#020617" />
-                  <rect x="82" y="82" width="4" height="4" fill="#020617" />
-                </svg>
+              {/* Scannable Dynamic QR Code Image */}
+              <div className="inline-block p-3 bg-white rounded-2xl shadow-xl border border-slate-700">
+                {qrCodeDataUrl ? (
+                  <img
+                    src={qrCodeDataUrl}
+                    alt="Cryptographic Audit Proof QR Code"
+                    className="w-48 h-48 mx-auto rounded-lg object-contain"
+                  />
+                ) : (
+                  <div className="w-48 h-48 flex items-center justify-center text-slate-800 font-mono text-xs">
+                    Generating QR...
+                  </div>
+                )}
               </div>
 
               <div className="space-y-1">
-                <p className="text-xs font-bold text-white">Instant Verification Link</p>
+                <p className="text-xs font-bold text-white">Instant Online Ledger Verification Link</p>
                 <p className="text-[11px] text-slate-400 font-mono truncate">{verificationUrl}</p>
               </div>
             </div>

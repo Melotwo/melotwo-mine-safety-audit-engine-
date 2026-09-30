@@ -14530,6 +14530,7 @@ const App: React.FC = () => {
                             localStorage.setItem('sans_trial_active', 'true');
                             localStorage.setItem('melotwo_vip_unlocked', 'true');
                             localStorage.setItem('sans_vip_unlocked', 'true');
+                            localStorage.setItem('melotwo_tender_paid_unlocked', 'true');
                         } catch (e) {}
                         setIsPaymentGatewayModalOpen(false);
                     }}

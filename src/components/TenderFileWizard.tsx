@@ -1,4 +1,4 @@
-import React, { useState, useId, useEffect } from 'react';
+import React, { useState, useEffect, useRef, useId } from 'react';
 import { 
   FileText, 
   ShieldCheck, 
@@ -15,32 +15,61 @@ import {
   HardHat, 
   Wrench, 
   Download, 
-  Printer, 
   AlertTriangle, 
   Info, 
   Users, 
   Check, 
   X, 
   Flame, 
-  PlusCircle, 
-  FileCode, 
   Zap, 
   Layers, 
   Lock, 
   ShieldAlert, 
   FolderCheck,
-  Briefcase,
   Eye,
   CreditCard,
   Crown,
-  Ban,
   Shield,
-  HelpCircle,
+  QrCode,
   ExternalLink,
   ChevronRight,
-  BadgeCheck
+  RefreshCw,
+  Activity,
+  Gauge,
+  Droplets,
+  RotateCcw,
+  FileArchive
 } from 'lucide-react';
 import jsPDF from 'jspdf';
+import JSZip from 'jszip';
+import { 
+  ContractorTierId, 
+  CONTRACTOR_TIERS,
+  ConsumableTrackingState,
+  AccessAndBlastingState,
+  DrillingTelemetryState,
+  WearSimulationState,
+  TenderSafetyFileDraftState
+} from '../types/tenderTypes';
+import { 
+  loadTenderDraft, 
+  saveTenderDraft, 
+  clearTenderDraft, 
+  checkIfTenderPaidUnlocked, 
+  markTenderPaidUnlocked,
+  calculatePhysicsWear,
+  DEFAULT_CONSUMABLES,
+  DEFAULT_ACCESS_BLASTING,
+  DEFAULT_DRILLING,
+  DEFAULT_WEAR_SIMULATION
+} from '../services/tenderDraftService';
+import { 
+  createAuditLedgerVerificationRecord, 
+  generateQrCodeDataUrl, 
+  AuditVerificationRecord 
+} from '../services/qrVerificationService';
+import { PayPalEFTCheckoutModal } from './PayPalEFTCheckoutModal';
+import { ComplianceProofViewer } from './ComplianceProofViewer';
 
 export interface TradeOption {
   id: string;
@@ -118,127 +147,33 @@ export const AVAILABLE_TRADES: TradeOption[] = [
     id: 'road_maintenance',
     name: 'Road Maintenance & Civils',
     category: 'Civil & Infrastructure',
-    riskLevel: 'High',
-    icon: HardHat,
-    description: 'Pothole repairs, asphalt resurfacing, kerbing, and high-traffic road verge maintenance.',
+    riskLevel: 'Medium',
+    icon: Wrench,
+    description: 'Pothole repairs, asphalt resurfacing, kerbing, stormwater channel clearing, and heavy plant marshaling.',
     swps: [
-      { code: 'SWP-RM-01', title: 'Traffic Accommodation & Advance Warning Signage', standard: 'SARTSM Vol 2 / CR 2014' },
-      { code: 'SWP-RM-02', title: 'Hot/Cold Asphalt Patching & Vibratory Roller Ops', standard: 'SANS 1200 / OHS Act' },
-      { code: 'SWP-RM-03', title: 'Bitumen Emulsion Handling & Flammable Liquid Safety', standard: 'GSR 4 / SANS 10228' },
-      { code: 'SWP-RM-04', title: 'High-Visibility PPE & Spotter Marshaling Protocol', standard: 'GSR 2 / DMR Rules' }
+      { code: 'SWP-RD-01', title: 'Traffic Accommodation & Roadway Flagging Procedures', standard: 'SARTSM Vol 2 / CR 20' },
+      { code: 'SWP-RD-02', title: 'Hot Bitumen & Asphalt Application Safety', standard: 'OHS Act Section 8 / SANS 4001' },
+      { code: 'SWP-RD-03', title: 'Pneumatic Breaker & Jackhammer Operation', standard: 'Physical Agents Regs / Noise Regs' },
+      { code: 'SWP-RD-04', title: 'Excavator & Tipper Truck Reversing Marshaling', standard: 'CR 23 / Construction Plant' }
     ],
-    methodStatements: ['Roadway Lane Closure & Taper Set-up', 'Mechanical Saw Cutting of Pavement', 'Hot Bituminous Surface Sealing']
+    methodStatements: ['Roadway Asphalt Patching & Compaction', 'Stormwater Culvert Pre-Cast Installation', 'Road Traffic Accommodation Plan Execution']
   },
   {
     id: 'building_renovation',
-    name: 'Building Construction & Renovation',
-    category: 'Commercial & Residential',
-    riskLevel: 'Medium',
-    icon: Building2,
-    description: 'Interior fit-outs, structural modifications, ceiling replacements, bricklaying, and wet trades.',
-    swps: [
-      { code: 'SWP-BR-01', title: 'Demolition of Non-Structural Partition Walls', standard: 'CR 29 / OHS Act' },
-      { code: 'SWP-BR-02', title: 'Mobile Aluminium Tower Scaffolding (<6m)', standard: 'SANS 10085 / CR 16' },
-      { code: 'SWP-BR-03', title: 'Crystalline Silica & Dust Extraction Protocol', standard: 'Hazardous Chemical Agents Regs' },
-      { code: 'SWP-BR-04', title: 'Rubble Chute & Waste Manifest Management', standard: 'Environmental & Municipal By-Laws' }
-    ],
-    methodStatements: ['Interior Plaster Strip & Wall Chasing', 'Suspended Ceiling Grid Installation', 'Tile Removal & Screed Prep']
-  },
-  {
-    id: 'painting_decorating',
-    name: 'Painting & Surface Decorating',
-    category: 'Finishing Trades',
-    riskLevel: 'Low',
-    icon: Wrench,
-    description: 'Industrial coating, high-access facade painting, spray painting, and surface prep.',
-    swps: [
-      { code: 'SWP-PD-01', title: 'Volatile Organic Compound (VOC) Ventilation & Storage', standard: 'HCAR 2021 / GSR 4' },
-      { code: 'SWP-PD-02', title: 'Working from Extension Ladders & Stepladders', standard: 'General Safety Reg 13A' },
-      { code: 'SWP-PD-03', title: 'High-Pressure Hydro-Washing Safety (150-300 Bar)', standard: 'Vessel Under Pressure Regs' },
-      { code: 'SWP-PD-04', title: 'Chemical Splash Eye & Respiratory Protection', standard: 'GSR 2 / SANS 10330' }
-    ],
-    methodStatements: ['External Multi-Storey Facade Coating', 'Airless Paint Spraying in Confined Rooms', 'Industrial Epoxy Floor Sealing']
-  },
-  {
-    id: 'agricultural_fencing',
-    name: 'Agricultural & Boundary Fencing',
-    category: 'Farming & Perimeter Security',
-    riskLevel: 'Medium',
-    icon: ShieldAlert,
-    description: 'Game fencing, razor wire, high-tensile cattle enclosures, and solar electric boundary fences.',
-    swps: [
-      { code: 'SWP-AF-01', title: 'Post-Hole Auger & Subsurface Utility Verification', standard: 'CR 13 / OHS Act' },
-      { code: 'SWP-AF-02', title: 'High-Tensile Wire Tensioning & Recoil Containment', standard: 'GSR 3 / Risk Matrix' },
-      { code: 'SWP-AF-03', title: 'Remote Farm Heat Stress, Dehydration & Snakebite Kit', standard: 'First Aid GSR 3 / OHS' },
-      { code: 'SWP-AF-04', title: 'Electric Fence Energizer Earth Spike Bonding', standard: 'SANS 10222-3' }
-    ],
-    methodStatements: ['Boundary Game Wire Strainer Tensioning', 'Treated Wooden Post Auger Planting', 'Electric Fence Multi-Zone Setup']
-  },
-  {
-    id: 'hvac_maintenance',
-    name: 'HVAC & Industrial Refrigeration',
-    category: 'Building Services',
-    riskLevel: 'High',
-    icon: Flame,
-    description: 'Chiller plant servicing, duct cleaning, refrigerant recovery, and rooftop cooling units.',
-    swps: [
-      { code: 'SWP-HV-01', title: 'Refrigerant R410A / R32 Gas Recovery & Pressure Safety', standard: 'PER 2009 / SANS 347' },
-      { code: 'SWP-HV-02', title: 'Rooftop Plant Access & Fall Restraint Anchoring', standard: 'CR 10 / SANS 50361' },
-      { code: 'SWP-HV-03', title: 'High-Voltage Capacitor Discharge & Belt Guard Safety', standard: 'Driven Machinery Regs 2' },
-      { code: 'SWP-HV-04', title: 'Chemical Coil Wash & Acid Neutralization Protocol', standard: 'HCAR 2021 / Effluent Laws' }
-    ],
-    methodStatements: ['Rooftop Condenser Coil Chemical Descaling', 'Compressor Motor Replacement', 'Air Duct Anti-Microbial Fogging']
-  },
-  {
-    id: 'small_works_handyman',
-    name: 'Small Works / Facilities Handyman',
-    category: 'General Maintenance',
+    name: 'Building Maintenance & Painting',
+    category: 'General Construction (CR 2014)',
     riskLevel: 'Low',
     icon: Layers,
-    description: 'Minor carpentry, plumbing repairs, drywall patching, door hanging, and lock repairs.',
+    description: 'Internal plastering, roof sealing, epoxy floor coating, scaffolding access, and dry walling.',
     swps: [
-      { code: 'SWP-SW-01', title: 'Portable Electrical Power Tools Pre-Use Inspection', standard: 'Electrical Machinery Regs 10' },
-      { code: 'SWP-SW-02', title: 'Ergonomic Manual Handling & Heavy Lifting (>25kg)', standard: 'Ergonomics Regs 2019' },
-      { code: 'SWP-SW-03', title: 'Pressurized Domestic Water Pipe Isolation', standard: 'National Building Regs' },
-      { code: 'SWP-SW-04', title: 'Drywall Dust & Angle Grinder Eye Safety', standard: 'GSR 2 / OHS Act' }
+      { code: 'SWP-BLD-01', title: 'Mobile Aluminum Tower Scaffolding Erection & Pre-Use Tagging', standard: 'SANS 10085-1 / CR 16' },
+      { code: 'SWP-BLD-02', title: 'Hazardous Chemical Substances (HCS) Paint & Solvent Application', standard: 'HCAR 2021 / SANS 10234' },
+      { code: 'SWP-BLD-03', title: 'Working at Heights & Full Body Harness Fall Arrest', standard: 'CR 10 / SANS 50361' },
+      { code: 'SWP-BLD-04', title: 'Portable Electric Power Tool Pre-Use Inspection & Tagging', standard: 'EMR 9 / OHS Act 85' }
     ],
-    methodStatements: ['Commercial Door & Lock Replacement', 'Drywall Partition Minor Patching', 'Sanitary Ware & Tap Fitting Repair']
+    methodStatements: ['External High-Level Facade Painting via Scaffolding', 'Industrial Concrete Floor Polyurethane Sealing', 'Ceiling & Partition Dry-Wall Installation']
   }
 ];
-
-export interface UploadedDocStatus {
-  name: string;
-  uploaded: boolean;
-  fileName?: string;
-  size?: string;
-}
-
-export interface CompanyProfileState {
-  fullName: string;
-  companyName: string;
-  tradingName: string;
-  contactPhone: string;
-  contactEmail: string;
-  physicalAddress: string;
-  cipcRegNumber: string;
-  coidNumber: string;
-  sarsPin: string;
-  projectTenderName: string;
-  clientPrincipalName: string;
-}
-
-export interface StatutoryStaffState {
-  ceoSupervisorName: string; // 16.2
-  ceoSupervisorId: string;
-  constructionManagerName: string; // CR 8.1
-  assistantManagerName: string; // CR 8.2
-  firstAiderName: string; // GSR 3
-  firstAiderExpiry: string;
-  fireMarshalName: string; // ER 9
-  safetyRepName: string; // Sec 17/18
-  riskAssessorName: string; // CR 9.1
-  incidentInvestigatorName: string; // GAR 9
-}
 
 export interface TenderFileWizardProps {
   isOpen?: boolean;
@@ -247,94 +182,151 @@ export interface TenderFileWizardProps {
   isStandalone?: boolean;
 }
 
-const MAX_DOWNLOAD_LIMIT = 3;
-const DOWNLOAD_STORAGE_KEY = 'melotwo_tender_download_count';
-
 export const TenderFileWizard: React.FC<TenderFileWizardProps> = ({
   isOpen = true,
   onClose,
   onSuccess,
   isStandalone = false
 }) => {
-  const [currentStep, setCurrentStep] = useState<1 | 2 | 3 | 4>(1);
-  const [isGeneratingPdf, setIsGeneratingPdf] = useState(false);
-  const [pdfGeneratedSuccess, setPdfGeneratedSuccess] = useState(false);
-  const [showFullDocIndex, setShowFullDocIndex] = useState(false);
+  // Load restored draft state from localStorage
+  const [draftState, setDraftState] = useState<TenderSafetyFileDraftState>(() => loadTenderDraft());
+
+  // Step and View Navigation
+  const [currentStep, setCurrentStep] = useState<1 | 2 | 3 | 4>(draftState.currentStep || 1);
+  const [step2SubTab, setStep2SubTab] = useState<'TRADES' | 'CONSUMABLES' | 'BLASTING' | 'DRILLING' | 'WEAR_PHYSICS'>('TRADES');
   const [activePreviewTab, setActivePreviewTab] = useState<'blueprint' | 'live_preview'>('live_preview');
   
-  // Download Limit and Conversion Lock State
-  const [downloadCount, setDownloadCount] = useState<number>(() => {
-    try {
-      const stored = localStorage.getItem(DOWNLOAD_STORAGE_KEY);
-      return stored ? parseInt(stored, 10) : 0;
-    } catch {
-      return 0;
-    }
-  });
-  const [showUpgradeModal, setShowUpgradeModal] = useState<boolean>(false);
-  const [isPaidUnlocked, setIsPaidUnlocked] = useState<boolean>(false);
+  // Specific Form States
+  const [selectedTier, setSelectedTier] = useState<ContractorTierId>(draftState.selectedTier || 'tier_standard');
+  const [profile, setProfile] = useState(draftState.profile);
+  const [docUploads, setDocUploads] = useState(draftState.docUploads);
+  const [selectedTrades, setSelectedTrades] = useState<string[]>(draftState.selectedTrades);
+  const [staff, setStaff] = useState(draftState.staff);
+  const [consumables, setConsumables] = useState<ConsumableTrackingState>(draftState.consumables || DEFAULT_CONSUMABLES);
+  const [accessBlasting, setAccessBlasting] = useState<AccessAndBlastingState>(draftState.accessBlasting || DEFAULT_ACCESS_BLASTING);
+  const [drilling, setDrilling] = useState<DrillingTelemetryState>(draftState.drilling || DEFAULT_DRILLING);
+  const [wearSimulation, setWearSimulation] = useState<WearSimulationState>(draftState.wearSimulation || DEFAULT_WEAR_SIMULATION);
+  
+  // Payment & Unlocking state
+  const [isPaidUnlocked, setIsPaidUnlocked] = useState<boolean>(() => checkIfTenderPaidUnlocked() || draftState.isPaidUnlocked);
+  const [isCheckoutModalOpen, setIsCheckoutModalOpen] = useState<boolean>(false);
+  const [showVerificationLedgerModal, setShowVerificationLedgerModal] = useState<boolean>(false);
+  
+  // Live Verification & QR Record
+  const [verificationRecord, setVerificationRecord] = useState<AuditVerificationRecord | null>(null);
+  const [liveQrDataUrl, setLiveQrDataUrl] = useState<string>('');
+  
+  // Auto-Save telemetry
+  const [lastAutoSaveTime, setLastAutoSaveTime] = useState<string>(new Date().toLocaleTimeString());
+  const [isGeneratingPdf, setIsGeneratingPdf] = useState(false);
+  const [pdfGeneratedSuccess, setPdfGeneratedSuccess] = useState(false);
+  const [isGeneratingZip, setIsGeneratingZip] = useState(false);
+  const [zipGeneratedSuccess, setZipGeneratedSuccess] = useState(false);
+  const autoSaveTimerRef = useRef<any>(null);
 
-  // Form State: Company Profile
-  const [profile, setProfile] = useState<CompanyProfileState>({
-    fullName: 'David Khumalo',
-    companyName: 'Apex Trade & Civils (Pty) Ltd',
-    tradingName: 'Apex Contractors',
-    contactPhone: '+27 11 000 0000',
-    contactEmail: 'safety@apexcontractors.co.za',
-    physicalAddress: '14 Industrial Road, Jet Park, Boksburg, 1459',
-    cipcRegNumber: '2021/847291/07',
-    coidNumber: '990001248573',
-    sarsPin: '9482716301',
-    projectTenderName: 'Tender No. PR-2026/088: Site Subcontract & Maintenance Facility',
-    clientPrincipalName: 'Anglo Operations / Municipal Infrastructure Unit'
-  });
-
-  // Upload placeholder states
-  const [docUploads, setDocUploads] = useState<Record<string, UploadedDocStatus>>({
-    coid: { name: 'COID Letter of Good Standing', uploaded: true, fileName: 'Apex_COID_Valid_2026.pdf', size: '342 KB' },
-    sars: { name: 'Tax Compliance Status (PIN Certificate)', uploaded: true, fileName: 'SARS_TCS_PIN_Apex.pdf', size: '180 KB' },
-    cipc: { name: 'CIPC Company Registration (COR14.3)', uploaded: true, fileName: 'COR14.3_2021_847291.pdf', size: '512 KB' },
-    insurance: { name: 'Public Liability Insurance (R5m+)', uploaded: false }
-  });
-
-  // Form State: Selected Trades
-  const [selectedTrades, setSelectedTrades] = useState<string[]>(['building_renovation', 'painting_decorating']);
-
-  // Form State: Statutory Employees
-  const [staff, setStaff] = useState<StatutoryStaffState>({
-    ceoSupervisorName: 'David Khumalo (OHS 16.2 Appointee)',
-    ceoSupervisorId: '840612 5182 084',
-    constructionManagerName: 'David Khumalo (CR 8.1 Manager)',
-    assistantManagerName: 'Thabo Mokoena (CR 8.2 Assistant)',
-    firstAiderName: 'Thabo Mokoena (Level 2 Certified)',
-    firstAiderExpiry: '2027-11-30',
-    fireMarshalName: 'Sipho Sithole (Appointed Marshall)',
-    safetyRepName: 'Lerato Ndlovu (SHE Rep Sec 17)',
-    riskAssessorName: 'David Khumalo (HIRA Qualified)',
-    incidentInvestigatorName: 'David Khumalo (GAR 9)'
-  });
-
-  const uniqueId = useId();
-
-  // Persist download count updates
+  // Initialize live verification QR code on mount
   useEffect(() => {
-    try {
-      localStorage.setItem(DOWNLOAD_STORAGE_KEY, downloadCount.toString());
-    } catch (e) {
-      console.warn('Could not save download count to localStorage:', e);
+    const refCode = draftState.verificationCode || `MT-TDR-${new Date().getFullYear()}-${Math.floor(1000 + Math.random() * 9000)}`;
+    createAuditLedgerVerificationRecord({
+      docType: '20-Section Mining Tender Safety File (The Red File)',
+      reference: refCode,
+      enterpriseName: profile.companyName,
+      siteId: 'SITE-WIT-01',
+      tier: selectedTier
+    }).then(rec => {
+      setVerificationRecord(rec);
+      setLiveQrDataUrl(rec.qrDataUrl);
+    }).catch(err => {
+      console.warn('Could not generate initial verification record:', err);
+    });
+  }, []);
+
+  // 1. Real-Time Auto-Save mechanism: Persists on every change to localStorage
+  useEffect(() => {
+    if (autoSaveTimerRef.current) {
+      clearTimeout(autoSaveTimerRef.current);
     }
-  }, [downloadCount]);
+
+    autoSaveTimerRef.current = setTimeout(() => {
+      const updated = saveTenderDraft({
+        currentStep,
+        selectedTier,
+        profile,
+        docUploads,
+        selectedTrades,
+        staff,
+        consumables,
+        accessBlasting,
+        drilling,
+        wearSimulation,
+        isPaidUnlocked
+      });
+      setLastAutoSaveTime(new Date().toLocaleTimeString());
+    }, 400);
+
+    return () => {
+      if (autoSaveTimerRef.current) clearTimeout(autoSaveTimerRef.current);
+    };
+  }, [
+    currentStep,
+    selectedTier,
+    profile,
+    docUploads,
+    selectedTrades,
+    staff,
+    consumables,
+    accessBlasting,
+    drilling,
+    wearSimulation,
+    isPaidUnlocked
+  ]);
+
+  // Recalculate wear simulation physics when parameters change
+  const handleRecalculateWear = (
+    hours: number, 
+    particulatePpm: number, 
+    ambientTemp: number, 
+    hydrolysis: 'LOW' | 'MEDIUM' | 'HIGH'
+  ) => {
+    const updatedComponents = calculatePhysicsWear(hours, particulatePpm, ambientTemp, hydrolysis);
+    setWearSimulation(prev => ({
+      ...prev,
+      dutyCyclesHours: hours,
+      quartzParticulatePpm: particulatePpm,
+      ambientTemperatureC: ambientTemp,
+      chemicalHydrolysisStress: hydrolysis,
+      monitoredComponents: updatedComponents,
+      lastSimulationRun: new Date().toISOString()
+    }));
+  };
+
+  // Reset draft handler
+  const handleResetDraft = () => {
+    if (window.confirm('Reset all Tender Safety File inputs to fresh defaults?')) {
+      const reset = clearTenderDraft();
+      setProfile(reset.profile);
+      setDocUploads(reset.docUploads);
+      setSelectedTrades(reset.selectedTrades);
+      setStaff(reset.staff);
+      setConsumables(DEFAULT_CONSUMABLES);
+      setAccessBlasting(DEFAULT_ACCESS_BLASTING);
+      setDrilling(DEFAULT_DRILLING);
+      setWearSimulation(DEFAULT_WEAR_SIMULATION);
+      setSelectedTier('tier_standard');
+      setCurrentStep(1);
+    }
+  };
 
   // Toggle Trade selection
   const toggleTrade = (tradeId: string) => {
     setSelectedTrades(prev => 
       prev.includes(tradeId)
-        ? (prev.length > 1 ? prev.filter(id => id !== tradeId) : prev) // keep at least 1
+        ? (prev.length > 1 ? prev.filter(id => id !== tradeId) : prev)
         : [...prev, tradeId]
     );
   };
 
-  // Upload handler simulation
+  // Simulated upload handler
   const handleSimulatedUpload = (key: string) => {
     setDocUploads(prev => ({
       ...prev,
@@ -347,7 +339,7 @@ export const TenderFileWizard: React.FC<TenderFileWizardProps> = ({
     }));
   };
 
-  // Quick autofill primary supervisor to all roles
+  // Quick autofill supervisor
   const handleAutofillSupervisor = () => {
     setStaff(prev => ({
       ...prev,
@@ -358,24 +350,31 @@ export const TenderFileWizard: React.FC<TenderFileWizardProps> = ({
     }));
   };
 
-  // Calculate dynamic components generated
+  const selectedTierObj = CONTRACTOR_TIERS.find(t => t.id === selectedTier) || CONTRACTOR_TIERS[1];
   const activeTradeObjects = AVAILABLE_TRADES.filter(t => selectedTrades.includes(t.id));
   const totalSwps = activeTradeObjects.reduce((acc, t) => acc + t.swps.length, 0);
   const totalMethodStatements = activeTradeObjects.reduce((acc, t) => acc + t.methodStatements.length, 0);
 
-  // Generate Actual PDF using jsPDF with download limit enforcement & watermark
-  const handleDownloadClick = () => {
-    if (!isPaidUnlocked && downloadCount >= MAX_DOWNLOAD_LIMIT) {
-      setShowUpgradeModal(true);
-      return;
-    }
-    generateTenderSafetyFile();
-  };
+  // Compile Master 20-Section PDF Document with Real QR Code
+  const compilePdfDocument = async (): Promise<{ doc: jsPDF; fileName: string; verification: AuditVerificationRecord }> => {
+    // 1. Generate live cryptographic verification record
+      const refCode = draftState.verificationCode || `MT-TDR-${new Date().getFullYear()}-${Math.floor(1000 + Math.random() * 9000)}`;
+      const verification = await createAuditLedgerVerificationRecord({
+        docType: '20-Section Mining Tender Safety File (The Red File)',
+        reference: refCode,
+        enterpriseName: profile.companyName,
+        siteId: 'SITE-WIT-01',
+        tier: selectedTierObj.name,
+        payload: {
+          blastingStatus: accessBlasting.blastingClearance.clearanceStatus,
+          oxygenSystemStatus: consumables.oxygenSystem.status,
+          wearHealthMin: Math.min(...wearSimulation.monitoredComponents.map(c => c.healthScore)),
+          drillingBorehole: drilling.targetBoreholeId
+        }
+      });
+      setVerificationRecord(verification);
+      setLiveQrDataUrl(verification.qrDataUrl);
 
-  const generateTenderSafetyFile = () => {
-    setIsGeneratingPdf(true);
-
-    try {
       const doc = new jsPDF({
         orientation: 'portrait',
         unit: 'mm',
@@ -388,255 +387,553 @@ export const TenderFileWizard: React.FC<TenderFileWizardProps> = ({
         day: 'numeric'
       });
 
-      const watermarkText = 'PREVIEW ONLY - TENDER SAFETY FILE - NOT FOR OFFICIAL SUBMISSION UNTIL PURCHASED';
+      const watermarkText = 'PREVIEW DRAFT • TENDER SAFETY FILE • NOT FOR OFFICIAL SUBMISSION UNTIL PURCHASED';
 
-      // Helper to add semi-transparent diagonal watermark across page
+      // Diagonal watermark only if unpaid
       const addWatermarkToPage = () => {
+        if (isPaidUnlocked) return; // Clean unwatermarked export!
         doc.saveGraphicsState();
-        doc.setTextColor(239, 68, 68); // red-500
+        doc.setTextColor(239, 68, 68);
         doc.setFont('helvetica', 'bold');
-        doc.setFontSize(11);
-        
-        // Diagonal watermark string
-        const angle = 45;
-        doc.text(watermarkText, 25, 270, { angle: angle });
-        doc.text(watermarkText, 5, 170, { angle: angle });
-        doc.text(watermarkText, -15, 70, { angle: angle });
+        doc.setFontSize(10.5);
+        doc.text(watermarkText, 25, 270, { angle: 45 });
+        doc.text(watermarkText, 5, 170, { angle: 45 });
+        doc.text(watermarkText, -15, 70, { angle: 45 });
         doc.restoreGraphicsState();
       };
 
-      // Page 1: Official Cover Page & Compliance Seal
+      // ================= PAGE 1: COVER PAGE & MASTER VERIFICATION SEAL =================
       doc.setFillColor(15, 23, 42); // slate-900
       doc.rect(0, 0, 210, 297, 'F');
 
-      // Top Accent Line
-      doc.setFillColor(6, 182, 212); // cyan-500
+      // Top Security Color Accent Bar
+      doc.setFillColor(isPaidUnlocked ? 16 : 220, isPaidUnlocked ? 185 : 38, isPaidUnlocked ? 129 : 38);
       doc.rect(0, 0, 210, 8, 'F');
 
-      // Gold Security Stamp
+      // Security Stamp Container
       doc.setFillColor(30, 41, 59); // slate-800
-      doc.roundedRect(20, 25, 170, 42, 3, 3, 'F');
-      doc.setDrawColor(245, 158, 11); // amber-500
+      doc.roundedRect(16, 20, 178, 48, 3, 3, 'F');
+      doc.setDrawColor(isPaidUnlocked ? 245 : 239, isPaidUnlocked ? 158 : 68, isPaidUnlocked ? 11 : 68);
       doc.setLineWidth(0.8);
-      doc.roundedRect(20, 25, 170, 42, 3, 3, 'D');
+      doc.roundedRect(16, 20, 178, 48, 3, 3, 'D');
 
-      doc.setTextColor(245, 158, 11);
+      doc.setTextColor(isPaidUnlocked ? 245 : 248, isPaidUnlocked ? 158 : 113, isPaidUnlocked ? 11 : 113);
       doc.setFont('helvetica', 'bold');
-      doc.setFontSize(10);
-      doc.text('STATUTORY HEALTH & SAFETY DOSSIER • OHS ACT 85 OF 1993', 105, 34, { align: 'center' });
+      doc.setFontSize(9.5);
+      doc.text('STATUTORY MINING SAFETY DOSSIER • MHSA ACT 29 / OHS ACT 85 OF 1993', 22, 29);
 
       doc.setTextColor(255, 255, 255);
-      doc.setFontSize(14);
-      doc.text('TENDER-READY MANDATORY SAFETY FILE', 105, 43, { align: 'center' });
+      doc.setFontSize(13);
+      doc.text('20-SECTION TENDER SAFETY DOSSIER ("THE RED FILE")', 22, 38);
 
-      doc.setTextColor(148, 163, 184); // slate-400
+      doc.setTextColor(148, 163, 184);
       doc.setFont('helvetica', 'normal');
-      doc.setFontSize(9);
-      doc.text('Per Construction Regulations 2014 & DMR Mine Health Safety Standards', 105, 50, { align: 'center' });
-      doc.text(`Digital Verification Hash: M2-SEC372-${Date.now().toString(36).toUpperCase()}-ZA`, 105, 57, { align: 'center' });
+      doc.setFontSize(8.5);
+      doc.text(`Package Tier: ${selectedTierObj.name.toUpperCase()} • ${isPaidUnlocked ? 'OFFICIAL UNWATERMARKED RELEASE' : 'WATERMARKED PREVIEW'}`, 22, 45);
+      doc.text(`Digital Verification Hash: ${verification.hash.slice(0, 36)}...`, 22, 52);
+      doc.text(`Verification Ref: ${verification.reference} • Date: ${currentDate}`, 22, 59);
 
-      // Contractor & Project Box
+      // Embed Real Scannable QR Code onto Cover Page
+      if (verification.qrDataUrl) {
+        doc.setFillColor(255, 255, 255);
+        doc.roundedRect(152, 23, 38, 42, 2, 2, 'F');
+        doc.addImage(verification.qrDataUrl, 'PNG', 154, 25, 34, 34);
+        doc.setTextColor(15, 23, 42);
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(6.5);
+        doc.text('SCAN TO VERIFY', 171, 62, { align: 'center' });
+      }
+
+      // Contractor Specification Box
       doc.setFillColor(15, 23, 42);
-      doc.roundedRect(20, 75, 170, 65, 2, 2, 'F');
+      doc.roundedRect(16, 74, 178, 64, 2, 2, 'F');
       doc.setDrawColor(51, 65, 85);
-      doc.roundedRect(20, 75, 170, 65, 2, 2, 'D');
+      doc.roundedRect(16, 74, 178, 64, 2, 2, 'D');
 
       doc.setTextColor(6, 182, 212);
       doc.setFont('helvetica', 'bold');
-      doc.setFontSize(11);
-      doc.text('CONTRACTOR & PRINCIPAL EMPLOYER SPECIFICATION', 26, 85);
+      doc.setFontSize(10.5);
+      doc.text('CONTRACTOR & PRINCIPAL EMPLOYER SPECIFICATION', 22, 84);
 
       doc.setTextColor(255, 255, 255);
-      doc.setFontSize(10);
-      doc.text(`Appointed Contractor:`, 26, 95);
+      doc.setFontSize(9.5);
+      doc.text('Appointed Contractor:', 22, 94);
       doc.setFont('helvetica', 'bold');
-      doc.text(`${profile.companyName}`, 75, 95);
+      doc.text(`${profile.companyName}`, 75, 94);
 
       doc.setFont('helvetica', 'normal');
       doc.setTextColor(203, 213, 225);
-      doc.text(`CIPC Reg Number:`, 26, 102);
-      doc.text(`${profile.cipcRegNumber}`, 75, 102);
+      doc.text('CIPC Registration:', 22, 101);
+      doc.text(`${profile.cipcRegNumber}`, 75, 101);
 
-      doc.text(`COID / WCA Number:`, 26, 109);
-      doc.text(`${profile.coidNumber} (Letter of Good Standing Attached)`, 75, 109);
+      doc.text('COID / WCA Good Standing:', 22, 108);
+      doc.text(`${profile.coidNumber} (Letter of Good Standing Verified)`, 75, 108);
 
-      doc.text(`SARS Tax PIN:`, 26, 116);
-      doc.text(`${profile.sarsPin} (Good Standing Validated)`, 75, 116);
+      doc.text('SARS Tax Compliance PIN:', 22, 115);
+      doc.text(`${profile.sarsPin} (Active Good Standing)`, 75, 115);
 
-      doc.text(`Project / Tender Scope:`, 26, 123);
+      doc.text('Project Tender Scope:', 22, 122);
       doc.setFont('helvetica', 'bold');
-      doc.text(`${profile.projectTenderName.slice(0, 50)}`, 75, 123);
+      doc.text(`${profile.projectTenderName.slice(0, 48)}`, 75, 122);
 
       doc.setFont('helvetica', 'normal');
-      doc.text(`Principal Client:`, 26, 130);
-      doc.text(`${profile.clientPrincipalName}`, 75, 130);
+      doc.text('Principal Mine Client:', 22, 129);
+      doc.text(`${profile.clientPrincipalName}`, 75, 129);
 
-      // Section: Selected Work Packages & SWPs
+      // Advanced Operations Snapshot on Cover
       doc.setFillColor(30, 41, 59);
-      doc.roundedRect(20, 148, 170, 80, 2, 2, 'F');
+      doc.roundedRect(16, 144, 178, 86, 2, 2, 'F');
       doc.setDrawColor(51, 65, 85);
-      doc.roundedRect(20, 148, 170, 80, 2, 2, 'D');
-
-      doc.setTextColor(6, 182, 212);
-      doc.setFont('helvetica', 'bold');
-      doc.setFontSize(11);
-      doc.text('ACTIVE TRADE SCOPES & SAFE WORK PROCEDURES (SWP)', 26, 158);
-
-      let yPos = 168;
-      activeTradeObjects.forEach((trade) => {
-        if (yPos > 215) return;
-        doc.setTextColor(255, 255, 255);
-        doc.setFont('helvetica', 'bold');
-        doc.setFontSize(9.5);
-        doc.text(`• ${trade.name} [Risk Tier: ${trade.riskLevel}]`, 26, yPos);
-        
-        doc.setTextColor(148, 163, 184);
-        doc.setFont('helvetica', 'normal');
-        doc.setFontSize(8.5);
-        const swpList = trade.swps.map(s => s.code).join(', ');
-        doc.text(`   Mapped Procedures: ${swpList} (${trade.methodStatements.length} Method Statements)`, 26, yPos + 5);
-        yPos += 12;
-      });
-
-      // Statutory Signatories Footer
-      doc.setFillColor(15, 23, 42);
-      doc.roundedRect(20, 235, 170, 45, 2, 2, 'F');
-      doc.setDrawColor(51, 65, 85);
-      doc.roundedRect(20, 235, 170, 45, 2, 2, 'D');
+      doc.roundedRect(16, 144, 178, 86, 2, 2, 'D');
 
       doc.setTextColor(245, 158, 11);
       doc.setFont('helvetica', 'bold');
-      doc.setFontSize(9.5);
-      doc.text('STATUTORY DUTY-BEARER APPOINTMENTS INCLUDED', 26, 243);
+      doc.setFontSize(10);
+      doc.text('HIGH-RISK OPERATIONS & TELEMETRY MODULE STATUS', 22, 154);
 
       doc.setTextColor(203, 213, 225);
       doc.setFont('helvetica', 'normal');
       doc.setFontSize(8.5);
-      doc.text(`• 16.2 Site Supervisor: ${staff.ceoSupervisorName}`, 26, 251);
-      doc.text(`• CR 8.1 Construction Manager: ${staff.constructionManagerName}`, 26, 257);
-      doc.text(`• GSR 3 First Aider: ${staff.firstAiderName}`, 26, 263);
-      doc.text(`• Lead Risk Assessor: ${staff.riskAssessorName}`, 26, 269);
+      doc.text(`• Consumable Gas & Oxygen: ${consumables.oxygenSystem.supplier} (Pressure: ${consumables.oxygenSystem.manifoldPressureBar} bar)`, 22, 163);
+      doc.text(`• Blasting Zone Perimeter: ${accessBlasting.blastingClearance.stopeHeading} (Radius: ${accessBlasting.blastingClearance.exclusionRadiusMeters}m)`, 22, 170);
+      doc.text(`• Subterranean Headcount: In-Stope ${accessBlasting.headcount.inStopeCrew}, Transit ${accessBlasting.headcount.shaftTransitCrew}, Surface Standby ${accessBlasting.headcount.surfaceStandbyCrew}`, 22, 177);
+      doc.text(`• Core Drilling Telemetry: Rig ${drilling.coreRigId} • Flow ${drilling.fluidReturnFlowLpm} L/min • Pressure ${drilling.pumpPressureBar} bar`, 22, 184);
+      doc.text(`• Physics Wear Simulator: ${wearSimulation.dutyCyclesHours} Running Hours • Ambient ${wearSimulation.ambientTemperatureC}°C • Quartz ${wearSimulation.quartzParticulatePpm} PPM`, 22, 191);
+      
+      const minHealthComp = wearSimulation.monitoredComponents.reduce((min, c) => c.healthScore < min.healthScore ? c : min, wearSimulation.monitoredComponents[0]);
+      doc.text(`• Lowest Component Health Score: ${minHealthComp.name} (${minHealthComp.healthScore}% - Discard in ${minHealthComp.projectedFailureDays} days)`, 22, 198);
+      doc.text(`• Selected Trades: ${activeTradeObjects.map(t => t.name).join(', ')}`, 22, 205);
+      doc.text(`• Pre-Configured Safe Work Procedures: ${totalSwps} SWPs & ${totalMethodStatements} Method Statements`, 22, 212);
+      doc.text(`• Statutory Appointments: 16.2 (${staff.ceoSupervisorName}), CR 8.1 (${staff.constructionManagerName})`, 22, 219);
+
+      // Signatories Footer
+      doc.setFillColor(15, 23, 42);
+      doc.roundedRect(16, 236, 178, 46, 2, 2, 'F');
+      doc.setDrawColor(51, 65, 85);
+      doc.roundedRect(16, 236, 178, 46, 2, 2, 'D');
+
+      doc.setTextColor(245, 158, 11);
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(9);
+      doc.text('OFFICIAL STATUTORY SIGN-OFF & CRYPTOGRAPHIC LEDGER LINK', 22, 244);
+
+      doc.setTextColor(203, 213, 225);
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(8);
+      doc.text(`• Authorized Appointee: ${profile.fullName} (Designation: Managing Director / Section 16.2)`, 22, 251);
+      doc.text(`• First Aider: ${staff.firstAiderName} (Certified Expiry: ${staff.firstAiderExpiry})`, 22, 257);
+      doc.text(`• Blasting Master: ${accessBlasting.blastingClearance.blastingMasterLicense}`, 22, 263);
+      doc.text(`• Verification URL: ${verification.verificationUrl.slice(0, 60)}...`, 22, 269);
 
       doc.setTextColor(100, 116, 139);
-      doc.setFontSize(7.5);
-      doc.text(`Issued by MeloTwo SHEQ Engine • Date: ${currentDate} • Standard: SANS 10330 / OHS Act Section 37.2`, 105, 288, { align: 'center' });
+      doc.setFontSize(7);
+      doc.text(`Compiled via MeloTwo SHEQ Cognitive Engine • Timestamp: ${verification.timestamp} • SHA-256 Merkle Proven`, 105, 290, { align: 'center' });
 
-      if (!isPaidUnlocked) {
-        addWatermarkToPage();
-      }
+      addWatermarkToPage();
 
-      // Page 2: Section 37(2) Mandatory Agreement Template
+      // ================= PAGE 2: SECTION 37(2) MANDATORY AGREEMENT =================
       doc.addPage();
       doc.setFillColor(255, 255, 255);
       doc.rect(0, 0, 210, 297, 'F');
 
       doc.setTextColor(15, 23, 42);
       doc.setFont('helvetica', 'bold');
-      doc.setFontSize(14);
-      doc.text('MANDATORY AGREEMENT IN TERMS OF SECTION 37(2)', 105, 22, { align: 'center' });
-      doc.setFontSize(10);
+      doc.setFontSize(13);
+      doc.text('MANDATORY AGREEMENT IN TERMS OF SECTION 37(2)', 105, 20, { align: 'center' });
+      doc.setFontSize(9.5);
       doc.setFont('helvetica', 'normal');
-      doc.text('OCCUPATIONAL HEALTH AND SAFETY ACT, 1993 (ACT NO. 85 OF 1993)', 105, 28, { align: 'center' });
+      doc.text('OCCUPATIONAL HEALTH AND SAFETY ACT 1993 (ACT NO. 85 OF 1993)', 105, 26, { align: 'center' });
 
       doc.setDrawColor(200, 200, 200);
-      doc.line(20, 32, 190, 32);
+      doc.line(16, 30, 194, 30);
 
-      doc.setFontSize(9);
-      doc.text('ENTERED INTO BY AND BETWEEN:', 20, 40);
-      doc.setFont('helvetica', 'bold');
-      doc.text(`PRINCIPAL CLIENT / EMPLOYER: ${profile.clientPrincipalName}`, 20, 46);
-      doc.setFont('helvetica', 'normal');
-      doc.text('AND', 20, 52);
-      doc.setFont('helvetica', 'bold');
-      doc.text(`MANDATARY / CONTRACTOR: ${profile.companyName} (Reg: ${profile.cipcRegNumber})`, 20, 58);
-
-      doc.setFont('helvetica', 'normal');
       doc.setFontSize(8.5);
-      const legalP1 = `1. The Mandatary hereby acknowledges that it is an employer in its own right in terms of Section 16(1) of the Act and undertakes to ensure that all work executed on the project site complies fully with the Occupational Health and Safety Act No. 85 of 1993, the Construction Regulations 2014, and all relevant SANS Codes of Practice.`;
-      const splitLegal1 = doc.splitTextToSize(legalP1, 170);
-      doc.text(splitLegal1, 20, 68);
-
-      const legalP2 = `2. The Mandatary confirms valid registration and good standing with the Compensation Commissioner (COID Reg: ${profile.coidNumber}) and confirms that all employees, sub-contractors, and supervisors engaged on site have received induction training and statutory PPE.`;
-      const splitLegal2 = doc.splitTextToSize(legalP2, 170);
-      doc.text(splitLegal2, 20, 88);
-
-      const legalP3 = `3. The Mandatary will maintain an on-site Health and Safety File comprising Baseline Risk Assessments, Method Statements, Tool Inspection Logs, and Statutory Appointment letters for the duration of the works.`;
-      const splitLegal3 = doc.splitTextToSize(legalP3, 170);
-      doc.text(splitLegal3, 20, 108);
-
-      // Signature Block
+      doc.text('ENTERED INTO BY AND BETWEEN:', 16, 38);
       doc.setFont('helvetica', 'bold');
-      doc.text('SIGNED ON BEHALF OF CONTRACTOR (MANDATARY):', 20, 135);
+      doc.text(`PRINCIPAL CLIENT: ${profile.clientPrincipalName}`, 16, 44);
       doc.setFont('helvetica', 'normal');
-      doc.text(`Authorized Name: ${profile.fullName}`, 20, 143);
-      doc.text(`Designation: Managing Director / Section 16.2 Appointee`, 20, 149);
-      doc.text(`Signature: ___________________________    Date: ${currentDate}`, 20, 155);
-
+      doc.text('AND', 16, 50);
       doc.setFont('helvetica', 'bold');
-      doc.text('SIGNED ON BEHALF OF PRINCIPAL CLIENT / EMPLOYER:', 20, 175);
-      doc.setFont('helvetica', 'normal');
-      doc.text(`Authorized Name: ___________________________`, 20, 183);
-      doc.text(`Designation: Client Project Manager / Safety Agent`, 20, 189);
-      doc.text(`Signature: ___________________________    Date: ____________________`, 20, 195);
-
-      // Section: Index of Attached Documents
-      doc.setFillColor(241, 245, 249);
-      doc.roundedRect(20, 215, 170, 65, 2, 2, 'F');
-      doc.setDrawColor(203, 213, 225);
-      doc.roundedRect(20, 215, 170, 65, 2, 2, 'D');
-
-      doc.setTextColor(15, 23, 42);
-      doc.setFont('helvetica', 'bold');
-      doc.setFontSize(9.5);
-      doc.text('ATTACHED HEALTH & SAFETY FILE MASTER INDEX', 26, 225);
+      doc.text(`MANDATARY / CONTRACTOR: ${profile.companyName} (Reg: ${profile.cipcRegNumber})`, 16, 56);
 
       doc.setFont('helvetica', 'normal');
       doc.setFontSize(8);
-      doc.text('• Tab 01: OHS Act Section 37.2 Agreement & Section 16.2 Appointment', 26, 233);
-      doc.text('• Tab 02: Valid COID Letter of Good Standing & SARS Tax Compliance PIN', 26, 239);
-      doc.text('• Tab 03: Baseline Health & Safety Plan & Fall Protection Protocol (CR 10)', 26, 245);
-      doc.text(`• Tab 04: Safe Work Procedures (${totalSwps} Pre-Configured SWPs for Active Trades)`, 26, 251);
-      doc.text(`• Tab 05: Method Statements (${totalMethodStatements} Scopes) & Daily Risk Assessments`, 26, 257);
-      doc.text('• Tab 06: Statutory Inspection Registers (Ladders, Power Tools, First Aid Box)', 26, 263);
-      doc.text('• Tab 07: 12 Weekly Toolbox Talks & Employee Induction Sign-off Register', 26, 269);
+      const legalClauses = [
+        '1. The Mandatary acknowledges responsibility under Section 16(1) of the OHS Act and commits to adhering to Construction Regulations 2014, SANS standards, and all applicable DMRE mandatory codes of practice.',
+        `2. Valid registration with Compensation Commissioner (COID: ${profile.coidNumber}) and SARS Tax PIN (${profile.sarsPin}) is confirmed on file.`,
+        '3. All personnel deployed to high-risk zones, blasting headings, and core drilling stations hold valid medical certificates of fitness and certified PPE.',
+        '4. The Mandatary undertakes to execute daily risk assessments, maintain equipment wear inspection logs, and uphold continuous gas monitoring protocols.'
+      ];
 
-      if (!isPaidUnlocked) {
-        addWatermarkToPage();
-      }
+      let yPos = 65;
+      legalClauses.forEach(clause => {
+        const split = doc.splitTextToSize(clause, 178);
+        doc.text(split, 16, yPos);
+        yPos += 14;
+      });
 
-      // Increment download count and save PDF
-      const newCount = downloadCount + 1;
-      setDownloadCount(newCount);
+      // Signature lines
+      doc.setFont('helvetica', 'bold');
+      doc.text('CONTRACTOR AUTHORIZATION:', 16, yPos + 10);
+      doc.setFont('helvetica', 'normal');
+      doc.text(`Name: ${profile.fullName}    Signature: _______________________    Date: ${currentDate}`, 16, yPos + 18);
 
-      const fileName = `${profile.companyName.replace(/[^a-zA-Z0-9]/g, '_')}_Tender_Safety_File.pdf`;
-      doc.save(fileName);
+      doc.setFont('helvetica', 'bold');
+      doc.text('PRINCIPAL CLIENT RECEIPT:', 16, yPos + 28);
+      doc.setFont('helvetica', 'normal');
+      doc.text(`Name: _______________________    Signature: _______________________    Date: ____________`, 16, yPos + 36);
+
+      // Master 20-Section Index Box
+      doc.setFillColor(248, 250, 252);
+      doc.roundedRect(16, yPos + 45, 178, 90, 2, 2, 'F');
+      doc.setDrawColor(203, 213, 225);
+      doc.roundedRect(16, yPos + 45, 178, 90, 2, 2, 'D');
+
+      doc.setTextColor(15, 23, 42);
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(9);
+      doc.text('MASTER 20-SECTION TENDER SAFETY DOSSIER INDEX ("THE RED FILE")', 22, yPos + 55);
+
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(7.5);
+      const sectionsList = [
+        '• Section 01: OHS Act 37(2) Legal Mandatary Agreement',
+        '• Section 02: CIPC Registration & COID Letter of Good Standing',
+        '• Section 03: Section 16.2 & Statutory Duty-Bearer Letters',
+        '• Section 04: Baseline Risk Assessment (HIRA) & Issue-Based Matrices',
+        `• Section 05: Safe Work Procedures (${totalSwps} Active Trade SWPs)`,
+        `• Section 06: Method Statements (${totalMethodStatements} Scopes of Work)`,
+        '• Section 07: Fall Protection Plan & Working at Heights Protocol',
+        '• Section 08: Daily Machine, Ladder & Power Tool Inspection Logs',
+        '• Section 09: Hazardous Chemical Substances (HCS) Registers & 16-Pt SDS',
+        '• Section 10: PPE Issuance & Material Degradation Inspection Registers',
+        '• Section 11: Emergency Preparedness & Evacuation Action Plan',
+        '• Section 12: Incident Notification GAR 9 & Root-Cause Protocols',
+        '• Section 13: 12-Week Modular Toolbox Talk Schedule & Sign-Offs',
+        '• Section 14: Employee Induction Records & Medical Surveillance Matrix',
+        '• Section 15: Industrial Consumable & Gas Reticulation Infrastructure Registers',
+        '• Section 16: Underground Turnstile Headcount & Blasting Zone Clearance Protocols',
+        '• Section 17: Core Drilling & Fluid Return Telemetry Operational Logs',
+        '• Section 18: Predictive Physics Wear Simulations & Degradation Schedules',
+        '• Section 19: Environmental Waste Management & Effluent Discharge Log',
+        '• Section 20: Cryptographic Audit Ledger Verification & SACPCMP Seal'
+      ];
+
+      let secY = yPos + 63;
+      sectionsList.slice(0, 10).forEach(s => {
+        doc.text(s, 22, secY);
+        secY += 6;
+      });
+      secY = yPos + 63;
+      sectionsList.slice(10, 20).forEach(s => {
+        doc.text(s, 108, secY);
+        secY += 6;
+      });
+
+      addWatermarkToPage();
+
+      // ================= PAGE 3: ADVANCED OPERATIONS (CONSUMABLES & BLASTING) =================
+      doc.addPage();
+      doc.setFillColor(255, 255, 255);
+      doc.rect(0, 0, 210, 297, 'F');
+
+      doc.setTextColor(15, 23, 42);
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(12);
+      doc.text('SECTION 15 & 16: CRITICAL INFRASTRUCTURE & UNDERGROUND BLASTING CLEARANCE', 105, 20, { align: 'center' });
+      doc.setDrawColor(200, 200, 200);
+      doc.line(16, 26, 194, 26);
+
+      // Section 15: Consumables
+      doc.setFillColor(241, 245, 249);
+      doc.roundedRect(16, 32, 178, 80, 2, 2, 'F');
+      doc.setDrawColor(203, 213, 225);
+      doc.roundedRect(16, 32, 178, 80, 2, 2, 'D');
+
+      doc.setTextColor(30, 41, 59);
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(9.5);
+      doc.text('SECTION 15: INDUSTRIAL CONSUMABLE & INVISIBLE INFRASTRUCTURE REGISTER', 22, 42);
+
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(8);
+      doc.text(`1. Subterranean Oxygen Reticulation System:`, 22, 50);
+      doc.text(`   • Supplier: ${consumables.oxygenSystem.supplier}`, 22, 56);
+      doc.text(`   • Purity Grade: ${consumables.oxygenSystem.purityGrade} • Manifold Pressure: ${consumables.oxygenSystem.manifoldPressureBar} bar`, 22, 62);
+      doc.text(`   • Hydrostatic Test Expiry: ${consumables.oxygenSystem.hydrostaticTestExpiry} • Dual Shutoff Tested: ${consumables.oxygenSystem.dualShutoffValveChecked ? 'Yes (Pass)' : 'No'}`, 22, 68);
       
-      setPdfGeneratedSuccess(true);
-      if (onSuccess) {
-        onSuccess(fileName);
-      }
+      doc.text(`2. Mine Gas Supply & Nitrogen Inerting Reticulation:`, 22, 76);
+      doc.text(`   • System Type: ${consumables.gasInfrastructure.systemType}`, 22, 82);
+      doc.text(`   • Cylinder Certificate: ${consumables.gasInfrastructure.cylinderBankCertNumber} • Line Pressure: ${consumables.gasInfrastructure.reticulationPressureBar} bar`, 22, 88);
+      doc.text(`   • Leak Detector Valid Until: ${consumables.gasInfrastructure.leakDetectorCalibratedUntil} • Ventilation Dilution: ${consumables.gasInfrastructure.ventilationDilutionVerified ? 'Verified' : 'Pending'}`, 22, 94);
 
-      // If user hit the max limit after this download, show conversion notice
-      if (newCount >= MAX_DOWNLOAD_LIMIT && !isPaidUnlocked) {
-        setTimeout(() => {
-          setShowUpgradeModal(true);
-        }, 1200);
-      }
+      doc.text(`3. Heavy Hydraulic Fluid & Reagent Bunding:`, 22, 102);
+      doc.text(`   • Fluid Grade: ${consumables.hydraulicReagents.fluidGrade} • Batch: ${consumables.hydraulicReagents.batchNumber}`, 22, 108);
+
+      // Section 16: Blasting Clearance
+      doc.setFillColor(254, 242, 242); // red-50
+      doc.roundedRect(16, 118, 178, 90, 2, 2, 'F');
+      doc.setDrawColor(254, 202, 202);
+      doc.roundedRect(16, 118, 178, 90, 2, 2, 'D');
+
+      doc.setTextColor(153, 27, 27);
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(9.5);
+      doc.text('SECTION 16: UNDERGROUND ACCESS CONTROL & PRE-DETONATION CLEARANCE', 22, 128);
+
+      doc.setTextColor(30, 41, 59);
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(8);
+      doc.text(`1. Turnstile Brass Tag Shift Headcount Accountability:`, 22, 136);
+      doc.text(`   • Active Shift: ${accessBlasting.headcount.shiftCode} • Tag Reconciliation Confirmed: ${accessBlasting.headcount.tagReconciliationConfirmed ? '100% Accounted For' : 'Unconfirmed'}`, 22, 142);
+      doc.text(`   • Subterranean In-Stope Crew: ${accessBlasting.headcount.inStopeCrew} Miners | Shaft Transit Crew: ${accessBlasting.headcount.shaftTransitCrew} Miners`, 22, 148);
+      doc.text(`   • Surface Standby & Rescue Brigade: ${accessBlasting.headcount.surfaceStandbyCrew} Personnel | Total Underground: ${accessBlasting.headcount.inStopeCrew + accessBlasting.headcount.shaftTransitCrew}`, 22, 154);
+
+      doc.text(`2. Blasting Zone Detonation Protocol & Safe Perimeter:`, 22, 164);
+      doc.text(`   • Blast Heading: ${accessBlasting.blastingClearance.stopeHeading} • Time Window: ${accessBlasting.blastingClearance.detonationWindow}`, 22, 170);
+      doc.text(`   • Safe Distance Exclusion Radius: ${accessBlasting.blastingClearance.exclusionRadiusMeters} meters (Barricaded Access Drives)`, 22, 176);
+      doc.text(`   • Deployed Sentry Guards: ${accessBlasting.blastingClearance.sentryGuardsCount} Sentries posted with two-way radio telemetry`, 22, 182);
+      doc.text(`   • Gas Re-Entry Thresholds: CO ${accessBlasting.blastingClearance.gasThresholds.carbonMonoxidePpm} PPM (Max 30), NOx ${accessBlasting.blastingClearance.gasThresholds.nitrogenOxidePpm} PPM (Max 3), CH4 ${accessBlasting.blastingClearance.gasThresholds.flammableGasPct}% (Max 0.2%)`, 22, 188);
+      doc.text(`   • Statutory Blasting Master License: ${accessBlasting.blastingClearance.blastingMasterLicense}`, 22, 194);
+      doc.text(`   • Clearance Status: ${accessBlasting.blastingClearance.clearanceStatus} • Protocol Signed: ${accessBlasting.blastingClearance.preDetonationProtocolSigned ? 'Yes' : 'No'}`, 22, 200);
+
+      addWatermarkToPage();
+
+      // ================= PAGE 4: DRILLING TELEMETRY & PHYSICS WEAR SIMULATION =================
+      doc.addPage();
+      doc.setFillColor(255, 255, 255);
+      doc.rect(0, 0, 210, 297, 'F');
+
+      doc.setTextColor(15, 23, 42);
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(12);
+      doc.text('SECTION 17 & 18: CORE DRILLING TELEMETRY & AUTOMATED WEAR SIMULATIONS', 105, 20, { align: 'center' });
+      doc.setDrawColor(200, 200, 200);
+      doc.line(16, 26, 194, 26);
+
+      // Section 17: Drilling Telemetry
+      doc.setFillColor(240, 253, 250); // teal-50
+      doc.roundedRect(16, 32, 178, 64, 2, 2, 'F');
+      doc.setDrawColor(204, 251, 241);
+      doc.roundedRect(16, 32, 178, 64, 2, 2, 'D');
+
+      doc.setTextColor(17, 94, 89);
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(9.5);
+      doc.text('SECTION 17: CORE DRILLING & FLUID TELEMETRY LOG', 22, 42);
+
+      doc.setTextColor(30, 41, 59);
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(8);
+      doc.text(`• Core Rig ID: ${drilling.coreRigId}`, 22, 50);
+      doc.text(`• Target Borehole: ${drilling.targetBoreholeId} • Geotechnical Stratum: ${drilling.boreholeRiskStratum}`, 22, 56);
+      doc.text(`• Return Flow Rate: ${drilling.fluidReturnFlowLpm} L/min • Manifold Pressure: ${drilling.pumpPressureBar} bar (Nominal)`, 22, 62);
+      doc.text(`• Downhole Mud Temperature: ${drilling.downholeMudTempC} °C • Drill String Torque: ${drilling.drillStringTorqueNm} Nm`, 22, 68);
+      doc.text(`• Vibration RMS: ${drilling.vibrationRmsMmSec} mm/s • Telemetry Active: ${drilling.telemetryStreamActive ? 'Active Stream' : 'Offline'}`, 22, 74);
+      doc.text(`• Sensor Calibration Valid Until: ${drilling.sensorCalibrationValidUntil}`, 22, 80);
+
+      // Section 18: Automated Physics Wear Modeling
+      doc.setFillColor(248, 250, 252);
+      doc.roundedRect(16, 102, 178, 120, 2, 2, 'F');
+      doc.setDrawColor(203, 213, 225);
+      doc.roundedRect(16, 102, 178, 120, 2, 2, 'D');
+
+      doc.setTextColor(30, 41, 59);
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(9.5);
+      doc.text('SECTION 18: PREDICTIVE PHYSICS WEAR MODELING & REPLACEMENT SCHEDULES', 22, 112);
+
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(8);
+      doc.text(`Operational Stress Parameters: ${wearSimulation.dutyCyclesHours} Operating Hours • ${wearSimulation.quartzParticulatePpm} PPM Quartz Dust • ${wearSimulation.ambientTemperatureC}°C Ambient • ${wearSimulation.chemicalHydrolysisStress} Chemical Exposure`, 22, 120);
+
+      let compY = 130;
+      wearSimulation.monitoredComponents.forEach((comp, idx) => {
+        doc.setFont('helvetica', 'bold');
+        doc.text(`${idx + 1}. ${comp.name} (${comp.category}) - ${comp.standardRef}:`, 22, compY);
+        doc.setFont('helvetica', 'normal');
+        doc.text(`   Wear: ${comp.wearPercentage}% | Health: ${comp.healthScore}/100 | Projected Life: ${comp.projectedFailureDays} days | Status: ${comp.status}`, 22, compY + 5);
+        doc.text(`   Discard Criterion: ${comp.discardThreshold}`, 22, compY + 10);
+        if (comp.gapAlert) {
+          doc.setTextColor(185, 28, 28);
+          doc.text(`   ⚠ GAP ALERT: ${comp.gapAlert}`, 22, compY + 15);
+          doc.setTextColor(30, 41, 59);
+          compY += 21;
+        } else {
+          compY += 16;
+        }
+      });
+
+      // Verification seal on bottom of last page
+      doc.setFillColor(241, 245, 249);
+      doc.roundedRect(16, 235, 178, 48, 2, 2, 'F');
+      doc.setDrawColor(51, 65, 85);
+      doc.roundedRect(16, 235, 178, 48, 2, 2, 'D');
+
+      doc.setTextColor(15, 23, 42);
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(8.5);
+      doc.text('CRYPTOGRAPHIC VERIFICATION SEAL & AUDIT TRAIL', 22, 244);
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(7.5);
+      doc.text(`Verification Ref: ${verification.reference}`, 22, 252);
+      doc.text(`Immutable Hash: ${verification.hash}`, 22, 258);
+      doc.text(`Online Verification View: ${verification.verificationUrl.slice(0, 68)}...`, 22, 264);
+      doc.text(`Certified for official submission under DMR Mine Health & Safety Act & OHS Act Construction Regs.`, 22, 270);
+
+      addWatermarkToPage();
+
+      const fileName = `${profile.companyName.replace(/[^a-zA-Z0-9]/g, '_')}_20_Section_Tender_Safety_File.pdf`;
+      return { doc, fileName, verification };
+  };
+
+  // Generate Official PDF with Real QR Code and Unlocked Status
+  const generateTenderSafetyFile = async () => {
+    setIsGeneratingPdf(true);
+    try {
+      const { doc, fileName } = await compilePdfDocument();
+      doc.save(fileName);
+      setPdfGeneratedSuccess(true);
+      if (onSuccess) onSuccess(fileName);
     } catch (err) {
-      console.error('Failed to compile PDF:', err);
+      console.error('Failed to compile PDF with QR code:', err);
     } finally {
       setIsGeneratingPdf(false);
     }
+  };
+
+  // Generate Official ZIP Dossier with PDF, CSV Wear Schedules, Telemetry JSONs, and Verification Seal
+  const generateTenderSafetyZip = async () => {
+    setIsGeneratingZip(true);
+    try {
+      const { doc, fileName: pdfFileName, verification } = await compilePdfDocument();
+      const pdfBlob = doc.output('blob');
+
+      const zip = new JSZip();
+
+      // 1. Master 20-Section PDF (Clean Unwatermarked if Paid)
+      zip.file(pdfFileName, pdfBlob);
+
+      // 2. Monitored Equipment & Physics Wear Schedule CSV
+      const csvHeader = 'Component ID,Component Name,Category,Statutory Standard,Running Hours,Wear Percentage,Health Score,Projected Failure Days,Status,Discard Threshold,Compliance Gap Alert\n';
+      const csvRows = wearSimulation.monitoredComponents.map(c => 
+        `"${c.id}","${c.name}","${c.category}","${c.standardRef}",${c.runningHours},${c.wearPercentage}%,${c.healthScore}/100,${c.projectedFailureDays} days,"${c.status}","${c.discardThreshold.replace(/"/g, '""')}","${(c.gapAlert || 'None - Within Tolerances').replace(/"/g, '""')}"`
+      ).join('\n');
+      zip.file('01_PPE_and_Equipment_Wear_Simulation_Schedule.csv', csvHeader + csvRows);
+
+      // 3. Operational JSON Logs: Consumables & Invisible Infrastructure
+      zip.file('02_Industrial_Consumables_and_Invisible_Infrastructure.json', JSON.stringify({
+        generatedAt: new Date().toISOString(),
+        companyName: profile.companyName,
+        consumables
+      }, null, 2));
+
+      // 4. Underground Access Control & Blasting Clearance
+      zip.file('03_Underground_Access_Control_and_Blasting_Clearance.json', JSON.stringify({
+        generatedAt: new Date().toISOString(),
+        companyName: profile.companyName,
+        accessAndBlasting: accessBlasting
+      }, null, 2));
+
+      // 5. Drilling and Fluid Telemetry
+      zip.file('04_Drilling_and_Fluid_Telemetry_Logs.json', JSON.stringify({
+        generatedAt: new Date().toISOString(),
+        companyName: profile.companyName,
+        drillingTelemetry: drilling
+      }, null, 2));
+
+      // 6. Company Profile and Statutory Appointments
+      zip.file('05_Company_Profile_and_Statutory_Appointments.json', JSON.stringify({
+        generatedAt: new Date().toISOString(),
+        profile,
+        staff,
+        selectedTrades,
+        docUploads
+      }, null, 2));
+
+      // 7. Cryptographic Audit Ledger Verification Seal
+      zip.file('06_Cryptographic_Audit_Ledger_Verification.json', JSON.stringify(verification, null, 2));
+
+      // 8. Verification QR Code PNG
+      if (verification.qrDataUrl && verification.qrDataUrl.startsWith('data:image/png;base64,')) {
+        const base64Data = verification.qrDataUrl.replace(/^data:image\/png;base64,/, '');
+        zip.file('07_Verification_Seal_QR.png', base64Data, { base64: true });
+      }
+
+      // 9. Compliance Manifesto & Statutory Instructions
+      const manifesto = `MELOTWO STATUTORY MINING SAFETY DOSSIER - 20-SECTION RED FILE
+========================================================================
+Enterprise: ${profile.companyName}
+Trading Name: ${profile.tradingName}
+CIPC Reg No: ${profile.cipcRegNumber}
+COID / Compensation Comm Reg: ${profile.coidNumber}
+SARS Tax PIN: ${profile.sarsPin}
+Target Tender: ${profile.projectTenderName}
+Client / Mine Principal: ${profile.clientPrincipalName}
+Verification Reference: ${verification.reference}
+Ledger Hash Anchor: ${verification.hash}
+Online Verification URL: ${verification.verificationUrl}
+Licensing Status: ${isPaidUnlocked ? 'OFFICIAL UNLOCKED DOSSIER (PAID)' : 'PREVIEW DRAFT'}
+
+STATUTORY COMPLIANCE DECLARATION:
+This dossier has been compiled in accordance with:
+- Republic of South Africa Mine Health and Safety Act (Act 29 of 1996)
+- Occupational Health and Safety Act (Act 85 of 1993) Construction Regulations 2014
+- Republic of Zambia Mines and Minerals Development Act (No. 11 of 2015)
+- SANS 10119: Code of Practice for Construction Safety
+- SACPCMP Project and Construction Management Professions Act (Act 48 of 2000)
+
+INCLUDED DOSSIER ARTIFACTS:
+1. ${pdfFileName} (Master 20-Section Safety File)
+2. 01_PPE_and_Equipment_Wear_Simulation_Schedule.csv (Predictive Wear Schedule)
+3. 02_Industrial_Consumables_and_Invisible_Infrastructure.json (Gases, Oxygen & Chemicals)
+4. 03_Underground_Access_Control_and_Blasting_Clearance.json (Headcount & Detonation Clearance)
+5. 04_Drilling_and_Fluid_Telemetry_Logs.json (Return flow, Mud pressure & Downhole telemetry)
+6. 05_Company_Profile_and_Statutory_Appointments.json (Appointee Register)
+7. 06_Cryptographic_Audit_Ledger_Verification.json (Proof of Authenticity)
+8. 07_Verification_Seal_QR.png (High-Resolution QR Seal for Print & Binders)
+`;
+      zip.file('00_Compliance_Manifesto_and_Readiness_Index.txt', manifesto);
+
+      const zipBlob = await zip.generateAsync({ type: 'blob' });
+      const zipFileName = `${profile.companyName.replace(/[^a-zA-Z0-9]/g, '_')}_20_Section_Tender_Safety_Dossier_Package.zip`;
+
+      const downloadUrl = URL.createObjectURL(zipBlob);
+      const a = document.createElement('a');
+      a.href = downloadUrl;
+      a.download = zipFileName;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(downloadUrl);
+
+      setZipGeneratedSuccess(true);
+      if (onSuccess) onSuccess(zipFileName);
+    } catch (err) {
+      console.error('Failed to compile ZIP dossier package:', err);
+    } finally {
+      setIsGeneratingZip(false);
+    }
+  };
+
+  // Handle Checkout success from PayPalEFTCheckoutModal
+  const handleCheckoutSuccess = (result: any) => {
+    setIsPaidUnlocked(true);
+    markTenderPaidUnlocked(selectedTier);
+    saveTenderDraft({ isPaidUnlocked: true, selectedTier });
+    setIsCheckoutModalOpen(false);
+    // Trigger unwatermarked PDF download immediately
+    generateTenderSafetyFile();
   };
 
   const containerContent = (
     <div 
       id="tender-file"
       data-modal-name="tender-safety-file-wizard"
-      className="bg-slate-900 border-t sm:border border-slate-800 text-slate-100 rounded-t-2xl sm:rounded-2xl shadow-2xl overflow-hidden flex flex-col max-w-4xl w-full mx-auto relative h-[100dvh] sm:h-auto sm:max-h-[90dvh]"
+      className="bg-slate-900 border-t sm:border border-slate-800 text-slate-100 rounded-t-2xl sm:rounded-2xl shadow-2xl overflow-hidden flex flex-col max-w-5xl w-full mx-auto relative h-[100dvh] sm:h-auto sm:max-h-[92dvh]"
     >
-      {/* Header Banner */}
-      <div className="px-4 py-3 sm:px-6 sm:py-4 border-b border-slate-800 bg-slate-950/90 shrink-0 flex items-center justify-between gap-2">
+      {/* Top Header Banner with Real-Time Auto-Save Telemetry */}
+      <div className="px-4 py-3 sm:px-6 sm:py-3.5 border-b border-slate-800 bg-slate-950/95 shrink-0 flex items-center justify-between gap-2">
         <div className="flex items-center gap-2.5 sm:gap-3 min-w-0">
           <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-xl bg-red-600/15 border border-red-500/40 flex items-center justify-center text-red-400 shrink-0 shadow-sm">
             <FolderCheck className="w-4 h-4 sm:w-5 sm:h-5" />
@@ -647,35 +944,47 @@ export const TenderFileWizard: React.FC<TenderFileWizardProps> = ({
                 Tender Safety File Generator
               </h2>
               <span className="text-[9px] sm:text-[10px] font-black uppercase px-2 py-0.5 rounded-full bg-red-600/20 text-red-300 border border-red-500/40 font-mono shrink-0">
-                The "Red File"
+                20-Section "Red File"
               </span>
-              <span className="hidden sm:inline-block text-[10px] font-semibold uppercase px-2 py-0.5 rounded-full bg-slate-800 text-slate-300 border border-slate-700">
-                CR 2014 Compliant
-              </span>
+              {isPaidUnlocked ? (
+                <span className="inline-flex items-center gap-1 text-[10px] font-bold uppercase px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/40">
+                  <CheckCircle2 className="w-3 h-3 text-emerald-400" />
+                  Unlocked / Paid
+                </span>
+              ) : (
+                <span className="text-[10px] font-semibold uppercase px-2 py-0.5 rounded-full bg-amber-500/10 text-amber-300 border border-amber-500/30">
+                  Preview Mode
+                </span>
+              )}
             </div>
-            <p className="text-[11px] sm:text-xs text-slate-400 truncate hidden xs:block">
-              Statutory 20-section DMRE &amp; OHS Act safety dossier for tenders and site gate clearances
+            <p className="text-[11px] text-slate-400 truncate hidden xs:block">
+              Statutory DMRE &amp; OHS Act compliance file with real-time wear modeling &amp; online verification QR
             </p>
           </div>
         </div>
 
+        {/* Header Actions: Auto-Save Status, Reset Draft, Close */}
         <div className="flex items-center gap-2 shrink-0">
-          {/* Download Count Pill */}
+          
+          {/* Real-Time Auto-Save Telemetry Badge */}
           <div 
-            className={`hidden md:flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[11px] font-mono border cursor-pointer ${
-              downloadCount >= MAX_DOWNLOAD_LIMIT && !isPaidUnlocked
-                ? 'bg-rose-950/80 border-rose-600 text-rose-300'
-                : 'bg-slate-800/80 border-slate-700 text-slate-300'
-            }`}
-            onClick={() => setShowUpgradeModal(true)}
-            title="Click to view upgrade options"
+            className="hidden sm:flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[10px] font-mono bg-slate-900 border border-slate-800 text-slate-300"
+            title="Changes automatically saved to localStorage on every change"
           >
-            <Download className="w-3.5 h-3.5" />
-            <span>Downloads: {downloadCount}/{MAX_DOWNLOAD_LIMIT}</span>
-            {downloadCount >= MAX_DOWNLOAD_LIMIT && !isPaidUnlocked && (
-              <span className="bg-rose-600 text-white text-[9px] px-1 py-0.2 rounded font-bold">LOCKED</span>
-            )}
+            <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+            <span>Auto-Saved {lastAutoSaveTime}</span>
           </div>
+
+          {/* Reset Draft Button */}
+          <button
+            type="button"
+            onClick={handleResetDraft}
+            className="p-1.5 sm:px-2 sm:py-1 rounded-lg bg-slate-900 hover:bg-slate-800 border border-slate-800 text-slate-400 hover:text-slate-200 text-xs font-mono transition cursor-pointer flex items-center gap-1"
+            title="Reset form to defaults"
+          >
+            <RotateCcw className="w-3.5 h-3.5" />
+            <span className="hidden md:inline">Reset</span>
+          </button>
 
           {onClose && (
             <button
@@ -689,13 +998,13 @@ export const TenderFileWizard: React.FC<TenderFileWizardProps> = ({
         </div>
       </div>
 
-      {/* Step Navigation Indicator */}
+      {/* Step Navigation Bar */}
       <div className="grid grid-cols-4 border-b border-slate-800/80 bg-slate-950/50 text-[10px] sm:text-xs font-mono shrink-0">
         {[
-          { step: 1, label: 'Profile & COID', short: 'Profile', icon: Building2 },
-          { step: 2, label: 'Trades & SWPs', short: 'Trades', icon: HardHat },
-          { step: 3, label: 'Appointments', short: 'Appts', icon: Users },
-          { step: 4, label: 'Red File Blueprint', short: 'Red File', icon: FileSpreadsheet }
+          { step: 1, label: 'Profile & Tier', short: 'Profile', icon: Building2 },
+          { step: 2, label: 'Operations & Telemetry', short: 'Operations', icon: Activity },
+          { step: 3, label: 'Duty Appointments', short: 'Appointees', icon: Users },
+          { step: 4, label: 'Dossier & QR Export', short: 'Export', icon: FileSpreadsheet }
         ].map((item) => {
           const isActive = currentStep === item.step;
           const isDone = currentStep > item.step;
@@ -722,667 +1031,1111 @@ export const TenderFileWizard: React.FC<TenderFileWizardProps> = ({
         })}
       </div>
 
-      {/* Wizard Step Body */}
-      <div className="p-4 sm:p-6 md:p-8 overflow-y-auto overscroll-contain flex-1 min-h-0 space-y-5 sm:space-y-6">
-        
-        {/* ================= STEP 1: Company Profile & Compliance Docs ================= */}
+      {/* Wizard Body Content */}
+      <div className="p-4 sm:p-6 md:p-8 overflow-y-auto overscroll-contain flex-1 min-h-0 space-y-6">
+
+        {/* ================= STEP 1: Contractor Tier Pricing & Company Profile ================= */}
         {currentStep === 1 && (
-          <div className="space-y-5 sm:space-y-6 animate-in fade-in duration-200">
-            <div className="flex items-center justify-between pb-2 border-b border-slate-800">
-              <div className="min-w-0">
-                <h3 className="text-xs sm:text-sm font-bold text-white uppercase tracking-wider font-mono text-red-400 truncate">
-                  Step 1: Contractor &amp; Statutory Profile
-                </h3>
-                <p className="text-[11px] sm:text-xs text-slate-400">
-                  Enter your registered legal entity details. These are embedded directly into Section 37.2 agreements.
-                </p>
-              </div>
-              <span className="text-[10px] sm:text-xs text-amber-400 font-mono font-semibold bg-amber-500/10 px-2 py-1 rounded border border-amber-500/20 shrink-0 ml-2">
-                OHS Act 16(1) / (2)
-              </span>
-            </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5 sm:gap-4">
-              <div className="min-w-0">
-                <label className="block text-[11px] sm:text-xs font-semibold text-slate-300 mb-1">
-                  Full Name of Managing Director / Safety Lead *
-                </label>
-                <input
-                  type="text"
-                  value={profile.fullName}
-                  onChange={e => setProfile({ ...profile, fullName: e.target.value })}
-                  className="w-full bg-slate-950 border border-slate-800 focus:border-red-500 rounded-xl px-3 sm:px-3.5 py-2 sm:py-2.5 text-xs sm:text-sm text-white outline-none transition-colors"
-                  placeholder="e.g. David Khumalo"
-                />
+          <div className="space-y-6 animate-in fade-in duration-200">
+            
+            {/* Contractor Tier Pricing Scaffolding */}
+            <div className="space-y-3">
+              <div className="flex items-center justify-between pb-2 border-b border-slate-800">
+                <div>
+                  <h3 className="text-xs sm:text-sm font-bold text-white uppercase tracking-wider font-mono text-red-400">
+                    Self-Service Contractor Safety File Pricing Scaffolding
+                  </h3>
+                  <p className="text-[11px] text-slate-400">
+                    Select your contractor tier. Generates compliant HIRAs, statutory appointments, and SACPCMP-aligned dossiers.
+                  </p>
+                </div>
+                <span className="text-[10px] text-amber-300 font-mono bg-amber-500/10 px-2.5 py-1 rounded border border-amber-500/20">
+                  SACPCMP Compliant
+                </span>
               </div>
 
-              <div className="min-w-0">
-                <label className="block text-[11px] sm:text-xs font-semibold text-slate-300 mb-1">
-                  Registered Legal Entity Name (Pty Ltd / CC) *
-                </label>
-                <input
-                  type="text"
-                  value={profile.companyName}
-                  onChange={e => setProfile({ ...profile, companyName: e.target.value })}
-                  className="w-full bg-slate-950 border border-slate-800 focus:border-red-500 rounded-xl px-3 sm:px-3.5 py-2 sm:py-2.5 text-xs sm:text-sm text-white outline-none transition-colors"
-                  placeholder="e.g. Apex Trade & Civils (Pty) Ltd"
-                />
-              </div>
-
-              <div className="min-w-0">
-                <label className="block text-[11px] sm:text-xs font-semibold text-slate-300 mb-1">
-                  CIPC Registration Number *
-                </label>
-                <input
-                  type="text"
-                  value={profile.cipcRegNumber}
-                  onChange={e => setProfile({ ...profile, cipcRegNumber: e.target.value })}
-                  className="w-full bg-slate-950 border border-slate-800 focus:border-red-500 rounded-xl px-3 sm:px-3.5 py-2 sm:py-2.5 text-xs sm:text-sm text-white font-mono outline-none transition-colors"
-                  placeholder="2021/123456/07"
-                />
-              </div>
-
-              <div className="min-w-0">
-                <label className="block text-[11px] sm:text-xs font-semibold text-slate-300 mb-1">
-                  COIDA / FEM Registration Number *
-                </label>
-                <input
-                  type="text"
-                  value={profile.coidNumber}
-                  onChange={e => setProfile({ ...profile, coidNumber: e.target.value })}
-                  className="w-full bg-slate-950 border border-slate-800 focus:border-red-500 rounded-xl px-3 sm:px-3.5 py-2 sm:py-2.5 text-xs sm:text-sm text-white font-mono outline-none transition-colors"
-                  placeholder="990001248573"
-                />
-              </div>
-
-              <div className="min-w-0">
-                <label className="block text-[11px] sm:text-xs font-semibold text-slate-300 mb-1">
-                  SARS Tax Compliance Status (PIN) *
-                </label>
-                <input
-                  type="text"
-                  value={profile.sarsPin}
-                  onChange={e => setProfile({ ...profile, sarsPin: e.target.value })}
-                  className="w-full bg-slate-950 border border-slate-800 focus:border-red-500 rounded-xl px-3 sm:px-3.5 py-2 sm:py-2.5 text-xs sm:text-sm text-white font-mono outline-none transition-colors"
-                  placeholder="9482716301"
-                />
-              </div>
-
-              <div className="min-w-0">
-                <label className="block text-[11px] sm:text-xs font-semibold text-slate-300 mb-1">
-                  Contact Phone &amp; WhatsApp *
-                </label>
-                <input
-                  type="text"
-                  value={profile.contactPhone}
-                  onChange={e => setProfile({ ...profile, contactPhone: e.target.value })}
-                  className="w-full bg-slate-950 border border-slate-800 focus:border-red-500 rounded-xl px-3 sm:px-3.5 py-2 sm:py-2.5 text-xs sm:text-sm text-white outline-none transition-colors"
-                  placeholder="+27 82 000 0000"
-                />
-              </div>
-
-              <div className="sm:col-span-2 min-w-0">
-                <label className="block text-[11px] sm:text-xs font-semibold text-slate-300 mb-1">
-                  Project Tender Title &amp; Scope Location *
-                </label>
-                <input
-                  type="text"
-                  value={profile.projectTenderName}
-                  onChange={e => setProfile({ ...profile, projectTenderName: e.target.value })}
-                  className="w-full bg-slate-950 border border-slate-800 focus:border-red-500 rounded-xl px-3 sm:px-3.5 py-2 sm:py-2.5 text-xs sm:text-sm text-white outline-none transition-colors"
-                  placeholder="Tender No. / Subcontract Scope Description"
-                />
-              </div>
-
-              <div className="sm:col-span-2 min-w-0">
-                <label className="block text-[11px] sm:text-xs font-semibold text-slate-300 mb-1">
-                  Principal Client / Mining Corporation / Main Contractor *
-                </label>
-                <input
-                  type="text"
-                  value={profile.clientPrincipalName}
-                  onChange={e => setProfile({ ...profile, clientPrincipalName: e.target.value })}
-                  className="w-full bg-slate-950 border border-slate-800 focus:border-red-500 rounded-xl px-3 sm:px-3.5 py-2 sm:py-2.5 text-xs sm:text-sm text-white outline-none transition-colors"
-                  placeholder="e.g. Anglo Platinum, Exxaro, Murray & Roberts, Municipality"
-                />
-              </div>
-            </div>
-
-            {/* Mandatory Document Verification Check */}
-            <div className="space-y-3 pt-2">
-              <span className="text-[11px] sm:text-xs font-semibold text-slate-300 uppercase tracking-wider font-mono">
-                Mandatory Supporting Compliance Attachments
-              </span>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 sm:gap-3">
-                {Object.entries(docUploads).map(([key, doc]) => (
-                  <div 
-                    key={key}
-                    className="p-2.5 sm:p-3 bg-slate-950 border border-slate-800/80 rounded-xl flex items-center justify-between gap-2 min-w-0"
-                  >
-                    <div className="flex items-center gap-2 sm:gap-2.5 overflow-hidden min-w-0">
-                      <div className={`w-7 h-7 rounded-lg flex items-center justify-center shrink-0 ${
-                        doc.uploaded ? 'bg-emerald-500/10 text-emerald-400' : 'bg-slate-800 text-slate-400'
-                      }`}>
-                        {doc.uploaded ? <CheckCircle2 className="w-4 h-4" /> : <Upload className="w-4 h-4" />}
-                      </div>
-                      <div className="truncate min-w-0">
-                        <div className="text-xs font-semibold text-white truncate">{doc.name}</div>
-                        <div className="text-[10px] text-slate-400 font-mono truncate">
-                          {doc.uploaded ? `${doc.fileName} (${doc.size})` : 'Pending attachment'}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                {CONTRACTOR_TIERS.map(tier => {
+                  const isSelected = selectedTier === tier.id;
+                  return (
+                    <div
+                      key={tier.id}
+                      onClick={() => setSelectedTier(tier.id)}
+                      className={`p-4 rounded-2xl border transition-all cursor-pointer flex flex-col justify-between relative ${
+                        isSelected
+                          ? 'bg-slate-950 border-red-500 shadow-xl shadow-red-950/40 ring-1 ring-red-500/50'
+                          : 'bg-slate-950/60 border-slate-800 hover:border-slate-700 text-slate-400'
+                      }`}
+                    >
+                      <div>
+                        <div className="flex items-center justify-between gap-1 mb-2">
+                          <span className={`text-[9px] font-black uppercase px-2 py-0.5 rounded font-mono ${
+                            isSelected ? 'bg-red-500 text-slate-950' : 'bg-slate-800 text-slate-300'
+                          }`}>
+                            {tier.badge}
+                          </span>
+                          <span className="text-[10px] font-mono text-slate-400">
+                            {tier.sectionsIncluded} Sections
+                          </span>
                         </div>
+                        <h4 className="text-xs sm:text-sm font-bold text-white mb-1">
+                          {tier.name}
+                        </h4>
+                        <div className="text-xl font-black text-white font-mono my-2 flex items-baseline gap-1">
+                          R{tier.priceZar.toLocaleString('en-ZA')}
+                          <span className="text-[10px] font-normal text-slate-400">once-off</span>
+                        </div>
+                        <p className="text-[11px] text-slate-300 leading-snug mb-3">
+                          {tier.description}
+                        </p>
+                      </div>
+
+                      <div className="space-y-1.5 pt-2 border-t border-slate-800/80 text-[10px] text-slate-300">
+                        {tier.features.slice(0, 3).map((f, i) => (
+                          <div key={i} className="flex items-center gap-1.5 truncate">
+                            <Check className="w-3 h-3 text-emerald-400 shrink-0" />
+                            <span className="truncate">{f}</span>
+                          </div>
+                        ))}
                       </div>
                     </div>
+                  );
+                })}
+              </div>
+            </div>
 
+            {/* Registered Company Profile Inputs */}
+            <div className="space-y-3 pt-2 border-t border-slate-800">
+              <h4 className="text-xs font-bold text-white uppercase tracking-wider font-mono text-red-400">
+                Registered Company &amp; Statutory Identifiers
+              </h4>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+                <div>
+                  <label className="block text-[11px] font-semibold text-slate-300 mb-1">
+                    Full Legal Name of Safety Officer / MD *
+                  </label>
+                  <input
+                    type="text"
+                    value={profile.fullName}
+                    onChange={(e) => setProfile({ ...profile, fullName: e.target.value })}
+                    className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-red-500"
+                    placeholder="e.g. David Khumalo"
+                  />
+                </div>
+                <div>
+                  <label className="block text-[11px] font-semibold text-slate-300 mb-1">
+                    Company Registered Legal Name *
+                  </label>
+                  <input
+                    type="text"
+                    value={profile.companyName}
+                    onChange={(e) => setProfile({ ...profile, companyName: e.target.value })}
+                    className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-red-500"
+                    placeholder="e.g. Apex Trade & Civils (Pty) Ltd"
+                  />
+                </div>
+                <div>
+                  <label className="block text-[11px] font-semibold text-slate-300 mb-1">
+                    CIPC Company Registration Number *
+                  </label>
+                  <input
+                    type="text"
+                    value={profile.cipcRegNumber}
+                    onChange={(e) => setProfile({ ...profile, cipcRegNumber: e.target.value })}
+                    className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white font-mono focus:outline-none focus:border-red-500"
+                    placeholder="2021/847291/07"
+                  />
+                </div>
+                <div>
+                  <label className="block text-[11px] font-semibold text-slate-300 mb-1">
+                    COID / WCA Reference Number *
+                  </label>
+                  <input
+                    type="text"
+                    value={profile.coidNumber}
+                    onChange={(e) => setProfile({ ...profile, coidNumber: e.target.value })}
+                    className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white font-mono focus:outline-none focus:border-red-500"
+                    placeholder="990001248573"
+                  />
+                </div>
+                <div>
+                  <label className="block text-[11px] font-semibold text-slate-300 mb-1">
+                    SARS Tax Compliance Status PIN *
+                  </label>
+                  <input
+                    type="text"
+                    value={profile.sarsPin}
+                    onChange={(e) => setProfile({ ...profile, sarsPin: e.target.value })}
+                    className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white font-mono focus:outline-none focus:border-red-500"
+                    placeholder="9482716301"
+                  />
+                </div>
+                <div>
+                  <label className="block text-[11px] font-semibold text-slate-300 mb-1">
+                    Principal Client / Mine Site *
+                  </label>
+                  <input
+                    type="text"
+                    value={profile.clientPrincipalName}
+                    onChange={(e) => setProfile({ ...profile, clientPrincipalName: e.target.value })}
+                    className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-red-500"
+                    placeholder="e.g. Anglo Platinum / Konkola Copper Mines"
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* Document Verification Checkpoints */}
+            <div className="space-y-2 pt-2 border-t border-slate-800">
+              <span className="text-xs font-bold text-white uppercase tracking-wider font-mono text-red-400">
+                Statutory Document Attachments
+              </span>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                {Object.entries(docUploads).map(([key, doc]) => (
+                  <div key={key} className="p-3 bg-slate-950 border border-slate-800 rounded-xl flex items-center justify-between">
+                    <div>
+                      <div className="text-xs font-semibold text-white">{doc.name}</div>
+                      <div className="text-[10px] text-slate-400 font-mono">
+                        {doc.uploaded ? `${doc.fileName} (${doc.size})` : 'Pending Attachment'}
+                      </div>
+                    </div>
                     {!doc.uploaded ? (
                       <button
                         type="button"
                         onClick={() => handleSimulatedUpload(key)}
-                        className="px-2.5 py-1 text-[10px] font-bold text-red-300 bg-red-950/80 border border-red-500/40 hover:bg-red-900 rounded-lg transition cursor-pointer shrink-0"
+                        className="px-2.5 py-1 text-[10px] font-bold text-red-300 bg-red-950 border border-red-500/40 rounded-lg hover:bg-red-900 cursor-pointer"
                       >
                         Attach
                       </button>
                     ) : (
-                      <span className="text-[10px] text-emerald-400 font-mono font-bold bg-emerald-500/10 px-2 py-0.5 rounded shrink-0">
-                        Verified
+                      <span className="text-[10px] text-emerald-400 font-mono font-bold bg-emerald-500/10 px-2 py-0.5 rounded">
+                        ✓ Verified
                       </span>
                     )}
                   </div>
                 ))}
               </div>
             </div>
+
           </div>
         )}
 
-        {/* ================= STEP 2: Trades & Scope Selection ================= */}
+        {/* ================= STEP 2: Operations, Consumables, Blasting, Drilling & Wear Modeling ================= */}
         {currentStep === 2 && (
-          <div className="space-y-5 sm:space-y-6 animate-in fade-in duration-200">
-            <div className="flex items-center justify-between pb-2 border-b border-slate-800">
-              <div className="min-w-0">
-                <h3 className="text-xs sm:text-sm font-bold text-white uppercase tracking-wider font-mono text-red-400 truncate">
-                  Step 2: Subcontractor Trade Packages &amp; Risk Tier
-                </h3>
-                <p className="text-[11px] sm:text-xs text-slate-400">
-                  Select all active scopes of work. MeloTwo will automatically inject matching SANS Safe Work Procedures and Hazard Identification (HIRA).
-                </p>
-              </div>
-              <span className="text-[10px] sm:text-xs text-red-300 font-mono font-bold bg-red-500/10 px-2.5 py-1 rounded-lg border border-red-500/30 shrink-0 ml-2">
-                {selectedTrades.length} Selected
-              </span>
+          <div className="space-y-5 animate-in fade-in duration-200">
+            
+            {/* Sub-tab navigation inside Step 2 */}
+            <div className="flex flex-wrap items-center gap-1.5 p-1 bg-slate-950 rounded-xl border border-slate-800 text-[11px] font-mono">
+              <button
+                type="button"
+                onClick={() => setStep2SubTab('TRADES')}
+                className={`px-3 py-1.5 rounded-lg transition-all cursor-pointer font-bold ${
+                  step2SubTab === 'TRADES' ? 'bg-red-600 text-white shadow' : 'text-slate-400 hover:text-white'
+                }`}
+              >
+                1. Trade Scopes ({selectedTrades.length})
+              </button>
+              <button
+                type="button"
+                onClick={() => setStep2SubTab('CONSUMABLES')}
+                className={`px-3 py-1.5 rounded-lg transition-all cursor-pointer font-bold ${
+                  step2SubTab === 'CONSUMABLES' ? 'bg-red-600 text-white shadow' : 'text-slate-400 hover:text-white'
+                }`}
+              >
+                2. Consumable Gases &amp; Reticulation
+              </button>
+              <button
+                type="button"
+                onClick={() => setStep2SubTab('BLASTING')}
+                className={`px-3 py-1.5 rounded-lg transition-all cursor-pointer font-bold ${
+                  step2SubTab === 'BLASTING' ? 'bg-red-600 text-white shadow' : 'text-slate-400 hover:text-white'
+                }`}
+              >
+                3. Access &amp; Blasting Clearance
+              </button>
+              <button
+                type="button"
+                onClick={() => setStep2SubTab('DRILLING')}
+                className={`px-3 py-1.5 rounded-lg transition-all cursor-pointer font-bold ${
+                  step2SubTab === 'DRILLING' ? 'bg-red-600 text-white shadow' : 'text-slate-400 hover:text-white'
+                }`}
+              >
+                4. Drilling Telemetry
+              </button>
+              <button
+                type="button"
+                onClick={() => setStep2SubTab('WEAR_PHYSICS')}
+                className={`px-3 py-1.5 rounded-lg transition-all cursor-pointer font-bold ${
+                  step2SubTab === 'WEAR_PHYSICS' ? 'bg-amber-600 text-slate-950 font-black shadow' : 'text-amber-400 hover:text-amber-300'
+                }`}
+              >
+                5. Automated Wear Physics
+              </button>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-3.5">
-              {AVAILABLE_TRADES.map((trade) => {
-                const isSelected = selectedTrades.includes(trade.id);
-                const Icon = trade.icon;
-                const riskBadgeColors = {
-                  Low: 'bg-emerald-500/10 text-emerald-300 border-emerald-500/30',
-                  Medium: 'bg-amber-500/10 text-amber-300 border-amber-500/30',
-                  High: 'bg-orange-500/10 text-orange-300 border-orange-500/30',
-                  Critical: 'bg-rose-500/10 text-rose-300 border-rose-500/30'
-                }[trade.riskLevel];
+            {/* SUB-TAB 1: TRADES */}
+            {step2SubTab === 'TRADES' && (
+              <div className="space-y-4">
+                <div className="flex items-center justify-between pb-2 border-b border-slate-800">
+                  <div>
+                    <h4 className="text-xs font-bold text-white uppercase tracking-wider font-mono text-red-400">
+                      Subcontractor Trade Packages &amp; SANS SWPs
+                    </h4>
+                    <p className="text-[11px] text-slate-400">
+                      Select all active trades. SANS Safe Work Procedures and HIRA risk matrices are automatically appended.
+                    </p>
+                  </div>
+                  <span className="text-[10px] text-red-300 font-mono bg-red-500/10 px-2 py-0.5 rounded border border-red-500/30">
+                    {selectedTrades.length} Active Scopes
+                  </span>
+                </div>
 
-                return (
-                  <div
-                    key={trade.id}
-                    onClick={() => toggleTrade(trade.id)}
-                    className={`p-3.5 sm:p-4 rounded-xl border transition-all cursor-pointer flex flex-col justify-between min-w-0 ${
-                      isSelected
-                        ? 'bg-slate-950 border-red-500 shadow-md shadow-red-950/40'
-                        : 'bg-slate-950/50 border-slate-800/80 hover:border-slate-700'
-                    }`}
-                  >
-                    <div>
-                      <div className="flex items-center justify-between mb-2 gap-1.5">
-                        <div className="flex items-center gap-2 sm:gap-2.5 min-w-0">
-                          <div className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 ${
-                            isSelected ? 'bg-red-500/20 text-red-400' : 'bg-slate-800 text-slate-400'
-                          }`}>
-                            <Icon className="w-4 h-4" />
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  {AVAILABLE_TRADES.map((trade) => {
+                    const isSelected = selectedTrades.includes(trade.id);
+                    const Icon = trade.icon;
+                    return (
+                      <div
+                        key={trade.id}
+                        onClick={() => toggleTrade(trade.id)}
+                        className={`p-3.5 rounded-xl border transition-all cursor-pointer flex flex-col justify-between ${
+                          isSelected
+                            ? 'bg-slate-950 border-red-500 shadow-md shadow-red-950/40 ring-1 ring-red-500/30'
+                            : 'bg-slate-950/50 border-slate-800/80 hover:border-slate-700'
+                        }`}
+                      >
+                        <div>
+                          <div className="flex items-center justify-between mb-2">
+                            <div className="flex items-center gap-2">
+                              <div className={`w-7 h-7 rounded-lg flex items-center justify-center ${
+                                isSelected ? 'bg-red-500/20 text-red-400' : 'bg-slate-800 text-slate-400'
+                              }`}>
+                                <Icon className="w-4 h-4" />
+                              </div>
+                              <div>
+                                <h5 className="text-xs font-bold text-white">{trade.name}</h5>
+                                <span className="text-[10px] text-slate-400 font-mono">{trade.category}</span>
+                              </div>
+                            </div>
+                            <span className="text-[9px] font-bold uppercase px-1.5 py-0.5 rounded bg-slate-800 text-slate-300 font-mono">
+                              {trade.riskLevel} Risk
+                            </span>
                           </div>
-                          <div className="min-w-0 truncate">
-                            <h4 className="text-xs font-bold text-white truncate">{trade.name}</h4>
-                            <span className="text-[10px] text-slate-400 font-mono block truncate">{trade.category}</span>
-                          </div>
+                          <p className="text-[11px] text-slate-300 leading-snug mb-2">
+                            {trade.description}
+                          </p>
                         </div>
-                        <div className="flex items-center gap-1.5 shrink-0">
-                          <span className={`text-[9px] font-bold uppercase px-1.5 py-0.5 rounded border font-mono ${riskBadgeColors}`}>
-                            {trade.riskLevel} Risk
-                          </span>
-                          <div className={`w-4 h-4 rounded-full border flex items-center justify-center ${
-                            isSelected ? 'border-red-500 bg-red-600 text-white' : 'border-slate-600'
-                          }`}>
-                            {isSelected && <Check className="w-3 h-3 stroke-[3]" />}
-                          </div>
+                        <div className="text-[10px] font-mono text-slate-400 pt-2 border-t border-slate-800/80">
+                          {trade.swps.length} SANS SWPs • {trade.methodStatements.length} Method Statements
                         </div>
                       </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
 
-                      <p className="text-[11px] text-slate-400 leading-relaxed mb-3 line-clamp-2 sm:line-clamp-none">
-                        {trade.description}
-                      </p>
+            {/* SUB-TAB 2: CONSUMABLES & INVISIBLE INFRASTRUCTURE */}
+            {step2SubTab === 'CONSUMABLES' && (
+              <div className="space-y-4">
+                <div className="flex items-center justify-between pb-2 border-b border-slate-800">
+                  <div>
+                    <h4 className="text-xs font-bold text-white uppercase tracking-wider font-mono text-red-400">
+                      Industrial Consumable &amp; Invisible Infrastructure Tracking
+                    </h4>
+                    <p className="text-[11px] text-slate-400">
+                      Track bulk oxygen lines, mine gas supply, nitrogen purging, and hydraulic fluid bunding for supply chain safety.
+                    </p>
+                  </div>
+                  <span className="text-[10px] text-emerald-400 font-mono bg-emerald-500/10 px-2 py-0.5 rounded border border-emerald-500/30">
+                    SABS 1499 Verified
+                  </span>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  {/* Oxygen System */}
+                  <div className="p-4 bg-slate-950 border border-slate-800 rounded-xl space-y-2.5">
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs font-bold text-cyan-400 flex items-center gap-1.5">
+                        <Droplets className="w-3.5 h-3.5" />
+                        Subterranean Cryogenic Oxygen Reticulation
+                      </span>
+                      <span className="text-[9px] px-1.5 py-0.2 rounded bg-emerald-500/20 text-emerald-300 font-mono">
+                        {consumables.oxygenSystem.status}
+                      </span>
                     </div>
-
-                    <div className="pt-2 border-t border-slate-800/60 flex items-center justify-between text-[10px] font-mono text-slate-400">
-                      <span>{trade.swps.length} Statutory SWPs</span>
-                      <span className="text-red-300 font-semibold">{trade.methodStatements.length} Method Statements</span>
+                    <div>
+                      <label className="block text-[10px] font-semibold text-slate-400 mb-0.5">Supplier &amp; Purity Spec</label>
+                      <input
+                        type="text"
+                        value={consumables.oxygenSystem.supplier}
+                        onChange={(e) => setConsumables({
+                          ...consumables,
+                          oxygenSystem: { ...consumables.oxygenSystem, supplier: e.target.value }
+                        })}
+                        className="w-full bg-slate-900 border border-slate-800 rounded-lg px-2.5 py-1.5 text-xs text-white font-mono"
+                      />
+                    </div>
+                    <div className="grid grid-cols-2 gap-2">
+                      <div>
+                        <label className="block text-[10px] font-semibold text-slate-400 mb-0.5">Manifold Pressure (bar)</label>
+                        <input
+                          type="number"
+                          value={consumables.oxygenSystem.manifoldPressureBar}
+                          onChange={(e) => setConsumables({
+                            ...consumables,
+                            oxygenSystem: { ...consumables.oxygenSystem, manifoldPressureBar: parseFloat(e.target.value) || 0 }
+                          })}
+                          className="w-full bg-slate-900 border border-slate-800 rounded-lg px-2.5 py-1.5 text-xs text-white font-mono"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-[10px] font-semibold text-slate-400 mb-0.5">Hydrostatic Test Expiry</label>
+                        <input
+                          type="date"
+                          value={consumables.oxygenSystem.hydrostaticTestExpiry}
+                          onChange={(e) => setConsumables({
+                            ...consumables,
+                            oxygenSystem: { ...consumables.oxygenSystem, hydrostaticTestExpiry: e.target.value }
+                          })}
+                          className="w-full bg-slate-900 border border-slate-800 rounded-lg px-2.5 py-1.5 text-xs text-white font-mono"
+                        />
+                      </div>
                     </div>
                   </div>
-                );
-              })}
-            </div>
+
+                  {/* Nitrogen & Mine Gas Reticulation */}
+                  <div className="p-4 bg-slate-950 border border-slate-800 rounded-xl space-y-2.5">
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs font-bold text-amber-400 flex items-center gap-1.5">
+                        <Flame className="w-3.5 h-3.5" />
+                        Nitrogen Inerting &amp; Gas Dilution
+                      </span>
+                      <span className="text-[9px] px-1.5 py-0.2 rounded bg-emerald-500/20 text-emerald-300 font-mono">
+                        {consumables.gasInfrastructure.status}
+                      </span>
+                    </div>
+                    <div>
+                      <label className="block text-[10px] font-semibold text-slate-400 mb-0.5">Cylinder Bank Certificate</label>
+                      <input
+                        type="text"
+                        value={consumables.gasInfrastructure.cylinderBankCertNumber}
+                        onChange={(e) => setConsumables({
+                          ...consumables,
+                          gasInfrastructure: { ...consumables.gasInfrastructure, cylinderBankCertNumber: e.target.value }
+                        })}
+                        className="w-full bg-slate-900 border border-slate-800 rounded-lg px-2.5 py-1.5 text-xs text-white font-mono"
+                      />
+                    </div>
+                    <div className="grid grid-cols-2 gap-2">
+                      <div>
+                        <label className="block text-[10px] font-semibold text-slate-400 mb-0.5">Line Pressure (bar)</label>
+                        <input
+                          type="number"
+                          value={consumables.gasInfrastructure.reticulationPressureBar}
+                          onChange={(e) => setConsumables({
+                            ...consumables,
+                            gasInfrastructure: { ...consumables.gasInfrastructure, reticulationPressureBar: parseFloat(e.target.value) || 0 }
+                          })}
+                          className="w-full bg-slate-900 border border-slate-800 rounded-lg px-2.5 py-1.5 text-xs text-white font-mono"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-[10px] font-semibold text-slate-400 mb-0.5">Leak Calibration Expiry</label>
+                        <input
+                          type="date"
+                          value={consumables.gasInfrastructure.leakDetectorCalibratedUntil}
+                          onChange={(e) => setConsumables({
+                            ...consumables,
+                            gasInfrastructure: { ...consumables.gasInfrastructure, leakDetectorCalibratedUntil: e.target.value }
+                          })}
+                          className="w-full bg-slate-900 border border-slate-800 rounded-lg px-2.5 py-1.5 text-xs text-white font-mono"
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Hydraulic Oils & Reagents */}
+                  <div className="sm:col-span-2 p-4 bg-slate-950 border border-slate-800 rounded-xl space-y-2.5">
+                    <span className="text-xs font-bold text-slate-200">
+                      Heavy Hydraulic Oils &amp; Flotation Reagents
+                    </span>
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                      <div>
+                        <label className="block text-[10px] font-semibold text-slate-400 mb-0.5">Hydraulic Fluid Grade</label>
+                        <input
+                          type="text"
+                          value={consumables.hydraulicReagents.fluidGrade}
+                          onChange={(e) => setConsumables({
+                            ...consumables,
+                            hydraulicReagents: { ...consumables.hydraulicReagents, fluidGrade: e.target.value }
+                          })}
+                          className="w-full bg-slate-900 border border-slate-800 rounded-lg px-2.5 py-1.5 text-xs text-white font-mono"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-[10px] font-semibold text-slate-400 mb-0.5">Spill Kit Monthly Check Date</label>
+                        <input
+                          type="date"
+                          value={consumables.hydraulicReagents.spillKitInspectionDate}
+                          onChange={(e) => setConsumables({
+                            ...consumables,
+                            hydraulicReagents: { ...consumables.hydraulicReagents, spillKitInspectionDate: e.target.value }
+                          })}
+                          className="w-full bg-slate-900 border border-slate-800 rounded-lg px-2.5 py-1.5 text-xs text-white font-mono"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-[10px] font-semibold text-slate-400 mb-0.5">Consumable Batch #</label>
+                        <input
+                          type="text"
+                          value={consumables.hydraulicReagents.batchNumber}
+                          onChange={(e) => setConsumables({
+                            ...consumables,
+                            hydraulicReagents: { ...consumables.hydraulicReagents, batchNumber: e.target.value }
+                          })}
+                          className="w-full bg-slate-900 border border-slate-800 rounded-lg px-2.5 py-1.5 text-xs text-white font-mono"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* SUB-TAB 3: ACCESS & BLASTING CLEARANCE */}
+            {step2SubTab === 'BLASTING' && (
+              <div className="space-y-4">
+                <div className="flex items-center justify-between pb-2 border-b border-slate-800">
+                  <div>
+                    <h4 className="text-xs font-bold text-white uppercase tracking-wider font-mono text-red-400">
+                      Underground Access Control &amp; Blasting Zone Clearance
+                    </h4>
+                    <p className="text-[11px] text-slate-400">
+                      Headcount turnstile verification, safe exclusion radius, and statutory Blasting Master Form MSD-14 clearance.
+                    </p>
+                  </div>
+                  <span className="text-[10px] text-rose-400 font-mono bg-rose-500/10 px-2 py-0.5 rounded border border-rose-500/30">
+                    MSR 912 Mandatory
+                  </span>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  {/* Headcount Accountability */}
+                  <div className="p-4 bg-slate-950 border border-slate-800 rounded-xl space-y-2.5">
+                    <span className="text-xs font-bold text-white flex items-center gap-1.5">
+                      <Users className="w-3.5 h-3.5 text-cyan-400" />
+                      Turnstile &amp; Brass Tag Headcount
+                    </span>
+                    <div className="grid grid-cols-3 gap-2 text-center">
+                      <div className="p-2 bg-slate-900 rounded-lg border border-slate-800">
+                        <div className="text-[10px] text-slate-400">In-Stope</div>
+                        <div className="text-base font-bold text-white font-mono">{accessBlasting.headcount.inStopeCrew}</div>
+                      </div>
+                      <div className="p-2 bg-slate-900 rounded-lg border border-slate-800">
+                        <div className="text-[10px] text-slate-400">In-Transit</div>
+                        <div className="text-base font-bold text-white font-mono">{accessBlasting.headcount.shaftTransitCrew}</div>
+                      </div>
+                      <div className="p-2 bg-slate-900 rounded-lg border border-slate-800">
+                        <div className="text-[10px] text-slate-400">Surface</div>
+                        <div className="text-base font-bold text-white font-mono">{accessBlasting.headcount.surfaceStandbyCrew}</div>
+                      </div>
+                    </div>
+                    <div className="text-[11px] text-emerald-400 font-mono flex items-center justify-between pt-1">
+                      <span>Total Accounted For:</span>
+                      <strong className="text-white">{accessBlasting.headcount.inStopeCrew + accessBlasting.headcount.shaftTransitCrew + accessBlasting.headcount.surfaceStandbyCrew} Personnel</strong>
+                    </div>
+                  </div>
+
+                  {/* Blasting Zone Clearance */}
+                  <div className="p-4 bg-slate-950 border border-slate-800 rounded-xl space-y-2.5">
+                    <span className="text-xs font-bold text-white flex items-center gap-1.5">
+                      <ShieldAlert className="w-3.5 h-3.5 text-rose-400" />
+                      Detonation Exposure &amp; Safe Radius
+                    </span>
+                    <div>
+                      <label className="block text-[10px] font-semibold text-slate-400 mb-0.5">Stope Heading &amp; Sub-Level</label>
+                      <input
+                        type="text"
+                        value={accessBlasting.blastingClearance.stopeHeading}
+                        onChange={(e) => setAccessBlasting({
+                          ...accessBlasting,
+                          blastingClearance: { ...accessBlasting.blastingClearance, stopeHeading: e.target.value }
+                        })}
+                        className="w-full bg-slate-900 border border-slate-800 rounded-lg px-2.5 py-1.5 text-xs text-white font-mono"
+                      />
+                    </div>
+                    <div className="grid grid-cols-2 gap-2">
+                      <div>
+                        <label className="block text-[10px] font-semibold text-slate-400 mb-0.5">Exclusion Radius (m)</label>
+                        <input
+                          type="number"
+                          value={accessBlasting.blastingClearance.exclusionRadiusMeters}
+                          onChange={(e) => setAccessBlasting({
+                            ...accessBlasting,
+                            blastingClearance: { ...accessBlasting.blastingClearance, exclusionRadiusMeters: parseInt(e.target.value, 10) || 0 }
+                          })}
+                          className="w-full bg-slate-900 border border-slate-800 rounded-lg px-2.5 py-1.5 text-xs text-white font-mono"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-[10px] font-semibold text-slate-400 mb-0.5">Sentry Guards</label>
+                        <input
+                          type="number"
+                          value={accessBlasting.blastingClearance.sentryGuardsCount}
+                          onChange={(e) => setAccessBlasting({
+                            ...accessBlasting,
+                            blastingClearance: { ...accessBlasting.blastingClearance, sentryGuardsCount: parseInt(e.target.value, 10) || 0 }
+                          })}
+                          className="w-full bg-slate-900 border border-slate-800 rounded-lg px-2.5 py-1.5 text-xs text-white font-mono"
+                        />
+                      </div>
+                    </div>
+                    <div>
+                      <label className="block text-[10px] font-semibold text-slate-400 mb-0.5">Blasting Master Form MSD-14 License</label>
+                      <input
+                        type="text"
+                        value={accessBlasting.blastingClearance.blastingMasterLicense}
+                        onChange={(e) => setAccessBlasting({
+                          ...accessBlasting,
+                          blastingClearance: { ...accessBlasting.blastingClearance, blastingMasterLicense: e.target.value }
+                        })}
+                        className="w-full bg-slate-900 border border-slate-800 rounded-lg px-2.5 py-1.5 text-xs text-white font-mono"
+                      />
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* SUB-TAB 4: DRILLING & FLUID TELEMETRY */}
+            {step2SubTab === 'DRILLING' && (
+              <div className="space-y-4">
+                <div className="flex items-center justify-between pb-2 border-b border-slate-800">
+                  <div>
+                    <h4 className="text-xs font-bold text-white uppercase tracking-wider font-mono text-red-400">
+                      Core Drilling &amp; Fluid Telemetry Operational Logging
+                    </h4>
+                    <p className="text-[11px] text-slate-400">
+                      Borehole conditions, fluid return flows, torque, and pump pressure dynamics to correlate geotechnical risks.
+                    </p>
+                  </div>
+                  <span className="text-[10px] text-cyan-400 font-mono bg-cyan-500/10 px-2 py-0.5 rounded border border-cyan-500/30">
+                    Live Telemetry Ready
+                  </span>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3.5">
+                  <div className="p-3 bg-slate-950 border border-slate-800 rounded-xl">
+                    <label className="block text-[10px] font-semibold text-slate-400 mb-1">Core Rig ID</label>
+                    <input
+                      type="text"
+                      value={drilling.coreRigId}
+                      onChange={(e) => setDrilling({ ...drilling, coreRigId: e.target.value })}
+                      className="w-full bg-slate-900 border border-slate-800 rounded-lg px-2.5 py-1.5 text-xs text-white font-mono"
+                    />
+                  </div>
+                  <div className="p-3 bg-slate-950 border border-slate-800 rounded-xl">
+                    <label className="block text-[10px] font-semibold text-slate-400 mb-1">Target Borehole ID</label>
+                    <input
+                      type="text"
+                      value={drilling.targetBoreholeId}
+                      onChange={(e) => setDrilling({ ...drilling, targetBoreholeId: e.target.value })}
+                      className="w-full bg-slate-900 border border-slate-800 rounded-lg px-2.5 py-1.5 text-xs text-white font-mono"
+                    />
+                  </div>
+                  <div className="p-3 bg-slate-950 border border-slate-800 rounded-xl">
+                    <label className="block text-[10px] font-semibold text-slate-400 mb-1">Fluid Return Flow (L/min)</label>
+                    <input
+                      type="number"
+                      value={drilling.fluidReturnFlowLpm}
+                      onChange={(e) => setDrilling({ ...drilling, fluidReturnFlowLpm: parseFloat(e.target.value) || 0 })}
+                      className="w-full bg-slate-900 border border-slate-800 rounded-lg px-2.5 py-1.5 text-xs text-white font-mono"
+                    />
+                  </div>
+                  <div className="p-3 bg-slate-950 border border-slate-800 rounded-xl">
+                    <label className="block text-[10px] font-semibold text-slate-400 mb-1">Pump Pressure (bar)</label>
+                    <input
+                      type="number"
+                      value={drilling.pumpPressureBar}
+                      onChange={(e) => setDrilling({ ...drilling, pumpPressureBar: parseFloat(e.target.value) || 0 })}
+                      className="w-full bg-slate-900 border border-slate-800 rounded-lg px-2.5 py-1.5 text-xs text-white font-mono"
+                    />
+                  </div>
+                  <div className="p-3 bg-slate-950 border border-slate-800 rounded-xl">
+                    <label className="block text-[10px] font-semibold text-slate-400 mb-1">Downhole Mud Temp (°C)</label>
+                    <input
+                      type="number"
+                      value={drilling.downholeMudTempC}
+                      onChange={(e) => setDrilling({ ...drilling, downholeMudTempC: parseFloat(e.target.value) || 0 })}
+                      className="w-full bg-slate-900 border border-slate-800 rounded-lg px-2.5 py-1.5 text-xs text-white font-mono"
+                    />
+                  </div>
+                  <div className="p-3 bg-slate-950 border border-slate-800 rounded-xl">
+                    <label className="block text-[10px] font-semibold text-slate-400 mb-1">Drill String Torque (Nm)</label>
+                    <input
+                      type="number"
+                      value={drilling.drillStringTorqueNm}
+                      onChange={(e) => setDrilling({ ...drilling, drillStringTorqueNm: parseFloat(e.target.value) || 0 })}
+                      className="w-full bg-slate-900 border border-slate-800 rounded-lg px-2.5 py-1.5 text-xs text-white font-mono"
+                    />
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* SUB-TAB 5: AUTOMATED WEAR SIMULATIONS & PHYSICS MODELING */}
+            {step2SubTab === 'WEAR_PHYSICS' && (
+              <div className="space-y-4">
+                <div className="flex items-center justify-between pb-2 border-b border-slate-800">
+                  <div>
+                    <h4 className="text-xs font-bold text-amber-400 uppercase tracking-wider font-mono">
+                      Automated Wear Simulations &amp; Physics Modeling
+                    </h4>
+                    <p className="text-[11px] text-slate-400">
+                      Predictive physics modeling for PPE, harnesses, scraper ropes, and drill bits to flag non-compliance prior to failure.
+                    </p>
+                  </div>
+                  <span className="text-[10px] text-amber-300 font-mono bg-amber-500/10 px-2 py-0.5 rounded border border-amber-500/30">
+                    Predictive CAPA Engine
+                  </span>
+                </div>
+
+                {/* Physics Simulation Input Controls */}
+                <div className="p-4 bg-slate-950 border border-slate-800 rounded-2xl space-y-3">
+                  <div className="text-xs font-bold text-white flex items-center justify-between">
+                    <span className="flex items-center gap-1.5">
+                      <Gauge className="w-3.5 h-3.5 text-amber-400" />
+                      Dynamic Physics Environment Parameters
+                    </span>
+                    <span className="text-[10px] text-slate-400 font-mono">
+                      Real-Time Degradation Calculations
+                    </span>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-4 gap-3">
+                    <div>
+                      <div className="flex justify-between text-[10px] text-slate-400 mb-1">
+                        <span>Duty Cycles / Running Hours</span>
+                        <strong className="text-white">{wearSimulation.dutyCyclesHours} hrs</strong>
+                      </div>
+                      <input
+                        type="range"
+                        min="100"
+                        max="1200"
+                        step="50"
+                        value={wearSimulation.dutyCyclesHours}
+                        onChange={(e) => handleRecalculateWear(
+                          parseInt(e.target.value, 10),
+                          wearSimulation.quartzParticulatePpm,
+                          wearSimulation.ambientTemperatureC,
+                          wearSimulation.chemicalHydrolysisStress
+                        )}
+                        className="w-full accent-amber-500 cursor-pointer"
+                      />
+                    </div>
+
+                    <div>
+                      <div className="flex justify-between text-[10px] text-slate-400 mb-1">
+                        <span>Quartz Dust Density (PPM)</span>
+                        <strong className="text-white">{wearSimulation.quartzParticulatePpm} PPM</strong>
+                      </div>
+                      <input
+                        type="range"
+                        min="100"
+                        max="900"
+                        step="50"
+                        value={wearSimulation.quartzParticulatePpm}
+                        onChange={(e) => handleRecalculateWear(
+                          wearSimulation.dutyCyclesHours,
+                          parseInt(e.target.value, 10),
+                          wearSimulation.ambientTemperatureC,
+                          wearSimulation.chemicalHydrolysisStress
+                        )}
+                        className="w-full accent-amber-500 cursor-pointer"
+                      />
+                    </div>
+
+                    <div>
+                      <div className="flex justify-between text-[10px] text-slate-400 mb-1">
+                        <span>Ambient Thermal Factor</span>
+                        <strong className="text-white">{wearSimulation.ambientTemperatureC} °C</strong>
+                      </div>
+                      <input
+                        type="range"
+                        min="20"
+                        max="55"
+                        step="1"
+                        value={wearSimulation.ambientTemperatureC}
+                        onChange={(e) => handleRecalculateWear(
+                          wearSimulation.dutyCyclesHours,
+                          wearSimulation.quartzParticulatePpm,
+                          parseInt(e.target.value, 10),
+                          wearSimulation.chemicalHydrolysisStress
+                        )}
+                        className="w-full accent-amber-500 cursor-pointer"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-[10px] text-slate-400 mb-1">Acid / Hydrolysis Stress</label>
+                      <select
+                        value={wearSimulation.chemicalHydrolysisStress}
+                        onChange={(e) => handleRecalculateWear(
+                          wearSimulation.dutyCyclesHours,
+                          wearSimulation.quartzParticulatePpm,
+                          wearSimulation.ambientTemperatureC,
+                          e.target.value as any
+                        )}
+                        className="w-full bg-slate-900 border border-slate-800 rounded-lg px-2 py-1.5 text-xs text-white font-mono focus:outline-none focus:border-amber-500"
+                      >
+                        <option value="LOW">Low (Dry Atmospheric)</option>
+                        <option value="MEDIUM">Medium (Acid Mine Drainage)</option>
+                        <option value="HIGH">High (Aggressive Leaching pH &lt; 3.0)</option>
+                      </select>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Monitored Components Grid */}
+                <div className="space-y-2">
+                  <span className="text-xs font-bold text-white uppercase tracking-wider font-mono">
+                    Predicted Component Wear Gauges &amp; Statutory Discard Limits
+                  </span>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    {wearSimulation.monitoredComponents.map(comp => (
+                      <div key={comp.id} className="p-3.5 bg-slate-950 border border-slate-800 rounded-xl space-y-2">
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <span className="text-xs font-bold text-white">{comp.name}</span>
+                            <span className="block text-[10px] text-slate-400 font-mono">{comp.standardRef}</span>
+                          </div>
+                          <span className={`text-[10px] font-bold font-mono px-2 py-0.5 rounded ${
+                            comp.status === 'REPLACE_IMMEDIATELY' ? 'bg-rose-500/20 text-rose-300 border border-rose-500/30' :
+                            comp.status === 'MODERATE_WEAR' ? 'bg-amber-500/20 text-amber-300 border border-amber-500/30' :
+                            'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30'
+                          }`}>
+                            {comp.status === 'REPLACE_IMMEDIATELY' ? 'REPLACE NOW' :
+                             comp.status === 'MODERATE_WEAR' ? 'MODERATE WEAR' : 'OPTIMAL'}
+                          </span>
+                        </div>
+
+                        {/* Progress Bar */}
+                        <div className="space-y-1">
+                          <div className="flex justify-between text-[10px] font-mono">
+                            <span className="text-slate-400">Wear: {comp.wearPercentage}%</span>
+                            <span className="text-slate-300">Remaining Life: ~{comp.projectedFailureDays} days</span>
+                          </div>
+                          <div className="w-full h-2 rounded-full bg-slate-800 overflow-hidden">
+                            <div 
+                              className={`h-full transition-all duration-300 ${
+                                comp.wearPercentage >= 75 ? 'bg-rose-500' :
+                                comp.wearPercentage >= 50 ? 'bg-amber-500' : 'bg-emerald-400'
+                              }`}
+                              style={{ width: `${comp.wearPercentage}%` }}
+                            />
+                          </div>
+                        </div>
+
+                        <div className="text-[10px] text-slate-400 font-mono">
+                          Discard Rule: {comp.discardThreshold}
+                        </div>
+
+                        {comp.gapAlert && (
+                          <div className="p-2 rounded bg-rose-950/40 border border-rose-500/30 text-[10px] text-rose-300 font-mono flex items-start gap-1.5">
+                            <AlertTriangle className="w-3.5 h-3.5 text-rose-400 shrink-0 mt-0.5" />
+                            <span>{comp.gapAlert}</span>
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+              </div>
+            )}
+
           </div>
         )}
 
-        {/* ================= STEP 3: Legal Appointments ================= */}
+        {/* ================= STEP 3: Statutory Staff Appointments ================= */}
         {currentStep === 3 && (
-          <div className="space-y-5 sm:space-y-6 animate-in fade-in duration-200">
-            <div className="flex items-center justify-between pb-2 border-b border-slate-800">
-              <div className="min-w-0">
-                <h3 className="text-xs sm:text-sm font-bold text-white uppercase tracking-wider font-mono text-red-400 truncate">
-                  Step 3: Statutory Duty-Bearer Legal Appointments
-                </h3>
+          <div className="space-y-5 animate-in fade-in duration-200">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-2 border-b border-slate-800 gap-2">
+              <div>
+                <h4 className="text-xs sm:text-sm font-bold text-white uppercase tracking-wider font-mono text-red-400">
+                  Step 3: Statutory Appointments &amp; Duty Bearers
+                </h4>
                 <p className="text-[11px] sm:text-xs text-slate-400">
-                  Assign key personnel to mandatory legal appointments required by Construction Regulations 2014 &amp; OHSA.
+                  Assign statutory roles. MeloTwo auto-compiles legal appointment letters under OHS Act 85 of 1993 and Construction Regulations 2014.
                 </p>
               </div>
               <button
                 type="button"
                 onClick={handleAutofillSupervisor}
-                className="text-[11px] sm:text-xs text-red-300 hover:text-red-200 font-mono bg-red-500/10 px-2.5 py-1 rounded-lg border border-red-500/30 flex items-center gap-1 cursor-pointer shrink-0 ml-2"
+                className="px-3 py-1.5 text-xs font-bold text-slate-900 bg-amber-400 hover:bg-amber-300 rounded-xl transition flex items-center gap-1.5 cursor-pointer shrink-0"
               >
                 <Sparkles className="w-3.5 h-3.5" />
-                Auto-fill Lead
+                <span>Autofill Primary Appointee</span>
               </button>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5 sm:gap-4">
-              <div className="min-w-0">
-                <label className="block text-[11px] sm:text-xs font-semibold text-slate-300 mb-1">
-                  Section 16.2 Assistant to CEO / Director *
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-[11px] font-semibold text-slate-300 mb-1">
+                  16.2 Assistant to CEO / Site Lead *
                 </label>
                 <input
                   type="text"
                   value={staff.ceoSupervisorName}
-                  onChange={e => setStaff({ ...staff, ceoSupervisorName: e.target.value })}
-                  className="w-full bg-slate-950 border border-slate-800 focus:border-red-500 rounded-xl px-3 sm:px-3.5 py-2 sm:py-2.5 text-xs sm:text-sm text-white outline-none transition-colors"
+                  onChange={(e) => setStaff({ ...staff, ceoSupervisorName: e.target.value })}
+                  className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white font-mono focus:outline-none focus:border-red-500"
                 />
               </div>
-
-              <div className="min-w-0">
-                <label className="block text-[11px] sm:text-xs font-semibold text-slate-300 mb-1">
+              <div>
+                <label className="block text-[11px] font-semibold text-slate-300 mb-1">
                   Construction Manager (CR 8.1) *
                 </label>
                 <input
                   type="text"
                   value={staff.constructionManagerName}
-                  onChange={e => setStaff({ ...staff, constructionManagerName: e.target.value })}
-                  className="w-full bg-slate-950 border border-slate-800 focus:border-red-500 rounded-xl px-3 sm:px-3.5 py-2 sm:py-2.5 text-xs sm:text-sm text-white outline-none transition-colors"
+                  onChange={(e) => setStaff({ ...staff, constructionManagerName: e.target.value })}
+                  className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white font-mono focus:outline-none focus:border-red-500"
                 />
               </div>
-
-              <div className="min-w-0">
-                <label className="block text-[11px] sm:text-xs font-semibold text-slate-300 mb-1">
-                  Certified First Aider (GSR 3) *
-                </label>
-                <input
-                  type="text"
-                  value={staff.firstAiderName}
-                  onChange={e => setStaff({ ...staff, firstAiderName: e.target.value })}
-                  className="w-full bg-slate-950 border border-slate-800 focus:border-red-500 rounded-xl px-3 sm:px-3.5 py-2 sm:py-2.5 text-xs sm:text-sm text-white outline-none transition-colors"
-                />
-              </div>
-
-              <div className="min-w-0">
-                <label className="block text-[11px] sm:text-xs font-semibold text-slate-300 mb-1">
-                  Fire Fighting Officer (ER 9) *
-                </label>
-                <input
-                  type="text"
-                  value={staff.fireMarshalName}
-                  onChange={e => setStaff({ ...staff, fireMarshalName: e.target.value })}
-                  className="w-full bg-slate-950 border border-slate-800 focus:border-red-500 rounded-xl px-3 sm:px-3.5 py-2 sm:py-2.5 text-xs sm:text-sm text-white outline-none transition-colors"
-                />
-              </div>
-
-              <div className="min-w-0">
-                <label className="block text-[11px] sm:text-xs font-semibold text-slate-300 mb-1">
-                  Health &amp; Safety Representative (Sec 17/18) *
-                </label>
-                <input
-                  type="text"
-                  value={staff.safetyRepName}
-                  onChange={e => setStaff({ ...staff, safetyRepName: e.target.value })}
-                  className="w-full bg-slate-950 border border-slate-800 focus:border-red-500 rounded-xl px-3 sm:px-3.5 py-2 sm:py-2.5 text-xs sm:text-sm text-white outline-none transition-colors"
-                />
-              </div>
-
-              <div className="min-w-0">
-                <label className="block text-[11px] sm:text-xs font-semibold text-slate-300 mb-1">
-                  Lead Risk Assessor (CR 9.1) *
+              <div>
+                <label className="block text-[11px] font-semibold text-slate-300 mb-1">
+                  Lead Risk Assessor (HIRA CR 9) *
                 </label>
                 <input
                   type="text"
                   value={staff.riskAssessorName}
-                  onChange={e => setStaff({ ...staff, riskAssessorName: e.target.value })}
-                  className="w-full bg-slate-950 border border-slate-800 focus:border-red-500 rounded-xl px-3 sm:px-3.5 py-2 sm:py-2.5 text-xs sm:text-sm text-white outline-none transition-colors"
+                  onChange={(e) => setStaff({ ...staff, riskAssessorName: e.target.value })}
+                  className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white font-mono focus:outline-none focus:border-red-500"
                 />
               </div>
-            </div>
-
-            <div className="p-3.5 sm:p-4 bg-slate-950/80 border border-slate-800 rounded-xl flex items-start gap-2.5 sm:gap-3 text-xs text-slate-400">
-              <ShieldCheck className="w-5 h-5 text-emerald-400 shrink-0 mt-0.5" />
               <div>
-                <span className="text-white font-semibold block">Statutory Legal Protection</span>
-                All appointed staff names will be formatted into official statutory appointment templates according to Construction Regulations 2014 Annexure A.
+                <label className="block text-[11px] font-semibold text-slate-300 mb-1">
+                  Incident Investigator (GAR 9) *
+                </label>
+                <input
+                  type="text"
+                  value={staff.incidentInvestigatorName}
+                  onChange={(e) => setStaff({ ...staff, incidentInvestigatorName: e.target.value })}
+                  className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white font-mono focus:outline-none focus:border-red-500"
+                />
+              </div>
+              <div>
+                <label className="block text-[11px] font-semibold text-slate-300 mb-1">
+                  GSR 3 First Aider Name *
+                </label>
+                <input
+                  type="text"
+                  value={staff.firstAiderName}
+                  onChange={(e) => setStaff({ ...staff, firstAiderName: e.target.value })}
+                  className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white font-mono focus:outline-none focus:border-red-500"
+                />
+              </div>
+              <div>
+                <label className="block text-[11px] font-semibold text-slate-300 mb-1">
+                  First Aid Certificate Expiry *
+                </label>
+                <input
+                  type="date"
+                  value={staff.firstAiderExpiry}
+                  onChange={(e) => setStaff({ ...staff, firstAiderExpiry: e.target.value })}
+                  className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white font-mono focus:outline-none focus:border-red-500"
+                />
               </div>
             </div>
           </div>
         )}
 
-        {/* ================= STEP 4: Dynamic Output, Watermarking Preview & Blueprint ================= */}
+        {/* ================= STEP 4: Live Preview, QR Verification & Checkout Unlocking ================= */}
         {currentStep === 4 && (
-          <div className="space-y-5 sm:space-y-6 animate-in fade-in duration-200">
-            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2.5 pb-2 border-b border-slate-800">
-              <div className="min-w-0">
-                <h3 className="text-xs sm:text-sm font-bold text-white uppercase tracking-wider font-mono text-red-400 truncate">
-                  Step 4: Red File Blueprint &amp; Watermarked Preview
-                </h3>
-                <p className="text-[11px] sm:text-xs text-slate-400">
-                  Review the structured 20-section dossier, inspect the live watermarked document preview, or compile the complete PDF.
+          <div className="space-y-6 animate-in fade-in duration-200">
+            
+            {/* Unlocked / Paid Status Banner */}
+            <div className={`p-4 rounded-2xl border flex flex-col sm:flex-row sm:items-center justify-between gap-3 ${
+              isPaidUnlocked 
+                ? 'bg-gradient-to-r from-emerald-950/60 via-slate-900 to-slate-950 border-emerald-500/40 text-emerald-300'
+                : 'bg-gradient-to-r from-amber-950/40 via-slate-900 to-slate-950 border-amber-500/40 text-amber-300'
+            }`}>
+              <div className="space-y-1">
+                <div className="flex items-center gap-2">
+                  {isPaidUnlocked ? (
+                    <CheckCircle2 className="w-5 h-5 text-emerald-400" />
+                  ) : (
+                    <Lock className="w-5 h-5 text-amber-400" />
+                  )}
+                  <span className="text-sm font-bold uppercase tracking-wider font-mono">
+                    {isPaidUnlocked 
+                      ? '✓ Unlocked & Verified For Official Submission' 
+                      : `Selected Package: ${selectedTierObj.name}`}
+                  </span>
+                </div>
+                <p className="text-xs text-slate-400">
+                  {isPaidUnlocked
+                    ? 'All watermarks removed. Immediate one-click unwatermarked PDF download ready.'
+                    : `Complete 20-Section Red File ready. Upgrade for R${selectedTierObj.priceZar.toLocaleString('en-ZA')} once-off via PayPal or Direct EFT to download official unwatermarked dossier.`}
                 </p>
               </div>
 
-              {/* View Switcher */}
-              <div className="flex items-center gap-1 bg-slate-950 p-1 rounded-xl border border-slate-800 text-xs font-mono shrink-0 self-start sm:self-auto">
+              {!isPaidUnlocked ? (
                 <button
                   type="button"
-                  onClick={() => setActivePreviewTab('live_preview')}
-                  className={`px-3 py-1 rounded-lg transition-colors cursor-pointer flex items-center gap-1.5 ${
-                    activePreviewTab === 'live_preview'
-                      ? 'bg-red-600 text-white font-bold shadow-sm'
-                      : 'text-slate-400 hover:text-white'
-                  }`}
+                  onClick={() => setIsCheckoutModalOpen(true)}
+                  className="px-4 py-2.5 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 font-black text-xs uppercase tracking-wider transition shadow-lg shadow-amber-950/40 flex items-center justify-center gap-1.5 cursor-pointer shrink-0"
                 >
-                  <Eye className="w-3.5 h-3.5" />
-                  Live Preview
+                  <CreditCard className="w-4 h-4" />
+                  <span>Unlock File — R{selectedTierObj.priceZar.toLocaleString('en-ZA')}</span>
                 </button>
-                <button
-                  type="button"
-                  onClick={() => setActivePreviewTab('blueprint')}
-                  className={`px-3 py-1 rounded-lg transition-colors cursor-pointer flex items-center gap-1.5 ${
-                    activePreviewTab === 'blueprint'
-                      ? 'bg-red-600 text-white font-bold shadow-sm'
-                      : 'text-slate-400 hover:text-white'
-                  }`}
-                >
-                  <Layers className="w-3.5 h-3.5" />
-                  Section Blueprint
-                </button>
+              ) : (
+                <span className="text-xs font-mono font-bold text-emerald-400 bg-emerald-500/10 px-3 py-1 rounded-lg border border-emerald-500/30 shrink-0">
+                  Official Clean Release
+                </span>
+              )}
+            </div>
+
+            {/* QR Code Online Verification Card */}
+            <div className="p-4 sm:p-5 bg-slate-950 border border-slate-800 rounded-2xl flex flex-col md:flex-row items-center justify-between gap-5">
+              <div className="space-y-2 max-w-lg">
+                <div className="flex items-center gap-2">
+                  <QrCode className="w-4 h-4 text-emerald-400" />
+                  <span className="text-xs font-bold text-white uppercase tracking-wider font-mono">
+                    Online Cryptographic Audit Ledger Verification
+                  </span>
+                </div>
+                <p className="text-xs text-slate-400 leading-relaxed">
+                  Every compliance dossier generated includes a unique verifiable hash. Mine safety inspectors, DMRE officers, and client audit committees can scan the QR code to verify immutable timestamps on the central ledger.
+                </p>
+                <div className="flex flex-wrap items-center gap-2 pt-1 font-mono text-[11px]">
+                  <span className="text-slate-400">Verification Ref: <strong className="text-amber-400">{verificationRecord?.reference || draftState.verificationCode}</strong></span>
+                  <button
+                    type="button"
+                    onClick={() => setShowVerificationLedgerModal(true)}
+                    className="text-cyan-400 hover:text-cyan-300 underline flex items-center gap-1 cursor-pointer"
+                  >
+                    <span>Inspect Ledger Chain</span>
+                    <ExternalLink className="w-3 h-3" />
+                  </button>
+                </div>
+              </div>
+
+              {/* Scannable Dynamic QR Code Image */}
+              <div 
+                onClick={() => setShowVerificationLedgerModal(true)}
+                className="p-3 bg-white rounded-xl shadow-lg border border-slate-700 cursor-pointer shrink-0 hover:scale-105 transition-transform text-center"
+                title="Click to view full cryptographic proof audit ledger"
+              >
+                {liveQrDataUrl ? (
+                  <img
+                    src={liveQrDataUrl}
+                    alt="Audit Verification QR"
+                    className="w-28 h-28 mx-auto object-contain"
+                  />
+                ) : (
+                  <div className="w-28 h-28 flex items-center justify-center text-slate-900 font-mono text-[10px]">
+                    Generating QR...
+                  </div>
+                )}
+                <span className="text-[8px] font-bold text-slate-950 font-mono block mt-1">
+                  TAP TO VERIFY
+                </span>
               </div>
             </div>
 
-            {/* TAB 1: LIVE WATERMARKED PREVIEW (Anti-Screenshot Layer) */}
-            {activePreviewTab === 'live_preview' && (
-              <div className="space-y-3">
-                <div className="flex items-center justify-between text-xs text-amber-400 font-mono">
-                  <span className="flex items-center gap-1.5">
-                    <ShieldAlert className="w-4 h-4 text-amber-400" />
-                    Anti-Screenshot Watermarked Draft Document
-                  </span>
-                  <span className="text-slate-400">Page 1 of 45 (Live Render)</span>
-                </div>
-
-                {/* THE WATERMARKED PREVIEW CANVAS */}
-                <div className="relative bg-white text-slate-900 rounded-xl p-3.5 sm:p-6 md:p-8 shadow-2xl border-2 sm:border-4 border-slate-800 select-none overflow-hidden min-h-[320px] sm:min-h-[380px]">
-                  
-                  {/* DIAGONAL ANTI-SCREENSHOT WATERMARK OVERLAYS */}
-                  <div className="absolute inset-0 pointer-events-none z-20 flex flex-col justify-around rotate-[-25deg] scale-125 opacity-25 overflow-hidden">
-                    <div className="whitespace-nowrap text-rose-600 font-black text-[10px] sm:text-xs md:text-sm tracking-widest uppercase text-center py-1.5 sm:py-2 bg-rose-500/10 border-y border-rose-500/30">
-                      PREVIEW ONLY • TENDER RED SAFETY FILE • NOT FOR OFFICIAL SUBMISSION UNTIL PURCHASED
-                    </div>
-                    <div className="whitespace-nowrap text-rose-600 font-black text-[10px] sm:text-xs md:text-sm tracking-widest uppercase text-center py-1.5 sm:py-2 bg-rose-500/10 border-y border-rose-500/30">
-                      PREVIEW ONLY • TENDER RED SAFETY FILE • NOT FOR OFFICIAL SUBMISSION UNTIL PURCHASED
-                    </div>
-                    <div className="whitespace-nowrap text-rose-600 font-black text-[10px] sm:text-xs md:text-sm tracking-widest uppercase text-center py-1.5 sm:py-2 bg-rose-500/10 border-y border-rose-500/30">
-                      PREVIEW ONLY • TENDER RED SAFETY FILE • NOT FOR OFFICIAL SUBMISSION UNTIL PURCHASED
-                    </div>
-                    <div className="whitespace-nowrap text-rose-600 font-black text-[10px] sm:text-xs md:text-sm tracking-widest uppercase text-center py-1.5 sm:py-2 bg-rose-500/10 border-y border-rose-500/30">
-                      PREVIEW ONLY • TENDER RED SAFETY FILE • NOT FOR OFFICIAL SUBMISSION UNTIL PURCHASED
-                    </div>
-                  </div>
-
-                  {/* Document Header */}
-                  <div className="border-b-2 border-slate-900 pb-3 sm:pb-4 mb-3 sm:mb-4 flex justify-between items-start gap-2">
-                    <div className="min-w-0">
-                      <div className="text-[9px] sm:text-[10px] font-mono font-bold uppercase tracking-wider text-slate-500 truncate">
-                        REPUBLIC OF SOUTH AFRICA • OCCUPATIONAL HEALTH AND SAFETY ACT 85 OF 1993
-                      </div>
-                      <h3 className="text-sm sm:text-base md:text-lg font-black tracking-tight text-slate-900 mt-1">
-                        STATUTORY HEALTH AND SAFETY TENDER FILE (THE "RED FILE")
-                      </h3>
-                      <p className="text-[11px] sm:text-xs font-semibold text-slate-600">
-                        Construction Regulations 2014 &amp; Section 37(2) Mandatary Agreement Dossier
-                      </p>
-                    </div>
-                    <div className="text-right shrink-0">
-                      <span className="text-[9px] sm:text-[10px] font-mono font-bold px-2 py-1 bg-slate-100 border border-slate-300 rounded text-slate-700">
-                        REF: M2-ZA-2026
-                      </span>
-                    </div>
-                  </div>
-
-                  {/* Document Body Metadata */}
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 sm:gap-4 text-xs mb-4">
-                    <div className="bg-slate-50 p-2.5 sm:p-3 rounded-lg border border-slate-200">
-                      <span className="text-[10px] font-bold text-slate-500 uppercase block">Appointed Contractor</span>
-                      <span className="font-bold text-slate-900 text-xs sm:text-sm">{profile.companyName}</span>
-                      <span className="block text-[11px] text-slate-600">CIPC: {profile.cipcRegNumber}</span>
-                      <span className="block text-[11px] text-slate-600">COID / WCA: {profile.coidNumber}</span>
-                    </div>
-                    <div className="bg-slate-50 p-2.5 sm:p-3 rounded-lg border border-slate-200">
-                      <span className="text-[10px] font-bold text-slate-500 uppercase block">Principal Employer / Client</span>
-                      <span className="font-bold text-slate-900 text-xs sm:text-sm">{profile.clientPrincipalName}</span>
-                      <span className="block text-[11px] text-slate-600">Scope: {profile.projectTenderName.slice(0, 40)}...</span>
-                      <span className="block text-[11px] text-slate-600">Managing Lead: {profile.fullName}</span>
-                    </div>
-                  </div>
-
-                  {/* Document Trade Table Sample */}
-                  <div className="border border-slate-200 rounded-lg overflow-hidden text-[11px] mb-3 sm:mb-4">
-                    <div className="bg-slate-100 px-3 py-1.5 font-bold text-slate-700 border-b border-slate-200 flex justify-between text-[10px] sm:text-[11px]">
-                      <span>Mapped Trades &amp; Safe Work Procedures ({totalSwps} SWPs)</span>
-                      <span>Risk Tier</span>
-                    </div>
-                    <div className="p-2.5 sm:p-3 space-y-1.5 bg-white">
-                      {activeTradeObjects.map(t => (
-                        <div key={t.id} className="flex justify-between items-center border-b border-slate-100 pb-1 text-[11px]">
-                          <span className="font-semibold text-slate-800 truncate mr-2">• {t.name}</span>
-                          <span className="text-[10px] font-mono font-bold text-slate-600 shrink-0">{t.riskLevel}</span>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-
-                  {/* Section 37.2 Notice snippet */}
-                  <div className="text-[9px] sm:text-[10px] text-slate-500 leading-relaxed italic border-t border-slate-200 pt-2">
-                    * Section 37(2) Mandatary Agreement legally indemnifies the Principal Client by transferring statutory duty of care to appointed Section 16.2 and CR 8.1 personnel in accordance with SANS 10330 &amp; DMR Mine Standards.
-                  </div>
-                </div>
+            {/* Live Document Preview Box */}
+            <div className="p-4 sm:p-5 bg-slate-950/80 border border-slate-800 rounded-2xl space-y-4">
+              <div className="flex items-center justify-between pb-3 border-b border-slate-800">
+                <h4 className="text-xs font-bold text-white uppercase tracking-wider font-mono">
+                  Compiled Document Sections Summary
+                </h4>
+                <span className="text-[10px] text-slate-400 font-mono">
+                  {selectedTierObj.sectionsIncluded} Sections Included
+                </span>
               </div>
-            )}
 
-            {/* TAB 2: SECTION BLUEPRINT VIEW */}
-            {activePreviewTab === 'blueprint' && (
-              <div className="space-y-3">
-                <div className="flex items-center justify-between">
-                  <span className="text-xs font-semibold text-slate-300 uppercase tracking-wider font-mono">
-                    Generated Safety File Master Index ({profile.companyName})
-                  </span>
-                  <button
-                    type="button"
-                    onClick={() => setShowFullDocIndex(!showFullDocIndex)}
-                    className="text-xs text-cyan-400 hover:text-cyan-300 font-mono cursor-pointer"
-                  >
-                    {showFullDocIndex ? 'Hide Breakdown' : 'Expand All Sections'}
-                  </button>
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 text-xs">
+                <div className="p-3 bg-slate-900/60 rounded-xl border border-slate-800/80">
+                  <div className="text-[10px] text-slate-400 uppercase font-mono">Contractor</div>
+                  <div className="font-bold text-white truncate">{profile.companyName}</div>
+                  <div className="text-[10px] text-slate-400 font-mono truncate">{profile.cipcRegNumber}</div>
                 </div>
-
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  <div className="p-3.5 bg-slate-950 border border-slate-800 rounded-xl space-y-1.5">
-                    <div className="flex items-center justify-between">
-                      <span className="text-xs font-bold text-white flex items-center gap-1.5">
-                        <FileText className="w-3.5 h-3.5 text-amber-400" />
-                        Tab 01: Legal & Mandatory Agreements
-                      </span>
-                      <span className="text-[10px] font-mono text-emerald-400 bg-emerald-500/10 px-1.5 py-0.5 rounded">
-                        Included
-                      </span>
-                    </div>
-                    <p className="text-[11px] text-slate-400">
-                      Section 37.2 Mandatory Agreement, OHS 16.2 Delegation, and Client SHE Specifications sign-off.
-                    </p>
-                  </div>
-
-                  <div className="p-3.5 bg-slate-950 border border-slate-800 rounded-xl space-y-1.5">
-                    <div className="flex items-center justify-between">
-                      <span className="text-xs font-bold text-white flex items-center gap-1.5">
-                        <ShieldCheck className="w-3.5 h-3.5 text-cyan-400" />
-                        Tab 02: Statutory Registration & COID
-                      </span>
-                      <span className="text-[10px] font-mono text-emerald-400 bg-emerald-500/10 px-1.5 py-0.5 rounded">
-                        Included
-                      </span>
-                    </div>
-                    <p className="text-[11px] text-slate-400">
-                      COID Good Standing ({profile.coidNumber}), Tax PIN, CIPC Org Structure, and Public Liability schedule.
-                    </p>
-                  </div>
-
-                  <div className="p-3.5 bg-slate-950 border border-slate-800 rounded-xl space-y-1.5">
-                    <div className="flex items-center justify-between">
-                      <span className="text-xs font-bold text-white flex items-center gap-1.5">
-                        <HardHat className="w-3.5 h-3.5 text-amber-400" />
-                        Tab 03: Safe Work Procedures ({totalSwps})
-                      </span>
-                      <span className="text-[10px] font-mono text-emerald-400 bg-emerald-500/10 px-1.5 py-0.5 rounded">
-                        {totalSwps} Procedures
-                      </span>
-                    </div>
-                    <p className="text-[11px] text-slate-400">
-                      Tailored for: {activeTradeObjects.map(t => t.name).join(', ')}.
-                    </p>
-                  </div>
-
-                  <div className="p-3.5 bg-slate-950 border border-slate-800 rounded-xl space-y-1.5">
-                    <div className="flex items-center justify-between">
-                      <span className="text-xs font-bold text-white flex items-center gap-1.5">
-                        <FileSpreadsheet className="w-3.5 h-3.5 text-indigo-400" />
-                        Tab 04: Method Statements & HIRA
-                      </span>
-                      <span className="text-[10px] font-mono text-emerald-400 bg-emerald-500/10 px-1.5 py-0.5 rounded">
-                        {totalMethodStatements} Scopes
-                      </span>
-                    </div>
-                    <p className="text-[11px] text-slate-400">
-                      Baseline Risk Assessment Matrix (CR 9.1) & Task Risk Assessments.
-                    </p>
-                  </div>
-
-                  <div className="p-3.5 bg-slate-950 border border-slate-800 rounded-xl space-y-1.5 sm:col-span-2">
-                    <div className="flex items-center justify-between">
-                      <span className="text-xs font-bold text-white flex items-center gap-1.5">
-                        <Users className="w-3.5 h-3.5 text-emerald-400" />
-                        Tab 05: Inspection Registers & Toolbox Talks
-                      </span>
-                      <span className="text-[10px] font-mono text-emerald-400 bg-emerald-500/10 px-1.5 py-0.5 rounded">
-                        12 Talks + 8 Logs
-                      </span>
-                    </div>
-                    <p className="text-[11px] text-slate-400">
-                      Daily portable electrical tool checklist, PPE issue register, ladder inspections, first aid treatment logs, and 12 weekly safety talks.
-                    </p>
-                  </div>
+                <div className="p-3 bg-slate-900/60 rounded-xl border border-slate-800/80">
+                  <div className="text-[10px] text-slate-400 uppercase font-mono">Trade SWPs &amp; HIRAs</div>
+                  <div className="font-bold text-white">{totalSwps} Pre-Configured SWPs</div>
+                  <div className="text-[10px] text-slate-400 font-mono">{activeTradeObjects.length} Active Trades</div>
                 </div>
-              </div>
-            )}
-
-            {/* Price & Commercial Package Box */}
-            <div className="p-4 sm:p-5 bg-gradient-to-br from-slate-950 to-slate-900 border border-slate-800 rounded-xl space-y-3 sm:space-y-4 shadow-inner">
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
-                
-                {/* Once-Off Option */}
-                <div className="p-3.5 sm:p-4 bg-red-950/20 border-2 border-red-500/60 rounded-xl space-y-2 relative shadow-md">
-                  <div className="flex items-center justify-between">
-                    <span className="text-xs font-black uppercase tracking-wider text-red-300">
-                      The "Red File" Standard (20 Sections)
-                    </span>
-                    <span className="text-[10px] font-mono font-bold text-red-200 bg-red-600/30 px-2 py-0.5 rounded border border-red-500/40">
-                      Once-off
-                    </span>
-                  </div>
-                  <div className="text-2xl font-black text-white font-mono">
-                    R750 <span className="text-xs font-normal text-slate-400">once-off</span>
-                  </div>
-                  <p className="text-xs text-slate-300">
-                    Instant complete 45+ page audit-ready Red Safety File PDF formatted for immediate tender submission and client vetting.
-                  </p>
-                </div>
-
-                {/* Subscription Option */}
-                <div className="p-3.5 sm:p-4 bg-slate-950/60 border border-amber-500/30 rounded-xl space-y-2">
-                  <div className="flex items-center justify-between">
-                    <span className="text-xs font-bold uppercase tracking-wider text-amber-300">
-                      SMB Continuous SHEQ Plan
-                    </span>
-                    <span className="text-[10px] font-mono font-bold text-amber-300 bg-amber-500/20 px-2 py-0.5 rounded">
-                      Recommended
-                    </span>
-                  </div>
-                  <div className="text-2xl font-black text-white font-mono">
-                    R1,999 <span className="text-xs font-normal text-slate-400">/ mo</span>
-                  </div>
-                  <p className="text-xs text-slate-400">
-                    Unlimited file generation, mobile offline audits, QR-code worker passport verification, and daily compliance logs.
-                  </p>
+                <div className="p-3 bg-slate-900/60 rounded-xl border border-slate-800/80">
+                  <div className="text-[10px] text-slate-400 uppercase font-mono">Operations &amp; Wear</div>
+                  <div className="font-bold text-white">{consumables.oxygenSystem.status} • {accessBlasting.blastingClearance.clearanceStatus}</div>
+                  <div className="text-[10px] text-slate-400 font-mono">5 Physics Components Monitored</div>
                 </div>
               </div>
 
-              {/* Primary Action Button with Download Limit Enforcement */}
-              <div className="pt-2">
+              {/* Action Buttons */}
+              <div className="pt-2 flex flex-col sm:flex-row items-center gap-3">
                 <button
-                  id="generate-tender-pdf-cta"
                   type="button"
-                  onClick={handleDownloadClick}
-                  disabled={isGeneratingPdf}
-                  className={`w-full py-3.5 px-4 text-xs sm:text-sm font-black uppercase tracking-wider rounded-xl transition-all shadow-xl flex items-center justify-center gap-2 cursor-pointer border ${
-                    downloadCount >= MAX_DOWNLOAD_LIMIT && !isPaidUnlocked
-                      ? 'bg-gradient-to-r from-red-700 to-rose-700 hover:from-red-600 hover:to-rose-600 text-white border-red-500 shadow-red-950/80'
-                      : 'bg-gradient-to-r from-red-600 via-rose-600 to-red-700 hover:from-red-500 hover:to-rose-500 text-white border-red-400/80 shadow-lg shadow-red-950/60 hover:shadow-red-600/30 active:scale-98'
-                  }`}
+                  onClick={generateTenderSafetyFile}
+                  disabled={isGeneratingPdf || isGeneratingZip}
+                  className="w-full sm:flex-1 py-3 px-4 bg-gradient-to-r from-red-600 via-rose-600 to-red-700 hover:from-red-500 hover:to-rose-500 text-white font-black text-xs uppercase tracking-wider rounded-xl transition shadow-lg shadow-red-950/60 flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
                 >
                   {isGeneratingPdf ? (
                     <>
                       <Sparkles className="w-4 h-4 animate-spin" />
-                      <span>Compiling Red File PDF &amp; Watermarks...</span>
-                    </>
-                  ) : downloadCount >= MAX_DOWNLOAD_LIMIT && !isPaidUnlocked ? (
-                    <>
-                      <Lock className="w-4 h-4" />
-                      <span>Download Limit Reached (3/3) • Upgrade to Download</span>
-                      <ArrowRight className="w-4 h-4" />
+                      <span>Compiling Red File PDF &amp; QR Code...</span>
                     </>
                   ) : (
                     <>
                       <Download className="w-4 h-4" />
-                      <span>Generate &amp; Download Red File PDF ({MAX_DOWNLOAD_LIMIT - downloadCount} Free Left)</span>
-                      <ArrowRight className="w-4 h-4" />
+                      <span>{isPaidUnlocked ? 'Download Official File (PDF)' : 'Download Watermarked Draft (PDF)'}</span>
                     </>
                   )}
                 </button>
+
+                <button
+                  type="button"
+                  onClick={generateTenderSafetyZip}
+                  disabled={isGeneratingZip || isGeneratingPdf}
+                  className="w-full sm:flex-1 py-3 px-4 bg-slate-800 hover:bg-slate-700 border border-slate-700 hover:border-slate-600 text-white font-bold text-xs uppercase tracking-wider rounded-xl transition shadow-md flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
+                  title="Complete archive containing unwatermarked PDF, wear physics CSV schedule, telemetry JSON logs, and QR code PNG"
+                >
+                  {isGeneratingZip ? (
+                    <>
+                      <Sparkles className="w-4 h-4 animate-spin text-amber-400" />
+                      <span>Packaging ZIP Dossier...</span>
+                    </>
+                  ) : (
+                    <>
+                      <FileArchive className="w-4 h-4 text-amber-400" />
+                      <span>Download Full Dossier (.ZIP)</span>
+                    </>
+                  )}
+                </button>
+
+                {!isPaidUnlocked && (
+                  <button
+                    type="button"
+                    onClick={() => setIsCheckoutModalOpen(true)}
+                    className="w-full sm:w-auto py-3 px-5 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 font-black text-xs uppercase tracking-wider rounded-xl transition shadow-lg shadow-amber-950/40 flex items-center justify-center gap-1.5 cursor-pointer shrink-0"
+                  >
+                    <CreditCard className="w-4 h-4" />
+                    <span>Unlock Unwatermarked Dossier (R{selectedTierObj.priceZar.toLocaleString('en-ZA')})</span>
+                  </button>
+                )}
               </div>
 
               {pdfGeneratedSuccess && (
                 <div className="p-3 bg-emerald-950/60 border border-emerald-500/40 rounded-xl text-center text-xs text-emerald-300 font-mono animate-in fade-in">
-                  ✓ Red Safety File PDF compiled and downloaded successfully as <span className="font-bold text-white">{profile.companyName.replace(/[^a-zA-Z0-9]/g, '_')}_Tender_Safety_File.pdf</span>
+                  ✓ Safety File PDF compiled and downloaded successfully with verified QR verification stamp!
+                </div>
+              )}
+
+              {zipGeneratedSuccess && (
+                <div className="p-3 bg-emerald-950/60 border border-emerald-500/40 rounded-xl text-center text-xs text-emerald-300 font-mono animate-in fade-in">
+                  ✓ Complete ZIP Dossier Package downloaded! Includes 20-Section PDF, wear simulation CSV, telemetry JSON registers, and QR verification seal.
                 </div>
               )}
             </div>
@@ -1392,7 +2145,7 @@ export const TenderFileWizard: React.FC<TenderFileWizardProps> = ({
 
       </div>
 
-      {/* Footer Navigation Controls */}
+      {/* Footer Navigation Bar */}
       <div className="px-4 py-3 sm:px-6 sm:py-3.5 border-t border-slate-800 bg-slate-950 shrink-0 flex items-center justify-between gap-2 pb-[max(0.875rem,env(safe-area-inset-bottom))]">
         <button
           type="button"
@@ -1418,109 +2171,61 @@ export const TenderFileWizard: React.FC<TenderFileWizardProps> = ({
             <ArrowRight className="w-4 h-4" />
           </button>
         ) : (
-          <button
-            type="button"
-            onClick={handleDownloadClick}
-            disabled={isGeneratingPdf}
-            className={`px-4 sm:px-5 py-2.5 text-xs font-bold uppercase tracking-wider rounded-xl transition-all shadow-md flex items-center gap-1.5 cursor-pointer disabled:opacity-50 shrink-0 active:scale-95 ${
-              downloadCount >= MAX_DOWNLOAD_LIMIT && !isPaidUnlocked
-                ? 'bg-rose-600 hover:bg-rose-500 text-white shadow-rose-950/40'
-                : 'bg-gradient-to-r from-red-600 to-rose-600 hover:from-red-500 hover:to-rose-500 text-white shadow-red-950/40 border border-red-500/60'
-            }`}
-          >
-            {downloadCount >= MAX_DOWNLOAD_LIMIT && !isPaidUnlocked ? <Lock className="w-4 h-4" /> : <Download className="w-4 h-4" />}
-            <span>{isGeneratingPdf ? 'Compiling...' : downloadCount >= MAX_DOWNLOAD_LIMIT && !isPaidUnlocked ? 'Upgrade to Unlock' : 'Download Red File'}</span>
-          </button>
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={generateTenderSafetyZip}
+              disabled={isGeneratingZip || isGeneratingPdf}
+              className="px-3 sm:px-4 py-2 bg-slate-800 hover:bg-slate-700 text-white text-xs font-bold uppercase tracking-wider rounded-xl transition border border-slate-700 flex items-center gap-1.5 cursor-pointer shrink-0 disabled:opacity-50"
+              title="Download Full Dossier Package as ZIP"
+            >
+              <FileArchive className="w-4 h-4 text-amber-400" />
+              <span className="hidden sm:inline">ZIP Dossier</span>
+            </button>
+            <button
+              type="button"
+              onClick={generateTenderSafetyFile}
+              disabled={isGeneratingPdf || isGeneratingZip}
+              className="px-4 sm:px-5 py-2.5 bg-gradient-to-r from-red-600 to-rose-600 hover:from-red-500 hover:to-rose-500 text-white text-xs font-bold uppercase tracking-wider rounded-xl transition-all shadow-md shadow-red-950/40 border border-red-500/60 flex items-center gap-1.5 cursor-pointer shrink-0 active:scale-95 disabled:opacity-50"
+            >
+              <Download className="w-4 h-4" />
+              <span>{isPaidUnlocked ? 'Download Official Red File' : 'Download Preview'}</span>
+            </button>
+          </div>
         )}
       </div>
 
-      {/* ================= MODAL: UpgradeModal (Triggered when downloadCount >= 3) ================= */}
-      {showUpgradeModal && (
+      {/* Embedded Real PayPal & South African EFT Checkout Modal */}
+      <PayPalEFTCheckoutModal
+        isOpen={isCheckoutModalOpen}
+        onClose={() => setIsCheckoutModalOpen(false)}
+        itemTitle={`${selectedTierObj.name} (Tender Safety File)`}
+        itemDescription={`${selectedTierObj.description} - Formal 20-Section dossier for ${profile.companyName}`}
+        amountZar={selectedTierObj.priceZar}
+        enterpriseName={profile.companyName}
+        userEmail={profile.contactEmail || 'safety@contractor.co.za'}
+        onSuccess={handleCheckoutSuccess}
+      />
+
+      {/* Embedded Cryptographic Ledger Online Verification Modal */}
+      {showVerificationLedgerModal && (
         <div 
-          id="upgrade-modal-backdrop"
-          className="absolute inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/90 backdrop-blur-md animate-in fade-in duration-150"
+          className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 bg-slate-950/90 backdrop-blur-md animate-in fade-in"
+          onClick={(e) => {
+            if (e.target === e.currentTarget) setShowVerificationLedgerModal(false);
+          }}
         >
-          <div className="bg-slate-900 border border-amber-500/50 rounded-2xl max-w-lg w-full p-6 sm:p-7 shadow-2xl space-y-5 text-slate-100 relative">
+          <div className="bg-slate-900 border border-slate-800 rounded-2xl max-w-4xl w-full max-h-[90vh] overflow-y-auto relative shadow-2xl p-4 sm:p-6">
             <button
-              onClick={() => setShowUpgradeModal(false)}
+              onClick={() => setShowVerificationLedgerModal(false)}
               className="absolute top-4 right-4 p-2 text-slate-400 hover:text-white rounded-lg cursor-pointer"
-              aria-label="Close Upgrade Modal"
             >
               <X className="w-5 h-5" />
             </button>
-
-            <div className="flex items-center gap-3">
-              <div className="w-12 h-12 rounded-2xl bg-amber-500/20 border border-amber-500/40 flex items-center justify-center text-amber-400 shrink-0">
-                <Crown className="w-6 h-6" />
-              </div>
-              <div>
-                <span className="text-[11px] font-mono font-bold uppercase text-amber-400 bg-amber-500/10 px-2 py-0.5 rounded border border-amber-500/30">
-                  Conversion Lock
-                </span>
-                <h3 className="text-lg font-black text-white tracking-tight mt-1">
-                  Download Limit Reached
-                </h3>
-              </div>
-            </div>
-
-            <div className="p-4 bg-slate-950 border border-slate-800 rounded-xl space-y-2">
-              <p className="text-xs text-slate-300 leading-relaxed">
-                Download Limit Reached. To generate unlimited site-specific safety files and conduct live daily site inspections, upgrade to the <strong>SMB Plan (R1,999/mo)</strong>.
-              </p>
-            </div>
-
-            <div className="space-y-2.5">
-              <span className="text-xs font-bold text-slate-200 uppercase tracking-wider font-mono">
-                Included in the MeloTwo SMB Plan:
-              </span>
-              <ul className="space-y-2 text-xs text-slate-300">
-                <li className="flex items-center gap-2">
-                  <Check className="w-4 h-4 text-emerald-400 shrink-0" />
-                  <span><strong>Unlimited</strong> Tender-Ready Safety File PDF generation & downloads.</span>
-                </li>
-                <li className="flex items-center gap-2">
-                  <Check className="w-4 h-4 text-emerald-400 shrink-0" />
-                  <span><strong>Un-watermarked</strong>, high-res audit dossiers with digital signing.</span>
-                </li>
-                <li className="flex items-center gap-2">
-                  <Check className="w-4 h-4 text-emerald-400 shrink-0" />
-                  <span><strong>Live Daily Field Audits</strong> with offline mobile sync & automated CAPA.</span>
-                </li>
-                <li className="flex items-center gap-2">
-                  <Check className="w-4 h-4 text-emerald-400 shrink-0" />
-                  <span><strong>QR Worker Passports</strong> for rapid gate entrance & DMRE compliance.</span>
-                </li>
-              </ul>
-            </div>
-
-            <div className="pt-2 space-y-2.5">
-              <button
-                type="button"
-                onClick={() => {
-                  setIsPaidUnlocked(true);
-                  setShowUpgradeModal(false);
-                  alert('Thank you for subscribing to MeloTwo SMB Plan (R1,999/mo). Your account is now fully unlocked for unlimited file downloads!');
-                }}
-                className="w-full py-3.5 px-4 bg-gradient-to-r from-amber-500 via-amber-400 to-amber-500 hover:from-amber-400 hover:to-amber-300 text-slate-950 font-black text-xs uppercase tracking-wider rounded-xl transition-all shadow-xl shadow-amber-950/80 flex items-center justify-center gap-2 cursor-pointer"
-              >
-                <CreditCard className="w-4 h-4" />
-                Upgrade to SMB Plan (R1,999 / mo)
-              </button>
-
-              <button
-                type="button"
-                onClick={() => {
-                  // Simulate R750 once-off payment
-                  setIsPaidUnlocked(true);
-                  setShowUpgradeModal(false);
-                  alert('Once-off Tender File Purchase (R750) successful. Generating clean unwatermarked PDF...');
-                  generateTenderSafetyFile();
-                }}
-                className="w-full py-2.5 px-4 bg-slate-950 hover:bg-slate-800 border border-slate-700 text-cyan-300 font-bold text-xs rounded-xl transition-all flex items-center justify-center gap-2 cursor-pointer"
-              >
-                <span>Or Buy Single Tender File (Once-off R750)</span>
-              </button>
-            </div>
+            <ComplianceProofViewer
+              siteId="SITE-WIT-01"
+              onBack={() => setShowVerificationLedgerModal(false)}
+            />
           </div>
         </div>
       )}
@@ -1546,3 +2251,5 @@ export const TenderFileWizard: React.FC<TenderFileWizardProps> = ({
     </div>
   );
 };
+
+export default TenderFileWizard;
