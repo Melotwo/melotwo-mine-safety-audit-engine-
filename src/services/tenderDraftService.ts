@@ -5,12 +5,15 @@ import {
   DrillingTelemetryState,
   WearSimulationState,
   ComponentWearMetric,
-  ContractorTierId
+  ContractorTierId,
+  CONTRACTOR_TIERS,
+  TENDER_ADDONS
 } from '../types/tenderTypes';
 
 export const TENDER_DRAFT_STORAGE_KEY = 'melotwo_tender_file_draft';
 export const TENDER_PAID_UNLOCKED_KEY = 'melotwo_tender_paid_unlocked';
 export const TENDER_PAID_TIER_KEY = 'melotwo_tender_paid_tier';
+export const TENDER_PAID_ADDONS_KEY = 'melotwo_tender_paid_addons';
 
 export const DEFAULT_CONSUMABLES: ConsumableTrackingState = {
   oxygenSystem: {
@@ -150,7 +153,12 @@ export const DEFAULT_WEAR_SIMULATION: WearSimulationState = {
 export const INITIAL_TENDER_DRAFT: TenderSafetyFileDraftState = {
   version: 2,
   lastSavedAt: new Date().toISOString(),
-  selectedTier: 'tier_standard',
+  selectedTier: 'tier_contractor_pay_per_file',
+  customTierPriceZar: 2500,
+  selectedAddOns: [],
+  diagnosticProgress: { overallScore: 84, riskTier: 'LOW', recommendedBinderType: 'Standard Trade Safety Dossier' },
+  diagnosticScore: 84,
+  totalAmountZar: 2500,
   currentStep: 1,
   profile: {
     fullName: 'David Khumalo',
@@ -195,6 +203,27 @@ export const INITIAL_TENDER_DRAFT: TenderSafetyFileDraftState = {
 };
 
 /**
+ * Calculate total amount based on tier, custom tier price, and selected add-ons
+ */
+export function calculateDraftTotalAmount(
+  tierId: ContractorTierId,
+  customPrice?: number,
+  addOnIds: string[] = []
+): number {
+  const tier = CONTRACTOR_TIERS.find(t => t.id === tierId) || CONTRACTOR_TIERS[0];
+  const basePrice = typeof customPrice === 'number' && customPrice >= tier.basePriceZar && customPrice <= tier.maxPriceZar
+    ? customPrice
+    : tier.defaultPriceZar;
+  
+  const addOnsSum = addOnIds.reduce((sum, id) => {
+    const addon = TENDER_ADDONS.find(a => a.id === id);
+    return sum + (addon ? addon.priceZar : 0);
+  }, 0);
+
+  return basePrice + addOnsSum;
+}
+
+/**
  * Load draft state from localStorage with safe fallback
  */
 export function loadTenderDraft(): TenderSafetyFileDraftState {
@@ -205,20 +234,55 @@ export function loadTenderDraft(): TenderSafetyFileDraftState {
   try {
     const raw = localStorage.getItem(TENDER_DRAFT_STORAGE_KEY);
     const paidUnlocked = localStorage.getItem(TENDER_PAID_UNLOCKED_KEY) === 'true';
-    const paidTier = (localStorage.getItem(TENDER_PAID_TIER_KEY) as ContractorTierId) || 'tier_standard';
+    const rawPaidTier = localStorage.getItem(TENDER_PAID_TIER_KEY) as ContractorTierId;
+    const rawPaidAddOns = localStorage.getItem(TENDER_PAID_ADDONS_KEY);
+    const storedAddOns: string[] = rawPaidAddOns ? JSON.parse(rawPaidAddOns) : [];
+
+    let paidTier: ContractorTierId = rawPaidTier || 'tier_contractor_pay_per_file';
+    if (paidTier === 'tier_base' || paidTier === 'tier_standard') {
+      paidTier = 'tier_contractor_pay_per_file';
+    } else if (paidTier === 'tier_enterprise') {
+      paidTier = 'tier_enterprise_site_license';
+    }
 
     if (!raw) {
       return {
         ...INITIAL_TENDER_DRAFT,
         isPaidUnlocked: paidUnlocked,
-        selectedTier: paidTier || INITIAL_TENDER_DRAFT.selectedTier
+        selectedTier: paidTier,
+        selectedAddOns: storedAddOns,
+        totalAmountZar: calculateDraftTotalAmount(paidTier, INITIAL_TENDER_DRAFT.customTierPriceZar, storedAddOns)
       };
     }
 
     const parsed = JSON.parse(raw);
+    
+    // Normalize tier backwards-compatibility
+    let selectedTier: ContractorTierId = parsed.selectedTier || paidTier || 'tier_contractor_pay_per_file';
+    if (selectedTier === 'tier_base' || selectedTier === 'tier_standard') {
+      selectedTier = 'tier_contractor_pay_per_file';
+    } else if (selectedTier === 'tier_enterprise') {
+      selectedTier = 'tier_enterprise_site_license';
+    }
+
+    const selectedAddOns: string[] = Array.isArray(parsed.selectedAddOns) 
+      ? parsed.selectedAddOns 
+      : storedAddOns;
+    
+    const activeTierObj = CONTRACTOR_TIERS.find(t => t.id === selectedTier) || CONTRACTOR_TIERS[0];
+    const customTierPriceZar = typeof parsed.customTierPriceZar === 'number'
+      ? parsed.customTierPriceZar
+      : activeTierObj.defaultPriceZar;
+
+    const totalAmountZar = calculateDraftTotalAmount(selectedTier, customTierPriceZar, selectedAddOns);
+
     return {
       ...INITIAL_TENDER_DRAFT,
       ...parsed,
+      selectedTier,
+      customTierPriceZar,
+      selectedAddOns,
+      totalAmountZar,
       // Deep merge modules to ensure new fields are populated cleanly
       consumables: {
         ...DEFAULT_CONSUMABLES,
@@ -236,8 +300,7 @@ export function loadTenderDraft(): TenderSafetyFileDraftState {
         ...DEFAULT_WEAR_SIMULATION,
         ...(parsed.wearSimulation || {})
       },
-      isPaidUnlocked: paidUnlocked || parsed.isPaidUnlocked || false,
-      selectedTier: paidTier || parsed.selectedTier || 'tier_standard'
+      isPaidUnlocked: paidUnlocked || parsed.isPaidUnlocked || false
     };
   } catch (err) {
     console.warn('[TenderDraftService] Error parsing draft from localStorage:', err);
@@ -292,12 +355,16 @@ export function checkIfTenderPaidUnlocked(): boolean {
 }
 
 /**
- * Mark safety file as paid and unlocked
+ * Mark safety file as paid and unlocked with tier and add-ons
  */
-export function markTenderPaidUnlocked(tier: ContractorTierId = 'tier_standard'): void {
+export function markTenderPaidUnlocked(
+  tier: ContractorTierId = 'tier_contractor_pay_per_file',
+  addOns: string[] = []
+): void {
   if (typeof localStorage !== 'undefined') {
     localStorage.setItem(TENDER_PAID_UNLOCKED_KEY, 'true');
     localStorage.setItem(TENDER_PAID_TIER_KEY, tier);
+    localStorage.setItem(TENDER_PAID_ADDONS_KEY, JSON.stringify(addOns));
     localStorage.setItem('melotwo_vip_unlocked', 'true');
     localStorage.setItem('sans_trial_active', 'true');
   }

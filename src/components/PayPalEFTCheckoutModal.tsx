@@ -32,27 +32,50 @@ import {
   submitEftOrder 
 } from '../services/paymentService';
 import { PayPalConfig, PaymentGatewayType, PaymentSuccessResult, SupportedEftBankKey } from '../types';
+import { 
+  ContractorTierId, 
+  CONTRACTOR_TIERS, 
+  TENDER_ADDONS,
+  ContractorTierOption,
+  TenderAddOn 
+} from '../types/tenderTypes';
+import { 
+  saveTenderDraft, 
+  loadTenderDraft, 
+  calculateDraftTotalAmount, 
+  markTenderPaidUnlocked 
+} from '../services/tenderDraftService';
 
-interface PayPalEFTCheckoutModalProps {
+export interface PayPalEFTCheckoutModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onSuccess: (result: PaymentSuccessResult) => void;
+  onSuccess: (result: PaymentSuccessResult & { tier?: ContractorTierId; addOns?: string[] }) => void;
   itemTitle?: string;
   itemDescription?: string;
   amountZar?: number;
   enterpriseName?: string;
   userEmail?: string;
+  selectedTierId?: ContractorTierId;
+  onTierChange?: (tier: ContractorTierId) => void;
+  selectedAddOns?: string[];
+  onAddOnsChange?: (addOns: string[]) => void;
+  showTierSelector?: boolean;
 }
 
 export const PayPalEFTCheckoutModal: React.FC<PayPalEFTCheckoutModalProps> = ({
   isOpen,
   onClose,
   onSuccess,
-  itemTitle = 'SANS 14-Day Full Compliance Shield & Tender Blueprint',
-  itemDescription = 'Instant unlock of official SANS compliance specification generator, Section 54 proof defense, and tender procurement blueprints.',
-  amountZar = 1500,
+  itemTitle: initialTitle = 'SANS 14-Day Full Compliance Shield & Tender Blueprint',
+  itemDescription: initialDescription = 'Instant unlock of official SANS compliance specification generator, Section 54 proof defense, and tender procurement blueprints.',
+  amountZar: initialAmountZar,
   enterpriseName: initialEnterprise = '',
-  userEmail: initialEmail = 'turoka15@gmail.com'
+  userEmail: initialEmail = 'turoka15@gmail.com',
+  selectedTierId: initialTier,
+  onTierChange,
+  selectedAddOns: initialAddOns,
+  onAddOnsChange,
+  showTierSelector = true
 }) => {
   const [activeTab, setActiveTab] = useState<PaymentGatewayType>('paypal');
   const [paypalConfig, setPaypalConfig] = useState<PayPalConfig>(getStoredPayPalConfig());
@@ -62,9 +85,30 @@ export const PayPalEFTCheckoutModal: React.FC<PayPalEFTCheckoutModalProps> = ({
   const [email, setEmail] = useState(initialEmail);
   const [copiedField, setCopiedField] = useState<string | null>(null);
 
+  // Dynamic Tier and Pricing state
+  const [selectedTier, setSelectedTier] = useState<ContractorTierId>(() => {
+    return initialTier || loadTenderDraft().selectedTier || 'tier_contractor_pay_per_file';
+  });
+  const [customPrice, setCustomPrice] = useState<number>(() => {
+    const draft = loadTenderDraft();
+    return typeof initialAmountZar === 'number' && initialAmountZar > 0
+      ? initialAmountZar
+      : (draft.customTierPriceZar || 2500);
+  });
+  const [activeAddOns, setActiveAddOns] = useState<string[]>(() => {
+    return initialAddOns || loadTenderDraft().selectedAddOns || [];
+  });
+
+  const activeTierObj = CONTRACTOR_TIERS.find(t => t.id === selectedTier) || CONTRACTOR_TIERS[0];
+  const itemTitle = initialTitle.includes('(') ? initialTitle : `${activeTierObj.name} (Tender Safety File)`;
+  const itemDescription = initialDescription;
+
+  const totalAmountZar = calculateDraftTotalAmount(selectedTier, customPrice, activeAddOns);
+  const usdAmount = convertZarToUsd(totalAmountZar);
+
   // EFT specific state with Capitec (Primary) and FNB (Secondary) toggle
   const [selectedBank, setSelectedBank] = useState<SupportedEftBankKey>('capitec');
-  const [eftReference] = useState(() => generateEftReference(itemTitle));
+  const [eftReference, setEftReference] = useState(() => generateEftReference(itemTitle));
   const [popFile, setPopFile] = useState<File | null>(null);
   const [popDataUrl, setPopDataUrl] = useState<string>('');
   const [eftSubmitting, setEftSubmitting] = useState(false);
@@ -85,17 +129,89 @@ export const PayPalEFTCheckoutModal: React.FC<PayPalEFTCheckoutModalProps> = ({
       }).catch(() => {
         setPaypalConfig(getStoredPayPalConfig());
       });
-      setEnterprise(initialEnterprise);
-      setEmail(initialEmail);
+
+      const draft = loadTenderDraft();
+      if (initialTier) {
+        setSelectedTier(initialTier);
+      } else if (draft.selectedTier) {
+        setSelectedTier(draft.selectedTier);
+      }
+
+      if (initialAddOns) {
+        setActiveAddOns(initialAddOns);
+      } else if (draft.selectedAddOns) {
+        setActiveAddOns(draft.selectedAddOns);
+      }
+
+      if (typeof initialAmountZar === 'number' && initialAmountZar > 0) {
+        setCustomPrice(initialAmountZar);
+      } else if (draft.customTierPriceZar) {
+        setCustomPrice(draft.customTierPriceZar);
+      }
+
+      if (initialEnterprise) {
+        setEnterprise(initialEnterprise);
+      } else if (draft.profile?.companyName) {
+        setEnterprise(draft.profile.companyName);
+      }
+
+      if (initialEmail) {
+        setEmail(initialEmail);
+      } else if (draft.profile?.contactEmail) {
+        setEmail(draft.profile.contactEmail);
+      }
+
+      setEftReference(generateEftReference(itemTitle));
       setErrorMessage(null);
       setEftSuccess(false);
       setPaypalSuccess(false);
     }
-  }, [isOpen, initialEnterprise, initialEmail]);
+  }, [isOpen, initialEnterprise, initialEmail, initialTier, initialAddOns, initialAmountZar, itemTitle]);
 
   if (!isOpen) return null;
 
-  const usdAmount = convertZarToUsd(amountZar);
+  // Handle tier switch
+  const handleSelectTier = (tierId: ContractorTierId) => {
+    const tObj = CONTRACTOR_TIERS.find(t => t.id === tierId) || CONTRACTOR_TIERS[0];
+    setSelectedTier(tierId);
+    setCustomPrice(tObj.defaultPriceZar);
+    if (onTierChange) onTierChange(tierId);
+    const total = calculateDraftTotalAmount(tierId, tObj.defaultPriceZar, activeAddOns);
+    saveTenderDraft({
+      selectedTier: tierId,
+      customTierPriceZar: tObj.defaultPriceZar,
+      selectedAddOns: activeAddOns,
+      totalAmountZar: total
+    });
+  };
+
+  // Handle price preset switch within tier
+  const handlePricePreset = (val: number) => {
+    setCustomPrice(val);
+    const total = calculateDraftTotalAmount(selectedTier, val, activeAddOns);
+    saveTenderDraft({
+      selectedTier,
+      customTierPriceZar: val,
+      selectedAddOns: activeAddOns,
+      totalAmountZar: total
+    });
+  };
+
+  // Handle add-on toggle
+  const handleToggleAddOn = (addonId: string) => {
+    const nextAddOns = activeAddOns.includes(addonId)
+      ? activeAddOns.filter(id => id !== addonId)
+      : [...activeAddOns, addonId];
+    setActiveAddOns(nextAddOns);
+    if (onAddOnsChange) onAddOnsChange(nextAddOns);
+    const total = calculateDraftTotalAmount(selectedTier, customPrice, nextAddOns);
+    saveTenderDraft({
+      selectedTier,
+      customTierPriceZar: customPrice,
+      selectedAddOns: nextAddOns,
+      totalAmountZar: total
+    });
+  };
 
   // Copy helper
   const handleCopy = (text: string, label: string) => {
@@ -128,7 +244,7 @@ export const PayPalEFTCheckoutModal: React.FC<PayPalEFTCheckoutModalProps> = ({
       // Simulate network confirmation
       await new Promise(r => setTimeout(r, 1200));
 
-      const captureRes = await fetch('/api/paypal/capture-order', {
+      await fetch('/api/paypal/capture-order', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -140,19 +256,31 @@ export const PayPalEFTCheckoutModal: React.FC<PayPalEFTCheckoutModalProps> = ({
             enterpriseName: enterprise
           }
         })
+      }).catch(() => {});
+
+      // Mark Unlocked in local storage & tender draft
+      markTenderPaidUnlocked(selectedTier, activeAddOns);
+      saveTenderDraft({
+        isPaidUnlocked: true,
+        selectedTier,
+        customTierPriceZar: customPrice,
+        selectedAddOns: activeAddOns,
+        totalAmountZar
       });
 
       setPaypalSuccess(true);
-      const result: PaymentSuccessResult = {
+      const result: PaymentSuccessResult & { tier?: ContractorTierId; addOns?: string[] } = {
         gateway: 'paypal',
         transactionId: orderId,
-        amount: amountZar,
+        amount: totalAmountZar,
         currency: 'ZAR',
         item: itemTitle,
         customerName: enterprise,
         customerEmail: email,
         timestamp: new Date().toISOString(),
-        status: 'COMPLETED'
+        status: 'COMPLETED',
+        tier: selectedTier,
+        addOns: activeAddOns
       };
 
       setTimeout(() => {
@@ -167,51 +295,65 @@ export const PayPalEFTCheckoutModal: React.FC<PayPalEFTCheckoutModalProps> = ({
     }
   };
 
-  // Submit EFT Transfer
+  // Process EFT Payment Submission & Admin Queue Routing
   const handleSubmitEft = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!enterprise.trim()) {
-      setErrorMessage('Please provide your Enterprise or Mine site name.');
+      setErrorMessage('Please enter your Enterprise or Mine Site name.');
       return;
     }
+    if (!email.trim()) {
+      setErrorMessage('Please enter your notification email address.');
+      return;
+    }
+
     setEftSubmitting(true);
     setErrorMessage(null);
 
-    const activeBank = EFT_BANK_ACCOUNTS[selectedBank] || EFT_BANK_ACCOUNTS.capitec;
-
     try {
-      const order = await submitEftOrder({
+      await submitEftOrder({
         reference: eftReference,
-        amountZar,
+        amountZar: totalAmountZar,
         enterpriseName: enterprise,
         email,
         tierOrItem: itemTitle,
         selectedBank,
-        bankName: activeBank.bankName,
-        popFileName: popFile ? popFile.name : undefined,
-        popFileDataUrl: popDataUrl || undefined,
-        notes: `EFT Transfer submitted via ${activeBank.bankName} (Acc: ${activeBank.accountNumber}, SWIFT: ${activeBank.swiftCode}). Reference: ${eftReference}`
+        popFileName: popFile?.name,
+        popFileDataUrl: popDataUrl || undefined
+      });
+
+      // Mark Unlocked in local storage & tender draft
+      markTenderPaidUnlocked(selectedTier, activeAddOns);
+      saveTenderDraft({
+        isPaidUnlocked: true,
+        selectedTier,
+        customTierPriceZar: customPrice,
+        selectedAddOns: activeAddOns,
+        totalAmountZar
       });
 
       setEftSuccess(true);
-      const result: PaymentSuccessResult = {
+
+      const result: PaymentSuccessResult & { tier?: ContractorTierId; addOns?: string[] } = {
         gateway: 'eft',
-        transactionId: order.reference,
-        amount: amountZar,
+        transactionId: eftReference,
+        amount: totalAmountZar,
         currency: 'ZAR',
         item: itemTitle,
         customerName: enterprise,
         customerEmail: email,
-        timestamp: order.createdAt,
-        status: 'PENDING_EFT_CLEARANCE'
+        timestamp: new Date().toISOString(),
+        status: 'COMPLETED',
+        tier: selectedTier,
+        addOns: activeAddOns
       };
 
       setTimeout(() => {
         onSuccess(result);
         onClose();
-      }, 1800);
+      }, 1500);
     } catch (err: any) {
-      setErrorMessage(err.message || 'Failed to submit EFT transfer.');
+      setErrorMessage(err.message || 'Failed to submit EFT order. Please try again.');
     } finally {
       setEftSubmitting(false);
     }
@@ -233,7 +375,7 @@ export const PayPalEFTCheckoutModal: React.FC<PayPalEFTCheckoutModalProps> = ({
                   Dual Gateway Checkout
                 </span>
                 <span className="text-[10px] font-mono text-slate-400">
-                  SANS 10108 & 10142 Compliant
+                  SACPCMP &amp; DMRE Compliant
                 </span>
               </div>
               <h3 className="text-lg font-black text-white uppercase tracking-wider font-display mt-0.5">
@@ -253,15 +395,234 @@ export const PayPalEFTCheckoutModal: React.FC<PayPalEFTCheckoutModalProps> = ({
           {/* Scrollable Container */}
           <div className="p-6 overflow-y-auto space-y-6">
 
+            {/* Dynamic Tier Selection */}
+            {showTierSelector && (
+              <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <label className="text-xs font-bold uppercase tracking-wider text-slate-300 font-mono flex items-center gap-1.5">
+                    <Sparkles className="w-3.5 h-3.5 text-amber-400" />
+                    <span>Select Platform Tier &amp; Scope</span>
+                  </label>
+                  <span className="text-[10px] text-slate-400 font-mono">
+                    3 Platform Tiers
+                  </span>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-2.5">
+                  {CONTRACTOR_TIERS.map(t => {
+                    const isSelected = selectedTier === t.id;
+                    return (
+                      <div
+                        key={t.id}
+                        onClick={() => handleSelectTier(t.id)}
+                        className={`p-3 rounded-2xl border transition-all cursor-pointer flex flex-col justify-between ${
+                          isSelected
+                            ? 'bg-slate-900 border-amber-500 ring-1 ring-amber-500/40 shadow-lg shadow-amber-950/30'
+                            : 'bg-slate-950/70 border-slate-800 hover:border-slate-700 text-slate-400'
+                        }`}
+                      >
+                        <div>
+                          <div className="flex items-center justify-between gap-1 mb-1.5">
+                            <span className={`text-[8px] font-black uppercase px-2 py-0.5 rounded font-mono ${
+                              isSelected ? 'bg-amber-400 text-slate-950' : 'bg-slate-800 text-slate-300'
+                            }`}>
+                              {t.badge}
+                            </span>
+                            <span className="text-[9px] font-mono text-slate-400">
+                              {t.billingCycle === 'once-off' ? 'Once-off' : t.billingCycle === 'monthly' ? '/month' : '/year'}
+                            </span>
+                          </div>
+                          <h5 className="text-xs font-bold text-white leading-tight mb-1">
+                            {t.name}
+                          </h5>
+                          <div className="text-xs font-black text-amber-300 font-mono my-1">
+                            {t.priceDisplay}
+                          </div>
+                          <p className="text-[10px] text-slate-400 line-clamp-2 leading-snug">
+                            {t.description}
+                          </p>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+
+                {/* Tier Presets */}
+                <div className="p-3 bg-slate-950/90 border border-slate-800/80 rounded-xl flex flex-wrap items-center justify-between gap-2 text-xs">
+                  <div className="flex items-center gap-2">
+                    <span className="text-[11px] font-semibold text-slate-300">
+                      {activeTierObj.name}:
+                    </span>
+                    <span className="font-mono font-bold text-white">
+                      {formatZarCurrency(customPrice)}
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-1.5 flex-wrap">
+                    <span className="text-[10px] text-slate-400 font-mono mr-1">Presets:</span>
+                    {selectedTier === 'tier_contractor_pay_per_file' ? (
+                      <>
+                        <button
+                          type="button"
+                          onClick={() => handlePricePreset(1500)}
+                          className={`px-2 py-1 text-[10px] font-mono rounded-lg border transition cursor-pointer ${
+                            customPrice === 1500 ? 'bg-amber-500 text-slate-950 font-bold border-amber-400' : 'bg-slate-900 border-slate-800 text-slate-300 hover:border-slate-700'
+                          }`}
+                        >
+                          R1,500 (Base)
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handlePricePreset(2500)}
+                          className={`px-2 py-1 text-[10px] font-mono rounded-lg border transition cursor-pointer ${
+                            customPrice === 2500 ? 'bg-amber-500 text-slate-950 font-bold border-amber-400' : 'bg-slate-900 border-slate-800 text-slate-300 hover:border-slate-700'
+                          }`}
+                        >
+                          R2,500 (Full Dossier)
+                        </button>
+                      </>
+                    ) : selectedTier === 'tier_operational_subscription' ? (
+                      <>
+                        <button
+                          type="button"
+                          onClick={() => handlePricePreset(8500)}
+                          className={`px-2 py-1 text-[10px] font-mono rounded-lg border transition cursor-pointer ${
+                            customPrice === 8500 ? 'bg-amber-500 text-slate-950 font-bold border-amber-400' : 'bg-slate-900 border-slate-800 text-slate-300 hover:border-slate-700'
+                          }`}
+                        >
+                          R8,500/mo (Standard)
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handlePricePreset(12500)}
+                          className={`px-2 py-1 text-[10px] font-mono rounded-lg border transition cursor-pointer ${
+                            customPrice === 12500 ? 'bg-amber-500 text-slate-950 font-bold border-amber-400' : 'bg-slate-900 border-slate-800 text-slate-300 hover:border-slate-700'
+                          }`}
+                        >
+                          R12,500/mo (Multi-Rig)
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handlePricePreset(15000)}
+                          className={`px-2 py-1 text-[10px] font-mono rounded-lg border transition cursor-pointer ${
+                            customPrice === 15000 ? 'bg-amber-500 text-slate-950 font-bold border-amber-400' : 'bg-slate-900 border-slate-800 text-slate-300 hover:border-slate-700'
+                          }`}
+                        >
+                          R15,000/mo (Full Fleet)
+                        </button>
+                      </>
+                    ) : (
+                      <>
+                        <button
+                          type="button"
+                          onClick={() => handlePricePreset(180000)}
+                          className={`px-2 py-1 text-[10px] font-mono rounded-lg border transition cursor-pointer ${
+                            customPrice === 180000 ? 'bg-amber-500 text-slate-950 font-bold border-amber-400' : 'bg-slate-900 border-slate-800 text-slate-300 hover:border-slate-700'
+                          }`}
+                        >
+                          R180,000/yr (Single Mine)
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handlePricePreset(300000)}
+                          className={`px-2 py-1 text-[10px] font-mono rounded-lg border transition cursor-pointer ${
+                            customPrice === 300000 ? 'bg-amber-500 text-slate-950 font-bold border-amber-400' : 'bg-slate-900 border-slate-800 text-slate-300 hover:border-slate-700'
+                          }`}
+                        >
+                          R300,000/yr (Multi-Shaft)
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handlePricePreset(420000)}
+                          className={`px-2 py-1 text-[10px] font-mono rounded-lg border transition cursor-pointer ${
+                            customPrice === 420000 ? 'bg-amber-500 text-slate-950 font-bold border-amber-400' : 'bg-slate-900 border-slate-800 text-slate-300 hover:border-slate-700'
+                          }`}
+                        >
+                          R420,000/yr (Enterprise Complex)
+                        </button>
+                      </>
+                    )}
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Optional Compliance & Tender Add-Ons */}
+            <div className="space-y-2.5">
+              <label className="text-xs font-bold uppercase tracking-wider text-slate-300 font-mono flex items-center justify-between">
+                <span>Optional Add-Ons</span>
+                <span className="text-[10px] text-slate-400 font-normal">
+                  {activeAddOns.length} selected
+                </span>
+              </label>
+
+              <div className="space-y-2">
+                {TENDER_ADDONS.map(addon => {
+                  const isChecked = activeAddOns.includes(addon.id);
+                  return (
+                    <div
+                      key={addon.id}
+                      onClick={() => handleToggleAddOn(addon.id)}
+                      className={`p-3 rounded-xl border transition-all cursor-pointer flex items-center justify-between gap-3 ${
+                        isChecked
+                          ? 'bg-slate-900 border-emerald-500/80 ring-1 ring-emerald-500/30'
+                          : 'bg-slate-950/60 border-slate-800/80 hover:border-slate-700'
+                      }`}
+                    >
+                      <div className="flex items-start gap-2.5 min-w-0">
+                        <div className={`w-4 h-4 rounded mt-0.5 flex items-center justify-center shrink-0 border ${
+                          isChecked ? 'bg-emerald-500 border-emerald-400 text-slate-950' : 'border-slate-700 bg-slate-900'
+                        }`}>
+                          {isChecked && <Check className="w-3 h-3 stroke-[3]" />}
+                        </div>
+                        <div className="min-w-0">
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <h6 className="text-xs font-bold text-white truncate">
+                              {addon.name}
+                            </h6>
+                            <span className="text-[9px] px-1.5 py-0.2 rounded bg-slate-800 text-slate-300 font-mono">
+                              {addon.badge}
+                            </span>
+                          </div>
+                          <p className="text-[10px] text-slate-400 leading-snug truncate">
+                            {addon.description}
+                          </p>
+                        </div>
+                      </div>
+
+                      <div className="text-right shrink-0">
+                        <span className="text-xs font-bold font-mono text-emerald-400">
+                          +{formatZarCurrency(addon.priceZar)}
+                        </span>
+                        <div className="text-[9px] text-slate-500 font-mono">once-off</div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+
             {/* Item Order Summary Card */}
             <div className="bg-slate-950/70 border border-slate-800 rounded-2xl p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
               <div className="space-y-1">
+                <div className="flex items-center gap-2">
+                  <h4 className="text-sm font-bold text-white">
+                    {activeTierObj.name}
+                  </h4>
+                  <span className="text-[10px] px-2 py-0.5 rounded bg-amber-500/20 text-amber-300 font-mono">
+                    {activeTierObj.badge}
+                  </span>
+                </div>
                 <p className="text-xs text-slate-400 leading-relaxed font-sans max-w-md">
-                  {itemDescription}
+                  {itemDescription || activeTierObj.description}
                 </p>
+                {activeAddOns.length > 0 && (
+                  <div className="text-[11px] text-emerald-400 font-mono pt-0.5">
+                    Includes {activeAddOns.length} selected add-on{activeAddOns.length > 1 ? 's' : ''}
+                  </div>
+                )}
                 <div className="flex items-center gap-3 pt-1 text-[11px] text-slate-400">
                   <span className="flex items-center gap-1 text-emerald-400">
-                    <ShieldCheck className="w-3.5 h-3.5" /> Instant Activation
+                    <ShieldCheck className="w-3.5 h-3.5" /> Instant Unlocked Dossier
                   </span>
                   <span>•</span>
                   <span>Defensible Tax Invoice</span>
@@ -273,7 +634,7 @@ export const PayPalEFTCheckoutModal: React.FC<PayPalEFTCheckoutModalProps> = ({
                   Total Payable
                 </div>
                 <div className="text-xl font-black text-white font-mono">
-                  {formatZarCurrency(amountZar)}
+                  {formatZarCurrency(totalAmountZar)}
                 </div>
                 <div className="text-[10px] font-mono text-amber-400">
                   ≈ {formatUsdCurrency(usdAmount)}
@@ -381,7 +742,7 @@ export const PayPalEFTCheckoutModal: React.FC<PayPalEFTCheckoutModalProps> = ({
                       Instant Smart Checkout
                     </h4>
                     <p className="text-xs text-slate-400">
-                      Charge {formatUsdCurrency(usdAmount)} ({formatZarCurrency(amountZar)}) to your PayPal Balance, Debit/Credit Card, or Corporate Account.
+                      Charge {formatUsdCurrency(usdAmount)} ({formatZarCurrency(totalAmountZar)}) to your PayPal Balance, Debit/Credit Card, or Corporate Account.
                     </p>
                   </div>
 
@@ -432,17 +793,30 @@ export const PayPalEFTCheckoutModal: React.FC<PayPalEFTCheckoutModalProps> = ({
                                   }
                                 })
                               });
+
+                              // Mark Unlocked in local storage & tender draft
+                              markTenderPaidUnlocked(selectedTier, activeAddOns);
+                              saveTenderDraft({
+                                isPaidUnlocked: true,
+                                selectedTier,
+                                customTierPriceZar: customPrice,
+                                selectedAddOns: activeAddOns,
+                                totalAmountZar
+                              });
+
                               setPaypalSuccess(true);
-                              const result: PaymentSuccessResult = {
+                              const result: PaymentSuccessResult & { tier?: ContractorTierId; addOns?: string[] } = {
                                 gateway: 'paypal',
                                 transactionId: data.orderID || `PAYID-${Date.now()}`,
-                                amount: amountZar,
+                                amount: totalAmountZar,
                                 currency: 'ZAR',
                                 item: itemTitle,
                                 customerName: enterprise,
                                 customerEmail: email,
                                 timestamp: new Date().toISOString(),
-                                status: 'COMPLETED'
+                                status: 'COMPLETED',
+                                tier: selectedTier,
+                                addOns: activeAddOns
                               };
                               setTimeout(() => {
                                 onSuccess(result);
@@ -523,7 +897,7 @@ export const PayPalEFTCheckoutModal: React.FC<PayPalEFTCheckoutModalProps> = ({
                       type="button"
                       onClick={() => generateEftInvoicePdf({
                         reference: eftReference,
-                        amountZar,
+                        amountZar: totalAmountZar,
                         enterpriseName: enterprise || 'Industrial Client',
                         email: email || 'billing@client.com',
                         tierOrItem: itemTitle,
@@ -835,7 +1209,7 @@ export const PayPalEFTCheckoutModal: React.FC<PayPalEFTCheckoutModalProps> = ({
                   ) : (
                     <>
                       <ShieldCheck className="w-4 h-4" />
-                      <span>Submit EFT Order & Queue for Approval ({formatZarCurrency(amountZar)})</span>
+                      <span>Submit EFT Order & Queue for Approval ({formatZarCurrency(totalAmountZar)})</span>
                     </>
                   )}
                 </button>

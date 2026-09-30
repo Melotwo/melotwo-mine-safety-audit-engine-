@@ -34,6 +34,7 @@ import {
 } from '../config/zambianMhsCompliance';
 import { ZAMBIAN_COMPLIANCE_DISCLAIMERS } from '../config/regulatoryRules.zambia';
 import { MeloTwoLogo } from './MeloTwoLogo';
+import { saveTenderDraft, loadTenderDraft } from '../services/tenderDraftService';
 
 export interface ZambiaComplianceAssessmentProps {
   onClose?: () => void;
@@ -157,6 +158,24 @@ export const ZambiaComplianceAssessmentModal: React.FC<ZambiaComplianceAssessmen
       };
       leads.unshift(newLead);
       localStorage.setItem('melotwo_partner_leads', JSON.stringify(leads));
+
+      // Persist diagnostic progress and company into tender file draft
+      saveTenderDraft({
+        profile: {
+          ...loadTenderDraft().profile,
+          companyName: companyName || loadTenderDraft().profile.companyName,
+          clientPrincipalName: `${district} Mining Unit / Zambian Copperbelt`
+        },
+        selectedTier: 'tier_contractor_pay_per_file',
+        diagnosticProgress: {
+          overallScore: diagnosticResult.overallScore,
+          riskTier: diagnosticResult.riskTier,
+          recommendedBinderType: diagnosticResult.recommendedBinderType,
+          district,
+          contractorTier
+        },
+        diagnosticScore: diagnosticResult.overallScore
+      });
     } catch (e) {
       console.warn('Failed to save partner lead locally:', e);
     }

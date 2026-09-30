@@ -45,6 +45,8 @@ import JSZip from 'jszip';
 import { 
   ContractorTierId, 
   CONTRACTOR_TIERS,
+  TENDER_ADDONS,
+  TenderAddOn,
   ConsumableTrackingState,
   AccessAndBlastingState,
   DrillingTelemetryState,
@@ -58,6 +60,7 @@ import {
   checkIfTenderPaidUnlocked, 
   markTenderPaidUnlocked,
   calculatePhysicsWear,
+  calculateDraftTotalAmount,
   DEFAULT_CONSUMABLES,
   DEFAULT_ACCESS_BLASTING,
   DEFAULT_DRILLING,
@@ -196,8 +199,10 @@ export const TenderFileWizard: React.FC<TenderFileWizardProps> = ({
   const [step2SubTab, setStep2SubTab] = useState<'TRADES' | 'CONSUMABLES' | 'BLASTING' | 'DRILLING' | 'WEAR_PHYSICS'>('TRADES');
   const [activePreviewTab, setActivePreviewTab] = useState<'blueprint' | 'live_preview'>('live_preview');
   
-  // Specific Form States
-  const [selectedTier, setSelectedTier] = useState<ContractorTierId>(draftState.selectedTier || 'tier_standard');
+  // Specific Form States & Dynamic Tiering
+  const [selectedTier, setSelectedTier] = useState<ContractorTierId>(draftState.selectedTier || 'tier_contractor_pay_per_file');
+  const [customTierPriceZar, setCustomTierPriceZar] = useState<number>(draftState.customTierPriceZar || 2500);
+  const [selectedAddOns, setSelectedAddOns] = useState<string[]>(draftState.selectedAddOns || []);
   const [profile, setProfile] = useState(draftState.profile);
   const [docUploads, setDocUploads] = useState(draftState.docUploads);
   const [selectedTrades, setSelectedTrades] = useState<string[]>(draftState.selectedTrades);
@@ -206,6 +211,10 @@ export const TenderFileWizard: React.FC<TenderFileWizardProps> = ({
   const [accessBlasting, setAccessBlasting] = useState<AccessAndBlastingState>(draftState.accessBlasting || DEFAULT_ACCESS_BLASTING);
   const [drilling, setDrilling] = useState<DrillingTelemetryState>(draftState.drilling || DEFAULT_DRILLING);
   const [wearSimulation, setWearSimulation] = useState<WearSimulationState>(draftState.wearSimulation || DEFAULT_WEAR_SIMULATION);
+  const [resolvedRedFlags, setResolvedRedFlags] = useState<string[]>(draftState.resolvedRedFlags || []);
+  const [customNotes, setCustomNotes] = useState<string>(draftState.customNotes || 'Compiled in strict accordance with SANS 10119 and SACPCMP Guidelines.');
+  const [diagnosticProgress, setDiagnosticProgress] = useState<Record<string, any>>(draftState.diagnosticProgress || { overallScore: 84, riskTier: 'LOW', recommendedBinderType: 'Standard Trade Safety Dossier' });
+  const [diagnosticScore, setDiagnosticScore] = useState<number>(draftState.diagnosticScore || 84);
   
   // Payment & Unlocking state
   const [isPaidUnlocked, setIsPaidUnlocked] = useState<boolean>(() => checkIfTenderPaidUnlocked() || draftState.isPaidUnlocked);
@@ -224,6 +233,44 @@ export const TenderFileWizard: React.FC<TenderFileWizardProps> = ({
   const [zipGeneratedSuccess, setZipGeneratedSuccess] = useState(false);
   const autoSaveTimerRef = useRef<any>(null);
 
+  // Background Persistence & Cross-Tab/Modal Sync
+  useEffect(() => {
+    const handleStorageSync = (e: StorageEvent) => {
+      if (e.key === 'melotwo_tender_file_draft' || e.key === 'melotwo_tender_paid_unlocked') {
+        const fresh = loadTenderDraft();
+        setSelectedTier(fresh.selectedTier);
+        if (fresh.customTierPriceZar) setCustomTierPriceZar(fresh.customTierPriceZar);
+        if (fresh.selectedAddOns) setSelectedAddOns(fresh.selectedAddOns);
+        if (fresh.isPaidUnlocked) setIsPaidUnlocked(true);
+        if (fresh.resolvedRedFlags) setResolvedRedFlags(fresh.resolvedRedFlags);
+        if (fresh.customNotes) setCustomNotes(fresh.customNotes);
+        if (fresh.diagnosticProgress) setDiagnosticProgress(fresh.diagnosticProgress);
+        if (fresh.diagnosticScore) setDiagnosticScore(fresh.diagnosticScore);
+        setProfile(fresh.profile);
+        setStaff(fresh.staff);
+        setConsumables(fresh.consumables);
+        setAccessBlasting(fresh.accessBlasting);
+        setDrilling(fresh.drilling);
+        setWearSimulation(fresh.wearSimulation);
+      }
+    };
+    if (typeof window !== 'undefined') {
+      window.addEventListener('storage', handleStorageSync);
+    }
+    return () => {
+      if (typeof window !== 'undefined') {
+        window.removeEventListener('storage', handleStorageSync);
+      }
+    };
+  }, []);
+
+  // Toggle Red Flag resolution
+  const handleToggleResolveRedFlag = (flagId: string) => {
+    setResolvedRedFlags(prev =>
+      prev.includes(flagId) ? prev.filter(f => f !== flagId) : [...prev, flagId]
+    );
+  };
+
   // Initialize live verification QR code on mount
   useEffect(() => {
     const refCode = draftState.verificationCode || `MT-TDR-${new Date().getFullYear()}-${Math.floor(1000 + Math.random() * 9000)}`;
@@ -241,16 +288,20 @@ export const TenderFileWizard: React.FC<TenderFileWizardProps> = ({
     });
   }, []);
 
-  // 1. Real-Time Auto-Save mechanism: Persists on every change to localStorage
+  // 1. Real-Time Auto-Save mechanism: Persists on every change to localStorage (key: melotwo_tender_file_draft)
   useEffect(() => {
     if (autoSaveTimerRef.current) {
       clearTimeout(autoSaveTimerRef.current);
     }
 
     autoSaveTimerRef.current = setTimeout(() => {
+      const calculatedTotal = calculateDraftTotalAmount(selectedTier, customTierPriceZar, selectedAddOns);
       const updated = saveTenderDraft({
         currentStep,
         selectedTier,
+        customTierPriceZar,
+        selectedAddOns,
+        totalAmountZar: calculatedTotal,
         profile,
         docUploads,
         selectedTrades,
@@ -259,6 +310,10 @@ export const TenderFileWizard: React.FC<TenderFileWizardProps> = ({
         accessBlasting,
         drilling,
         wearSimulation,
+        resolvedRedFlags,
+        customNotes,
+        diagnosticProgress,
+        diagnosticScore,
         isPaidUnlocked
       });
       setLastAutoSaveTime(new Date().toLocaleTimeString());
@@ -270,6 +325,8 @@ export const TenderFileWizard: React.FC<TenderFileWizardProps> = ({
   }, [
     currentStep,
     selectedTier,
+    customTierPriceZar,
+    selectedAddOns,
     profile,
     docUploads,
     selectedTrades,
@@ -278,6 +335,10 @@ export const TenderFileWizard: React.FC<TenderFileWizardProps> = ({
     accessBlasting,
     drilling,
     wearSimulation,
+    resolvedRedFlags,
+    customNotes,
+    diagnosticProgress,
+    diagnosticScore,
     isPaidUnlocked
   ]);
 
@@ -312,7 +373,13 @@ export const TenderFileWizard: React.FC<TenderFileWizardProps> = ({
       setAccessBlasting(DEFAULT_ACCESS_BLASTING);
       setDrilling(DEFAULT_DRILLING);
       setWearSimulation(DEFAULT_WEAR_SIMULATION);
-      setSelectedTier('tier_standard');
+      setResolvedRedFlags([]);
+      setCustomNotes(reset.customNotes || 'Compiled in strict accordance with SANS 10119 and SACPCMP Guidelines.');
+      setDiagnosticProgress(reset.diagnosticProgress || { overallScore: 84, riskTier: 'LOW', recommendedBinderType: 'Standard Trade Safety Dossier' });
+      setDiagnosticScore(reset.diagnosticScore || 84);
+      setSelectedTier('tier_contractor_pay_per_file');
+      setSelectedAddOns([]);
+      setCustomTierPriceZar(2500);
       setCurrentStep(1);
     }
   };
@@ -350,7 +417,8 @@ export const TenderFileWizard: React.FC<TenderFileWizardProps> = ({
     }));
   };
 
-  const selectedTierObj = CONTRACTOR_TIERS.find(t => t.id === selectedTier) || CONTRACTOR_TIERS[1];
+  const selectedTierObj = CONTRACTOR_TIERS.find(t => t.id === selectedTier) || CONTRACTOR_TIERS[0];
+  const totalAmountZar = calculateDraftTotalAmount(selectedTier, customTierPriceZar, selectedAddOns);
   const activeTradeObjects = AVAILABLE_TRADES.filter(t => selectedTrades.includes(t.id));
   const totalSwps = activeTradeObjects.reduce((acc, t) => acc + t.swps.length, 0);
   const totalMethodStatements = activeTradeObjects.reduce((acc, t) => acc + t.methodStatements.length, 0);
@@ -918,9 +986,19 @@ INCLUDED DOSSIER ARTIFACTS:
 
   // Handle Checkout success from PayPalEFTCheckoutModal
   const handleCheckoutSuccess = (result: any) => {
+    const tierToUnlock = result?.tier || selectedTier;
+    const addOnsToUnlock = result?.addOns || selectedAddOns;
     setIsPaidUnlocked(true);
-    markTenderPaidUnlocked(selectedTier);
-    saveTenderDraft({ isPaidUnlocked: true, selectedTier });
+    setSelectedTier(tierToUnlock);
+    setSelectedAddOns(addOnsToUnlock);
+    markTenderPaidUnlocked(tierToUnlock, addOnsToUnlock);
+    saveTenderDraft({ 
+      isPaidUnlocked: true, 
+      selectedTier: tierToUnlock,
+      selectedAddOns: addOnsToUnlock,
+      customTierPriceZar,
+      totalAmountZar: calculateDraftTotalAmount(tierToUnlock, customTierPriceZar, addOnsToUnlock)
+    });
     setIsCheckoutModalOpen(false);
     // Trigger unwatermarked PDF download immediately
     generateTenderSafetyFile();
@@ -1040,27 +1118,33 @@ INCLUDED DOSSIER ARTIFACTS:
             
             {/* Contractor Tier Pricing Scaffolding */}
             <div className="space-y-3">
-              <div className="flex items-center justify-between pb-2 border-b border-slate-800">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-2 border-b border-slate-800 gap-2">
                 <div>
                   <h3 className="text-xs sm:text-sm font-bold text-white uppercase tracking-wider font-mono text-red-400">
-                    Self-Service Contractor Safety File Pricing Scaffolding
+                    Dynamic Tiered Pricing &amp; License Scope
                   </h3>
                   <p className="text-[11px] text-slate-400">
-                    Select your contractor tier. Generates compliant HIRAs, statutory appointments, and SACPCMP-aligned dossiers.
+                    Select your compliance tier. All tiers include real-time auto-save and SACPCMP/DMRE audit alignment.
                   </p>
                 </div>
-                <span className="text-[10px] text-amber-300 font-mono bg-amber-500/10 px-2.5 py-1 rounded border border-amber-500/20">
-                  SACPCMP Compliant
-                </span>
+                <div className="flex items-center gap-2 shrink-0">
+                  <span className="text-[10px] text-amber-300 font-mono bg-amber-500/10 px-2.5 py-1 rounded border border-amber-500/20">
+                    Total: R{totalAmountZar.toLocaleString('en-ZA')}
+                  </span>
+                </div>
               </div>
 
+              {/* 3 Platform Tiers */}
               <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
                 {CONTRACTOR_TIERS.map(tier => {
                   const isSelected = selectedTier === tier.id;
                   return (
                     <div
                       key={tier.id}
-                      onClick={() => setSelectedTier(tier.id)}
+                      onClick={() => {
+                        setSelectedTier(tier.id);
+                        setCustomTierPriceZar(tier.defaultPriceZar);
+                      }}
                       className={`p-4 rounded-2xl border transition-all cursor-pointer flex flex-col justify-between relative ${
                         isSelected
                           ? 'bg-slate-950 border-red-500 shadow-xl shadow-red-950/40 ring-1 ring-red-500/50'
@@ -1075,15 +1159,14 @@ INCLUDED DOSSIER ARTIFACTS:
                             {tier.badge}
                           </span>
                           <span className="text-[10px] font-mono text-slate-400">
-                            {tier.sectionsIncluded} Sections
+                            {tier.billingCycle === 'once-off' ? 'Once-off' : tier.billingCycle === 'monthly' ? '/month' : '/year'}
                           </span>
                         </div>
                         <h4 className="text-xs sm:text-sm font-bold text-white mb-1">
                           {tier.name}
                         </h4>
-                        <div className="text-xl font-black text-white font-mono my-2 flex items-baseline gap-1">
-                          R{tier.priceZar.toLocaleString('en-ZA')}
-                          <span className="text-[10px] font-normal text-slate-400">once-off</span>
+                        <div className="text-lg font-black text-amber-300 font-mono my-1.5 flex items-baseline gap-1">
+                          {tier.priceDisplay}
                         </div>
                         <p className="text-[11px] text-slate-300 leading-snug mb-3">
                           {tier.description}
@@ -1091,7 +1174,7 @@ INCLUDED DOSSIER ARTIFACTS:
                       </div>
 
                       <div className="space-y-1.5 pt-2 border-t border-slate-800/80 text-[10px] text-slate-300">
-                        {tier.features.slice(0, 3).map((f, i) => (
+                        {tier.features.slice(0, 4).map((f, i) => (
                           <div key={i} className="flex items-center gap-1.5 truncate">
                             <Check className="w-3 h-3 text-emerald-400 shrink-0" />
                             <span className="truncate">{f}</span>
@@ -1101,6 +1184,160 @@ INCLUDED DOSSIER ARTIFACTS:
                     </div>
                   );
                 })}
+              </div>
+
+              {/* Dynamic Rate Presets for Active Tier */}
+              <div className="p-3 bg-slate-950/80 border border-slate-800 rounded-xl flex flex-wrap items-center justify-between gap-2.5 text-xs">
+                <div className="flex items-center gap-2">
+                  <span className="text-[11px] font-semibold text-slate-300">
+                    {selectedTierObj.name} Rate:
+                  </span>
+                  <span className="font-mono font-bold text-white">
+                    R{customTierPriceZar.toLocaleString('en-ZA')}
+                  </span>
+                </div>
+                <div className="flex items-center gap-1.5 flex-wrap">
+                  <span className="text-[10px] text-slate-400 font-mono mr-1">Presets:</span>
+                  {selectedTier === 'tier_contractor_pay_per_file' ? (
+                    <>
+                      <button
+                        type="button"
+                        onClick={() => setCustomTierPriceZar(1500)}
+                        className={`px-2.5 py-1 text-[10px] font-mono rounded-lg border transition cursor-pointer ${
+                          customTierPriceZar === 1500 ? 'bg-red-600 text-white font-bold border-red-500' : 'bg-slate-900 border-slate-800 text-slate-300 hover:border-slate-700'
+                        }`}
+                      >
+                        R1,500 (Base SMME)
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setCustomTierPriceZar(2500)}
+                        className={`px-2.5 py-1 text-[10px] font-mono rounded-lg border transition cursor-pointer ${
+                          customTierPriceZar === 2500 ? 'bg-red-600 text-white font-bold border-red-500' : 'bg-slate-900 border-slate-800 text-slate-300 hover:border-slate-700'
+                        }`}
+                      >
+                        R2,500 (Full 20-Section Returnable)
+                      </button>
+                    </>
+                  ) : selectedTier === 'tier_operational_subscription' ? (
+                    <>
+                      <button
+                        type="button"
+                        onClick={() => setCustomTierPriceZar(8500)}
+                        className={`px-2.5 py-1 text-[10px] font-mono rounded-lg border transition cursor-pointer ${
+                          customTierPriceZar === 8500 ? 'bg-red-600 text-white font-bold border-red-500' : 'bg-slate-900 border-slate-800 text-slate-300 hover:border-slate-700'
+                        }`}
+                      >
+                        R8,500/mo (Single Rig)
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setCustomTierPriceZar(12500)}
+                        className={`px-2.5 py-1 text-[10px] font-mono rounded-lg border transition cursor-pointer ${
+                          customTierPriceZar === 12500 ? 'bg-red-600 text-white font-bold border-red-500' : 'bg-slate-900 border-slate-800 text-slate-300 hover:border-slate-700'
+                        }`}
+                      >
+                        R12,500/mo (Multi-Rig Telemetry)
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setCustomTierPriceZar(15000)}
+                        className={`px-2.5 py-1 text-[10px] font-mono rounded-lg border transition cursor-pointer ${
+                          customTierPriceZar === 15000 ? 'bg-red-600 text-white font-bold border-red-500' : 'bg-slate-900 border-slate-800 text-slate-300 hover:border-slate-700'
+                        }`}
+                      >
+                        R15,000/mo (Full Fleet Sync)
+                      </button>
+                    </>
+                  ) : (
+                    <>
+                      <button
+                        type="button"
+                        onClick={() => setCustomTierPriceZar(180000)}
+                        className={`px-2.5 py-1 text-[10px] font-mono rounded-lg border transition cursor-pointer ${
+                          customTierPriceZar === 180000 ? 'bg-red-600 text-white font-bold border-red-500' : 'bg-slate-900 border-slate-800 text-slate-300 hover:border-slate-700'
+                        }`}
+                      >
+                        R180,000/yr (Single Mine)
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setCustomTierPriceZar(300000)}
+                        className={`px-2.5 py-1 text-[10px] font-mono rounded-lg border transition cursor-pointer ${
+                          customTierPriceZar === 300000 ? 'bg-red-600 text-white font-bold border-red-500' : 'bg-slate-900 border-slate-800 text-slate-300 hover:border-slate-700'
+                        }`}
+                      >
+                        R300,000/yr (Multi-Shaft)
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setCustomTierPriceZar(420000)}
+                        className={`px-2.5 py-1 text-[10px] font-mono rounded-lg border transition cursor-pointer ${
+                          customTierPriceZar === 420000 ? 'bg-red-600 text-white font-bold border-red-500' : 'bg-slate-900 border-slate-800 text-slate-300 hover:border-slate-700'
+                        }`}
+                      >
+                        R420,000/yr (Enterprise Complex)
+                      </button>
+                    </>
+                  )}
+                </div>
+              </div>
+
+              {/* Optional Compliance Add-Ons */}
+              <div className="pt-2 space-y-2">
+                <div className="flex items-center justify-between">
+                  <h4 className="text-xs font-bold text-white uppercase tracking-wider font-mono text-slate-300">
+                    Optional Tender &amp; Regulatory Add-Ons
+                  </h4>
+                  <span className="text-[10px] text-slate-400 font-mono">
+                    {selectedAddOns.length} Active Add-on{selectedAddOns.length !== 1 ? 's' : ''}
+                  </span>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+                  {TENDER_ADDONS.map(addon => {
+                    const isChecked = selectedAddOns.includes(addon.id);
+                    return (
+                      <div
+                        key={addon.id}
+                        onClick={() => {
+                          setSelectedAddOns(prev =>
+                            prev.includes(addon.id) ? prev.filter(id => id !== addon.id) : [...prev, addon.id]
+                          );
+                        }}
+                        className={`p-3 rounded-xl border transition-all cursor-pointer flex flex-col justify-between ${
+                          isChecked
+                            ? 'bg-slate-950 border-emerald-500 ring-1 ring-emerald-500/30'
+                            : 'bg-slate-950/60 border-slate-800 hover:border-slate-700'
+                        }`}
+                      >
+                        <div>
+                          <div className="flex items-center justify-between gap-1 mb-1">
+                            <span className="text-[9px] px-1.5 py-0.5 rounded bg-slate-800 text-slate-300 font-mono">
+                              {addon.badge}
+                            </span>
+                            <div className={`w-3.5 h-3.5 rounded flex items-center justify-center border ${
+                              isChecked ? 'bg-emerald-500 border-emerald-400 text-slate-950' : 'border-slate-700 bg-slate-900'
+                            }`}>
+                              {isChecked && <Check className="w-2.5 h-2.5 stroke-[3]" />}
+                            </div>
+                          </div>
+                          <div className="text-xs font-bold text-white mb-0.5 leading-snug">
+                            {addon.name}
+                          </div>
+                          <p className="text-[10px] text-slate-400 leading-snug line-clamp-2">
+                            {addon.description}
+                          </p>
+                        </div>
+                        <div className="pt-2 text-right">
+                          <span className="text-xs font-bold font-mono text-emerald-400">
+                            +R{addon.priceZar.toLocaleString('en-ZA')}
+                          </span>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
               </div>
             </div>
 
@@ -1842,9 +2079,35 @@ INCLUDED DOSSIER ARTIFACTS:
                         </div>
 
                         {comp.gapAlert && (
-                          <div className="p-2 rounded bg-rose-950/40 border border-rose-500/30 text-[10px] text-rose-300 font-mono flex items-start gap-1.5">
-                            <AlertTriangle className="w-3.5 h-3.5 text-rose-400 shrink-0 mt-0.5" />
-                            <span>{comp.gapAlert}</span>
+                          <div className={`p-2.5 rounded-xl border text-[10px] font-mono flex flex-col sm:flex-row sm:items-start justify-between gap-2 transition ${
+                            resolvedRedFlags.includes(comp.id)
+                              ? 'bg-emerald-950/30 border-emerald-500/40 text-emerald-300'
+                              : 'bg-rose-950/40 border-rose-500/30 text-rose-300'
+                          }`}>
+                            <div className="flex items-start gap-1.5 flex-1">
+                              {resolvedRedFlags.includes(comp.id) ? (
+                                <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400 shrink-0 mt-0.5" />
+                              ) : (
+                                <AlertTriangle className="w-3.5 h-3.5 text-rose-400 shrink-0 mt-0.5" />
+                              )}
+                              <span>
+                                {comp.gapAlert}
+                                {resolvedRedFlags.includes(comp.id) && (
+                                  <span className="ml-1.5 text-emerald-400 font-bold block sm:inline">• RESOLVED (Mitigation Plan Logged in Draft)</span>
+                                )}
+                              </span>
+                            </div>
+                            <button
+                              type="button"
+                              onClick={() => handleToggleResolveRedFlag(comp.id)}
+                              className={`px-2.5 py-1 rounded text-[9px] font-bold uppercase transition shrink-0 cursor-pointer self-start ${
+                                resolvedRedFlags.includes(comp.id)
+                                  ? 'bg-emerald-500/20 text-emerald-300 hover:bg-emerald-500/30 border border-emerald-500/40'
+                                  : 'bg-rose-500/20 text-rose-300 hover:bg-rose-500/30 border border-rose-500/40'
+                              }`}
+                            >
+                              {resolvedRedFlags.includes(comp.id) ? 'Resolved ✓' : 'Mark Resolved'}
+                            </button>
                           </div>
                         )}
                       </div>
@@ -2122,7 +2385,7 @@ INCLUDED DOSSIER ARTIFACTS:
                     className="w-full sm:w-auto py-3 px-5 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 font-black text-xs uppercase tracking-wider rounded-xl transition shadow-lg shadow-amber-950/40 flex items-center justify-center gap-1.5 cursor-pointer shrink-0"
                   >
                     <CreditCard className="w-4 h-4" />
-                    <span>Unlock Unwatermarked Dossier (R{selectedTierObj.priceZar.toLocaleString('en-ZA')})</span>
+                    <span>Unlock Unwatermarked Dossier (R{totalAmountZar.toLocaleString('en-ZA')})</span>
                   </button>
                 )}
               </div>
@@ -2198,10 +2461,26 @@ INCLUDED DOSSIER ARTIFACTS:
       {/* Embedded Real PayPal & South African EFT Checkout Modal */}
       <PayPalEFTCheckoutModal
         isOpen={isCheckoutModalOpen}
-        onClose={() => setIsCheckoutModalOpen(false)}
+        onClose={() => {
+          setIsCheckoutModalOpen(false);
+          // Seamless restoration of complete draft state without page reload
+          const fresh = loadTenderDraft();
+          setSelectedTier(fresh.selectedTier);
+          if (fresh.customTierPriceZar) setCustomTierPriceZar(fresh.customTierPriceZar);
+          if (fresh.selectedAddOns) setSelectedAddOns(fresh.selectedAddOns);
+          if (fresh.isPaidUnlocked) setIsPaidUnlocked(true);
+          if (fresh.resolvedRedFlags) setResolvedRedFlags(fresh.resolvedRedFlags);
+          if (fresh.customNotes) setCustomNotes(fresh.customNotes);
+          if (fresh.diagnosticProgress) setDiagnosticProgress(fresh.diagnosticProgress);
+          if (fresh.diagnosticScore) setDiagnosticScore(fresh.diagnosticScore);
+        }}
         itemTitle={`${selectedTierObj.name} (Tender Safety File)`}
         itemDescription={`${selectedTierObj.description} - Formal 20-Section dossier for ${profile.companyName}`}
-        amountZar={selectedTierObj.priceZar}
+        amountZar={totalAmountZar}
+        selectedTierId={selectedTier}
+        onTierChange={(newTier) => setSelectedTier(newTier)}
+        selectedAddOns={selectedAddOns}
+        onAddOnsChange={(newAddOns) => setSelectedAddOns(newAddOns)}
         enterpriseName={profile.companyName}
         userEmail={profile.contactEmail || 'safety@contractor.co.za'}
         onSuccess={handleCheckoutSuccess}

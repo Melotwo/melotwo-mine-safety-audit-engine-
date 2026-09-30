@@ -14531,6 +14531,12 @@ const App: React.FC = () => {
                             localStorage.setItem('melotwo_vip_unlocked', 'true');
                             localStorage.setItem('sans_vip_unlocked', 'true');
                             localStorage.setItem('melotwo_tender_paid_unlocked', 'true');
+                            if (result?.tier) {
+                                localStorage.setItem('melotwo_tender_paid_tier', result.tier);
+                            }
+                            if (result?.addOns) {
+                                localStorage.setItem('melotwo_tender_paid_addons', JSON.stringify(result.addOns));
+                            }
                         } catch (e) {}
                         setIsPaymentGatewayModalOpen(false);
                     }}
