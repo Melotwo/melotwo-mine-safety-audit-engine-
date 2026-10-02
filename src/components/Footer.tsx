@@ -1,12 +1,16 @@
 import React from 'react';
 import { APP_NAME } from '../constants';
 import { GooglePreferredSourceBanner } from './GooglePreferredSourceBanner';
+import { CurrencySwitcher } from './CurrencySwitcher';
 
 export const Footer: React.FC = () => {
   return (
     <footer className="bg-slate-950 border-t border-slate-900 py-8 mt-auto text-slate-500">
       <div className="max-w-7xl mx-auto px-6 flex flex-col md:flex-row justify-between items-center gap-4 text-xs">
-        <p>© {new Date().getFullYear()} {APP_NAME}. All rights reserved.</p>
+        <div className="flex flex-col sm:flex-row items-center gap-3">
+          <p>© {new Date().getFullYear()} {APP_NAME}. All rights reserved.</p>
+          <CurrencySwitcher variant="footer" />
+        </div>
         <GooglePreferredSourceBanner variant="compact" />
         <p className="mt-2 md:mt-0 text-slate-600 font-mono">
           POPIA Compliant • SANS 10286 Standard • Melotwo Mining Safety

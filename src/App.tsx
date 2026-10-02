@@ -26,6 +26,7 @@ import { OutreachHub } from './components/OutreachHub';
 import { BlogPage } from './components/BlogPage';
 import { PWAInstallPrompt } from './components/PWAInstallPrompt';
 import { GooglePreferredSourceBanner } from './components/GooglePreferredSourceBanner';
+import { CurrencySwitcher } from './components/CurrencySwitcher';
 import { ZambianMhsCompliancePanel } from './components/ZambianMhsCompliancePanel';
 import { ZambiaComplianceAssessmentModal } from './components/ZambiaComplianceAssessmentModal';
 import { PartnerCoPilotAdminView } from './components/PartnerCoPilotAdminView';
@@ -4764,6 +4765,9 @@ const AppNavbar: React.FC<AppNavbarProps> = ({
             </button>
           )}
 
+          {/* Regional Currency Switcher (Option A: Auto-detected ZAR R / USD $) */}
+          <CurrencySwitcher variant="navbar" showAutoDetectLabel={true} />
+
           {/* Action: PayPal & EFT Checkout (Customer-facing) */}
           {onOpenPaymentSettings && (
             <button
@@ -4810,6 +4814,13 @@ const AppNavbar: React.FC<AppNavbarProps> = ({
               <ChevronRight className="w-3.5 h-3.5 text-amber-400" />
             </button>
           )}
+
+          {/* Mobile Currency Switcher */}
+          <div className="p-2 mb-2 bg-slate-950/70 border border-slate-800 rounded-xl flex items-center justify-between">
+            <span className="text-[11px] font-mono text-slate-400">Currency Display:</span>
+            <CurrencySwitcher variant="compact" />
+          </div>
+
           <div className="grid grid-cols-2 gap-2">
             <button
               onClick={() => {

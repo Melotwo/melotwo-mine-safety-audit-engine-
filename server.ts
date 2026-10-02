@@ -48,6 +48,37 @@ app.get(['/api/health', '/api/health/'], (req, res) => {
   });
 });
 
+// Geolocation & Automatic Currency Resolution Endpoint (Option A)
+app.get(['/api/geo/detect', '/api/geo/detect/'], (req, res) => {
+  // 1. Check for manual test/query parameter override
+  const testCountry = typeof req.query.country === 'string' ? req.query.country.trim().toUpperCase() : null;
+
+  // 2. Check standard cloud proxy & CDN geolocation headers
+  const cfCountry = (req.headers['cf-ipcountry'] as string)?.trim().toUpperCase();
+  const gcpCountry = (req.headers['x-appengine-country'] as string)?.trim().toUpperCase();
+  const customCountryHeader = (req.headers['x-country-code'] as string)?.trim().toUpperCase();
+  const geoLocHeader = (req.headers['x-client-geo-location'] as string)?.trim().toUpperCase();
+
+  // 3. Fallback IP address parsing
+  const forwardedFor = (req.headers['x-forwarded-for'] as string)?.split(',')[0]?.trim();
+  const rawIp = forwardedFor || req.socket.remoteAddress || '127.0.0.1';
+
+  // Determine detected country
+  const countryCode = testCountry || cfCountry || gcpCountry || customCountryHeader || geoLocHeader || 'ZA';
+  const isSouthAfrica = countryCode === 'ZA';
+  const currency = isSouthAfrica ? 'ZAR' : 'USD';
+
+  res.json({
+    ip: rawIp,
+    countryCode,
+    countryName: countryCode === 'ZA' ? 'South Africa' : countryCode === 'ZM' ? 'Zambia' : 'International',
+    currency,
+    isSouthAfrica,
+    exchangeRate: 18.5,
+    detectedVia: testCountry ? 'user_override' : (cfCountry || gcpCountry || customCountryHeader) ? 'server_header' : 'fallback_default'
+  });
+});
+
 // Upstream safety analysis proxy endpoint - supports both with and without trailing slash
 const ENGINE_SYSTEM_PROMPT = `You are the Melotwo AI Safety & Compliance Engine. Your primary function is to process raw audit logs, inspection data, and terminal telemetry across multiple SANS standards simultaneously.
 
