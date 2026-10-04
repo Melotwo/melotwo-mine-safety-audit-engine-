@@ -41,4 +41,6 @@ export * from './InspectorConflictResolver';
 export * from './OfflineSyncDashboard';
 export * from './PayPalKeyConfigModal';
 export * from './PayPalEFTCheckoutModal';
+export * from './AppNavbar';
+export * from './CurrencySwitcher';
 

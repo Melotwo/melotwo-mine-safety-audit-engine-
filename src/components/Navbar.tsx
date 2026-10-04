@@ -368,5 +368,4 @@ export const Navbar: React.FC<NavbarProps> = ({
   );
 };
 
-export { Navbar as AppNavbar };
 export default Navbar;
