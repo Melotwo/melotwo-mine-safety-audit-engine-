@@ -66,9 +66,13 @@ export const PartnerCoPilotAdminView: React.FC<PartnerCoPilotAdminViewProps> = (
 }) => {
   const [partnerOrg, setPartnerOrg] = useState<string>('Zambia Chamber of Mines - Copperbelt Chapter');
   const [partnerCode, setPartnerCode] = useState<string>('CHAMBER-KITWE');
+  const [customCodeInput, setCustomCodeInput] = useState<string>('CHAMBER-KITWE');
+  const [isEditingCode, setIsEditingCode] = useState<boolean>(false);
+  const [linkDestination, setLinkDestination] = useState<'zambia' | 'tender' | 'calculator' | 'home'>('zambia');
   const [selectedDistrict, setSelectedDistrict] = useState<string>('ALL');
   const [selectedTier, setSelectedTier] = useState<string>('ALL');
   const [isCopied, setIsCopied] = useState<boolean>(false);
+  const [toastMessage, setToastMessage] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<'INTELLIGENCE' | 'REFERRAL_PIPELINE' | 'EFT_APPROVALS' | 'GOVERNANCE'>('INTELLIGENCE');
   const [isAdminPayPalModalOpen, setIsAdminPayPalModalOpen] = useState(false);
 
@@ -167,7 +171,28 @@ export const PartnerCoPilotAdminView: React.FC<PartnerCoPilotAdminViewProps> = (
 
   // Dynamic Origin Link Generation
   const baseUrl = typeof window !== 'undefined' ? window.location.origin : 'https://melotwo.com';
-  const partnerTrackingLink = `${baseUrl}/?ref=${partnerCode}#zambia-assessment`;
+  
+  const getDestinationHash = () => {
+    switch (linkDestination) {
+      case 'zambia': return '#zambia-assessment';
+      case 'tender': return '#tender-file';
+      case 'calculator': return '#calculate-cost';
+      case 'home': return '';
+      default: return '#zambia-assessment';
+    }
+  };
+
+  const partnerTrackingLink = `${baseUrl}/?ref=${encodeURIComponent(partnerCode.trim().toUpperCase())}${getDestinationHash()}`;
+
+  const handleApplyCustomCode = () => {
+    const clean = customCodeInput.trim().toUpperCase().replace(/[^A-Z0-9_-]/g, '');
+    if (clean) {
+      setPartnerCode(clean);
+      setIsEditingCode(false);
+      setToastMessage(`Partner referral code set to "${clean}". Unique link generated!`);
+      setTimeout(() => setToastMessage(null), 3500);
+    }
+  };
 
   const handleCopyLink = async () => {
     try {
@@ -182,7 +207,11 @@ export const PartnerCoPilotAdminView: React.FC<PartnerCoPilotAdminViewProps> = (
         document.body.removeChild(textarea);
       }
       setIsCopied(true);
-      setTimeout(() => setIsCopied(false), 2500);
+      setToastMessage(`Referral link copied to clipboard! (Code: ${partnerCode})`);
+      setTimeout(() => {
+        setIsCopied(false);
+        setToastMessage(null);
+      }, 3500);
     } catch (e) {
       console.error('Failed to copy partner link:', e);
     }
@@ -440,61 +469,216 @@ export const PartnerCoPilotAdminView: React.FC<PartnerCoPilotAdminViewProps> = (
           </div>
         </div>
 
+        {/* Floating Toast Notification */}
+        {toastMessage && (
+          <div className="fixed top-6 right-6 z-50 bg-emerald-500 text-slate-950 px-4 py-3 rounded-2xl shadow-2xl font-bold text-xs flex items-center gap-2 animate-in fade-in slide-in-from-top-4 duration-200 border border-emerald-400">
+            <CheckCircle2 className="w-4 h-4 text-slate-950 shrink-0" />
+            <span>{toastMessage}</span>
+          </div>
+        )}
+
         {/* Partner Accreditation & Tracking Card */}
-        <div className="bg-slate-900/90 border border-slate-800 rounded-3xl p-5 sm:p-6 backdrop-blur-xl shadow-2xl">
-          <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
-            <div className="space-y-2">
+        <div className="bg-slate-900/90 border border-slate-800 rounded-3xl p-5 sm:p-6 backdrop-blur-xl shadow-2xl space-y-6">
+          <div className="flex flex-col lg:flex-row lg:items-start justify-between gap-6">
+            <div className="space-y-3 max-w-xl">
               <div className="flex items-center gap-2">
                 <Building2 className="w-4 h-4 text-amber-400" />
                 <span className="text-xs font-mono uppercase text-slate-400 font-bold">Accredited Channel Co-Pilot:</span>
               </div>
-              <h2 className="text-lg sm:text-xl font-black text-white">
+              <h2 className="text-lg sm:text-xl md:text-2xl font-black text-white">
                 {partnerOrg}
               </h2>
               <div className="flex flex-wrap items-center gap-2 pt-1">
                 <span className="text-xs font-mono text-slate-400 bg-slate-950 px-2.5 py-1 rounded-lg border border-slate-800">
-                  Partner Code: <strong className="text-amber-400">{partnerCode}</strong>
+                  Active Partner Code: <strong className="text-amber-400">{partnerCode}</strong>
                 </span>
                 <span className="text-xs font-mono text-slate-400 bg-slate-950 px-2.5 py-1 rounded-lg border border-slate-800">
                   Territory: <strong className="text-slate-200">Copperbelt &amp; North-Western Provinces</strong>
                 </span>
+                <span className="text-xs font-mono text-emerald-400 bg-emerald-500/10 px-2.5 py-1 rounded-lg border border-emerald-500/20">
+                  15% Rev Share Active
+                </span>
+              </div>
+
+              {/* Custom Code Input / Generator Toggle */}
+              <div className="pt-2">
+                {isEditingCode ? (
+                  <div className="flex items-center gap-2 max-w-sm">
+                    <input 
+                      type="text"
+                      value={customCodeInput}
+                      onChange={(e) => setCustomCodeInput(e.target.value.toUpperCase())}
+                      placeholder="ENTER-CUSTOM-CODE"
+                      className="bg-slate-950 border border-amber-500/60 rounded-xl px-3 py-1.5 text-xs font-mono text-amber-400 focus:outline-none w-full"
+                    />
+                    <button
+                      type="button"
+                      onClick={handleApplyCustomCode}
+                      className="px-3 py-1.5 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs rounded-xl transition cursor-pointer shrink-0"
+                    >
+                      Apply Code
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setIsEditingCode(false)}
+                      className="px-2.5 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs rounded-xl transition cursor-pointer"
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                ) : (
+                  <div className="flex items-center gap-2 flex-wrap text-xs">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setCustomCodeInput(partnerCode);
+                        setIsEditingCode(true);
+                      }}
+                      className="text-amber-400 hover:underline text-[11px] font-mono cursor-pointer flex items-center gap-1"
+                    >
+                      <span>Customize Partner Code</span>
+                    </button>
+                    <span className="text-slate-600">•</span>
+                    <span className="text-slate-500 text-[11px] font-mono">Quick Presets:</span>
+                    {['CHAMBER-KITWE', 'MINE-AUDITOR', 'COPPERBELT-SHEQ'].map((preset) => (
+                      <button
+                        key={preset}
+                        type="button"
+                        onClick={() => {
+                          setPartnerCode(preset);
+                          setCustomCodeInput(preset);
+                          setToastMessage(`Partner code updated to ${preset}`);
+                          setTimeout(() => setToastMessage(null), 3000);
+                        }}
+                        className={`text-[10px] font-mono px-2 py-0.5 rounded border transition cursor-pointer ${
+                          partnerCode === preset 
+                            ? 'bg-amber-500/20 text-amber-300 border-amber-500/40' 
+                            : 'bg-slate-950 text-slate-400 border-slate-800 hover:text-slate-200'
+                        }`}
+                      >
+                        {preset}
+                      </button>
+                    ))}
+                  </div>
+                )}
               </div>
             </div>
 
-            {/* Partner Referral Link Generator */}
-            <div className="bg-slate-950 border border-slate-800 p-4 rounded-2xl max-w-md w-full space-y-2">
+            {/* Partner Referral Link Generator Box */}
+            <div className="bg-slate-950 border border-slate-800 p-4 sm:p-5 rounded-2xl max-w-lg w-full space-y-3 shadow-inner">
               <div className="flex items-center justify-between">
-                <span className="text-[10px] font-mono font-bold text-slate-400 uppercase">Partner Lead Magnet Link</span>
-                <span className="text-[10px] font-mono text-emerald-400">Attribution Active</span>
+                <span className="text-[10px] font-mono font-bold text-slate-400 uppercase tracking-wider">
+                  Partner Referral Link Generator
+                </span>
+                <span className="text-[10px] font-mono text-emerald-400 flex items-center gap-1">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                  Attribution Active
+                </span>
               </div>
-              <div className="flex items-center gap-2 bg-slate-900 border border-slate-800 rounded-xl px-3 py-1.5">
+
+              {/* Destination Selector */}
+              <div>
+                <label className="text-[10px] font-mono text-slate-500 uppercase block mb-1">
+                  Target Landing Destination:
+                </label>
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-1.5">
+                  {[
+                    { key: 'zambia', label: '15-PT Diagnostic', badge: 'Zambia' },
+                    { key: 'tender', label: 'Tender Safety File', badge: 'Red File' },
+                    { key: 'calculator', label: 'Cost Calculator', badge: 'ROI' },
+                    { key: 'home', label: 'Platform Home', badge: 'Overview' }
+                  ].map(dest => (
+                    <button
+                      key={dest.key}
+                      type="button"
+                      onClick={() => setLinkDestination(dest.key as any)}
+                      className={`px-2 py-1.5 rounded-lg text-left transition cursor-pointer border ${
+                        linkDestination === dest.key
+                          ? 'bg-amber-500/10 border-amber-500/50 text-amber-300'
+                          : 'bg-slate-900 border-slate-800 text-slate-400 hover:bg-slate-800/60'
+                      }`}
+                    >
+                      <span className="text-[10px] font-bold block truncate">{dest.label}</span>
+                      <span className="text-[8px] font-mono opacity-70 block">{dest.badge}</span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* The Link Output Bar */}
+              <div className="flex items-center gap-2 bg-slate-900 border border-slate-800 rounded-xl px-3 py-2">
                 <input 
                   type="text"
                   readOnly
                   value={partnerTrackingLink}
-                  className="bg-transparent text-[11px] font-mono text-slate-300 w-full focus:outline-none truncate"
+                  className="bg-transparent text-xs font-mono text-slate-200 w-full focus:outline-none truncate select-all"
                 />
                 <button
+                  type="button"
                   onClick={handleCopyLink}
-                  className="p-1.5 text-slate-400 hover:text-white rounded-lg transition cursor-pointer"
-                  title="Copy Tracking Link"
+                  className={`px-3 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-1.5 cursor-pointer shrink-0 ${
+                    isCopied 
+                      ? 'bg-emerald-600 text-white' 
+                      : 'bg-amber-500 hover:bg-amber-400 text-slate-950 shadow-sm'
+                  }`}
+                  title="Copy Tracking Link to Clipboard"
                 >
-                  {isCopied ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
+                  {isCopied ? (
+                    <>
+                      <Check className="w-3.5 h-3.5" />
+                      <span>Copied!</span>
+                    </>
+                  ) : (
+                    <>
+                      <Copy className="w-3.5 h-3.5" />
+                      <span>Copy Referral Link</span>
+                    </>
+                  )}
                 </button>
               </div>
 
               <div className="flex items-center justify-between pt-1">
-                <span className="text-[10px] text-slate-500 font-mono">Commission: ZMW 1,200 / Binder</span>
+                <span className="text-[10px] text-slate-400 font-mono">
+                  Bounty: <strong className="text-amber-400">ZMW 1,200</strong> / Binder or 15% SaaS
+                </span>
                 <a
                   href={whatsappShareUrl}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="text-[10px] font-bold text-emerald-400 hover:text-emerald-300 flex items-center gap-1 cursor-pointer"
+                  className="text-xs font-bold text-emerald-400 hover:text-emerald-300 flex items-center gap-1.5 cursor-pointer bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/30 px-2.5 py-1 rounded-lg transition"
                 >
-                  <Share2 className="w-3 h-3" />
+                  <Share2 className="w-3.5 h-3.5" />
                   <span>Share via WhatsApp</span>
                 </a>
               </div>
+            </div>
+          </div>
+
+          {/* Partner Program Details & Tracking Terms Banner */}
+          <div className="bg-slate-950/70 border border-slate-800/80 rounded-2xl p-4 text-xs text-slate-300 grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="space-y-1">
+              <span className="text-[10px] font-mono text-amber-400 uppercase font-bold block">
+                1. Commission Structure
+              </span>
+              <p className="text-[11px] text-slate-400 leading-relaxed font-sans">
+                Earn <strong className="text-white">15% recurring commission</strong> on all annual &amp; monthly SaaS licenses, plus <strong className="text-amber-400">ZMW 1,200 (or R750)</strong> instant bounty on every standalone 20-Section Tender Safety File or Diagnostic Audit report.
+              </p>
+            </div>
+            <div className="space-y-1">
+              <span className="text-[10px] font-mono text-cyan-400 uppercase font-bold block">
+                2. Attribution &amp; Tracking
+              </span>
+              <p className="text-[11px] text-slate-400 leading-relaxed font-sans">
+                Every visitor landing via <code className="text-cyan-300 font-mono">?ref={partnerCode}</code> has their partner code stored in persistent browser storage with a <strong className="text-white">60-day attribution window</strong>. Conversions automatically credit your dashboard.
+              </p>
+            </div>
+            <div className="space-y-1">
+              <span className="text-[10px] font-mono text-emerald-400 uppercase font-bold block">
+                3. Settlement Schedule
+              </span>
+              <p className="text-[11px] text-slate-400 leading-relaxed font-sans">
+                Referral payouts are disbursed weekly every Friday directly via <strong className="text-white">South African Corporate EFT</strong> (Capitec / FNB) or international <strong className="text-white">PayPal gateway</strong>. Zero threshold barrier.
+              </p>
             </div>
           </div>
 

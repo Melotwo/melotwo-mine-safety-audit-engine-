@@ -1247,7 +1247,8 @@ export const AFFILIATE_LINKS: AffiliateLink[] = [
   { id: 1, name: 'Compliance Blog & Guides', url: '#blog', description: 'Technical whitepapers, SANS standards & MHSA stoppage prevention guides.', icon: BookOpen },
   { id: 2, name: 'Tender Safety File Engine', url: '#tender-file', description: 'Generate 20-section DMRE compliant tender safety documentation.', icon: FileSpreadsheet },
   { id: 3, name: 'Site Stoppage Cost Calculator', url: '#calculate-cost', description: 'Calculate daily financial exposure and ROI of digital compliance.', icon: Shield },
-  { id: 4, name: '📲 Install MeloTwo App', url: '#install-app', description: 'Install MeloTwo PWA on your phone or desktop for offline access.', icon: Shield },
+  { id: 4, name: '🤝 Partner Program & Referrals', url: '#partner-copilot', description: 'Join our channel partner co-pilot network and contractor referral program.', icon: Users },
+  { id: 5, name: '📲 Install MeloTwo App', url: '#install-app', description: 'Install MeloTwo PWA on your phone or desktop for offline access.', icon: Shield },
 ];
 
 export const INSPECTOR_TEMPLATES: InspectorTemplate[] = [
@@ -5187,11 +5188,13 @@ const EnterpriseDemoModal: React.FC<EnterpriseDemoModalProps> = ({ isOpen, onClo
                                         iso42001 && 'ISO/IEC 42001'
                                     ].filter(Boolean).join(', ');
 
+                                    const activePartnerRef = typeof localStorage !== 'undefined' ? localStorage.getItem('melotwo_partner_ref') : null;
+
                                     syncLeadToKlaviyoAndBackup({
                                         fullName: demoName,
                                         companyName: demoCompany,
                                         email: demoEmail,
-                                        selectedSans: `Pricing Estimator: ${formatPrice(calculatedPrice)} (${currency}) | Tier: ${selectedTier} | Sites: ${numSites} | Modules: [${activeModulesStr}] | Workforce: ${workforceSize}`
+                                        selectedSans: `Pricing Estimator: ${formatPrice(calculatedPrice)} (${currency}) | Tier: ${selectedTier} | Sites: ${numSites} | Modules: [${activeModulesStr}] | Workforce: ${workforceSize}${activePartnerRef ? ` | PartnerRef: ${activePartnerRef}` : ''}`
                                     });
 
                                     trackGA4Event('pricing_estimator_submitted', {
@@ -5201,7 +5204,8 @@ const EnterpriseDemoModal: React.FC<EnterpriseDemoModalProps> = ({ isOpen, onClo
                                         currency,
                                         sites: numSites,
                                         workforce: workforceSize,
-                                        tier: selectedTier
+                                        tier: selectedTier,
+                                        partner_ref: activePartnerRef || 'direct'
                                     });
                                 }
                             }}
@@ -13907,6 +13911,29 @@ const App: React.FC = () => {
         }, 1200);
 
         return () => clearTimeout(toastTimer);
+    }, []);
+
+    // Global Referral Tracking & Partner Attribution (?ref=... or ?referral=...)
+    useEffect(() => {
+        if (typeof window === 'undefined') return;
+        try {
+            const urlParams = new URLSearchParams(window.location.search);
+            const refCode = urlParams.get('ref') || urlParams.get('referral') || urlParams.get('partner') || urlParams.get('affiliate');
+            if (refCode && refCode.trim()) {
+                const cleanCode = refCode.trim().toUpperCase();
+                localStorage.setItem('melotwo_partner_ref', cleanCode);
+                sessionStorage.setItem('melotwo_partner_ref', cleanCode);
+                localStorage.setItem('melotwo_partner_ref_timestamp', new Date().toISOString());
+                
+                trackGA4Event('partner_referral_landed', {
+                    referral_code: cleanCode,
+                    landing_url: window.location.href,
+                    referrer: document.referrer || 'direct'
+                });
+            }
+        } catch (e) {
+            console.warn('Failed to parse referral attribution:', e);
+        }
     }, []);
 
     useEffect(() => {

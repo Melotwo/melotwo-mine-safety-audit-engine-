@@ -200,12 +200,12 @@ export const AppNavbar: React.FC<AppNavbarProps> = ({
     },
     {
       id: 'copilot',
-      name: 'Partner Co-Pilot Intelligence',
-      badge: 'Lead Gov',
-      badgeColor: 'bg-purple-500/20 text-purple-300 border-purple-500/30',
-      description: 'Executive legal review, EFT approvals, and Section 54 defense dashboard.',
+      name: 'Partner Program & Co-Pilot',
+      badge: 'Earn 15%',
+      badgeColor: 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30',
+      description: 'Partner portal, referral link generator, 15% rev share, and contractor pipeline.',
       category: 'MANAGEMENT & TRAINING',
-      icon: <Users className="w-4 h-4 text-purple-400" />,
+      icon: <Users className="w-4 h-4 text-emerald-400" />,
       action: () => setPage('partner-copilot'),
       activeMatch: currentPage === 'partner-copilot'
     },

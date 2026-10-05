@@ -36,6 +36,8 @@ export const OutreachHub: React.FC<OutreachHubProps> = ({
   const { toast } = useToast();
   const [activeTab, setActiveTab] = useState<'tender-scraper' | 'pipeline' | 'referrals' | 'earnings'>('tender-scraper');
   const [promoCode, setPromoCode] = useState<string>('BUILD10');
+  const [customCodeInput, setCustomCodeInput] = useState<string>('BUILD10');
+  const [isEditingCode, setIsEditingCode] = useState<boolean>(false);
   const [isCopied, setIsCopied] = useState<boolean>(false);
   const [isCodeCopied, setIsCodeCopied] = useState<boolean>(false);
   const [isPayoutModalOpen, setIsPayoutModalOpen] = useState<boolean>(false);
@@ -50,7 +52,21 @@ export const OutreachHub: React.FC<OutreachHubProps> = ({
 
   // Dynamic Origin Link Generation
   const baseUrl = typeof window !== 'undefined' ? window.location.origin : 'https://melotwo.com';
-  const referralLink = `${baseUrl}/?ref=${promoCode}`;
+  const referralLink = `${baseUrl}/?ref=${encodeURIComponent(promoCode.trim().toUpperCase())}`;
+
+  const handleApplyPromoCode = () => {
+    const clean = customCodeInput.trim().toUpperCase().replace(/[^A-Z0-9_-]/g, '');
+    if (clean) {
+      setPromoCode(clean);
+      setIsEditingCode(false);
+      toast({
+        title: 'Referral Code Updated!',
+        message: `Your tracking code is now "${clean}". Referral link regenerated.`,
+        type: 'success',
+        duration: 3500
+      });
+    }
+  };
 
   // WhatsApp Pre-filled share message for South African contractors
   const whatsappShareText = encodeURIComponent(
@@ -324,27 +340,83 @@ export const OutreachHub: React.FC<OutreachHubProps> = ({
                 {/* Promo Code Box */}
                 <div className="lg:col-span-4 bg-slate-950 border border-slate-800 rounded-2xl p-5 flex flex-col justify-between space-y-4">
                   <div>
-                    <label className="text-[10px] font-mono font-bold text-slate-400 uppercase tracking-wider block mb-1">
-                      Your Promo Code
-                    </label>
-                    <div className="flex items-center justify-between bg-slate-900 border border-amber-500/40 rounded-xl px-4 py-3">
-                      <span className="font-mono text-xl font-black text-amber-400 tracking-wider">
-                        {promoCode}
-                      </span>
+                    <div className="flex items-center justify-between mb-1">
+                      <label className="text-[10px] font-mono font-bold text-slate-400 uppercase tracking-wider block">
+                        Your Promo Code
+                      </label>
                       <button
-                        onClick={handleCopyCode}
-                        className="p-1.5 rounded-lg bg-amber-500/10 hover:bg-amber-500/20 text-amber-300 text-xs font-bold transition flex items-center gap-1 cursor-pointer"
-                        title="Copy Promo Code"
+                        type="button"
+                        onClick={() => {
+                          setCustomCodeInput(promoCode);
+                          setIsEditingCode(!isEditingCode);
+                        }}
+                        className="text-[10px] font-mono text-cyan-400 hover:underline cursor-pointer"
                       >
-                        {isCodeCopied ? (
-                          <span className="text-emerald-400 text-[11px] font-mono font-bold flex items-center gap-1">
-                            <Check className="w-3.5 h-3.5" /> Copied
-                          </span>
-                        ) : (
-                          <Copy className="w-4 h-4" />
-                        )}
+                        {isEditingCode ? 'Cancel' : 'Customize Code'}
                       </button>
                     </div>
+
+                    {isEditingCode ? (
+                      <div className="space-y-2">
+                        <div className="flex items-center gap-1.5">
+                          <input
+                            type="text"
+                            value={customCodeInput}
+                            onChange={(e) => setCustomCodeInput(e.target.value.toUpperCase())}
+                            placeholder="PROMO-CODE"
+                            className="bg-slate-900 border border-amber-500/60 rounded-xl px-3 py-2 text-xs font-mono text-amber-400 font-bold focus:outline-none w-full"
+                          />
+                          <button
+                            type="button"
+                            onClick={handleApplyPromoCode}
+                            className="px-3 py-2 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs rounded-xl transition cursor-pointer shrink-0"
+                          >
+                            Apply
+                          </button>
+                        </div>
+                        <div className="flex gap-1 flex-wrap">
+                          {['BUILD10', 'MINE-REF', 'SAFETY2026'].map((preset) => (
+                            <button
+                              key={preset}
+                              type="button"
+                              onClick={() => {
+                                setPromoCode(preset);
+                                setCustomCodeInput(preset);
+                                setIsEditingCode(false);
+                                toast({
+                                  title: 'Promo Code Applied',
+                                  message: `Set to ${preset}`,
+                                  type: 'success',
+                                  duration: 2500
+                                });
+                              }}
+                              className="text-[9px] font-mono px-2 py-0.5 rounded bg-slate-900 border border-slate-800 text-slate-400 hover:text-white cursor-pointer"
+                            >
+                              {preset}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="flex items-center justify-between bg-slate-900 border border-amber-500/40 rounded-xl px-4 py-3">
+                        <span className="font-mono text-xl font-black text-amber-400 tracking-wider">
+                          {promoCode}
+                        </span>
+                        <button
+                          onClick={handleCopyCode}
+                          className="p-1.5 rounded-lg bg-amber-500/10 hover:bg-amber-500/20 text-amber-300 text-xs font-bold transition flex items-center gap-1 cursor-pointer"
+                          title="Copy Promo Code"
+                        >
+                          {isCodeCopied ? (
+                            <span className="text-emerald-400 text-[11px] font-mono font-bold flex items-center gap-1">
+                              <Check className="w-3.5 h-3.5" /> Copied
+                            </span>
+                          ) : (
+                            <Copy className="w-4 h-4" />
+                          )}
+                        </button>
+                      </div>
+                    )}
                   </div>
 
                   <p className="text-xs text-slate-400 leading-relaxed">
