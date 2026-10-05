@@ -22,6 +22,8 @@ import {
 } from 'lucide-react';
 import { PayPalScriptProvider, PayPalButtons } from '@paypal/react-paypal-js';
 import jsPDF from 'jspdf';
+import { useCurrency } from '../context/CurrencyContext';
+import { CurrencySwitcher } from './CurrencySwitcher';
 
 // Official PayPal Client ID from Developer Dashboard
 export const PAYPAL_CLIENT_ID = 
@@ -137,6 +139,7 @@ export const PaymentGatewayModal: React.FC<PaymentGatewayModalProps> = ({
   customPlanName,
   onPaymentSuccess
 }) => {
+  const { currency, symbol, formatPrice } = useCurrency();
   const [activeTab, setActiveTab] = useState<'paypal' | 'eft'>('paypal');
   const [selectedPlanId, setSelectedPlanId] = useState<string>(initialPlanId);
   const [companyName, setCompanyName] = useState('');
@@ -171,9 +174,9 @@ export const PaymentGatewayModal: React.FC<PaymentGatewayModalProps> = ({
       const rand = Math.floor(1000 + Math.random() * 9000);
       const ref = `MT-${new Date().getFullYear()}-${rand}`;
       setEftReference(ref);
-      setEftAmountPaid(`R${effectivePriceZar.toLocaleString('en-ZA')}`);
+      setEftAmountPaid(formatPrice(effectivePriceZar));
     }
-  }, [isOpen, effectivePriceZar]);
+  }, [isOpen, effectivePriceZar, formatPrice]);
 
   const handleCopy = (text: string, fieldName: string) => {
     navigator.clipboard.writeText(text);
@@ -430,7 +433,7 @@ export const PaymentGatewayModal: React.FC<PaymentGatewayModalProps> = ({
       setPaymentDetails({
         method: 'PayPal (Global Gateway)',
         id: captureId,
-        amount: `$${effectivePriceUsd} USD (R${effectivePriceZar.toLocaleString('en-ZA')} ZAR)`
+        amount: `${formatPrice(effectivePriceZar)} (${currency === 'USD' ? '$' + effectivePriceUsd : '$' + effectivePriceUsd + ' USD'})`
       });
 
       if (onPaymentSuccess) {
@@ -451,16 +454,16 @@ export const PaymentGatewayModal: React.FC<PaymentGatewayModalProps> = ({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-slate-950/85 backdrop-blur-md animate-fade-in overflow-y-auto">
-      <div className="bg-slate-900 border-2 border-slate-800 rounded-3xl shadow-2xl max-w-3xl w-full overflow-hidden relative my-6 text-white font-sans">
+    <div className="fixed inset-0 z-50 flex items-start sm:items-center justify-center p-2 sm:p-4 bg-slate-950/85 backdrop-blur-md animate-fade-in overflow-y-auto">
+      <div className="bg-slate-900 border-2 border-slate-800 rounded-2xl sm:rounded-3xl shadow-2xl max-w-3xl w-full overflow-hidden relative my-auto text-white font-sans flex flex-col max-h-[94vh] sm:max-h-[90vh]">
         
         {/* Top Visual Accent Stripe */}
-        <div className="h-1.5 w-full bg-gradient-to-r from-amber-500 via-sky-400 to-indigo-600" />
+        <div className="h-1.5 w-full bg-gradient-to-r from-amber-500 via-sky-400 to-indigo-600 shrink-0" />
 
-        {/* Modal Header */}
-        <div className="p-5 sm:p-6 border-b border-slate-800 flex items-start justify-between relative">
-          <div>
-            <div className="flex items-center gap-2 mb-1.5">
+        {/* Modal Header - Sticky and Responsive */}
+        <div className="p-4 sm:p-6 border-b border-slate-800 bg-slate-950/95 flex items-start justify-between gap-3 shrink-0 sticky top-0 z-20 backdrop-blur-sm">
+          <div className="min-w-0 pr-2">
+            <div className="flex items-center gap-2 mb-1.5 flex-wrap">
               <span className="text-[10px] font-mono font-bold uppercase tracking-widest text-amber-400 bg-amber-500/10 border border-amber-500/30 px-2 py-0.5 rounded-full flex items-center gap-1.5">
                 <ShieldCheck className="w-3.5 h-3.5" />
                 MeloTwo Gateway Checkout
@@ -469,22 +472,26 @@ export const PaymentGatewayModal: React.FC<PaymentGatewayModalProps> = ({
                 SSL 256-Bit Encrypted
               </span>
             </div>
-            <h3 className="text-xl sm:text-2xl font-black tracking-tight text-white flex items-center gap-2">
+            <h3 className="text-lg sm:text-xl md:text-2xl font-black tracking-tight text-white flex items-center gap-2 truncate">
               <span>Payment &amp; Subscription Portal</span>
             </h3>
-            <p className="text-xs text-slate-400 mt-0.5 font-sans">
+            <p className="text-[11px] sm:text-xs text-slate-400 mt-0.5 font-sans">
               Choose your preferred payment method: secure international settlement via <strong>PayPal</strong> or direct South African corporate <strong>EFT</strong> wire transfer.
             </p>
           </div>
 
-          <button
-            type="button"
-            onClick={onClose}
-            className="p-2 text-slate-400 hover:text-white hover:bg-slate-800 rounded-xl transition-colors cursor-pointer"
-            title="Close Checkout"
-          >
-            <X className="w-5 h-5" />
-          </button>
+          <div className="flex items-center gap-2 sm:gap-3 shrink-0">
+            <CurrencySwitcher variant="compact" />
+            <button
+              type="button"
+              onClick={onClose}
+              className="p-1.5 sm:p-2 text-slate-400 hover:text-white hover:bg-slate-800 rounded-xl transition-colors cursor-pointer"
+              title="Close Checkout"
+              aria-label="Close Checkout Modal"
+            >
+              <X className="w-5 h-5" />
+            </button>
+          </div>
         </div>
 
         {/* SUCCESS STATE */}
@@ -541,7 +548,7 @@ export const PaymentGatewayModal: React.FC<PaymentGatewayModalProps> = ({
             </div>
           </div>
         ) : (
-          <div className="p-5 sm:p-6 space-y-6">
+          <div className="p-4 sm:p-6 space-y-6 overflow-y-auto flex-1 overscroll-contain">
 
             {/* PLAN SELECTION CAROUSEL / PILLS */}
             {!customAmountZar && (
@@ -574,10 +581,10 @@ export const PaymentGatewayModal: React.FC<PaymentGatewayModalProps> = ({
                         </div>
                         <div className="mt-3 pt-2 border-t border-slate-800/80">
                           <span className="text-sm font-black font-mono text-amber-300">
-                            R{plan.priceZar.toLocaleString('en-ZA')}
+                            {formatPrice(plan.priceZar)}
                           </span>
                           <span className="text-[9px] text-slate-500 block font-mono">
-                            ≈ ${plan.priceUsd} USD ({plan.billingPeriod})
+                            {currency !== 'USD' ? `≈ $${plan.priceUsd} USD (${plan.billingPeriod})` : `(${plan.billingPeriod})`}
                           </span>
                         </div>
                       </button>
@@ -599,11 +606,13 @@ export const PaymentGatewayModal: React.FC<PaymentGatewayModalProps> = ({
                 <span className="text-[10px] text-slate-400 uppercase tracking-wider block">Total Amount:</span>
                 <div className="flex sm:justify-end items-baseline gap-2">
                   <span className="text-2xl font-black text-amber-400">
-                    R{effectivePriceZar.toLocaleString('en-ZA')}
+                    {formatPrice(effectivePriceZar)}
                   </span>
-                  <span className="text-xs text-slate-400">
-                    (approx. ${effectivePriceUsd} USD)
-                  </span>
+                  {currency !== 'USD' && (
+                    <span className="text-xs text-slate-400">
+                      (approx. ${effectivePriceUsd} USD)
+                    </span>
+                  )}
                 </div>
               </div>
             </div>

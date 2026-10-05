@@ -563,6 +563,11 @@ export const AppNavbar: React.FC<AppNavbarProps> = ({
               </button>
             )}
 
+            {/* Main Navbar Currency Switcher */}
+            <div className="hidden md:flex items-center shrink-0">
+              <CurrencySwitcher variant="compact" />
+            </div>
+
             {/* Mobile / Tablet Menu Button */}
             <button
               onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}

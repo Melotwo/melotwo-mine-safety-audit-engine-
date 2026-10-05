@@ -27,6 +27,7 @@ import { BlogPage } from './components/BlogPage';
 import { PWAInstallPrompt } from './components/PWAInstallPrompt';
 import { GooglePreferredSourceBanner } from './components/GooglePreferredSourceBanner';
 import { CurrencySwitcher } from './components/CurrencySwitcher';
+import { useCurrency } from './context/CurrencyContext';
 import { AppNavbar } from './components/AppNavbar';
 import { ZambianMhsCompliancePanel } from './components/ZambianMhsCompliancePanel';
 import { ZambiaComplianceAssessmentModal } from './components/ZambiaComplianceAssessmentModal';
@@ -4770,6 +4771,7 @@ interface EnterpriseDemoModalProps {
 }
 
 const EnterpriseDemoModal: React.FC<EnterpriseDemoModalProps> = ({ isOpen, onClose, initialTier, onOpenCheckout }) => {
+    const { currency, symbol, formatPrice, formatRange } = useCurrency();
     const [demoName, setDemoName] = useState('');
     const [demoEmail, setDemoEmail] = useState('');
     const [demoCompany, setDemoCompany] = useState('');
@@ -4786,6 +4788,17 @@ const EnterpriseDemoModal: React.FC<EnterpriseDemoModalProps> = ({ isOpen, onClo
     const [iso42001, setIso42001] = useState(false);
     const [workforceSize, setWorkforceSize] = useState<'under50' | '50-250' | '250+'>('under50');
     const [demoSubmitted, setDemoSubmitted] = useState(false);
+
+    // Close on Escape key
+    useEffect(() => {
+        const handleKeyDown = (e: KeyboardEvent) => {
+            if (e.key === 'Escape' && isOpen) {
+                onClose();
+            }
+        };
+        window.addEventListener('keydown', handleKeyDown);
+        return () => window.removeEventListener('keydown', handleKeyDown);
+    }, [isOpen, onClose]);
 
     useEffect(() => {
         if (!isOpen) {
@@ -5082,590 +5095,631 @@ const EnterpriseDemoModal: React.FC<EnterpriseDemoModalProps> = ({ isOpen, onClo
     if (!isOpen) return null;
 
     return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm animate-fade-in overflow-y-auto">
-            <div className="bg-white rounded-3xl shadow-2xl border border-gray-100 max-w-5xl w-full overflow-hidden animate-scale-up my-8">
-                {/* Header Banner */}
-                <div className="bg-slate-950 p-6 text-white relative">
-                    <button
-                        onClick={onClose}
-                        className="absolute top-4 right-4 text-slate-400 hover:text-white text-lg font-bold cursor-pointer transition"
-                    >
-                        ✕
-                    </button>
-                    <span className="text-[10px] font-bold text-amber-400 uppercase tracking-widest block mb-1 font-mono">
-                        Enterprise Estimator System
-                    </span>
-                    <h3 className="text-2xl font-black tracking-tight">Interactive Compliance Quotation</h3>
-                    <p className="text-xs text-slate-400 mt-1 leading-relaxed">
-                        Assess multi-site licensing costs across all 6 core SANS & ISO compliance modules. Instantly export an official PDF quote.
-                    </p>
+        <div 
+            className="fixed inset-0 z-50 flex items-start sm:items-center justify-center p-2 sm:p-4 md:p-6 bg-slate-950/85 backdrop-blur-md animate-fade-in overflow-y-auto"
+            onClick={(e) => {
+                if (e.target === e.currentTarget) onClose();
+            }}
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="quotation-modal-title"
+        >
+            <div className="bg-white rounded-2xl sm:rounded-3xl shadow-2xl border border-slate-800/20 max-w-5xl w-full max-h-[94vh] sm:max-h-[90vh] flex flex-col overflow-hidden animate-scale-up my-auto">
+                {/* Header Banner - Fixed & Sticky at the very top so it is NEVER cut off */}
+                <div className="shrink-0 sticky top-0 z-20 bg-slate-950 px-4 sm:px-6 py-3.5 sm:py-4 text-white border-b border-slate-800/80 flex items-center justify-between gap-3">
+                    <div className="min-w-0 pr-2">
+                        <div className="flex items-center gap-2 mb-0.5">
+                            <span className="text-[10px] font-bold text-amber-400 uppercase tracking-widest font-mono bg-amber-500/10 px-2 py-0.5 rounded border border-amber-500/20">
+                                Enterprise Estimator System
+                            </span>
+                            <span className="text-[10px] text-slate-400 font-mono hidden md:inline">
+                                • SANS &amp; MHSA Multi-Site
+                            </span>
+                        </div>
+                        <h3 id="quotation-modal-title" className="text-lg sm:text-xl md:text-2xl font-black tracking-tight text-white truncate">
+                            Interactive Compliance Quotation
+                        </h3>
+                        <p className="text-[11px] text-slate-400 hidden sm:block truncate mt-0.5">
+                            Assess multi-site licensing costs across all 6 core SANS &amp; ISO compliance modules. Instantly export an official PDF quote.
+                        </p>
+                    </div>
+
+                    <div className="flex items-center gap-2 sm:gap-3 shrink-0">
+                        {/* Currency Switcher in Modal Header */}
+                        <CurrencySwitcher variant="compact" />
+
+                        <button
+                            type="button"
+                            onClick={onClose}
+                            className="w-8 h-8 rounded-xl bg-slate-900 hover:bg-slate-800 text-slate-400 hover:text-white border border-slate-700/80 flex items-center justify-center font-bold text-sm cursor-pointer transition shadow-sm"
+                            title="Close Window (Esc)"
+                            aria-label="Close Quotation Modal"
+                        >
+                            ✕
+                        </button>
+                    </div>
                 </div>
                 
-                {demoSubmitted ? (
-                    <div className="p-12 text-center max-w-xl mx-auto">
-                        <div className="w-16 h-16 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center mx-auto mb-6">
-                            <svg className="w-8 h-8 stroke-[3]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-                            </svg>
+                {/* Modal Body - Scrollable Container to prevent any viewport clipping */}
+                <div className="overflow-y-auto flex-1 overscroll-contain">
+                    {demoSubmitted ? (
+                        <div className="p-8 sm:p-12 text-center max-w-xl mx-auto">
+                            <div className="w-16 h-16 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center mx-auto mb-6 shadow-inner">
+                                <svg className="w-8 h-8 stroke-[3]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                                </svg>
+                            </div>
+                            <h4 className="text-2xl font-black text-gray-900 mb-2">Quote Synchronized &amp; Saved</h4>
+                            <p className="text-sm text-gray-500 mb-8 leading-relaxed">
+                                Your estimate of <strong className="text-indigo-600">{formatPrice(calculatedPrice)}{MELOTWO_PRICING_MATRIX[selectedTier].billingType === 'monthly' ? '/mo' : ' (one-off)'}</strong> has been successfully cached offline and synchronized to our system. A MeloTwo SHEQ Integration Engineer will contact you at <strong>{demoEmail}</strong>.
+                            </p>
+                            <div className="flex flex-col sm:flex-row gap-4 justify-center">
+                                <button
+                                    type="button"
+                                    onClick={handleDownloadQuotationPDF}
+                                    className="px-6 py-3 bg-amber-500 hover:bg-amber-600 text-slate-950 font-black text-xs uppercase tracking-wider rounded-xl shadow-md transition cursor-pointer"
+                                >
+                                    Re-Download Quotation (PDF)
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={onClose}
+                                    className="px-6 py-3 border border-slate-200 text-slate-700 font-bold text-xs uppercase tracking-wider rounded-xl hover:bg-slate-50 transition cursor-pointer"
+                                >
+                                    Close Window
+                                </button>
+                            </div>
                         </div>
-                        <h4 className="text-2xl font-black text-gray-900 mb-2">Quote Synchronized & Saved</h4>
-                        <p className="text-sm text-gray-500 mb-8 leading-relaxed">
-                            Your estimate of <strong className="text-indigo-600">R{calculatedPrice.toLocaleString('en-ZA')}{MELOTWO_PRICING_MATRIX[selectedTier].billingType === 'monthly' ? '/mo' : ' (one-off)'}</strong> has been successfully cached offline and synchronized to our system. A MeloTwo SHEQ Integration Engineer will contact you at <strong>{demoEmail}</strong>.
-                        </p>
-                        <div className="flex flex-col sm:flex-row gap-4 justify-center">
-                            <button
-                                onClick={handleDownloadQuotationPDF}
-                                className="px-6 py-3 bg-amber-500 hover:bg-amber-600 text-slate-950 font-black text-xs uppercase tracking-wider rounded-xl shadow-md transition cursor-pointer"
-                            >
-                                Re-Download Quotation (PDF)
-                            </button>
-                            <button
-                                onClick={onClose}
-                                className="px-6 py-3 border border-slate-200 text-slate-700 font-bold text-xs uppercase tracking-wider rounded-xl hover:bg-slate-50 transition cursor-pointer"
-                            >
-                                Close Window
-                            </button>
-                        </div>
-                    </div>
-                ) : (
-                    <form
-                        onSubmit={(e) => {
-                            e.preventDefault();
-                            if (demoName && demoEmail && demoCompany) {
-                                setDemoSubmitted(true);
-                                
-                                // Sync lead with Klaviyo & back up locally
-                                const activeModulesStr = [
-                                    sans10330 && 'SANS 10330',
-                                    sans10142 && 'SANS 10142-1',
-                                    sans10049 && 'SANS 10049',
-                                    sans10108 && 'SANS 10108',
-                                    sans10375 && 'SANS 10375',
-                                    iso42001 && 'ISO/IEC 42001'
-                                ].filter(Boolean).join(', ');
-
-                                syncLeadToKlaviyoAndBackup({
-                                    fullName: demoName,
-                                    companyName: demoCompany,
-                                    email: demoEmail,
-                                    selectedSans: `Pricing Estimator: ZAR ${calculatedPrice} | Tier: ${selectedTier} | Sites: ${numSites} | Modules: [${activeModulesStr}] | Workforce: ${workforceSize}`
-                                });
-
-                                trackGA4Event('pricing_estimator_submitted', {
-                                    company: demoCompany,
-                                    email_domain: demoEmail.split('@')[1] || '',
-                                    total_estimate: calculatedPrice,
-                                    sites: numSites,
-                                    workforce: workforceSize,
-                                    tier: selectedTier
-                                });
-                            }
-                        }}
-                        className="p-8 grid md:grid-cols-12 gap-8"
-                    >
-                        {/* Left Side: Parameters Form */}
-                        <div className="md:col-span-7 space-y-6">
-                            
-                            {/* NEW TIER SELECTION FIELD */}
-                            <div>
-                                <h4 className="text-sm font-bold text-slate-900 uppercase tracking-wider mb-3">1. Engagement & Pricing Tier</h4>
-                                <div className="grid grid-cols-2 md:grid-cols-4 gap-2.5">
-                                    {(['professional', 'enterprise', 'full_site', 'audit'] as const).map((t) => {
-                                        const config = MELOTWO_PRICING_MATRIX[t];
-                                        return (
-                                            <button
-                                                key={t}
-                                                type="button"
-                                                onClick={() => {
-                                                    setSelectedTier(t);
-                                                    if (t === 'full_site') {
-                                                        setSans10330(true);
-                                                        setSans10142(true);
-                                                        setSans10049(true);
-                                                        setSans10108(true);
-                                                        setSans10375(true);
-                                                        setIso42001(true);
-                                                    }
-                                                }}
-                                                className={`p-3 rounded-xl border text-left transition cursor-pointer flex flex-col justify-between min-h-[125px] ${
-                                                    selectedTier === t
-                                                        ? 'bg-slate-900 border-slate-900 text-white shadow-md'
-                                                        : 'bg-slate-50 border-slate-200 text-slate-600 hover:bg-slate-100'
-                                                }`}
-                                            >
-                                                <div>
-                                                    <span className="text-xs font-black block leading-tight">{config.name}</span>
-                                                    <span className="text-[9px] opacity-70 font-medium block mt-1 leading-normal line-clamp-2">
-                                                        {config.tagline}
-                                                    </span>
-                                                </div>
-                                                <span className="text-[10px] font-black font-mono mt-2 block border-t border-current/20 pt-1 text-right">
-                                                    {t === 'full_site' ? 'R900k - R2.5m/yr' : t === 'enterprise' ? 'R35k - R60k/mo' : t === 'professional' ? 'R15k - R25k/mo' : 'R50k - R150k'}
-                                                </span>
-                                            </button>
-                                        );
-                                    })}
-                                </div>
-                            </div>
-
-                            <div className="border-b border-slate-100 pb-4">
-                                <h4 className="text-sm font-bold text-slate-900 uppercase tracking-wider mb-3">2. Contact & Corporate Profiles</h4>
-                                <div className="grid sm:grid-cols-2 gap-4">
-                                    <div>
-                                        <label className="block text-[10px] font-black text-gray-500 uppercase tracking-wide mb-1">Full Name</label>
-                                        <input
-                                            type="text"
-                                            required
-                                            value={demoName}
-                                            onChange={(e) => setDemoName(e.target.value)}
-                                            placeholder="John Smith"
-                                            className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:ring-2 focus:ring-amber-500 focus:border-amber-500 outline-none transition"
-                                        />
-                                    </div>
-                                    <div>
-                                        <label className="block text-[10px] font-black text-gray-500 uppercase tracking-wide mb-1">Company Name</label>
-                                        <input
-                                            type="text"
-                                            required
-                                            value={demoCompany}
-                                            onChange={(e) => setDemoCompany(e.target.value)}
-                                            placeholder="Deep Reef Gold Ltd"
-                                            className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:ring-2 focus:ring-amber-500 focus:border-amber-500 outline-none transition"
-                                        />
-                                    </div>
-                                    <div className="sm:col-span-2">
-                                        <label className="block text-[10px] font-black text-gray-500 uppercase tracking-wide mb-1">Work Email Address</label>
-                                        <input
-                                            type="email"
-                                            required
-                                            value={demoEmail}
-                                            onChange={(e) => setDemoEmail(e.target.value)}
-                                            placeholder="j.smith@reefmining.co.za"
-                                            className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:ring-2 focus:ring-amber-500 focus:border-amber-500 outline-none transition"
-                                        />
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div className="border-b border-slate-100 pb-4">
-                                <div className="flex justify-between items-center mb-3">
-                                    <h4 className="text-sm font-bold text-slate-900 uppercase tracking-wider">3. SANS Multi-Module Coverage</h4>
-                                    <button
-                                        type="button"
-                                        onClick={() => {
-                                            const allSelected = sans10330 && sans10142 && sans10049 && sans10108 && sans10375 && iso42001;
-                                            setSans10330(!allSelected);
-                                            setSans10142(!allSelected);
-                                            setSans10049(!allSelected);
-                                            setSans10108(!allSelected);
-                                            setSans10375(!allSelected);
-                                            setIso42001(!allSelected);
-                                        }}
-                                        className="text-[10px] font-bold text-amber-600 hover:text-amber-700 bg-amber-50 hover:bg-amber-100 border border-amber-200/80 px-2.5 py-1 rounded-lg transition"
-                                    >
-                                        {sans10330 && sans10142 && sans10049 && sans10108 && sans10375 && iso42001 ? 'Deselect All' : 'Select Full Multi-Module Coverage'}
-                                    </button>
-                                </div>
-
-                                {/* Dynamic Module Coverage Progress Bar */}
-                                <div className="mb-3.5 bg-slate-100/90 p-2.5 rounded-xl border border-slate-200/80">
-                                    <div className="flex justify-between items-center text-[11px] font-bold text-slate-700 mb-1.5">
-                                        <span className="flex items-center gap-1.5">
-                                            <span className="w-2 h-2 rounded-full bg-amber-500 animate-pulse"></span>
-                                            Module Coverage Strength
-                                        </span>
-                                        <span className="font-mono text-amber-600 font-black">
-                                            {[sans10330, sans10142, sans10049, sans10108, sans10375, iso42001].filter(Boolean).length} / 6 Selected ({Math.round(([sans10330, sans10142, sans10049, sans10108, sans10375, iso42001].filter(Boolean).length / 6) * 100)}%)
-                                        </span>
-                                    </div>
-                                    <div className="w-full h-2 bg-slate-200 rounded-full overflow-hidden p-0.5 border border-slate-300/40">
-                                        <div 
-                                            className="h-full bg-gradient-to-r from-amber-500 to-amber-400 rounded-full transition-all duration-300 ease-out shadow-sm"
-                                            style={{ width: `${([sans10330, sans10142, sans10049, sans10108, sans10375, iso42001].filter(Boolean).length / 6) * 100}%` }}
-                                        />
-                                    </div>
-                                </div>
-                                <div className="space-y-2.5">
-                                    <label className="flex items-start gap-3 p-3 bg-slate-50 border border-slate-200/60 rounded-xl hover:bg-slate-100/60 transition cursor-pointer">
-                                        <input
-                                            type="checkbox"
-                                            checked={sans10330}
-                                            onChange={(e) => setSans10330(e.target.checked)}
-                                            className="mt-0.5 rounded text-amber-500 focus:ring-amber-500 border-slate-300 w-4 h-4 cursor-pointer"
-                                        />
-                                        <div>
-                                            <span className="text-xs font-black text-slate-900 block">SANS 10330 (Catering & HACCP Food Safety Audit)</span>
-                                            <span className="text-[10px] text-gray-500 block">Covers kitchen storage, walk-in coolers, food sanitation pipelines.</span>
-                                        </div>
-                                    </label>
-
-                                    <label className="flex items-start gap-3 p-3 bg-slate-50 border border-slate-200/60 rounded-xl hover:bg-slate-100/60 transition cursor-pointer">
-                                        <input
-                                            type="checkbox"
-                                            checked={sans10142}
-                                            onChange={(e) => setSans10142(e.target.checked)}
-                                            className="mt-0.5 rounded text-amber-500 focus:ring-amber-500 border-slate-300 w-4 h-4 cursor-pointer"
-                                        />
-                                        <div>
-                                            <span className="text-xs font-black text-slate-900 block">SANS 10142-1 (Wiring & Electrical Isolator Safety)</span>
-                                            <span className="text-[10px] text-gray-500 block">Covers electrical distribution panel obstructions and steam line mounting codes.</span>
-                                        </div>
-                                    </label>
-
-                                    <label className="flex items-start gap-3 p-3 bg-slate-50 border border-slate-200/60 rounded-xl hover:bg-slate-100/60 transition cursor-pointer">
-                                        <input
-                                            type="checkbox"
-                                            checked={sans10049}
-                                            onChange={(e) => setSans10049(e.target.checked)}
-                                            className="mt-0.5 rounded text-amber-500 focus:ring-amber-500 border-slate-300 w-4 h-4 cursor-pointer"
-                                        />
-                                        <div>
-                                            <span className="text-xs font-black text-slate-900 block">SANS 10049 (Hygiene & PPE Compliance)</span>
-                                            <span className="text-[10px] text-gray-500 block">Covers personal protective gear verification, dispenser levels, and sanitizers.</span>
-                                        </div>
-                                    </label>
-
-                                    <label className="flex items-start gap-3 p-3 bg-slate-50 border border-slate-200/60 rounded-xl hover:bg-slate-100/60 transition cursor-pointer">
-                                        <input
-                                            type="checkbox"
-                                            checked={sans10108}
-                                            onChange={(e) => setSans10108(e.target.checked)}
-                                            className="mt-0.5 rounded text-amber-500 focus:ring-amber-500 border-slate-300 w-4 h-4 cursor-pointer"
-                                        />
-                                        <div>
-                                            <span className="text-xs font-black text-slate-900 block">SANS 10108 (Hazardous Location & Explosive Atmosphere Classification)</span>
-                                            <span className="text-[10px] text-gray-500 block">Covers Ex-d flameproof enclosures, gas extraction fans, and hazardous area zone audits.</span>
-                                        </div>
-                                    </label>
-
-                                    <label className="flex items-start gap-3 p-3 bg-slate-50 border border-slate-200/60 rounded-xl hover:bg-slate-100/60 transition cursor-pointer">
-                                        <input
-                                            type="checkbox"
-                                            checked={sans10375}
-                                            onChange={(e) => setSans10375(e.target.checked)}
-                                            className="mt-0.5 rounded text-amber-500 focus:ring-amber-500 border-slate-300 w-4 h-4 cursor-pointer"
-                                        />
-                                        <div>
-                                            <span className="text-xs font-black text-slate-900 block">SANS 10375 / ISO 45001 (Lifting Equipment & Operational Safety Management)</span>
-                                            <span className="text-[10px] text-gray-500 block">Covers overhead crane hooks, wire rope fraying, load limit testing, and OH&S tracking.</span>
-                                        </div>
-                                    </label>
-
-                                    <label className="flex items-start gap-3 p-3 bg-slate-50 border border-slate-200/60 rounded-xl hover:bg-slate-100/60 transition cursor-pointer">
-                                        <input
-                                            type="checkbox"
-                                            checked={iso42001}
-                                            onChange={(e) => setIso42001(e.target.checked)}
-                                            className="mt-0.5 rounded text-amber-500 focus:ring-amber-500 border-slate-300 w-4 h-4 cursor-pointer"
-                                        />
-                                        <div>
-                                            <span className="text-xs font-black text-slate-900 block">ISO/IEC 42001 (AI Governance & Safety Automation Compliance)</span>
-                                            <span className="text-[10px] text-gray-500 block">Covers automated AI risk assessment, safety guardrails, and algorithmic audit trails.</span>
-                                        </div>
-                                    </label>
-                                </div>
-                            </div>
-
-                            {/* Active Mine Shafts / Terminals Field */}
-                            {(selectedTier === 'full_site' || selectedTier === 'enterprise') && (
-                                <div className="border-b border-slate-100 pb-4 animate-fade-in">
-                                    <div className="flex justify-between items-center mb-2">
-                                        <h4 className="text-sm font-bold text-slate-900 uppercase tracking-wider">4. Active Mine Shafts & Terminals</h4>
-                                        <span className="text-[10px] font-mono text-amber-600 bg-amber-50 px-2 py-0.5 rounded border border-amber-200 font-bold">
-                                            {numShafts} Shaft{numShafts > 1 ? 's' : ''} Selected
-                                        </span>
-                                    </div>
+                    ) : (
+                        <form
+                            onSubmit={(e) => {
+                                e.preventDefault();
+                                if (demoName && demoEmail && demoCompany) {
+                                    setDemoSubmitted(true);
                                     
-                                    <div className="flex items-center gap-3 mb-3">
-                                        <button
-                                            type="button"
-                                            onClick={() => setNumShafts(Math.max(1, numShafts - 1))}
-                                            className="w-10 h-10 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-900 font-black text-lg flex items-center justify-center transition border border-slate-200"
-                                        >
-                                            -
-                                        </button>
-                                        <input
-                                            type="number"
-                                            min={1}
-                                            max={50}
-                                            value={numShafts}
-                                            onChange={(e) => setNumShafts(Math.max(1, parseInt(e.target.value) || 1))}
-                                            className="w-20 py-2 text-center bg-slate-50 border border-slate-200 rounded-xl font-mono text-sm font-bold text-slate-900 focus:ring-2 focus:ring-amber-500 outline-none"
-                                        />
-                                        <button
-                                            type="button"
-                                            onClick={() => setNumShafts(numShafts + 1)}
-                                            className="w-10 h-10 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-900 font-black text-lg flex items-center justify-center transition border border-slate-200"
-                                        >
-                                            +
-                                        </button>
-                                        
-                                        <div className="flex gap-1.5 flex-wrap ml-auto">
-                                            {[1, 3, 6, 12, 20].map((sCount) => (
+                                    // Sync lead with Klaviyo & back up locally
+                                    const activeModulesStr = [
+                                        sans10330 && 'SANS 10330',
+                                        sans10142 && 'SANS 10142-1',
+                                        sans10049 && 'SANS 10049',
+                                        sans10108 && 'SANS 10108',
+                                        sans10375 && 'SANS 10375',
+                                        iso42001 && 'ISO/IEC 42001'
+                                    ].filter(Boolean).join(', ');
+
+                                    syncLeadToKlaviyoAndBackup({
+                                        fullName: demoName,
+                                        companyName: demoCompany,
+                                        email: demoEmail,
+                                        selectedSans: `Pricing Estimator: ${formatPrice(calculatedPrice)} (${currency}) | Tier: ${selectedTier} | Sites: ${numSites} | Modules: [${activeModulesStr}] | Workforce: ${workforceSize}`
+                                    });
+
+                                    trackGA4Event('pricing_estimator_submitted', {
+                                        company: demoCompany,
+                                        email_domain: demoEmail.split('@')[1] || '',
+                                        total_estimate: calculatedPrice,
+                                        currency,
+                                        sites: numSites,
+                                        workforce: workforceSize,
+                                        tier: selectedTier
+                                    });
+                                }
+                            }}
+                            className="p-5 sm:p-7 md:p-8 grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-8"
+                        >
+                            {/* Left Side: Parameters Form */}
+                            <div className="lg:col-span-7 space-y-6">
+                                
+                                {/* TIER SELECTION FIELD */}
+                                <div>
+                                    <div className="flex items-center justify-between mb-3">
+                                        <h4 className="text-sm font-bold text-slate-900 uppercase tracking-wider">1. Engagement &amp; Pricing Tier</h4>
+                                        <span className="text-[10px] font-mono text-slate-400">Currency: {currency} ({symbol})</span>
+                                    </div>
+                                    <div className="grid grid-cols-2 md:grid-cols-4 gap-2.5">
+                                        {(['professional', 'enterprise', 'full_site', 'audit'] as const).map((t) => {
+                                            const config = MELOTWO_PRICING_MATRIX[t];
+                                            return (
                                                 <button
-                                                    key={sCount}
+                                                    key={t}
                                                     type="button"
-                                                    onClick={() => setNumShafts(sCount)}
-                                                    className={`px-2.5 py-1.5 rounded-lg text-[10px] font-mono font-bold transition ${
-                                                        numShafts === sCount
-                                                            ? 'bg-slate-900 text-white'
-                                                            : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                                                    onClick={() => {
+                                                        setSelectedTier(t);
+                                                        if (t === 'full_site') {
+                                                            setSans10330(true);
+                                                            setSans10142(true);
+                                                            setSans10049(true);
+                                                            setSans10108(true);
+                                                            setSans10375(true);
+                                                            setIso42001(true);
+                                                        }
+                                                    }}
+                                                    className={`p-3 rounded-xl border text-left transition cursor-pointer flex flex-col justify-between min-h-[125px] ${
+                                                        selectedTier === t
+                                                            ? 'bg-slate-900 border-slate-900 text-white shadow-md'
+                                                            : 'bg-slate-50 border-slate-200 text-slate-600 hover:bg-slate-100'
                                                     }`}
                                                 >
-                                                    {sCount} {sCount === 1 ? 'Shaft' : 'Shafts'}
+                                                    <div>
+                                                        <span className="text-xs font-black block leading-tight">{config.name}</span>
+                                                        <span className="text-[9px] opacity-70 font-medium block mt-1 leading-normal line-clamp-2">
+                                                            {config.tagline}
+                                                        </span>
+                                                    </div>
+                                                    <span className="text-[10px] font-black font-mono mt-2 block border-t border-current/20 pt-1 text-right">
+                                                        {t === 'full_site' 
+                                                            ? `${formatRange(900000, 2500000)}/yr` 
+                                                            : t === 'enterprise' 
+                                                            ? `${formatRange(35000, 60000)}/mo` 
+                                                            : t === 'professional' 
+                                                            ? `${formatRange(15000, 25000)}/mo` 
+                                                            : formatRange(50000, 150000)}
+                                                    </span>
+                                                </button>
+                                            );
+                                        })}
+                                    </div>
+                                </div>
+
+                                <div className="border-b border-slate-100 pb-4">
+                                    <h4 className="text-sm font-bold text-slate-900 uppercase tracking-wider mb-3">2. Contact &amp; Corporate Profiles</h4>
+                                    <div className="grid sm:grid-cols-2 gap-4">
+                                        <div>
+                                            <label className="block text-[10px] font-black text-gray-500 uppercase tracking-wide mb-1">Full Name</label>
+                                            <input
+                                                type="text"
+                                                required
+                                                value={demoName}
+                                                onChange={(e) => setDemoName(e.target.value)}
+                                                placeholder="John Smith"
+                                                className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:ring-2 focus:ring-amber-500 focus:border-amber-500 outline-none transition"
+                                            />
+                                        </div>
+                                        <div>
+                                            <label className="block text-[10px] font-black text-gray-500 uppercase tracking-wide mb-1">Company Name</label>
+                                            <input
+                                                type="text"
+                                                required
+                                                value={demoCompany}
+                                                onChange={(e) => setDemoCompany(e.target.value)}
+                                                placeholder="Deep Reef Gold Ltd"
+                                                className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:ring-2 focus:ring-amber-500 focus:border-amber-500 outline-none transition"
+                                            />
+                                        </div>
+                                        <div className="sm:col-span-2">
+                                            <label className="block text-[10px] font-black text-gray-500 uppercase tracking-wide mb-1">Work Email Address</label>
+                                            <input
+                                                type="email"
+                                                required
+                                                value={demoEmail}
+                                                onChange={(e) => setDemoEmail(e.target.value)}
+                                                placeholder="j.smith@reefmining.co.za"
+                                                className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:ring-2 focus:ring-amber-500 focus:border-amber-500 outline-none transition"
+                                            />
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div className="border-b border-slate-100 pb-4">
+                                    <div className="flex justify-between items-center mb-3">
+                                        <h4 className="text-sm font-bold text-slate-900 uppercase tracking-wider">3. SANS Multi-Module Coverage</h4>
+                                        <button
+                                            type="button"
+                                            onClick={() => {
+                                                const allSelected = sans10330 && sans10142 && sans10049 && sans10108 && sans10375 && iso42001;
+                                                setSans10330(!allSelected);
+                                                setSans10142(!allSelected);
+                                                setSans10049(!allSelected);
+                                                setSans10108(!allSelected);
+                                                setSans10375(!allSelected);
+                                                setIso42001(!allSelected);
+                                            }}
+                                            className="text-[10px] font-bold text-amber-600 hover:text-amber-700 bg-amber-50 hover:bg-amber-100 border border-amber-200/80 px-2.5 py-1 rounded-lg transition cursor-pointer"
+                                        >
+                                            {sans10330 && sans10142 && sans10049 && sans10108 && sans10375 && iso42001 ? 'Deselect All' : 'Select Full Multi-Module Coverage'}
+                                        </button>
+                                    </div>
+
+                                    {/* Dynamic Module Coverage Progress Bar */}
+                                    <div className="mb-3.5 bg-slate-100/90 p-2.5 rounded-xl border border-slate-200/80">
+                                        <div className="flex justify-between items-center text-[11px] font-bold text-slate-700 mb-1.5">
+                                            <span className="flex items-center gap-1.5">
+                                                <span className="w-2 h-2 rounded-full bg-amber-500 animate-pulse"></span>
+                                                Module Coverage Strength
+                                            </span>
+                                            <span className="font-mono text-amber-600 font-black">
+                                                {[sans10330, sans10142, sans10049, sans10108, sans10375, iso42001].filter(Boolean).length} / 6 Selected ({Math.round(([sans10330, sans10142, sans10049, sans10108, sans10375, iso42001].filter(Boolean).length / 6) * 100)}%)
+                                            </span>
+                                        </div>
+                                        <div className="w-full h-2 bg-slate-200 rounded-full overflow-hidden p-0.5 border border-slate-300/40">
+                                            <div 
+                                                className="h-full bg-gradient-to-r from-amber-500 to-amber-400 rounded-full transition-all duration-300 ease-out shadow-sm"
+                                                style={{ width: `${([sans10330, sans10142, sans10049, sans10108, sans10375, iso42001].filter(Boolean).length / 6) * 100}%` }}
+                                            />
+                                        </div>
+                                    </div>
+                                    <div className="space-y-2.5">
+                                        <label className="flex items-start gap-3 p-3 bg-slate-50 border border-slate-200/60 rounded-xl hover:bg-slate-100/60 transition cursor-pointer">
+                                            <input
+                                                type="checkbox"
+                                                checked={sans10330}
+                                                onChange={(e) => setSans10330(e.target.checked)}
+                                                className="mt-0.5 rounded text-amber-500 focus:ring-amber-500 border-slate-300 w-4 h-4 cursor-pointer"
+                                            />
+                                            <div>
+                                                <span className="text-xs font-black text-slate-900 block">SANS 10330 (Catering &amp; HACCP Food Safety Audit)</span>
+                                                <span className="text-[10px] text-gray-500 block">Covers kitchen storage, walk-in coolers, food sanitation pipelines.</span>
+                                            </div>
+                                        </label>
+
+                                        <label className="flex items-start gap-3 p-3 bg-slate-50 border border-slate-200/60 rounded-xl hover:bg-slate-100/60 transition cursor-pointer">
+                                            <input
+                                                type="checkbox"
+                                                checked={sans10142}
+                                                onChange={(e) => setSans10142(e.target.checked)}
+                                                className="mt-0.5 rounded text-amber-500 focus:ring-amber-500 border-slate-300 w-4 h-4 cursor-pointer"
+                                            />
+                                            <div>
+                                                <span className="text-xs font-black text-slate-900 block">SANS 10142-1 (Wiring &amp; Electrical Isolator Safety)</span>
+                                                <span className="text-[10px] text-gray-500 block">Covers electrical distribution panel obstructions and steam line mounting codes.</span>
+                                            </div>
+                                        </label>
+
+                                        <label className="flex items-start gap-3 p-3 bg-slate-50 border border-slate-200/60 rounded-xl hover:bg-slate-100/60 transition cursor-pointer">
+                                            <input
+                                                type="checkbox"
+                                                checked={sans10049}
+                                                onChange={(e) => setSans10049(e.target.checked)}
+                                                className="mt-0.5 rounded text-amber-500 focus:ring-amber-500 border-slate-300 w-4 h-4 cursor-pointer"
+                                            />
+                                            <div>
+                                                <span className="text-xs font-black text-slate-900 block">SANS 10049 (Hygiene &amp; PPE Compliance)</span>
+                                                <span className="text-[10px] text-gray-500 block">Covers personal protective gear verification, dispenser levels, and sanitizers.</span>
+                                            </div>
+                                        </label>
+
+                                        <label className="flex items-start gap-3 p-3 bg-slate-50 border border-slate-200/60 rounded-xl hover:bg-slate-100/60 transition cursor-pointer">
+                                            <input
+                                                type="checkbox"
+                                                checked={sans10108}
+                                                onChange={(e) => setSans10108(e.target.checked)}
+                                                className="mt-0.5 rounded text-amber-500 focus:ring-amber-500 border-slate-300 w-4 h-4 cursor-pointer"
+                                            />
+                                            <div>
+                                                <span className="text-xs font-black text-slate-900 block">SANS 10108 (Hazardous Location &amp; Explosive Atmosphere Classification)</span>
+                                                <span className="text-[10px] text-gray-500 block">Covers Ex-d flameproof enclosures, gas extraction fans, and hazardous area zone audits.</span>
+                                            </div>
+                                        </label>
+
+                                        <label className="flex items-start gap-3 p-3 bg-slate-50 border border-slate-200/60 rounded-xl hover:bg-slate-100/60 transition cursor-pointer">
+                                            <input
+                                                type="checkbox"
+                                                checked={sans10375}
+                                                onChange={(e) => setSans10375(e.target.checked)}
+                                                className="mt-0.5 rounded text-amber-500 focus:ring-amber-500 border-slate-300 w-4 h-4 cursor-pointer"
+                                            />
+                                            <div>
+                                                <span className="text-xs font-black text-slate-900 block">SANS 10375 / ISO 45001 (Lifting Equipment &amp; Operational Safety Management)</span>
+                                                <span className="text-[10px] text-gray-500 block">Covers overhead crane hooks, wire rope fraying, load limit testing, and OH&amp;S tracking.</span>
+                                            </div>
+                                        </label>
+
+                                        <label className="flex items-start gap-3 p-3 bg-slate-50 border border-slate-200/60 rounded-xl hover:bg-slate-100/60 transition cursor-pointer">
+                                            <input
+                                                type="checkbox"
+                                                checked={iso42001}
+                                                onChange={(e) => setIso42001(e.target.checked)}
+                                                className="mt-0.5 rounded text-amber-500 focus:ring-amber-500 border-slate-300 w-4 h-4 cursor-pointer"
+                                            />
+                                            <div>
+                                                <span className="text-xs font-black text-slate-900 block">ISO/IEC 42001 (AI Governance &amp; Safety Automation Compliance)</span>
+                                                <span className="text-[10px] text-gray-500 block">Covers automated AI risk assessment, safety guardrails, and algorithmic audit trails.</span>
+                                            </div>
+                                        </label>
+                                    </div>
+                                </div>
+
+                                {/* Active Mine Shafts / Terminals Field */}
+                                {(selectedTier === 'full_site' || selectedTier === 'enterprise') && (
+                                    <div className="border-b border-slate-100 pb-4 animate-fade-in">
+                                        <div className="flex justify-between items-center mb-2">
+                                            <h4 className="text-sm font-bold text-slate-900 uppercase tracking-wider">4. Active Mine Shafts &amp; Terminals</h4>
+                                            <span className="text-[10px] font-mono text-amber-600 bg-amber-50 px-2 py-0.5 rounded border border-amber-200 font-bold">
+                                                {numShafts} Shaft{numShafts > 1 ? 's' : ''} Selected
+                                            </span>
+                                        </div>
+                                        
+                                        <div className="flex items-center gap-3 mb-3">
+                                            <button
+                                                type="button"
+                                                onClick={() => setNumShafts(Math.max(1, numShafts - 1))}
+                                                className="w-10 h-10 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-900 font-black text-lg flex items-center justify-center transition border border-slate-200 cursor-pointer"
+                                            >
+                                                -
+                                            </button>
+                                            <input
+                                                type="number"
+                                                min={1}
+                                                max={50}
+                                                value={numShafts}
+                                                onChange={(e) => setNumShafts(Math.max(1, parseInt(e.target.value) || 1))}
+                                                className="w-20 py-2 text-center bg-slate-50 border border-slate-200 rounded-xl font-mono text-sm font-bold text-slate-900 focus:ring-2 focus:ring-amber-500 outline-none"
+                                            />
+                                            <button
+                                                type="button"
+                                                onClick={() => setNumShafts(numShafts + 1)}
+                                                className="w-10 h-10 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-900 font-black text-lg flex items-center justify-center transition border border-slate-200 cursor-pointer"
+                                            >
+                                                +
+                                            </button>
+                                            
+                                            <div className="flex gap-1.5 flex-wrap ml-auto">
+                                                {[1, 3, 6, 12, 20].map((sCount) => (
+                                                    <button
+                                                        key={sCount}
+                                                        type="button"
+                                                        onClick={() => setNumShafts(sCount)}
+                                                        className={`px-2.5 py-1.5 rounded-lg text-[10px] font-mono font-bold transition cursor-pointer ${
+                                                            numShafts === sCount
+                                                                ? 'bg-slate-900 text-white'
+                                                                : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                                                        }`}
+                                                    >
+                                                        {sCount} {sCount === 1 ? 'Shaft' : 'Shafts'}
+                                                    </button>
+                                                ))}
+                                            </div>
+                                        </div>
+                                        <p className="text-[10px] text-slate-500 font-sans leading-relaxed">
+                                            Base Full Site License includes 1 primary shaft terminal. Additional shafts add {formatPrice(15000)}/year each for multi-shaft synchronization.
+                                        </p>
+                                    </div>
+                                )}
+
+                                {/* Contractor Ecosystem Passports Add-On Field */}
+                                {(selectedTier === 'full_site' || selectedTier === 'enterprise') && (
+                                    <div className="border-b border-slate-100 pb-4 animate-fade-in">
+                                        <div className="flex justify-between items-center mb-3">
+                                            <h4 className="text-sm font-bold text-slate-900 uppercase tracking-wider">5. Contractor Ecosystem Passports</h4>
+                                            <label className="flex items-center gap-2 cursor-pointer">
+                                                <input
+                                                    type="checkbox"
+                                                    checked={contractorPassportsEnabled}
+                                                    onChange={(e) => setContractorPassportsEnabled(e.target.checked)}
+                                                    className="rounded text-amber-500 focus:ring-amber-500 border-slate-300 w-4 h-4 cursor-pointer"
+                                                />
+                                                <span className="text-xs font-bold text-slate-700">Include Add-On Tier</span>
+                                            </label>
+                                        </div>
+
+                                        {contractorPassportsEnabled && (
+                                            <div>
+                                                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mb-2">
+                                                    {[
+                                                        { key: '50', label: '50 Seats', priceZar: 100000 },
+                                                        { key: '150', label: '150 Seats', priceZar: 200000 },
+                                                        { key: '500', label: '500 Seats', priceZar: 350000 },
+                                                        { key: 'unlimited', label: 'Unlimited', priceZar: 500000 }
+                                                    ].map((cOpt) => (
+                                                        <button
+                                                            key={cOpt.key}
+                                                            type="button"
+                                                            onClick={() => setContractorSeatsTier(cOpt.key as any)}
+                                                            className={`p-2 rounded-xl border text-center transition cursor-pointer flex flex-col justify-center items-center ${
+                                                                contractorSeatsTier === cOpt.key
+                                                                    ? 'bg-slate-900 border-slate-900 text-white shadow-md'
+                                                                    : 'bg-slate-50 border-slate-200 text-slate-600 hover:bg-slate-100'
+                                                            }`}
+                                                        >
+                                                            <span className="text-xs font-black">{cOpt.label}</span>
+                                                            <span className="text-[9px] font-mono tracking-wider opacity-80 mt-0.5">
+                                                                +{formatPrice(cOpt.priceZar)}/yr
+                                                            </span>
+                                                        </button>
+                                                    ))}
+                                                </div>
+                                                <p className="text-[10px] text-slate-500 leading-relaxed font-sans">
+                                                    Enables contractor compliance passports, digital gate clearances, and third-party SANS safety verification logs.
+                                                </p>
+                                            </div>
+                                        )}
+                                    </div>
+                                )}
+
+                                {selectedTier === 'enterprise' && (
+                                    <div className="animate-fade-in">
+                                        <h4 className="text-sm font-bold text-slate-900 uppercase tracking-wider mb-3">6. Workforce Headcount Scale</h4>
+                                        <div className="grid grid-cols-3 gap-3">
+                                            {([
+                                                { key: 'under50', label: '< 50 staff' },
+                                                { key: '50-250', label: '50-250 staff' },
+                                                { key: '250+', label: '250+ staff' }
+                                            ] as const).map((opt) => (
+                                                <button
+                                                    key={opt.key}
+                                                    type="button"
+                                                    onClick={() => setWorkforceSize(opt.key)}
+                                                    className={`py-2 px-2.5 rounded-xl border text-center transition cursor-pointer ${
+                                                        workforceSize === opt.key
+                                                            ? 'bg-slate-900 border-slate-900 text-white shadow-md'
+                                                            : 'bg-slate-50 border-slate-200 text-slate-600 hover:bg-slate-100'
+                                                    }`}
+                                                >
+                                                    <span className="text-xs font-bold block">{opt.label}</span>
                                                 </button>
                                             ))}
                                         </div>
                                     </div>
-                                    <p className="text-[10px] text-slate-500 font-sans leading-relaxed">
-                                        Base Full Site License includes 1 primary shaft terminal. Additional shafts add R15,000/year each for multi-shaft synchronization.
-                                    </p>
-                                </div>
-                            )}
-
-                            {/* Contractor Ecosystem Passports Add-On Field */}
-                            {(selectedTier === 'full_site' || selectedTier === 'enterprise') && (
-                                <div className="border-b border-slate-100 pb-4 animate-fade-in">
-                                    <div className="flex justify-between items-center mb-3">
-                                        <h4 className="text-sm font-bold text-slate-900 uppercase tracking-wider">5. Contractor Ecosystem Passports</h4>
-                                        <label className="flex items-center gap-2 cursor-pointer">
-                                            <input
-                                                type="checkbox"
-                                                checked={contractorPassportsEnabled}
-                                                onChange={(e) => setContractorPassportsEnabled(e.target.checked)}
-                                                className="rounded text-amber-500 focus:ring-amber-500 border-slate-300 w-4 h-4 cursor-pointer"
-                                            />
-                                            <span className="text-xs font-bold text-slate-700">Include Add-On Tier</span>
-                                        </label>
-                                    </div>
-
-                                    {contractorPassportsEnabled && (
-                                        <div>
-                                            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mb-2">
-                                                {[
-                                                    { key: '50', label: '50 Seats', price: '+R100,000/yr' },
-                                                    { key: '150', label: '150 Seats', price: '+R200,000/yr' },
-                                                    { key: '500', label: '500 Seats', price: '+R350,000/yr' },
-                                                    { key: 'unlimited', label: 'Unlimited', price: '+R500,000/yr' }
-                                                ].map((cOpt) => (
-                                                    <button
-                                                        key={cOpt.key}
-                                                        type="button"
-                                                        onClick={() => setContractorSeatsTier(cOpt.key as any)}
-                                                        className={`p-2 rounded-xl border text-center transition cursor-pointer flex flex-col justify-center items-center ${
-                                                            contractorSeatsTier === cOpt.key
-                                                                ? 'bg-slate-900 border-slate-900 text-white shadow-md'
-                                                                : 'bg-slate-50 border-slate-200 text-slate-600 hover:bg-slate-100'
-                                                        }`}
-                                                    >
-                                                        <span className="text-xs font-black">{cOpt.label}</span>
-                                                        <span className="text-[9px] font-mono tracking-wider opacity-80 mt-0.5">
-                                                            {cOpt.price}
-                                                        </span>
-                                                    </button>
-                                                ))}
-                                            </div>
-                                            <p className="text-[10px] text-slate-500 leading-relaxed font-sans">
-                                                Enables contractor compliance passports, digital gate clearances, and third-party SANS safety verification logs.
-                                            </p>
-                                        </div>
-                                    )}
-                                </div>
-                            )}
-
-                            {selectedTier === 'enterprise' && (
-                                <div className="animate-fade-in">
-                                    <h4 className="text-sm font-bold text-slate-900 uppercase tracking-wider mb-3">6. Workforce Headcount Scale</h4>
-                                    <div className="grid grid-cols-3 gap-3">
-                                        {([
-                                            { key: 'under50', label: '< 50 staff' },
-                                            { key: '50-250', label: '50-250 staff' },
-                                            { key: '250+', label: '250+ staff' }
-                                        ] as const).map((opt) => (
-                                            <button
-                                                key={opt.key}
-                                                type="button"
-                                                onClick={() => setWorkforceSize(opt.key)}
-                                                className={`py-2 px-2.5 rounded-xl border text-center transition cursor-pointer ${
-                                                    workforceSize === opt.key
-                                                        ? 'bg-slate-900 border-slate-900 text-white shadow-md'
-                                                        : 'bg-slate-50 border-slate-200 text-slate-600 hover:bg-slate-100'
-                                                }`}
-                                            >
-                                                <span className="text-xs font-bold block">{opt.label}</span>
-                                            </button>
-                                        ))}
-                                    </div>
-                                </div>
-                            )}
-                        </div>
-
-                        {/* Right Side: Cost Summary Card */}
-                        <div className="md:col-span-5 bg-slate-950 border border-slate-800 rounded-3xl p-6 text-white flex flex-col justify-between shadow-lg relative overflow-hidden">
-                            <div className="absolute top-0 right-0 w-32 h-32 bg-amber-500/5 rounded-full blur-2xl -z-10"></div>
-                            
-                            <div>
-                                <div className="flex justify-between items-center mb-6">
-                                    <span className="text-[9px] font-black text-amber-400 uppercase tracking-widest font-mono bg-amber-500/10 border border-amber-500/20 px-2.5 py-1 rounded">
-                                        Estimate Result
-                                    </span>
-                                    <span className="text-[9px] font-bold text-slate-400 font-mono">MT-ZAR-2026</span>
-                                </div>
-
-                                <div className="mb-6">
-                                    <span className="text-slate-400 text-[10px] font-bold uppercase tracking-wider block">Estimated Fee</span>
-                                    <div className="flex items-baseline mt-1.5">
-                                        <span className="text-4xl font-black tracking-tight text-white">R{calculatedPrice.toLocaleString('en-ZA')}</span>
-                                        <span className="text-slate-400 text-xs font-bold font-mono ml-1.5">
-                                            {MELOTWO_PRICING_MATRIX[selectedTier].billingType === 'monthly' ? '/ mo' : MELOTWO_PRICING_MATRIX[selectedTier].billingType === 'annual' ? '/ yr' : ' once-off'}
-                                        </span>
-                                    </div>
-                                    <span className="text-[9px] text-slate-500 mt-1 block">Excluding VAT. Calculated reactively based on your custom operation parameters.</span>
-                                </div>
-
-                                <div className="h-px bg-slate-800 my-5"></div>
-
-                                {/* Dynamic high-stakes marketing justifications */}
-                                <div className="space-y-4 mb-5 text-xs text-slate-300">
-                                    <div>
-                                        <span className="text-[9px] font-bold text-indigo-400 uppercase tracking-wider block mb-1">Insurance Premium Offset:</span>
-                                        <p className="text-[11px] text-slate-400 leading-relaxed font-sans">{MELOTWO_PRICING_MATRIX[selectedTier].insuranceOffsetRate}</p>
-                                    </div>
-                                    <div>
-                                        <span className="text-[9px] font-bold text-teal-400 uppercase tracking-wider block mb-1">Audit-Trail Defensibility:</span>
-                                        <p className="text-[11px] text-slate-400 leading-relaxed font-sans">{MELOTWO_PRICING_MATRIX[selectedTier].auditTrailDefensibility}</p>
-                                    </div>
-                                </div>
-
-                                <div className="h-px bg-slate-800 my-5"></div>
-
-                                {/* Cost Breakdown Visualizer */}
-                                <div className="space-y-3.5">
-                                    <span className="text-slate-400 text-[9px] font-black uppercase tracking-wider block mb-1">Fee Breakdown:</span>
-                                    
-                                    <div className="flex justify-between items-center text-xs text-slate-300">
-                                        <span className="text-slate-400">Site License Base Cost:</span>
-                                        <span className="font-bold font-mono">
-                                            R{MELOTWO_PRICING_MATRIX[selectedTier].basePrice.toLocaleString('en-ZA')}
-                                            {selectedTier === 'full_site' ? ' / yr' : ''}
-                                        </span>
-                                    </div>
-
-                                    {selectedTier === 'full_site' && (
-                                        <>
-                                            <div className="flex justify-between items-center text-xs text-slate-300">
-                                                <span className="text-slate-400">Active Shafts/Terminals ({numShafts} shafts):</span>
-                                                <span className="font-bold font-mono text-indigo-400">
-                                                    +{(Math.max(0, numShafts - 1) * 150000).toLocaleString('en-ZA')}
-                                                </span>
-                                            </div>
-                                            <div className="flex justify-between items-center text-xs text-slate-300">
-                                                <span className="text-slate-400">SANS Multi-Module Coverage ({[sans10330, sans10142, sans10049, sans10108, sans10375, iso42001].filter(Boolean).length} selected):</span>
-                                                <span className="font-bold font-mono text-amber-400">
-                                                    +{([sans10330, sans10142, sans10049, sans10108, sans10375, iso42001].filter(Boolean).length * 100000).toLocaleString('en-ZA')}
-                                                </span>
-                                            </div>
-                                            <div className="flex justify-between items-center text-xs text-slate-300">
-                                                <span className="text-slate-400">Contractor Passports ({contractorPassportsEnabled ? `${contractorSeatsTier} seats` : 'Disabled'}):</span>
-                                                <span className="font-bold font-mono text-emerald-400">
-                                                    +{contractorPassportsEnabled ? (contractorSeatsTier === '50' ? 100000 : contractorSeatsTier === '150' ? 200000 : contractorSeatsTier === '500' ? 350000 : 500000) : 0}
-                                                </span>
-                                            </div>
-                                        </>
-                                    )}
-
-                                    {selectedTier === 'professional' && (
-                                        <div className="flex justify-between items-center text-xs text-slate-300">
-                                            <span className="text-slate-400">SANS Modules (R2,000/mod):</span>
-                                            <span className="font-bold font-mono text-amber-400">
-                                                +{([sans10330, sans10142, sans10049, sans10108, sans10375, iso42001].filter(Boolean).length * 2000).toLocaleString('en-ZA')}
-                                            </span>
-                                        </div>
-                                    )}
-
-                                    {selectedTier === 'enterprise' && (
-                                        <>
-                                            <div className="flex justify-between items-center text-xs text-slate-300">
-                                                <span className="text-slate-400">Enterprise Modules (R3,000/mod):</span>
-                                                <span className="font-bold font-mono text-amber-400">
-                                                    +{([sans10330, sans10142, sans10049, sans10108, sans10375, iso42001].filter(Boolean).length * 3000).toLocaleString('en-ZA')}
-                                                </span>
-                                            </div>
-                                            <div className="flex justify-between items-center text-xs text-slate-300">
-                                                <span className="text-slate-400">Shaft Multiplier Factor:</span>
-                                                <span className="font-bold font-mono text-indigo-400">
-                                                    {numSites === '1' ? '1.0x' : numSites === '2-5' ? '1.5x' : '2.2x'}
-                                                </span>
-                                            </div>
-                                        </>
-                                    )}
-
-                                    {selectedTier === 'audit' && (
-                                        <div className="flex justify-between items-center text-xs text-slate-300">
-                                            <span className="text-slate-400">Add-on Modules (R10,000/mod):</span>
-                                            <span className="font-bold font-mono text-teal-400">
-                                                +{(Math.max(0, [sans10330, sans10142, sans10049, sans10108, sans10375, iso42001].filter(Boolean).length - 1) * 10000).toLocaleString('en-ZA')}
-                                            </span>
-                                        </div>
-                                    )}
-                                </div>
-
-                                <div className="h-px bg-slate-800 my-5"></div>
-
-                                <div className="text-left bg-slate-900/50 p-3 rounded-xl border border-slate-800 text-[10px] text-slate-400 leading-relaxed space-y-1">
-                                    <strong className="text-slate-300 block">SANS Enforced Certification:</strong>
-                                    <span>Real-time local backups & multi-user role-based dashboards are standard.</span>
-                                </div>
-                            </div>
-
-                            <div className="mt-8 space-y-3.5">
-                                {onOpenCheckout && (
-                                    <button
-                                        type="button"
-                                        onClick={() => {
-                                            onOpenCheckout(
-                                                calculatedPrice,
-                                                MELOTWO_PRICING_MATRIX[selectedTier].name,
-                                                demoCompany || 'Industrial Mine Site'
-                                            );
-                                        }}
-                                        className="w-full py-3 px-4 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 font-black text-xs uppercase tracking-wider rounded-xl transition cursor-pointer flex items-center justify-center gap-2 shadow-lg shadow-amber-500/20"
-                                    >
-                                        <CreditCard className="w-4 h-4 text-slate-950" />
-                                        Pay via PayPal or EFT (R{calculatedPrice.toLocaleString('en-ZA')})
-                                    </button>
                                 )}
+                            </div>
 
-                                <button
-                                    type="button"
-                                    onClick={handleDownloadQuotationPDF}
-                                    className="w-full py-3 px-4 bg-slate-800 hover:bg-slate-700 border border-slate-700 hover:border-slate-600 text-white font-black text-xs uppercase tracking-wider rounded-xl transition cursor-pointer flex items-center justify-center gap-2"
-                                >
-                                    <svg className="w-4 h-4 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
-                                        <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3" />
-                                    </svg>
-                                    Download Formal Quote (PDF)
-                                </button>
+                            {/* Right Side: Cost Summary Card */}
+                            <div className="lg:col-span-5 bg-slate-950 border border-slate-800 rounded-3xl p-5 sm:p-6 text-white flex flex-col justify-between shadow-xl relative overflow-hidden self-start sticky lg:top-2">
+                                <div className="absolute top-0 right-0 w-32 h-32 bg-amber-500/5 rounded-full blur-2xl -z-10"></div>
+                                
+                                <div>
+                                    <div className="flex justify-between items-center mb-5">
+                                        <span className="text-[9px] font-black text-amber-400 uppercase tracking-widest font-mono bg-amber-500/10 border border-amber-500/20 px-2.5 py-1 rounded">
+                                            Estimate Result
+                                        </span>
+                                        <span className="text-[9px] font-bold text-slate-400 font-mono">MT-{currency}-2026</span>
+                                    </div>
 
-                                <div className="flex gap-3">
+                                    <div className="mb-5">
+                                        <span className="text-slate-400 text-[10px] font-bold uppercase tracking-wider block">Estimated Fee</span>
+                                        <div className="flex items-baseline mt-1.5">
+                                            <span className="text-3xl sm:text-4xl font-black tracking-tight text-white">{formatPrice(calculatedPrice)}</span>
+                                            <span className="text-slate-400 text-xs font-bold font-mono ml-1.5">
+                                                {MELOTWO_PRICING_MATRIX[selectedTier].billingType === 'monthly' ? '/ mo' : MELOTWO_PRICING_MATRIX[selectedTier].billingType === 'annual' ? '/ yr' : ' once-off'}
+                                            </span>
+                                        </div>
+                                        <span className="text-[9px] text-slate-500 mt-1 block">Excluding VAT. Calculated reactively based on your custom operation parameters in {currency}.</span>
+                                    </div>
+
+                                    <div className="h-px bg-slate-800 my-4"></div>
+
+                                    {/* Dynamic high-stakes marketing justifications */}
+                                    <div className="space-y-3 mb-4 text-xs text-slate-300">
+                                        <div>
+                                            <span className="text-[9px] font-bold text-indigo-400 uppercase tracking-wider block mb-0.5">Insurance Premium Offset:</span>
+                                            <p className="text-[11px] text-slate-400 leading-relaxed font-sans">{MELOTWO_PRICING_MATRIX[selectedTier].insuranceOffsetRate}</p>
+                                        </div>
+                                        <div>
+                                            <span className="text-[9px] font-bold text-teal-400 uppercase tracking-wider block mb-0.5">Audit-Trail Defensibility:</span>
+                                            <p className="text-[11px] text-slate-400 leading-relaxed font-sans">{MELOTWO_PRICING_MATRIX[selectedTier].auditTrailDefensibility}</p>
+                                        </div>
+                                    </div>
+
+                                    <div className="h-px bg-slate-800 my-4"></div>
+
+                                    {/* Cost Breakdown Visualizer */}
+                                    <div className="space-y-2.5">
+                                        <span className="text-slate-400 text-[9px] font-black uppercase tracking-wider block mb-1">Fee Breakdown:</span>
+                                        
+                                        <div className="flex justify-between items-center text-xs text-slate-300">
+                                            <span className="text-slate-400">Site License Base Cost:</span>
+                                            <span className="font-bold font-mono">
+                                                {formatPrice(MELOTWO_PRICING_MATRIX[selectedTier].basePrice)}
+                                                {selectedTier === 'full_site' ? ' / yr' : ''}
+                                            </span>
+                                        </div>
+
+                                        {selectedTier === 'full_site' && (
+                                            <>
+                                                <div className="flex justify-between items-center text-xs text-slate-300">
+                                                    <span className="text-slate-400">Active Shafts/Terminals ({numShafts} shafts):</span>
+                                                    <span className="font-bold font-mono text-indigo-400">
+                                                        +{formatPrice(Math.max(0, numShafts - 1) * 150000)}
+                                                    </span>
+                                                </div>
+                                                <div className="flex justify-between items-center text-xs text-slate-300">
+                                                    <span className="text-slate-400">SANS Multi-Module Coverage ({[sans10330, sans10142, sans10049, sans10108, sans10375, iso42001].filter(Boolean).length} selected):</span>
+                                                    <span className="font-bold font-mono text-amber-400">
+                                                        +{formatPrice([sans10330, sans10142, sans10049, sans10108, sans10375, iso42001].filter(Boolean).length * 100000)}
+                                                    </span>
+                                                </div>
+                                                <div className="flex justify-between items-center text-xs text-slate-300">
+                                                    <span className="text-slate-400">Contractor Passports ({contractorPassportsEnabled ? `${contractorSeatsTier} seats` : 'Disabled'}):</span>
+                                                    <span className="font-bold font-mono text-emerald-400">
+                                                        +{formatPrice(contractorPassportsEnabled ? (contractorSeatsTier === '50' ? 100000 : contractorSeatsTier === '150' ? 200000 : contractorSeatsTier === '500' ? 350000 : 500000) : 0)}
+                                                    </span>
+                                                </div>
+                                            </>
+                                        )}
+
+                                        {selectedTier === 'professional' && (
+                                            <div className="flex justify-between items-center text-xs text-slate-300">
+                                                <span className="text-slate-400">SANS Modules ({formatPrice(2000)}/mod):</span>
+                                                <span className="font-bold font-mono text-amber-400">
+                                                    +{formatPrice([sans10330, sans10142, sans10049, sans10108, sans10375, iso42001].filter(Boolean).length * 2000)}
+                                                </span>
+                                            </div>
+                                        )}
+
+                                        {selectedTier === 'enterprise' && (
+                                            <>
+                                                <div className="flex justify-between items-center text-xs text-slate-300">
+                                                    <span className="text-slate-400">Enterprise Modules ({formatPrice(3000)}/mod):</span>
+                                                    <span className="font-bold font-mono text-amber-400">
+                                                        +{formatPrice([sans10330, sans10142, sans10049, sans10108, sans10375, iso42001].filter(Boolean).length * 3000)}
+                                                    </span>
+                                                </div>
+                                                <div className="flex justify-between items-center text-xs text-slate-300">
+                                                    <span className="text-slate-400">Shaft Multiplier Factor:</span>
+                                                    <span className="font-bold font-mono text-indigo-400">
+                                                        {numSites === '1' ? '1.0x' : numSites === '2-5' ? '1.5x' : '2.2x'}
+                                                    </span>
+                                                </div>
+                                            </>
+                                        )}
+
+                                        {selectedTier === 'audit' && (
+                                            <div className="flex justify-between items-center text-xs text-slate-300">
+                                                <span className="text-slate-400">Add-on Modules ({formatPrice(10000)}/mod):</span>
+                                                <span className="font-bold font-mono text-teal-400">
+                                                    +{formatPrice(Math.max(0, [sans10330, sans10142, sans10049, sans10108, sans10375, iso42001].filter(Boolean).length - 1) * 10000)}
+                                                </span>
+                                            </div>
+                                        )}
+                                    </div>
+
+                                    <div className="h-px bg-slate-800 my-4"></div>
+
+                                    <div className="text-left bg-slate-900/50 p-3 rounded-xl border border-slate-800 text-[10px] text-slate-400 leading-relaxed space-y-1">
+                                        <strong className="text-slate-300 block">SANS Enforced Certification:</strong>
+                                        <span>Real-time local backups &amp; multi-user role-based dashboards are standard.</span>
+                                    </div>
+                                </div>
+
+                                <div className="mt-6 space-y-3">
+                                    {onOpenCheckout && (
+                                        <button
+                                            type="button"
+                                            onClick={() => {
+                                                onOpenCheckout(
+                                                    calculatedPrice,
+                                                    MELOTWO_PRICING_MATRIX[selectedTier].name,
+                                                    demoCompany || 'Industrial Mine Site'
+                                                );
+                                            }}
+                                            className="w-full py-3 px-4 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 font-black text-xs uppercase tracking-wider rounded-xl transition cursor-pointer flex items-center justify-center gap-2 shadow-lg shadow-amber-500/20"
+                                        >
+                                            <CreditCard className="w-4 h-4 text-slate-950" />
+                                            Pay via PayPal or EFT ({formatPrice(calculatedPrice)})
+                                        </button>
+                                    )}
+
                                     <button
                                         type="button"
-                                        onClick={onClose}
-                                        className="flex-1 py-3 border border-slate-800 text-slate-400 rounded-xl font-bold text-xs hover:bg-slate-900 transition cursor-pointer"
+                                        onClick={handleDownloadQuotationPDF}
+                                        className="w-full py-2.5 px-4 bg-slate-800 hover:bg-slate-700 border border-slate-700 hover:border-slate-600 text-white font-black text-xs uppercase tracking-wider rounded-xl transition cursor-pointer flex items-center justify-center gap-2"
                                     >
-                                        Cancel
+                                        <svg className="w-4 h-4 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
+                                            <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3" />
+                                        </svg>
+                                        Download Formal Quote (PDF)
                                     </button>
-                                    <button
-                                        type="submit"
-                                        className="flex-1 py-3 bg-amber-500 hover:bg-amber-600 text-slate-950 rounded-xl font-black text-xs shadow-md shadow-amber-500/10 transition cursor-pointer"
-                                    >
-                                        Save & Sync
-                                    </button>
+
+                                    <div className="flex gap-2.5">
+                                        <button
+                                            type="button"
+                                            onClick={onClose}
+                                            className="flex-1 py-2.5 border border-slate-800 text-slate-400 rounded-xl font-bold text-xs hover:bg-slate-900 transition cursor-pointer"
+                                        >
+                                            Cancel
+                                        </button>
+                                        <button
+                                            type="submit"
+                                            className="flex-1 py-2.5 bg-amber-500 hover:bg-amber-600 text-slate-950 rounded-xl font-black text-xs shadow-md shadow-amber-500/10 transition cursor-pointer"
+                                        >
+                                            Save &amp; Sync
+                                        </button>
+                                    </div>
                                 </div>
                             </div>
-                        </div>
-                    </form>
-                )}
+                        </form>
+                    )}
+                </div>
             </div>
         </div>
     );
@@ -5687,6 +5741,7 @@ const LandingPage: React.FC<LandingPageProps> = ({
     setDemoModalTier,
     onOpenTenderWizard 
 }) => {
+    const { currency, symbol, formatPrice, formatRange } = useCurrency();
     useEffect(() => {
         if (currentPage === 'solutions') {
             const el = document.getElementById('solutions-section');
@@ -6692,14 +6747,17 @@ const LandingPage: React.FC<LandingPageProps> = ({
             {/* MeloTwo Premium Pricing Section */}
             <div className="mb-24 scroll-mt-24 border-t border-slate-100 pt-20" id="pricing-section">
                 <div className="text-center max-w-3xl mx-auto mb-16">
-                    <span className="text-[10px] font-black text-amber-600 tracking-widest uppercase bg-amber-500/10 border border-amber-500/20 px-3.5 py-1.5 rounded-full font-mono">
-                        Four-Tier Industrial Licensing
-                    </span>
-                    <h2 className="text-3xl font-black text-slate-900 tracking-tight mt-4">
+                    <div className="flex flex-wrap items-center justify-center gap-2 mb-3">
+                        <span className="text-[10px] font-black text-amber-600 tracking-widest uppercase bg-amber-500/10 border border-amber-500/20 px-3.5 py-1.5 rounded-full font-mono">
+                            Four-Tier Industrial Licensing
+                        </span>
+                        <CurrencySwitcher variant="compact" />
+                    </div>
+                    <h2 className="text-3xl font-black text-slate-900 tracking-tight mt-2">
                         Transparent, Premium Compliance Pricing
                     </h2>
                     <p className="text-gray-500 text-sm mt-3 leading-relaxed">
-                        Select the tier aligned with your operational footprint or inspection cycle. Calculate real-time costs, add shafts/contractors, and generate defensible regulatory proofs.
+                        Select the tier aligned with your operational footprint or inspection cycle. Calculate real-time costs, add shafts/contractors, and generate defensible regulatory proofs in {currency}.
                     </p>
                 </div>
 
@@ -6721,10 +6779,10 @@ const LandingPage: React.FC<LandingPageProps> = ({
                             </div>
                             
                             <div className="mb-3 flex items-baseline">
-                                <span className="text-2xl font-black text-slate-900">R50k – R150k</span>
+                                <span className="text-2xl font-black text-slate-900">{formatRange(50000, 150000)}</span>
                             </div>
                             <span className="text-[9px] font-bold text-teal-600 bg-teal-50 border border-teal-100 px-2 py-0.5 rounded block w-fit mb-4 font-mono">
-                                One-time site audit & risk assessment
+                                One-time site audit &amp; risk assessment
                             </span>
 
                             <p className="text-xs text-gray-500 mb-4 leading-relaxed">
@@ -6766,7 +6824,7 @@ const LandingPage: React.FC<LandingPageProps> = ({
                                             <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
                                         </svg>
                                     </div>
-                                    <span className="text-xs text-slate-600">Structured CAPA & remediations</span>
+                                    <span className="text-xs text-slate-600">Structured CAPA &amp; remediations</span>
                                 </li>
                             </ul>
                         </div>
@@ -6801,7 +6859,7 @@ const LandingPage: React.FC<LandingPageProps> = ({
                             </div>
                             
                             <div className="mb-3 flex items-baseline">
-                                <span className="text-2xl font-black text-slate-900">R15k – R25k</span>
+                                <span className="text-2xl font-black text-slate-900">{formatRange(15000, 25000)}</span>
                                 <span className="text-xs font-bold text-gray-400 ml-1 font-mono">/ site / mo</span>
                             </div>
                             <span className="text-[9px] font-bold text-indigo-600 bg-indigo-50 border border-indigo-100 px-2 py-0.5 rounded block w-fit mb-4 font-mono">
@@ -6809,7 +6867,7 @@ const LandingPage: React.FC<LandingPageProps> = ({
                             </span>
 
                             <p className="text-xs text-gray-500 mb-4 leading-relaxed">
-                                Entry-tier monthly compliance site subscription for MHSA & SANS audit workflows.
+                                Entry-tier monthly compliance site subscription for MHSA &amp; SANS audit workflows.
                             </p>
 
                             <div className="h-px bg-slate-100 mb-4"></div>
@@ -6883,11 +6941,11 @@ const LandingPage: React.FC<LandingPageProps> = ({
                             </div>
                             
                             <div className="mb-3 flex items-baseline">
-                                <span className="text-2xl font-black text-amber-400">R35k – R60k</span>
+                                <span className="text-2xl font-black text-amber-400">{formatRange(35000, 60000)}</span>
                                 <span className="text-xs font-bold text-slate-400 ml-1 font-mono">/ site / mo</span>
                             </div>
                             <span className="text-[9px] font-bold text-amber-400 bg-amber-500/10 border border-amber-500/20 px-2 py-0.5 rounded block w-fit mb-4 font-mono">
-                                Includes HACCP & Offline Capture
+                                Includes HACCP &amp; Offline Capture
                             </span>
 
                             <p className="text-xs text-slate-400 mb-4 leading-relaxed">
@@ -6899,9 +6957,9 @@ const LandingPage: React.FC<LandingPageProps> = ({
                             {/* Risk Adjustments & Corporate Protections */}
                             <div className="space-y-3 mb-4">
                                 <div>
-                                    <span className="text-[9px] font-bold text-slate-500 uppercase tracking-wider block">HACCP & Canteen Safety</span>
+                                    <span className="text-[9px] font-bold text-slate-500 uppercase tracking-wider block">HACCP &amp; Canteen Safety</span>
                                     <p className="text-[11px] text-slate-300 mt-0.5 leading-relaxed font-sans font-medium">
-                                        Includes SANS 10049 & SANS 10330 mess hall compliance tracking.
+                                        Includes SANS 10049 &amp; SANS 10330 mess hall compliance tracking.
                                     </p>
                                 </div>
                                 <div>
@@ -6965,7 +7023,7 @@ const LandingPage: React.FC<LandingPageProps> = ({
                             </div>
                             
                             <div className="mb-3 flex items-baseline">
-                                <span className="text-xl font-black text-amber-400">R900k – R2.5m</span>
+                                <span className="text-xl font-black text-amber-400">{formatRange(900000, 2500000)}</span>
                                 <span className="text-xs font-bold text-slate-400 ml-1 font-mono">/ year</span>
                             </div>
                             <span className="text-[9px] font-bold text-amber-300 bg-amber-500/20 border border-amber-500/30 px-2 py-0.5 rounded block w-fit mb-4 font-mono">
@@ -6973,7 +7031,7 @@ const LandingPage: React.FC<LandingPageProps> = ({
                             </span>
 
                             <p className="text-xs text-slate-300 mb-4 leading-relaxed">
-                                Master enterprise group contract for multi-site mining complexes & contractor ecosystems.
+                                Master enterprise group contract for multi-site mining complexes &amp; contractor ecosystems.
                             </p>
 
                             <div className="h-px bg-slate-800 mb-4"></div>
@@ -6983,13 +7041,13 @@ const LandingPage: React.FC<LandingPageProps> = ({
                                 <div>
                                     <span className="text-[9px] font-bold text-amber-400 uppercase tracking-wider block">Multi-Site Scale</span>
                                     <p className="text-[11px] text-slate-300 mt-0.5 leading-relaxed font-sans font-medium">
-                                        Covers 3 to 10 mining sites & complex multi-shaft operations.
+                                        Covers 3 to 10 mining sites &amp; complex multi-shaft operations.
                                     </p>
                                 </div>
                                 <div>
                                     <span className="text-[9px] font-bold text-amber-400 uppercase tracking-wider block">Contractor Ecosystem</span>
                                     <p className="text-[11px] text-slate-300 mt-0.5 leading-relaxed font-sans font-medium">
-                                        Digital contractor passports & gate clearance verifications.
+                                        Digital contractor passports &amp; gate clearance verifications.
                                     </p>
                                 </div>
                             </div>
@@ -7003,7 +7061,7 @@ const LandingPage: React.FC<LandingPageProps> = ({
                                             <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
                                         </svg>
                                     </div>
-                                    <span className="text-xs text-white font-medium">Full SANS & ISO multi-module suite</span>
+                                    <span className="text-xs text-white font-medium">Full SANS &amp; ISO multi-module suite</span>
                                 </li>
                                 <li className="flex items-start gap-2">
                                     <div className="w-4 h-4 bg-amber-400 text-slate-950 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">

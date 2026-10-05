@@ -18,6 +18,8 @@ import {
   Sparkles
 } from 'lucide-react';
 import { PayPalScriptProvider, PayPalButtons } from '@paypal/react-paypal-js';
+import { useCurrency } from '../context/CurrencyContext';
+import { CurrencySwitcher } from './CurrencySwitcher';
 import { 
   EFT_BANK_ACCOUNTS,
   EFT_BANKING_DETAILS, 
@@ -77,6 +79,7 @@ export const PayPalEFTCheckoutModal: React.FC<PayPalEFTCheckoutModalProps> = ({
   onAddOnsChange,
   showTierSelector = true
 }) => {
+  const { currency, formatPrice } = useCurrency();
   const [activeTab, setActiveTab] = useState<PaymentGatewayType>('paypal');
   const [paypalConfig, setPaypalConfig] = useState<PayPalConfig>(getStoredPayPalConfig());
 
@@ -361,16 +364,16 @@ export const PayPalEFTCheckoutModal: React.FC<PayPalEFTCheckoutModalProps> = ({
 
   return (
     <>
-      <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-slate-950/85 backdrop-blur-md animate-fade-in font-sans">
-        <div className="relative w-full max-w-2xl bg-[#0f172a] border border-slate-700 rounded-3xl shadow-2xl overflow-hidden text-slate-200 max-h-[92vh] flex flex-col">
+      <div className="fixed inset-0 z-50 flex items-start sm:items-center justify-center p-2 sm:p-4 bg-slate-950/85 backdrop-blur-md animate-fade-in font-sans overflow-y-auto">
+        <div className="relative w-full max-w-2xl bg-[#0f172a] border border-slate-700 rounded-2xl sm:rounded-3xl shadow-2xl overflow-hidden text-slate-200 max-h-[94vh] sm:max-h-[90vh] flex flex-col my-auto">
           
           {/* Accent top stripe */}
           <div className="h-1.5 w-full bg-gradient-to-r from-sky-400 via-amber-500 to-emerald-400 shrink-0" />
 
           {/* Modal Header */}
-          <div className="px-6 py-4 border-b border-slate-800 flex items-center justify-between shrink-0 bg-slate-900/60">
-            <div>
-              <div className="flex items-center gap-2">
+          <div className="px-4 sm:px-6 py-3.5 sm:py-4 border-b border-slate-800 flex items-center justify-between shrink-0 bg-slate-900/95 sticky top-0 z-20 backdrop-blur-sm gap-3">
+            <div className="min-w-0 pr-2">
+              <div className="flex items-center gap-2 flex-wrap">
                 <span className="text-[10px] font-mono font-bold uppercase tracking-widest px-2 py-0.5 rounded bg-sky-500/10 text-sky-400 border border-sky-500/20">
                   Dual Gateway Checkout
                 </span>
@@ -378,22 +381,27 @@ export const PayPalEFTCheckoutModal: React.FC<PayPalEFTCheckoutModalProps> = ({
                   SACPCMP &amp; DMRE Compliant
                 </span>
               </div>
-              <h3 className="text-lg font-black text-white uppercase tracking-wider font-display mt-0.5">
+              <h3 className="text-base sm:text-lg font-black text-white uppercase tracking-wider font-display mt-0.5 truncate">
                 {itemTitle}
               </h3>
             </div>
 
-            <button
-              type="button"
-              onClick={onClose}
-              className="p-2 text-slate-400 hover:text-white rounded-xl hover:bg-slate-800 transition cursor-pointer"
-            >
-              <X className="w-5 h-5" />
-            </button>
+            <div className="flex items-center gap-2 sm:gap-3 shrink-0">
+              <CurrencySwitcher variant="compact" />
+              <button
+                type="button"
+                onClick={onClose}
+                className="p-1.5 sm:p-2 text-slate-400 hover:text-white rounded-xl hover:bg-slate-800 transition cursor-pointer"
+                title="Close Checkout"
+                aria-label="Close Checkout Modal"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
           </div>
 
           {/* Scrollable Container */}
-          <div className="p-6 overflow-y-auto space-y-6">
+          <div className="p-4 sm:p-6 overflow-y-auto space-y-6 flex-1 overscroll-contain">
 
             {/* Dynamic Tier Selection */}
             {showTierSelector && (
@@ -634,11 +642,13 @@ export const PayPalEFTCheckoutModal: React.FC<PayPalEFTCheckoutModalProps> = ({
                   Total Payable
                 </div>
                 <div className="text-xl font-black text-white font-mono">
-                  {formatZarCurrency(totalAmountZar)}
+                  {formatPrice(totalAmountZar)}
                 </div>
-                <div className="text-[10px] font-mono text-amber-400">
-                  ≈ {formatUsdCurrency(usdAmount)}
-                </div>
+                {currency !== 'USD' && (
+                  <div className="text-[10px] font-mono text-amber-400">
+                    ≈ {formatUsdCurrency(usdAmount)}
+                  </div>
+                )}
               </div>
             </div>
 

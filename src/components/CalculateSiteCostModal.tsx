@@ -14,6 +14,8 @@ import {
   Sparkles,
   Info
 } from 'lucide-react';
+import { useCurrency } from '../context/CurrencyContext';
+import { CurrencySwitcher } from './CurrencySwitcher';
 
 export type IndustryTierId = 'agriculture' | 'light_industrial' | 'mining_enterprise';
 
@@ -118,6 +120,8 @@ export const CalculateSiteCostModal: React.FC<CalculateSiteCostModalProps> = ({
     };
   }, [isOpen]);
 
+  const { currency, formatPrice } = useCurrency();
+
   if (!isOpen) return null;
 
   const currentTier = INDUSTRY_TIERS.find(t => t.id === selectedTierId) || INDUSTRY_TIERS[0];
@@ -145,7 +149,7 @@ export const CalculateSiteCostModal: React.FC<CalculateSiteCostModalProps> = ({
   };
 
   const formatCurrency = (amount: number) => {
-    return `R${amount.toLocaleString('en-ZA')}`;
+    return formatPrice(amount);
   };
 
   const handleStartTrial = () => {
@@ -167,7 +171,7 @@ export const CalculateSiteCostModal: React.FC<CalculateSiteCostModalProps> = ({
   return (
     <div 
       id="calculate-site-cost-backdrop"
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 bg-slate-950/80 backdrop-blur-md overflow-y-auto animate-in fade-in duration-200"
+      className="fixed inset-0 z-50 flex items-start sm:items-center justify-center p-2 sm:p-4 md:p-6 bg-slate-950/85 backdrop-blur-md overflow-y-auto animate-in fade-in duration-200"
       onClick={(e) => {
         if (e.target === e.currentTarget) onClose();
       }}
@@ -178,37 +182,41 @@ export const CalculateSiteCostModal: React.FC<CalculateSiteCostModalProps> = ({
         role="dialog"
         aria-modal="true"
         aria-labelledby="site-cost-modal-title"
-        className="relative w-full max-w-3xl bg-slate-900 border border-slate-800 text-slate-100 rounded-2xl shadow-2xl overflow-hidden my-8"
+        className="relative w-full max-w-3xl bg-slate-900 border border-slate-800 text-slate-100 rounded-2xl sm:rounded-3xl shadow-2xl overflow-hidden my-auto flex flex-col max-h-[94vh] sm:max-h-[90vh]"
         onClick={(e) => e.stopPropagation()}
       >
-        {/* Modal Header */}
-        <div className="relative px-6 py-5 border-b border-slate-800/80 bg-slate-950/60 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-cyan-500/10 border border-cyan-500/30 flex items-center justify-center text-cyan-400">
+        {/* Modal Header - Fixed & Sticky */}
+        <div className="shrink-0 sticky top-0 z-20 px-4 sm:px-6 py-3.5 sm:py-4 border-b border-slate-800/80 bg-slate-950/95 flex items-center justify-between gap-3 backdrop-blur-sm">
+          <div className="flex items-center gap-3 min-w-0">
+            <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-cyan-500/10 border border-cyan-500/30 flex items-center justify-center text-cyan-400 shrink-0">
               <Calculator className="w-5 h-5" />
             </div>
-            <div>
+            <div className="min-w-0">
               <div className="flex items-center gap-2">
-                <h2 id="site-cost-modal-title" className="text-lg sm:text-xl font-bold text-white tracking-tight">
+                <h2 id="site-cost-modal-title" className="text-base sm:text-lg md:text-xl font-bold text-white tracking-tight truncate">
                   Calculate Site Deployment Cost
                 </h2>
-                <span className="hidden sm:inline-flex text-[11px] font-semibold uppercase px-2 py-0.5 rounded-full bg-amber-500/10 text-amber-300 border border-amber-500/30">
-                  Instant Estimate
+                <span className="hidden sm:inline-flex text-[10px] font-semibold uppercase px-2 py-0.5 rounded-full bg-amber-500/10 text-amber-300 border border-amber-500/30 font-mono">
+                  {currency}
                 </span>
               </div>
-              <p className="text-xs text-slate-400">
-                Transparent SHEQ compliance pricing tailored from family-run packhouses to deep-level mines
+              <p className="text-[11px] text-slate-400 truncate">
+                Transparent SHEQ compliance pricing tailored from family packhouses to deep-level mines
               </p>
             </div>
           </div>
-          <button
-            id="close-site-cost-modal-btn"
-            onClick={onClose}
-            aria-label="Close cost calculator"
-            className="p-2 text-slate-400 hover:text-white hover:bg-slate-800/80 rounded-xl transition-colors"
-          >
-            <X className="w-5 h-5" />
-          </button>
+          
+          <div className="flex items-center gap-2 sm:gap-3 shrink-0">
+            <CurrencySwitcher variant="compact" />
+            <button
+              id="close-site-cost-modal-btn"
+              onClick={onClose}
+              aria-label="Close cost calculator"
+              className="p-1.5 sm:p-2 text-slate-400 hover:text-white hover:bg-slate-800/80 rounded-xl transition-colors cursor-pointer"
+            >
+              <X className="w-5 h-5" />
+            </button>
+          </div>
         </div>
 
         {proposalSubmitted ? (
@@ -242,7 +250,7 @@ export const CalculateSiteCostModal: React.FC<CalculateSiteCostModalProps> = ({
           </div>
         ) : (
           /* Calculator Body */
-          <div className="p-6 sm:p-8 space-y-6 max-h-[78vh] overflow-y-auto">
+          <div className="p-4 sm:p-6 md:p-8 space-y-6 overflow-y-auto flex-1 overscroll-contain">
             
             {/* Step 1: Industry & Framework Focus */}
             <div className="space-y-3">
@@ -360,7 +368,7 @@ export const CalculateSiteCostModal: React.FC<CalculateSiteCostModalProps> = ({
                 <span className="font-mono text-slate-300">
                   {extraUsersCount > 0 ? (
                     <span className="text-cyan-300 font-semibold">
-                      +{extraUsersCount} extra × R1,500/mo = +{formatCurrency(extraUsersMonthlyFee)}/mo
+                      +{extraUsersCount} extra × {formatPrice(1500)}/mo = +{formatCurrency(extraUsersMonthlyFee)}/mo
                     </span>
                   ) : (
                     <span className="text-emerald-400 font-medium">No extra user charges</span>
@@ -404,7 +412,7 @@ export const CalculateSiteCostModal: React.FC<CalculateSiteCostModalProps> = ({
                       Initial Paper Checklist Digitization Bundle
                     </span>
                     <span className="text-xs font-mono font-bold text-amber-300 bg-amber-500/10 border border-amber-500/30 px-2 py-0.5 rounded">
-                      R2,500 One-Time
+                      {formatPrice(2500)} One-Time
                     </span>
                   </div>
                   <p className="text-xs text-slate-400 leading-relaxed">

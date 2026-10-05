@@ -1,12 +1,15 @@
 import React, { createContext, useContext, useState, useEffect, useMemo, ReactNode } from 'react';
 import { SupportedCurrency, CurrencyContextType } from '../types/currency';
 import {
-  DEFAULT_ZAR_PER_USD,
+  SUPPORTED_CURRENCIES,
+  CURRENCY_CONFIG_MAP,
+  getExchangeRateForCurrency,
   getStoredCurrencyOverride,
   saveCurrencyOverride,
   detectVisitorGeoLocation,
   formatCurrencyAmount,
-  convertZarToUsdAmount
+  formatCurrencyRange,
+  convertZarToCurrencyAmount
 } from '../services/currencyService';
 
 const CurrencyContext = createContext<CurrencyContextType | undefined>(undefined);
@@ -21,7 +24,18 @@ export const CurrencyProvider: React.FC<CurrencyProviderProps> = ({ children }) 
   });
   const [countryCode, setCountryCode] = useState<string>('ZA');
   const [isAutoDetected, setIsAutoDetected] = useState<boolean>(false);
-  const exchangeRate = DEFAULT_ZAR_PER_USD;
+
+  // Sync state if another part of the app or storage fires an event
+  useEffect(() => {
+    const handleCurrencyEvent = (e: Event) => {
+      const customEvent = e as CustomEvent<{ currency: SupportedCurrency }>;
+      if (customEvent.detail?.currency && customEvent.detail.currency !== currency) {
+        setCurrencyState(customEvent.detail.currency);
+      }
+    };
+    window.addEventListener('melotwo_currency_changed', handleCurrencyEvent);
+    return () => window.removeEventListener('melotwo_currency_changed', handleCurrencyEvent);
+  }, [currency]);
 
   // Auto-detect visitor location on initial mount if not overridden
   useEffect(() => {
@@ -54,28 +68,30 @@ export const CurrencyProvider: React.FC<CurrencyProviderProps> = ({ children }) 
   };
 
   const contextValue = useMemo<CurrencyContextType>(() => {
-    const symbol = currency === 'USD' ? '$' : 'R';
+    const activeConfig = CURRENCY_CONFIG_MAP[currency] || CURRENCY_CONFIG_MAP.ZAR;
     const isSouthAfrica = currency === 'ZAR';
+    const exchangeRate = getExchangeRateForCurrency(currency);
 
     return {
       currency,
-      symbol,
+      symbol: activeConfig.symbol,
       countryCode,
       isAutoDetected,
       isSouthAfrica,
       exchangeRate,
+      allCurrencies: SUPPORTED_CURRENCIES,
       setCurrency: handleSetCurrency,
-      formatPrice: (amountInZar: number, options?: { showCode?: boolean; roundDecimals?: boolean }) => {
-        return formatCurrencyAmount(amountInZar, currency, exchangeRate, options);
+      formatPrice: (amountInZar: number, options?: { showCode?: boolean; roundDecimals?: boolean; compact?: boolean }) => {
+        return formatCurrencyAmount(amountInZar, currency, undefined, options);
+      },
+      formatRange: (minZar: number, maxZar: number, suffix?: string) => {
+        return formatCurrencyRange(minZar, maxZar, currency, suffix);
       },
       convertZarToActive: (amountInZar: number) => {
-        if (currency === 'USD') {
-          return convertZarToUsdAmount(amountInZar, exchangeRate);
-        }
-        return amountInZar;
+        return convertZarToCurrencyAmount(amountInZar, currency);
       }
     };
-  }, [currency, countryCode, isAutoDetected, exchangeRate]);
+  }, [currency, countryCode, isAutoDetected]);
 
   return (
     <CurrencyContext.Provider value={contextValue}>
@@ -94,11 +110,14 @@ export function useCurrency(): CurrencyContextType {
       countryCode: 'ZA',
       isAutoDetected: false,
       isSouthAfrica: true,
-      exchangeRate: DEFAULT_ZAR_PER_USD,
+      exchangeRate: 1,
+      allCurrencies: SUPPORTED_CURRENCIES,
       setCurrency: () => {},
-      formatPrice: (amount: number) => formatCurrencyAmount(amount, 'ZAR'),
+      formatPrice: (amount: number, options?: any) => formatCurrencyAmount(amount, 'ZAR', undefined, options),
+      formatRange: (min: number, max: number, suffix?: string) => formatCurrencyRange(min, max, 'ZAR', suffix),
       convertZarToActive: (amount: number) => amount
     };
   }
   return ctx;
 }
+
