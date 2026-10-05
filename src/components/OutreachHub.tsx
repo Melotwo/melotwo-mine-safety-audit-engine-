@@ -439,15 +439,15 @@ export const OutreachHub: React.FC<OutreachHubProps> = ({
                       />
                       <button
                         onClick={handleCopyLink}
-                        className={`px-4 py-2 rounded-lg text-xs font-bold transition flex items-center justify-center gap-2 cursor-pointer shrink-0 ${
+                        className={`px-4 py-2 rounded-lg text-xs font-bold transition-all duration-300 flex items-center justify-center gap-2 cursor-pointer shrink-0 ${
                           isCopied 
-                            ? 'bg-emerald-600 text-white' 
-                            : 'bg-indigo-600 hover:bg-indigo-500 text-white shadow-md'
+                            ? 'bg-emerald-500 hover:bg-emerald-400 text-white shadow-lg shadow-emerald-500/30 scale-105 ring-2 ring-emerald-400/60' 
+                            : 'bg-indigo-600 hover:bg-indigo-500 text-white shadow-md active:scale-95'
                         }`}
                       >
                         {isCopied ? (
                           <>
-                            <Check className="w-4 h-4" />
+                            <CheckCircle2 className="w-4 h-4 text-white animate-bounce stroke-[2.5]" />
                             <span>Copied to Clipboard!</span>
                           </>
                         ) : (

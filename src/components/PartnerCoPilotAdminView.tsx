@@ -667,17 +667,17 @@ export const PartnerCoPilotAdminView: React.FC<PartnerCoPilotAdminViewProps> = (
                 <button
                   type="button"
                   onClick={handleCopyLink}
-                  className={`px-3 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-1.5 cursor-pointer shrink-0 ${
+                  className={`px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all duration-300 flex items-center gap-1.5 cursor-pointer shrink-0 ${
                     isCopied 
-                      ? 'bg-emerald-600 text-white' 
-                      : 'bg-amber-500 hover:bg-amber-400 text-slate-950 shadow-sm'
+                      ? 'bg-emerald-500 hover:bg-emerald-400 text-white shadow-lg shadow-emerald-500/30 scale-105 ring-2 ring-emerald-400/60' 
+                      : 'bg-amber-500 hover:bg-amber-400 text-slate-950 shadow-sm active:scale-95'
                   }`}
                   title="Copy Tracking Link to Clipboard"
                 >
                   {isCopied ? (
                     <>
-                      <Check className="w-3.5 h-3.5" />
-                      <span>Copied!</span>
+                      <CheckCircle2 className="w-3.5 h-3.5 text-white animate-bounce stroke-[2.5]" />
+                      <span className="tracking-tight">Copied to Clipboard!</span>
                     </>
                   ) : (
                     <>
@@ -1715,10 +1715,23 @@ export const PartnerCoPilotAdminView: React.FC<PartnerCoPilotAdminViewProps> = (
               <button
                 type="button"
                 onClick={handleCopyLink}
-                className="px-3.5 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold text-xs rounded-xl flex items-center gap-1.5 transition cursor-pointer"
+                className={`px-3.5 py-2 font-bold text-xs rounded-xl flex items-center gap-1.5 transition-all duration-300 cursor-pointer ${
+                  isCopied
+                    ? 'bg-emerald-500 text-white shadow-md shadow-emerald-500/30 ring-2 ring-emerald-400/50 scale-105'
+                    : 'bg-slate-800 hover:bg-slate-700 text-slate-200 active:scale-95'
+                }`}
               >
-                {isCopied ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
-                <span>{isCopied ? 'Link Copied!' : 'Copy Link'}</span>
+                {isCopied ? (
+                  <>
+                    <CheckCircle2 className="w-3.5 h-3.5 text-white animate-bounce stroke-[2.5]" />
+                    <span>Link Copied!</span>
+                  </>
+                ) : (
+                  <>
+                    <Copy className="w-3.5 h-3.5" />
+                    <span>Copy Link</span>
+                  </>
+                )}
               </button>
 
               <div className="flex items-center gap-2">
