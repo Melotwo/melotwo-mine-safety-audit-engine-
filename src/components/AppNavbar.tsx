@@ -260,20 +260,15 @@ export const AppNavbar: React.FC<AppNavbarProps> = ({
           </div>
 
           {/* Quick Utility Links (Right) */}
-          <div className="flex items-center gap-3 sm:gap-4 shrink-0 font-mono">
-            {/* Currency Switcher Pill (Option A) */}
-            <CurrencySwitcher variant="compact" />
-
+          <div className="flex items-center gap-3 shrink-0 font-mono">
             {/* Direct Support & WhatsApp */}
-            <div className="flex items-center gap-2 pl-2 border-l border-slate-800">
-              <WhatsAppChatButton variant="nav" />
-            </div>
+            <WhatsAppChatButton variant="nav" />
 
             {/* Fast Checkout CTA */}
             {onOpenPaymentSettings && (
               <button
                 onClick={onOpenPaymentSettings}
-                className="hidden sm:inline-flex items-center gap-1.5 text-amber-400 hover:text-amber-300 transition text-[11px] font-bold cursor-pointer"
+                className="hidden sm:inline-flex items-center gap-1.5 text-amber-400 hover:text-amber-300 transition text-[11px] font-bold cursor-pointer pl-3 border-l border-slate-800"
                 title="Direct PayPal & EFT License Portal"
               >
                 <CreditCard className="w-3 h-3 text-amber-400" />
@@ -563,8 +558,8 @@ export const AppNavbar: React.FC<AppNavbarProps> = ({
               </button>
             )}
 
-            {/* Main Navbar Currency Switcher */}
-            <div className="hidden md:flex items-center shrink-0">
+            {/* Main Navbar Single Primary Currency Switcher */}
+            <div className="hidden sm:flex items-center shrink-0">
               <CurrencySwitcher variant="compact" />
             </div>
 
