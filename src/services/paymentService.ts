@@ -145,6 +145,7 @@ export async function submitEftOrder(submission: {
 }): Promise<EftOrderSubmission> {
   const bankKey = submission.selectedBank || 'capitec';
   const resolvedBank = EFT_BANK_ACCOUNTS[bankKey] || EFT_BANK_ACCOUNTS.capitec;
+  const activePartnerCode = typeof localStorage !== 'undefined' ? localStorage.getItem('melotwo_partner_ref') || undefined : undefined;
 
   const order: EftOrderSubmission = {
     id: `EFT-${Date.now()}`,
@@ -159,7 +160,8 @@ export async function submitEftOrder(submission: {
     popFileName: submission.popFileName,
     popFileDataUrl: submission.popFileDataUrl,
     status: 'PROVISIONALLY_APPROVED',
-    createdAt: new Date().toISOString()
+    createdAt: new Date().toISOString(),
+    partnerCode: activePartnerCode
   };
 
   // Cache locally

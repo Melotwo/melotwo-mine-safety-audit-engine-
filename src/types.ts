@@ -255,6 +255,7 @@ export interface EftOrderSubmission {
   status: 'PENDING_VERIFICATION' | 'VERIFIED' | 'PROVISIONALLY_APPROVED' | 'REJECTED';
   createdAt: string;
   verifiedAt?: string;
+  partnerCode?: string;
 }
 
 export interface PaymentSuccessResult {

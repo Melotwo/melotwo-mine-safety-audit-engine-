@@ -29,13 +29,16 @@ import {
   X,
   RefreshCw,
   XCircle,
-  Key
+  Key,
+  QrCode,
+  Smartphone
 } from 'lucide-react';
 import { ZAMBIAN_COMPLIANCE_DISCLAIMERS, getZambianRulesByVerificationStatus, getZambianRulesByAuthority } from '../config/regulatoryRules.zambia';
 import { MeloTwoLogo } from './MeloTwoLogo';
 import { EftOrderSubmission } from '../types';
 import { EFT_BANK_ACCOUNTS, generateEftInvoicePdf } from '../services/paymentService';
 import { PayPalKeyConfigModal } from './PayPalKeyConfigModal';
+import { generateQrCodeDataUrl } from '../services/qrVerificationService';
 
 export interface PartnerCoPilotAdminViewProps {
   onBack?: () => void;
@@ -75,6 +78,12 @@ export const PartnerCoPilotAdminView: React.FC<PartnerCoPilotAdminViewProps> = (
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<'INTELLIGENCE' | 'REFERRAL_PIPELINE' | 'EFT_APPROVALS' | 'GOVERNANCE'>('INTELLIGENCE');
   const [isAdminPayPalModalOpen, setIsAdminPayPalModalOpen] = useState(false);
+
+  // QR Code Referral Generation State
+  const [qrCodeDataUrl, setQrCodeDataUrl] = useState<string>('');
+  const [isQrModalOpen, setIsQrModalOpen] = useState<boolean>(false);
+  const [isGeneratingQr, setIsGeneratingQr] = useState<boolean>(false);
+  const [showInlineQr, setShowInlineQr] = useState<boolean>(false);
 
   // Direct EFT & POP Admin Approval Queue State
   const [eftOrders, setEftOrders] = useState<EftOrderSubmission[]>([]);
@@ -214,6 +223,48 @@ export const PartnerCoPilotAdminView: React.FC<PartnerCoPilotAdminViewProps> = (
       }, 3500);
     } catch (e) {
       console.error('Failed to copy partner link:', e);
+    }
+  };
+
+  // Generate QR Code data URL dynamically whenever partnerTrackingLink changes
+  useEffect(() => {
+    let isMounted = true;
+    setIsGeneratingQr(true);
+    generateQrCodeDataUrl(partnerTrackingLink, {
+      width: 420,
+      margin: 2,
+      darkColor: '#090d16',
+      lightColor: '#ffffff'
+    })
+      .then(url => {
+        if (isMounted) {
+          setQrCodeDataUrl(url);
+          setIsGeneratingQr(false);
+        }
+      })
+      .catch(err => {
+        console.error('Failed to generate partner QR code:', err);
+        if (isMounted) setIsGeneratingQr(false);
+      });
+
+    return () => {
+      isMounted = false;
+    };
+  }, [partnerTrackingLink]);
+
+  const handleDownloadQrCode = () => {
+    if (!qrCodeDataUrl) return;
+    try {
+      const downloadLink = document.createElement('a');
+      downloadLink.href = qrCodeDataUrl;
+      downloadLink.download = `melotwo-referral-qr-${partnerCode.toLowerCase()}.png`;
+      document.body.appendChild(downloadLink);
+      downloadLink.click();
+      document.body.removeChild(downloadLink);
+      setToastMessage(`QR Code downloaded for partner code "${partnerCode}"!`);
+      setTimeout(() => setToastMessage(null), 3500);
+    } catch (e) {
+      console.error('Failed to download QR code:', e);
     }
   };
 
@@ -637,20 +688,94 @@ export const PartnerCoPilotAdminView: React.FC<PartnerCoPilotAdminViewProps> = (
                 </button>
               </div>
 
-              <div className="flex items-center justify-between pt-1">
+              {/* Action Buttons: QR Scan, Inline Toggle & WhatsApp */}
+              <div className="flex flex-wrap items-center justify-between gap-2 pt-1">
                 <span className="text-[10px] text-slate-400 font-mono">
                   Bounty: <strong className="text-amber-400">ZMW 1,200</strong> / Binder or 15% SaaS
                 </span>
-                <a
-                  href={whatsappShareUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-xs font-bold text-emerald-400 hover:text-emerald-300 flex items-center gap-1.5 cursor-pointer bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/30 px-2.5 py-1 rounded-lg transition"
-                >
-                  <Share2 className="w-3.5 h-3.5" />
-                  <span>Share via WhatsApp</span>
-                </a>
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setIsQrModalOpen(true)}
+                    className="text-xs font-bold text-amber-300 hover:text-amber-200 flex items-center gap-1.5 cursor-pointer bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/30 px-2.5 py-1 rounded-lg transition"
+                    title="Generate & View QR Code for Mobile Scanning"
+                  >
+                    <QrCode className="w-3.5 h-3.5 text-amber-400" />
+                    <span>Scan QR</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setShowInlineQr(!showInlineQr)}
+                    className="text-xs font-mono text-slate-400 hover:text-slate-200 flex items-center gap-1 cursor-pointer bg-slate-900 hover:bg-slate-800 border border-slate-800 px-2 py-1 rounded-lg transition"
+                    title="Toggle quick inline QR display"
+                  >
+                    <Smartphone className="w-3.5 h-3.5 text-cyan-400" />
+                    <span>{showInlineQr ? 'Hide' : 'Quick QR'}</span>
+                  </button>
+                  <a
+                    href={whatsappShareUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-xs font-bold text-emerald-400 hover:text-emerald-300 flex items-center gap-1.5 cursor-pointer bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/30 px-2.5 py-1 rounded-lg transition"
+                  >
+                    <Share2 className="w-3.5 h-3.5" />
+                    <span className="hidden sm:inline">WhatsApp</span>
+                  </a>
+                </div>
               </div>
+
+              {/* Inline Quick QR Drawer */}
+              {showInlineQr && (
+                <div className="bg-slate-900/90 border border-amber-500/30 rounded-xl p-3 flex flex-col sm:flex-row items-center gap-3.5 animate-fadeIn">
+                  <div 
+                    onClick={() => setIsQrModalOpen(true)}
+                    className="bg-white p-2 rounded-lg cursor-pointer hover:ring-2 hover:ring-amber-400 transition shrink-0 group relative shadow-md"
+                    title="Click to expand QR Code"
+                  >
+                    {qrCodeDataUrl ? (
+                      <img 
+                        src={qrCodeDataUrl} 
+                        alt={`QR Code for ${partnerCode}`} 
+                        className="w-24 h-24 sm:w-28 sm:h-28 object-contain"
+                      />
+                    ) : (
+                      <div className="w-24 h-24 flex items-center justify-center text-slate-500 text-xs font-mono">
+                        Generating...
+                      </div>
+                    )}
+                    <span className="absolute inset-0 bg-slate-950/50 opacity-0 group-hover:opacity-100 flex items-center justify-center rounded-lg text-[10px] font-bold text-white transition">
+                      Enlarge
+                    </span>
+                  </div>
+                  <div className="text-left space-y-1.5 flex-1 min-w-0">
+                    <div className="flex items-center gap-1.5 text-[10px] font-mono text-amber-400 font-bold uppercase">
+                      <Smartphone className="w-3.5 h-3.5" />
+                      <span>Instant Mobile Referral Scan</span>
+                    </div>
+                    <p className="text-[11px] text-slate-300 leading-tight">
+                      Contractors scan this code on mobile to land directly on your selected destination with attribution tag <code className="text-amber-300 font-mono">?ref={partnerCode}</code>.
+                    </p>
+                    <div className="flex items-center gap-2 pt-1">
+                      <button
+                        type="button"
+                        onClick={handleDownloadQrCode}
+                        className="text-[10px] font-mono font-bold bg-slate-800 hover:bg-slate-700 text-slate-200 px-2.5 py-1 rounded-lg border border-slate-700 flex items-center gap-1 transition cursor-pointer"
+                      >
+                        <Download className="w-3 h-3 text-cyan-400" />
+                        <span>Save PNG</span>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setIsQrModalOpen(true)}
+                        className="text-[10px] font-mono font-bold bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 px-2.5 py-1 rounded-lg border border-amber-500/30 flex items-center gap-1 transition cursor-pointer"
+                      >
+                        <QrCode className="w-3 h-3" />
+                        <span>Full Screen &amp; Print</span>
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
 
@@ -1500,6 +1625,126 @@ export const PartnerCoPilotAdminView: React.FC<PartnerCoPilotAdminViewProps> = (
         isOpen={isAdminPayPalModalOpen}
         onClose={() => setIsAdminPayPalModalOpen(false)}
       />
+
+      {/* Partner Referral QR Code Modal */}
+      {isQrModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-slate-950/85 backdrop-blur-md animate-fade-in font-sans">
+          <div className="relative w-full max-w-md bg-[#0f172a] border border-amber-500/40 rounded-3xl shadow-2xl shadow-amber-950/20 overflow-hidden flex flex-col max-h-[92vh]">
+            
+            {/* Modal Header */}
+            <div className="px-5 py-4 bg-slate-900/90 border-b border-slate-800 flex items-center justify-between shrink-0">
+              <div className="flex items-center gap-2.5">
+                <div className="w-9 h-9 rounded-xl bg-amber-500/10 border border-amber-500/30 flex items-center justify-center text-amber-400">
+                  <QrCode className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="text-sm font-bold text-white flex items-center gap-2">
+                    Partner Referral QR Code
+                    <span className="text-[10px] font-mono font-normal text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-full border border-emerald-500/20">
+                      Live
+                    </span>
+                  </h3>
+                  <p className="text-[11px] text-slate-400 font-mono">
+                    Scan with any smartphone camera
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setIsQrModalOpen(false)}
+                className="w-8 h-8 rounded-full bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white flex items-center justify-center transition cursor-pointer"
+                title="Close Modal"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            {/* Modal Body */}
+            <div className="p-5 sm:p-6 space-y-4 overflow-y-auto flex-1 text-center">
+              {/* Destination & Partner Info Badges */}
+              <div className="flex flex-wrap items-center justify-center gap-2 text-xs">
+                <span className="font-mono text-slate-300 bg-slate-950 px-3 py-1 rounded-xl border border-slate-800">
+                  Partner Code: <strong className="text-amber-400">{partnerCode}</strong>
+                </span>
+                <span className="font-mono text-slate-300 bg-slate-950 px-3 py-1 rounded-xl border border-slate-800">
+                  Target: <strong className="text-cyan-400">
+                    {linkDestination === 'zambia' ? '15-PT Diagnostic' : linkDestination === 'tender' ? 'Tender File' : linkDestination === 'calculator' ? 'Cost Calculator' : 'Platform Home'}
+                  </strong>
+                </span>
+                <span className="font-mono text-emerald-400 bg-emerald-500/10 px-2.5 py-1 rounded-xl border border-emerald-500/20">
+                  15% Rev Share
+                </span>
+              </div>
+
+              {/* High-Contrast QR Code Card */}
+              <div className="flex justify-center my-2">
+                <div className="bg-white p-4 sm:p-5 rounded-2xl shadow-xl shadow-slate-950/60 inline-block border-4 border-slate-800">
+                  {qrCodeDataUrl ? (
+                    <img 
+                      src={qrCodeDataUrl} 
+                      alt={`Referral QR Code for ${partnerCode}`} 
+                      className="w-56 h-56 sm:w-64 sm:h-64 object-contain mx-auto block"
+                    />
+                  ) : (
+                    <div className="w-56 h-56 flex items-center justify-center text-slate-600 text-xs font-mono">
+                      Generating scannable QR Code...
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Mobile Scan Helper */}
+              <div className="bg-slate-950/80 border border-slate-800 rounded-xl p-3 text-left space-y-1">
+                <div className="flex items-center gap-1.5 text-xs font-bold text-amber-400">
+                  <Smartphone className="w-4 h-4 text-amber-400 shrink-0" />
+                  <span>Mobile Scan Instructions</span>
+                </div>
+                <p className="text-[11px] text-slate-400 leading-relaxed font-sans">
+                  Open any smartphone camera (iOS Camera app or Android Google Lens / QR Scanner). Point at this QR code to immediately launch MeloTwo with your partner referral code attached.
+                </p>
+                <div className="pt-1">
+                  <div className="text-[10px] font-mono text-slate-500 truncate select-all bg-slate-900 px-2.5 py-1 rounded border border-slate-800 text-cyan-300">
+                    {partnerTrackingLink}
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Modal Footer Actions */}
+            <div className="px-5 py-3.5 bg-slate-900/90 border-t border-slate-800 flex flex-wrap items-center justify-between gap-2 shrink-0">
+              <button
+                type="button"
+                onClick={handleCopyLink}
+                className="px-3.5 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold text-xs rounded-xl flex items-center gap-1.5 transition cursor-pointer"
+              >
+                {isCopied ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
+                <span>{isCopied ? 'Link Copied!' : 'Copy Link'}</span>
+              </button>
+
+              <div className="flex items-center gap-2">
+                <a
+                  href={whatsappShareUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="px-3 py-2 bg-emerald-600/20 hover:bg-emerald-600/30 text-emerald-300 border border-emerald-500/30 font-bold text-xs rounded-xl flex items-center gap-1.5 transition cursor-pointer"
+                >
+                  <Share2 className="w-3.5 h-3.5" />
+                  <span>Share</span>
+                </a>
+                <button
+                  type="button"
+                  onClick={handleDownloadQrCode}
+                  className="px-4 py-2 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs rounded-xl flex items-center gap-1.5 transition cursor-pointer shadow-lg shadow-amber-950/40"
+                >
+                  <Download className="w-3.5 h-3.5" />
+                  <span>Download PNG</span>
+                </button>
+              </div>
+            </div>
+
+          </div>
+        </div>
+      )}
     </div>
   );
 };

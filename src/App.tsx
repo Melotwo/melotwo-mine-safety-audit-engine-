@@ -13692,9 +13692,11 @@ const App: React.FC = () => {
             }
             if (
                 rawPath.startsWith('/partner') || 
+                rawPath.startsWith('/partners') || 
                 rawHash === '#partner-copilot' || 
                 rawHash === '#partner-admin' || 
-                rawHash === '#copilot'
+                rawHash === '#copilot' ||
+                rawHash.startsWith('#partner')
             ) {
                 return 'partner-copilot';
             }
@@ -13849,7 +13851,10 @@ const App: React.FC = () => {
                 rawHash === '#partner-admin' || 
                 rawHash === '#copilot' ||
                 rawHash.startsWith('#partner') ||
-                (typeof window !== 'undefined' && window.location.pathname.startsWith('/partner'));
+                (typeof window !== 'undefined' && (
+                    window.location.pathname.startsWith('/partner') ||
+                    window.location.pathname.startsWith('/partners')
+                ));
 
             if (isTenderHash) {
                 setCurrentPage('home');
@@ -13918,7 +13923,15 @@ const App: React.FC = () => {
         if (typeof window === 'undefined') return;
         try {
             const urlParams = new URLSearchParams(window.location.search);
-            const refCode = urlParams.get('ref') || urlParams.get('referral') || urlParams.get('partner') || urlParams.get('affiliate');
+            let refCode = urlParams.get('ref') || urlParams.get('referral') || urlParams.get('partner') || urlParams.get('affiliate');
+
+            // Handle links where query params follow the hash (e.g., #zambia-assessment?ref=CODE)
+            if (!refCode && window.location.hash.includes('?')) {
+                const hashQuery = window.location.hash.split('?')[1];
+                const hashParams = new URLSearchParams(hashQuery);
+                refCode = hashParams.get('ref') || hashParams.get('referral') || hashParams.get('partner') || hashParams.get('affiliate');
+            }
+
             if (refCode && refCode.trim()) {
                 const cleanCode = refCode.trim().toUpperCase();
                 localStorage.setItem('melotwo_partner_ref', cleanCode);
