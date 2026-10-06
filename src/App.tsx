@@ -13844,6 +13844,21 @@ const App: React.FC = () => {
                 rawHash === '#cost-calculator' ||
                 rawHash === '#savings-modal';
 
+            // 2b. Check On-Page Savings & Stoppage Calculator hash / deep-link
+            const isSavingsCalculatorHash = 
+                rawHash === '#savings-calculator' || 
+                rawHash === '#calculator' || 
+                rawHash === '#stoppage-calculator' || 
+                rawHash === '#stoppage-cost' || 
+                rawHash === '#dmre-calculator' || 
+                rawHash === '#section-54-calculator' || 
+                rawHash === '#section54' ||
+                (typeof window !== 'undefined' && (
+                    window.location.pathname === '/calculator' ||
+                    window.location.pathname === '/savings-calculator' ||
+                    window.location.pathname === '/stoppage-calculator'
+                ));
+
             // 3. Check Blog & Guide route / hash
             const isBlogRoute = 
                 rawHash === '#blog' || 
@@ -13912,6 +13927,20 @@ const App: React.FC = () => {
                     target: 'calculate_cost_modal'
                 });
                 window.scrollTo({ top: 0, behavior: 'smooth' });
+            } else if (isSavingsCalculatorHash) {
+                setCurrentPage('home');
+                setIsTenderWizardOpen(false);
+                setIsCostModalOpen(false);
+                trackGA4Event('hash_deep_link_triggered', {
+                    hash: window.location.hash || window.location.pathname,
+                    target: 'savings_calculator_lead_magnet'
+                });
+                setTimeout(() => {
+                    const el = document.getElementById('savings-calculator');
+                    if (el) {
+                        el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                    }
+                }, 120);
             } else if (isBlogRoute) {
                 setCurrentPage('blog');
                 setIsTenderWizardOpen(false);
