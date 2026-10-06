@@ -271,3 +271,4 @@ export interface PaymentSuccessResult {
 }
 
 export * from './types/complianceEngine';
+export * from './types/crossBorderCompliance';

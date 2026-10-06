@@ -22,7 +22,9 @@ import {
   CheckCircle2,
   FileCheck2,
   HelpCircle,
-  Cpu
+  Cpu,
+  Globe,
+  TreePine
 } from 'lucide-react';
 import { MeloTwoLogo } from './MeloTwoLogo';
 import { CurrencySwitcher } from './CurrencySwitcher';
@@ -207,8 +209,29 @@ export const AppNavbar: React.FC<AppNavbarProps> = ({
       description: 'Statutory appointments, VR machine rule engine, and SETA/QCTO WSP/ATR tracker.',
       category: 'AUDIT & INSPECTION',
       icon: <Cpu className="w-4 h-4 text-amber-400" />,
-      action: () => setPage('operational-compliance'),
+      action: () => {
+        setPage('operational-compliance');
+        if (typeof window !== 'undefined') {
+          try { window.location.hash = '#operational-compliance'; } catch {}
+        }
+      },
       activeMatch: currentPage === 'operational-compliance'
+    },
+    {
+      id: 'cross-border-sandbox',
+      name: 'Mine Closure & Cross-Border Sandbox',
+      badge: 'SADC / GISTM',
+      badgeColor: 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30',
+      description: 'DMRE/NEMA closure, GISTM tailings liability handover, Defensibility Index & SADC mapping.',
+      category: 'REGIONAL & SPECIALIZED',
+      icon: <Globe className="w-4 h-4 text-cyan-400" />,
+      action: () => {
+        setPage('operational-compliance');
+        if (typeof window !== 'undefined') {
+          try { window.location.hash = '#cross-border-sandbox'; } catch {}
+        }
+      },
+      activeMatch: false
     },
     {
       id: 'copilot',

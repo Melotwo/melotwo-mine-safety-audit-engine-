@@ -14,6 +14,17 @@ import {
   BbeeSkillsScorecardSummary,
   Tier1HostSite
 } from '../types/complianceEngine';
+import {
+  StatutoryEnvironmentalLicense,
+  LiabilityTransferHandoverItem,
+  EsgClosureTransitionMetric,
+  MineClosureSuiteOverview,
+  EnterpriseTier1Host,
+  DefensibilityCategoryScore,
+  DefensibilityIndexResult,
+  CrossBorderRegulatoryMappingItem,
+  ComplianceGapAlert
+} from '../types/crossBorderCompliance';
 
 // ============================================================================
 // IN-MEMORY STORAGE & SEED DATA
@@ -641,6 +652,461 @@ let tradeCandidates: TradeQualificationRecord[] = [
     }
   }
 ];
+
+// 6. Mine Closure, Rehabilitation & Environmental Transition Suite Data
+let mineClosureSuite: MineClosureSuiteOverview = {
+  siteId: 'SITE-WIT-01',
+  siteName: 'Witwatersrand Deep Reef Shaft 4 Decommissioning Complex',
+  mineStage: 'ACTIVE_DECOMMISSIONING',
+  overallRehabilitationProgressPct: 76.5,
+  financialProvisionBondGuaranteeZar: 28500000, // R28.5M Financial Provisioning under NEMA GN R1147
+  licenses: [
+    {
+      licenseId: 'LIC-WULA-01',
+      licenseNumber: '03/B11J/ACGI/9912',
+      statutoryBody: 'DWS',
+      title: 'Water Use License (WULA) - Section 21(a), (c), (g), (i)',
+      actReference: 'National Water Act 36 of 1998 (DWS Pretoria)',
+      issueDate: '2023-04-15',
+      renewalDate: '2028-04-15',
+      status: 'ACTIVE_COMPLIANT',
+      financialProvisionAmountZar: 12400000,
+      keyConditions: [
+        'Discharge limit: max 1,200 m³/day treated water to Wonderfonteinspruit',
+        'Continuous EC telemetry probe logging at discharge point DP-01',
+        'Quarterly ICP-MS heavy metal panel across 14 monitoring boreholes'
+      ],
+      monitoringBoreholesCount: 14,
+      waterDischargeLimitM3Day: 1200
+    },
+    {
+      licenseId: 'LIC-MPRDA-CLOSURE-02',
+      licenseNumber: 'DMRE-MPRDA-SEC43-8841',
+      statutoryBody: 'DMRE',
+      title: 'MPRDA Section 43 Decommissioning & Closure Application',
+      actReference: 'Mineral & Petroleum Resources Development Act 28 of 2002',
+      issueDate: '2024-01-10',
+      renewalDate: '2027-01-10',
+      status: 'REHABILITATION_TRIGGERED',
+      financialProvisionAmountZar: 16100000,
+      keyConditions: [
+        'Shaft cap engineered plug to SANS 10286 specification',
+        'Post-closure latent groundwater pollution indemnity bond in place'
+      ]
+    },
+    {
+      licenseId: 'LIC-ZEMA-EPF-03',
+      licenseNumber: 'ZEMA-EPF-ZM-2025-441',
+      statutoryBody: 'ZEMA_ZAMBIA',
+      title: 'Environmental Protection Fund (EPF) Closure Bond & SI 112 License',
+      actReference: 'Mines & Minerals Development Act 2015 & ZEMA EMA Act 2011',
+      issueDate: '2024-06-01',
+      renewalDate: '2027-06-01',
+      status: 'ACTIVE_COMPLIANT',
+      financialProvisionAmountZar: 32400000, // Equivalent in ZAR (USD $1.8M)
+      keyConditions: [
+        'Copper tailings seepage cutoff trench operational at Kansanshi basin',
+        'Zero untreated acid drainage discharge into Kafue river catchment'
+      ]
+    }
+  ],
+  liabilityHandoverItems: [
+    {
+      itemId: 'HANDOVER-TSF-01',
+      phase: 'TAILINGS_DRAWDOWM_GISTM',
+      workstreamName: 'Tailings Storage Facility (TSF 2) Dewatering & GISTM Stability Handover',
+      locationArea: 'West Basin Tailings Complex (Footprint 114 Hectares)',
+      contractorResponsible: 'MeloTwo Earthworks & Environmental Remediation JV',
+      clientSuperintendent: 'Johan van der Merwe (GCC Engineer)',
+      independentEnvironmentalAuditor: 'SRK Consulting / Pr.Eng Geotechnical Reviewer',
+      checklistRequirements: [
+        { itemDescription: 'Piezometric pore pressure stabilized below 45 kPa threshold', completed: true, statutoryStandard: 'GISTM Requirement 8.3', verifiedDate: '2026-03-28' },
+        { itemDescription: 'Decant pond water volume drawn down by 80% to storm contingency reserve', completed: true, statutoryStandard: 'SANS 10286 / GISTM 7.1', verifiedDate: '2026-03-30' },
+        { itemDescription: 'Static factor of safety exceeds 1.60 across outer buttress wall (target > 1.50)', completed: true, statutoryStandard: 'GISTM Requirement 4.2', verifiedDate: '2026-04-01' },
+        { itemDescription: 'Automated satellite InSAR displacement radar tracking active (< 2mm/month drift)', completed: true, statutoryStandard: 'GISTM Requirement 11.2', verifiedDate: '2026-04-02' }
+      ],
+      signOffStatus: 'LIABILITY_DISCHARGED',
+      gistmConformance: {
+        tailingsFactorOfSafety: 1.62,
+        phAcidMineDrainage: 7.4,
+        piezometerPressureKpa: 42,
+        conformanceLevel: 'CONFORMANT'
+      },
+      handoverCertificateHash: crypto.createHash('sha256').update('TSF2-GISTM-DISCHARGED-2026').digest('hex').substring(0, 16)
+    },
+    {
+      itemId: 'HANDOVER-PLANT-02',
+      phase: 'INFRASTRUCTURE_DEMOLITION',
+      workstreamName: 'Heavy Concentrator Plant Structural Demolition & Scrap Decontamination',
+      locationArea: 'Primary Milling & Flotation Circuit Area',
+      contractorResponsible: 'MeloTwo Industrial Decommissioning Division',
+      clientSuperintendent: 'David Mokoena (Construction Manager)',
+      independentEnvironmentalAuditor: 'WSP Golder Environmental Inspectorate',
+      checklistRequirements: [
+        { itemDescription: 'Certified asbestos lagging stripping completed with air clearance testing (< 0.01 f/ml)', completed: true, statutoryStandard: 'OHSA Asbestos Regulations 2020', verifiedDate: '2026-03-14' },
+        { itemDescription: 'Ball mill gearboxes oil drained and recycled with certified safe disposal manifest', completed: true, statutoryStandard: 'NEMA Waste Act 59 of 2008', verifiedDate: '2026-03-18' },
+        { itemDescription: 'Concrete footings broken to 1.5m below natural ground level and backfilled', completed: false, statutoryStandard: 'MPRDA Closure Plan Guideline' }
+      ],
+      signOffStatus: 'PARTIALLY_VERIFIED',
+      handoverCertificateHash: undefined
+    },
+    {
+      itemId: 'HANDOVER-REVEG-03',
+      phase: 'TOPSOIL_REVEGETATION',
+      workstreamName: 'Waste Rock Dump Slopes Topsoil Profiling & Native Hydroseeding',
+      locationArea: 'Waste Rock Dump 1 Outer Slopes (68 Hectares)',
+      contractorResponsible: 'MeloTwo Eco-Remediation Specialist Services',
+      clientSuperintendent: 'Dr. Michael van Niekerk (Mine Manager)',
+      independentEnvironmentalAuditor: 'Botanical Society of SA / Ecological Specialist',
+      checklistRequirements: [
+        { itemDescription: 'Topsoil spread to minimum 300mm depth with compost and bio-char conditioner', completed: true, statutoryStandard: 'NEMA Rehabilitation Guidelines', verifiedDate: '2026-02-20' },
+        { itemDescription: 'Hydroseeded with certified indigenous seed mix (Themeda triandra, Cynodon dactylon)', completed: true, statutoryStandard: 'DMRE Biodiversity Standard', verifiedDate: '2026-03-01' },
+        { itemDescription: 'Canopy vegetation cover achieves 82% density without alien invasive species', completed: true, statutoryStandard: 'CARA Act 43 of 1983', verifiedDate: '2026-03-25' }
+      ],
+      signOffStatus: 'LIABILITY_DISCHARGED',
+      handoverCertificateHash: crypto.createHash('sha256').update('REVEG-WRD1-DISCHARGED-2026').digest('hex').substring(0, 16)
+    }
+  ],
+  esgTransitionMetrics: [
+    {
+      metricId: 'ESG-AMD-01',
+      domain: 'ENVIRONMENTAL_REMEDIATION',
+      indicatorName: 'Acid Mine Drainage (AMD) Plume Neutralization & Sulfate Reduction',
+      statutoryReference: 'NWA Act 36 Section 21(g) / DWS Water Quality Guidelines',
+      baselineAtClosure: 'pH 3.2, Heavy Metals Elevated, SO4 > 2,800 mg/L',
+      targetAtFinalRelinquishment: 'pH 6.5 - 8.5, SO4 < 500 mg/L (Potable Standard)',
+      currentProgressPct: 91.5,
+      status: 'ON_TRACK',
+      expenditureToDateZar: 14200000,
+      futureForumConsultationHeld: true
+    },
+    {
+      metricId: 'ESG-SLP-02',
+      domain: 'SOCIAL_LABOUR_PLAN_SLP',
+      indicatorName: 'Community Reskilling & Downscaling Enterprise Handovers',
+      statutoryReference: 'MPRDA Regulation 46 / Social & Labour Plan (SLP) Section 52',
+      baselineAtClosure: '1,450 Direct Mine Shaft Contractor Employees',
+      targetAtFinalRelinquishment: '100% Transitioned: 480 Local Agribusiness Jobs + 220 Solar Microgrid Artisans',
+      currentProgressPct: 84.0,
+      status: 'ON_TRACK',
+      expenditureToDateZar: 8900000,
+      slpCommunityBeneficiariesCount: 700,
+      futureForumConsultationHeld: true
+    },
+    {
+      metricId: 'ESG-LEGACY-03',
+      domain: 'GOVERNANCE_LEGACY',
+      indicatorName: 'Municipal Water Purification Asset Transfer to Local Municipality',
+      statutoryReference: 'Local Government Municipal Systems Act 32 of 2000',
+      baselineAtClosure: 'Mine-owned 8.5 ML/day Ultrafiltration Water Plant',
+      targetAtFinalRelinquishment: 'Zero-debt asset transfer with 2-year contractor operational mentoring',
+      currentProgressPct: 100.0,
+      status: 'TARGET_ACHIEVED',
+      expenditureToDateZar: 4500000,
+      slpCommunityBeneficiariesCount: 45000,
+      futureForumConsultationHeld: true
+    }
+  ]
+};
+
+// 7. Cross-Border SADC Regulatory Mapping Matrix (South Africa vs. Zambia)
+let crossBorderMappings: CrossBorderRegulatoryMappingItem[] = [
+  {
+    id: 'MAP-01-MACHINERY',
+    functionalDomain: 'Statutory Machinery & Engineering Appointment',
+    southAfricaStatute: {
+      authority: 'DMRE',
+      legislation: 'Mine Health and Safety Act (Act 29 of 1996)',
+      sectionOrStandard: 'Regulation 2.6.1 (Competent Person in charge of Machinery)',
+      requiredDocument: 'Section 2.6.1 Appointment Letter + Government Certificate of Competency (GCC Mines & Works)',
+      validityCycle: 'Site-specific, valid for contract duration'
+    },
+    zambiaStatute: {
+      authority: 'MSD_KITWE',
+      legislation: 'Mines and Minerals Development Act No. 11 of 2015',
+      sectionOrStandard: 'Mining Regulations Part II Reg 33 (Resident Engineer Appointment)',
+      requiredDocument: 'MSD Form MSR-33 Resident Engineer Appointment + EIZ Registered Practicing License',
+      validityCycle: 'Annual EIZ license renewal mandatory'
+    },
+    harmonizationGuidance: 'South African GCC holders operating in Zambia must register with the Engineering Institution of Zambia (EIZ) and obtain an MSD Kitwe Certificate of Recognition prior to assuming legal custody of machinery.',
+    commonPitfall: 'Submitting South African GCC without EIZ local accreditation causes immediate mine gate access refusal at Kansanshi and Lumwana.'
+  },
+  {
+    id: 'MAP-02-MEDICALS',
+    functionalDomain: 'Occupational Health & Medical Surveillance (Silicosis & Fitness)',
+    southAfricaStatute: {
+      authority: 'DMRE',
+      legislation: 'MHSA Act 29 Section 13 / DMRE Medical Surveillance Guidelines',
+      sectionOrStandard: 'Annexure 3 Certificate of Fitness (Initial, Periodic, Exit)',
+      requiredDocument: 'Signed Certificate of Fitness from registered OMP (Audiometry PLH, Chest X-Ray, Spirometry FVC)',
+      validityCycle: 'Annual (12 Months)'
+    },
+    zambiaStatute: {
+      authority: 'MBOD',
+      legislation: 'Occupational Health and Safety Act 2010 & Workers Compensation Act',
+      sectionOrStandard: 'Medical Bureau for Occupational Diseases (MBOD Ndola) Directives',
+      requiredDocument: 'MBOD Silicosis Medical Bureau Card / Certificate of Fitness (Chest Radiograph ILO scored)',
+      validityCycle: 'Annual (12 Months)'
+    },
+    harmonizationGuidance: 'Zambia requires primary screening through the statutory Medical Bureau for Occupational Diseases (MBOD Ndola) or an MSD-accredited occupational health provider. A generic clinic certificate is legally defective.',
+    commonPitfall: 'Contractors presenting standard South African occupational clinic cards without MBOD verification are prohibited from entering underground shafts in the Copperbelt.'
+  },
+  {
+    id: 'MAP-03-CONTRACTOR-MANDATARY',
+    functionalDomain: 'Contractor Liability Transfer & Safety File Mandatary Agreement',
+    southAfricaStatute: {
+      authority: 'DMRE',
+      legislation: 'Mine Health and Safety Act Section 10 / OHSA Section 37(2)',
+      sectionOrStandard: 'MHSA Section 37.2 Mandatory Agreement (Mine General Manager ↔ Contractor CEO)',
+      requiredDocument: 'Signed Section 37.2 Tripartite Mandatary Agreement + Letter of Good Standing (COIDA/RMA)',
+      validityCycle: 'Contract duration (re-validated on scope extension)'
+    },
+    zambiaStatute: {
+      authority: 'MSD_KITWE',
+      legislation: 'Mines and Minerals Development Act 2015 / MSD Kitwe MSR Rules',
+      sectionOrStandard: 'MSD Form MSR-14 Contractor Safety Accountability Agreement',
+      requiredDocument: 'MSD Kitwe Approved Contractor Safety File + Workers Compensation (WCFCB) Certificate',
+      validityCycle: 'Contract duration + Annual WCFCB clearance'
+    },
+    harmonizationGuidance: 'Under South African law, Section 37.2 explicitly transfers statutory OHSA/MHSA duties to the contractor. In Zambia, MSD Kitwe requires joint liability registered on Form MSR-14 with the host mine general manager.',
+    commonPitfall: 'Using a standard OHSA 37(2) agreement on a Zambian mine property is null and void; MSD inspectors will shut down contractor operations under Section 87 stoppage notices.'
+  },
+  {
+    id: 'MAP-04-ENVIRONMENTAL',
+    functionalDomain: 'Tailings Storage & Environmental Effluent Discharge',
+    southAfricaStatute: {
+      authority: 'DWS',
+      legislation: 'National Water Act 36 of 1998 / NEMA Act 107 of 1998',
+      sectionOrStandard: 'Section 21 Water Use License (WULA) & NEMA Financial Provisioning (GN R1147)',
+      requiredDocument: 'Approved WULA License + Bank Guarantee for Mine Rehabilitation Bond',
+      validityCycle: '5-year review, 20-year term'
+    },
+    zambiaStatute: {
+      authority: 'ZEMA',
+      legislation: 'Environmental Management Act No. 12 of 2011 / Statutory Instrument 112',
+      sectionOrStandard: 'ZEMA SI 112 Effluent Discharge License & Environmental Protection Fund (EPF)',
+      requiredDocument: 'Valid SI 112 Effluent Discharge Permit + EPF Cash/Bond Contribution Receipt',
+      validityCycle: 'Annual permit renewal'
+    },
+    harmonizationGuidance: 'Both jurisdictions mandate strict heavy metal limits (Cu < 1.0 mg/L, Co < 0.5 mg/L, Fe < 1.0 mg/L). Global mining houses (Barrick, Anglo, FQM) overlay GISTM tailings stability requirements (Factor of Safety > 1.5).',
+    commonPitfall: 'Failing to lodge the statutory EPF contribution in Zambia triggers immediate ZEMA stop orders and daily compounding statutory fines.'
+  },
+  {
+    id: 'MAP-05-EXPLOSIVES',
+    functionalDomain: 'Explosives, Charging & Subterranean Blasting Authorization',
+    southAfricaStatute: {
+      authority: 'DMRE',
+      legislation: 'MHSA Chapter 4 Explosives Regulations',
+      sectionOrStandard: 'DMRE Blasting Certificate of Competency (Hard Rock / Fiery Mines)',
+      requiredDocument: 'Valid Blasting Ticket + Section 2.13.1 Appointed Blast Master Letter',
+      validityCycle: 'Permanent ticket subject to annual medical fitness'
+    },
+    zambiaStatute: {
+      authority: 'MSD_KITWE',
+      legislation: 'Explosives Act Cap 115 / Mining Regulations Part V',
+      sectionOrStandard: 'MSD Statutory Blaster License (Full Open Pit or Underground Subterranean)',
+      requiredDocument: 'MSD Kitwe Blaster Certificate + Annual Police Clearance & Fingerprint vetting',
+      validityCycle: 'Annual license re-validation'
+    },
+    harmonizationGuidance: 'Zambia requires direct physical examination by an MSD Inspector at the Kitwe or Solwezi testing stations before a South African blaster can charge stopes.',
+    commonPitfall: 'Deploying a South African blasting artisan without MSD local endorsement violates the Zambian Explosives Act and carries criminal liability.'
+  },
+  {
+    id: 'MAP-06-LOCAL-CONTENT',
+    functionalDomain: 'Citizen Economic Empowerment & Local Supply Chain Mandate',
+    southAfricaStatute: {
+      authority: 'DMRE',
+      legislation: 'Broad-Based Black Socio-Economic Empowerment Charter (Mining Charter III)',
+      sectionOrStandard: 'Element 2: Minimum 50% + 1 vote Black Owned Procurement Spend Target',
+      requiredDocument: 'SANAS Accredited B-BBEE Verification Certificate / Sworn Affidavit',
+      validityCycle: 'Annual (12 Months)'
+    },
+    zambiaStatute: {
+      authority: 'MSD_KITWE',
+      legislation: 'Citizens Economic Empowerment Commission (CEEC) Act No. 9 of 2006',
+      sectionOrStandard: 'Mining Local Content Regulations: 20% Citizen Equity in Contractor JV',
+      requiredDocument: 'PACRA Certificate + CEEC Registered Citizen-Owned Enterprise Accreditation',
+      validityCycle: 'Annual certification'
+    },
+    harmonizationGuidance: 'South African contractors bidding on Zambian mining tenders must incorporate a local Zambian Joint Venture with at least 20% citizen equity to qualify for Tier-1 vendor lists at Barrick Lumwana or FQM Sentinel.',
+    commonPitfall: 'Submitting a 100% South African entity to a Zambian tender results in disqualification at commercial pre-qualification gate.'
+  }
+];
+
+// 8. Real-Time Compliance Gap Analysis Alerts (Tender Readiness Scanner)
+let complianceGapAlerts: ComplianceGapAlert[] = [
+  {
+    alertId: 'GAP-2026-001',
+    severity: 'CRITICAL_DISQUALIFIER',
+    domain: 'Occupational Medical Surveillance',
+    title: 'Expired Annexure 3 Medical Fitness for Lead Drill Operator',
+    affectedTenderScope: 'Anglo American Mogalakwena North Deep mechanised advance tender',
+    statutoryMandate: 'MHSA Section 13 / Anglo American Mandatory Gate Rule 4',
+    detailDescription: 'Operator Hendrik Botha has an expired Annexure 3 Certificate of Fitness (expired 385 days ago). If submitted in tender safety file, will trigger immediate disqualification during vendor SHEQ scrutiny.',
+    remediationAction: 'Schedule priority OMP medical recertification or reassign certified operator (Kagiso Molefe / Dumisani Zulu).',
+    daysToDeadline: 7,
+    isResolved: false
+  },
+  {
+    alertId: 'GAP-2026-002',
+    severity: 'CRITICAL_DISQUALIFIER',
+    domain: 'Statutory Engineering Appointment',
+    title: 'Missing MSD Kitwe Section 33 Counter-Signature for Zambian Tender',
+    affectedTenderScope: 'First Quantum Minerals (FQM) Sentinel Copper Expansion civil tender',
+    statutoryMandate: 'Zambian Mines & Minerals Development Act 2015 Reg 33',
+    detailDescription: 'The submitted safety file includes South African MHSA 2.6.1 GCC Engineer appointment, but lacks the mandatory MSD Kitwe Form MSR-33 counter-signature with EIZ practicing certificate.',
+    remediationAction: 'Generate and endorse MSD Form MSR-33 with EIZ registered resident engineer before tender deadline.',
+    daysToDeadline: 14,
+    isResolved: false
+  },
+  {
+    alertId: 'GAP-2026-003',
+    severity: 'MAJOR_DEFICIENCY',
+    domain: 'Statutory Appointment Expiration Risk',
+    title: 'Construction Manager Appointment Expiring in 27 Days',
+    affectedTenderScope: 'Valterra Platinum Concentrator structural expansion tender',
+    statutoryMandate: 'OHSA Construction Regulation 8.1',
+    detailDescription: 'Appointed Construction Manager David Mokoena (Pr.CM #4412/2018) appointment letter expires on 2026-11-01. Host sites require appointments to be valid for minimum 90 days post-bid submission.',
+    remediationAction: 'Issue renewed OHSA 16.2 / CR 8.1 appointment letter extension to 2027.',
+    daysToDeadline: 21,
+    isResolved: false
+  },
+  {
+    alertId: 'GAP-2026-004',
+    severity: 'MAJOR_DEFICIENCY',
+    domain: 'Tailings & Environmental GISTM Compliance',
+    title: 'TSF 2 Concrete Footings Demolition Lacks Verification Sign-Off',
+    affectedTenderScope: 'Sibanye-Stillwater Deep Reef Closure & Rehabilitation contract',
+    statutoryMandate: 'GISTM Standard Requirement 4.2 / NEMA GN R1147',
+    detailDescription: 'Plant demolition workstream is 85% complete but missing independent geotechnical sign-off on concrete footing removal down to 1.5m below ground.',
+    remediationAction: 'Upload independent environmental auditor inspection slip and update handover status to LIABILITY_DISCHARGED.',
+    daysToDeadline: 18,
+    isResolved: false
+  }
+];
+
+// ============================================================================
+// SIMULATION & AUDIT ENGINE HELPERS (PILLAR 1 & 2)
+// ============================================================================
+
+export function simulateDefensibilityIndex(
+  hostEnterprise: EnterpriseTier1Host,
+  customOverrides?: Record<string, any>
+): DefensibilityIndexResult {
+  const hostNames: Record<EnterpriseTier1Host, { name: string; jurisdiction: 'SOUTH_AFRICA' | 'ZAMBIA' | 'CROSS_BORDER_SADC'; threshold: number }> = {
+    ANGLO_AMERICAN: { name: 'Anglo American Platinum / Kumba Iron Ore', jurisdiction: 'SOUTH_AFRICA', threshold: 85 },
+    VALTERRA_PLATINUM: { name: 'Valterra Platinum Mechanized Operations', jurisdiction: 'SOUTH_AFRICA', threshold: 82 },
+    BARRICK_GOLD: { name: 'Barrick Gold (Lumwana / Kibali SADC Operations)', jurisdiction: 'CROSS_BORDER_SADC', threshold: 88 },
+    FIRST_QUANTUM_FQM: { name: 'First Quantum Minerals (Kansanshi / Sentinel)', jurisdiction: 'ZAMBIA', threshold: 85 }
+  };
+
+  const meta = hostNames[hostEnterprise] || hostNames.ANGLO_AMERICAN;
+
+  // Category point calculations with domain weightings
+  const categories: DefensibilityCategoryScore[] = [
+    {
+      categoryKey: 'STATUTORY_LEGAL',
+      categoryTitle: 'Statutory Appointments & Mandatary Agreements (MHSA / MSD)',
+      weightPercentage: 25,
+      scoreAchievedPct: hostEnterprise === 'FIRST_QUANTUM_FQM' ? 92 : 96,
+      maxPoints: 25,
+      pointsAwarded: hostEnterprise === 'FIRST_QUANTUM_FQM' ? 23.0 : 24.0,
+      findingsCount: 0,
+      mandatoryRequirementsMet: true,
+      criticalGaps: []
+    },
+    {
+      categoryKey: 'OCCUPATIONAL_HEALTH',
+      categoryTitle: 'Medical Surveillance, Audiometry & Silicosis (Annexure 3 / MBOD)',
+      weightPercentage: 20,
+      scoreAchievedPct: 90,
+      maxPoints: 20,
+      pointsAwarded: 18.0,
+      findingsCount: 1,
+      mandatoryRequirementsMet: true,
+      criticalGaps: ['1 Operator (Hendrik Botha) medical expired — stand-down enforced']
+    },
+    {
+      categoryKey: 'PERMITS_AND_HIRAS',
+      categoryTitle: 'Operational Permits, SWPs & Issue-Based HIRAs',
+      weightPercentage: 20,
+      scoreAchievedPct: 95,
+      maxPoints: 20,
+      pointsAwarded: 19.0,
+      findingsCount: 0,
+      mandatoryRequirementsMet: true,
+      criticalGaps: []
+    },
+    {
+      categoryKey: 'ENVIRONMENTAL_TAILINGS',
+      categoryTitle: 'Environmental Authorizations, WULA & GISTM Tailings Conformance',
+      weightPercentage: 15,
+      scoreAchievedPct: 94,
+      maxPoints: 15,
+      pointsAwarded: 14.1,
+      findingsCount: 0,
+      mandatoryRequirementsMet: true,
+      criticalGaps: []
+    },
+    {
+      categoryKey: 'ARTISAN_QUALIFICATIONS',
+      categoryTitle: 'SETA/QCTO Artisan Trade Accreditations (Red Seal & OEM Simulators)',
+      weightPercentage: 20,
+      scoreAchievedPct: 93,
+      maxPoints: 20,
+      pointsAwarded: 18.6,
+      findingsCount: 0,
+      mandatoryRequirementsMet: true,
+      criticalGaps: []
+    }
+  ];
+
+  const totalPointsAwarded = categories.reduce((sum, c) => sum + c.pointsAwarded, 0);
+  const overallDefensibilityScorePct = Math.round((totalPointsAwarded / 100) * 1000) / 10;
+
+  const isQualified = overallDefensibilityScorePct >= meta.threshold;
+  const verdict = isQualified 
+    ? 'QUALIFIED_FOR_TENDER' 
+    : overallDefensibilityScorePct >= 70 
+      ? 'CONDITIONAL_REVISION_REQUIRED' 
+      : 'REJECTED_AT_MINE_GATE';
+
+  const rating = overallDefensibilityScorePct >= 92 
+    ? 'AAA_EXEMPLARY' 
+    : overallDefensibilityScorePct >= 85 
+      ? 'AA_DEFENSIBLE' 
+      : overallDefensibilityScorePct >= 75 
+        ? 'A_SATISFACTORY' 
+        : 'SUB_STANDARD_RISK';
+
+  const simulationHash = crypto.createHash('sha256')
+    .update(`MELOTWO-DEFENSIBILITY-${hostEnterprise}-${overallDefensibilityScorePct}-${Date.now()}`)
+    .digest('hex')
+    .substring(0, 20)
+    .toUpperCase();
+
+  const adviceMap: Record<EnterpriseTier1Host, string> = {
+    ANGLO_AMERICAN: 'Dossier complies fully with Anglo American Fatal Risk Standards (FRS) and Section 37.2 liability transfer covenants. Recommended for high-value mechanised tender bid submission.',
+    VALTERRA_PLATINUM: 'Meets Valterra mechanized PPR requirements. GISTM tailings stability factor of safety (1.62) provides strong ESG competitive defense.',
+    BARRICK_GOLD: 'Meets Barrick Zero Harm Cardinal Rules. SADC cross-border medicals and ISO 45001 accreditation verify readiness for Lumwana or Kibali contract execution.',
+    FIRST_QUANTUM_FQM: 'Zambian statutory requirements (MSD Kitwe MSR-33 and ZEMA SI 112) verified. Ensure CEEC 20% citizen equity joint venture certificate is attached in commercial returnable schedule.'
+  };
+
+  return {
+    simulationId: `SIM-DEF-${hostEnterprise}-${Date.now().toString().slice(-4)}`,
+    contractorName: 'MeloTwo Industrial Mining Services (Pty) Ltd',
+    hostEnterprise,
+    hostEnterpriseName: meta.name,
+    jurisdiction: meta.jurisdiction,
+    overallDefensibilityScorePct,
+    verdict,
+    categories,
+    defensibilityRating: rating,
+    simulatedAt: new Date().toISOString(),
+    auditSimulationHash: simulationHash,
+    summaryExecutiveAdvice: adviceMap[hostEnterprise]
+  };
+}
 
 // ============================================================================
 // COMPLIANCE ENGINE HELPER FUNCTIONS
@@ -1384,5 +1850,173 @@ export function registerComplianceEngineRoutes(app: Express) {
       atrSummary,
       bbeeScorecard
     });
+  });
+
+  // --------------------------------------------------------------------------
+  // CROSS-BORDER & MINE LIFE-CYCLE COMPLIANCE SANDBOX
+  // PILLAR 1: MINE CLOSURE, REHABILITATION & ENVIRONMENTAL TRANSITION SUITE
+  // --------------------------------------------------------------------------
+
+  // Get Mine Closure Overview, Environmental Licenses, and Handover Checklists
+  app.get(['/api/compliance/mine-closure/overview', '/api/compliance/mine-closure/overview/'], (req: Request, res: Response) => {
+    res.json({
+      success: true,
+      overview: mineClosureSuite
+    });
+  });
+
+  // Add new Statutory Environmental License (DMRE, DWS, NEMA, ZEMA)
+  app.post(['/api/compliance/mine-closure/licenses', '/api/compliance/mine-closure/licenses/'], (req: Request, res: Response) => {
+    try {
+      const {
+        licenseNumber,
+        statutoryBody,
+        title,
+        actReference,
+        financialProvisionAmountZar,
+        keyConditions
+      } = req.body || {};
+
+      if (!licenseNumber || !title) {
+        return res.status(400).json({ error: 'License number and title are required' });
+      }
+
+      const newLicense: StatutoryEnvironmentalLicense = {
+        licenseId: `LIC-${Date.now().toString().slice(-6)}`,
+        licenseNumber,
+        statutoryBody: statutoryBody || 'DMRE',
+        title,
+        actReference: actReference || 'MPRDA Act 28 of 2002',
+        issueDate: new Date().toISOString().split('T')[0],
+        renewalDate: new Date(Date.now() + 3 * 365 * 24 * 3600 * 1000).toISOString().split('T')[0],
+        status: 'ACTIVE_COMPLIANT',
+        financialProvisionAmountZar: Number(financialProvisionAmountZar) || 5000000,
+        keyConditions: Array.isArray(keyConditions) ? keyConditions : ['Quarterly ground water sampling', 'Annual financial provisioning review']
+      };
+
+      mineClosureSuite.licenses.unshift(newLicense);
+      res.json({
+        success: true,
+        message: 'Statutory environmental license registered successfully.',
+        license: newLicense,
+        overview: mineClosureSuite
+      });
+    } catch (err: any) {
+      res.status(500).json({ error: err.message || 'Failed to register environmental license' });
+    }
+  });
+
+  // Sign off or update liability handover checklist item
+  app.put(['/api/compliance/mine-closure/handover-items/:itemId/sign-off', '/api/compliance/mine-closure/handover-items/:itemId/sign-off/'], (req: Request, res: Response) => {
+    try {
+      const { itemId } = req.params;
+      const { signOffStatus, checkIndex, completed } = req.body || {};
+
+      const item = mineClosureSuite.liabilityHandoverItems.find(i => i.itemId === itemId);
+      if (!item) {
+        return res.status(404).json({ error: `Handover item ${itemId} not found` });
+      }
+
+      if (typeof checkIndex === 'number' && item.checklistRequirements[checkIndex]) {
+        item.checklistRequirements[checkIndex].completed = completed ?? true;
+        if (completed) {
+          item.checklistRequirements[checkIndex].verifiedDate = new Date().toISOString().split('T')[0];
+        }
+      }
+
+      if (signOffStatus) {
+        item.signOffStatus = signOffStatus;
+        if (signOffStatus === 'LIABILITY_DISCHARGED') {
+          item.handoverCertificateHash = crypto.createHash('sha256').update(`${itemId}-DISCHARGED-${Date.now()}`).digest('hex');
+        }
+      }
+
+      // Check if all checklist items are completed to auto-discharge
+      const allDone = item.checklistRequirements.every(c => c.completed);
+      if (allDone && item.signOffStatus !== 'LIABILITY_DISCHARGED') {
+        item.signOffStatus = 'PARTIALLY_VERIFIED';
+      }
+
+      res.json({
+        success: true,
+        message: `Handover item ${itemId} updated successfully.`,
+        item,
+        overview: mineClosureSuite
+      });
+    } catch (err: any) {
+      res.status(500).json({ error: err.message || 'Failed to update handover item' });
+    }
+  });
+
+  // --------------------------------------------------------------------------
+  // CROSS-BORDER & MINE LIFE-CYCLE COMPLIANCE SANDBOX
+  // PILLAR 2: TIER-1 CONTRACTOR PRE-QUALIFICATION & CROSS-BORDER AUDIT SANDBOX
+  // --------------------------------------------------------------------------
+
+  // Get Cross-Border Statutory Safety Regulatory Mapping (SA DMRE vs Zambia MSD / SADC)
+  app.get(['/api/compliance/cross-border/mapping', '/api/compliance/cross-border/mapping/'], (req: Request, res: Response) => {
+    res.json({
+      success: true,
+      count: crossBorderMappings.length,
+      mappings: crossBorderMappings
+    });
+  });
+
+  // Defensibility Index Matrix simulation endpoint
+  app.get(['/api/compliance/cross-border/defensibility-index', '/api/compliance/cross-border/defensibility-index/'], (req: Request, res: Response) => {
+    try {
+      const host = (req.query.host as EnterpriseTier1Host) || 'ANGLO_AMERICAN';
+      const result = simulateDefensibilityIndex(host);
+      res.json({
+        success: true,
+        result
+      });
+    } catch (err: any) {
+      res.status(500).json({ error: err.message || 'Defensibility simulation failed' });
+    }
+  });
+
+  app.post(['/api/compliance/cross-border/defensibility-index/simulate', '/api/compliance/cross-border/defensibility-index/simulate/'], (req: Request, res: Response) => {
+    try {
+      const { hostEnterprise, customOverrides } = req.body || {};
+      const host = (hostEnterprise as EnterpriseTier1Host) || 'ANGLO_AMERICAN';
+      const result = simulateDefensibilityIndex(host, customOverrides);
+      res.json({
+        success: true,
+        result
+      });
+    } catch (err: any) {
+      res.status(500).json({ error: err.message || 'Defensibility simulation failed' });
+    }
+  });
+
+  // Real-time Compliance Gap Analysis Alerts (Tender Readiness Scanner)
+  app.get(['/api/compliance/cross-border/gap-alerts', '/api/compliance/cross-border/gap-alerts/'], (req: Request, res: Response) => {
+    res.json({
+      success: true,
+      count: complianceGapAlerts.length,
+      alerts: complianceGapAlerts
+    });
+  });
+
+  // Resolve or remediate a compliance gap alert
+  app.post(['/api/compliance/cross-border/gap-alerts/:alertId/resolve', '/api/compliance/cross-border/gap-alerts/:alertId/resolve/'], (req: Request, res: Response) => {
+    try {
+      const { alertId } = req.params;
+      const alert = complianceGapAlerts.find(a => a.alertId === alertId);
+      if (!alert) {
+        return res.status(404).json({ error: `Alert ${alertId} not found` });
+      }
+
+      alert.isResolved = true;
+      res.json({
+        success: true,
+        message: `Compliance gap ${alertId} marked as resolved. Safety file defensibility restored.`,
+        alert,
+        alerts: complianceGapAlerts
+      });
+    } catch (err: any) {
+      res.status(500).json({ error: err.message || 'Failed to resolve compliance gap' });
+    }
   });
 }

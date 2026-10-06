@@ -13704,11 +13704,18 @@ const App: React.FC = () => {
             if (
                 rawPath.startsWith('/compliance') || 
                 rawPath.startsWith('/operational') || 
+                rawPath.startsWith('/cross-border') ||
+                rawPath.startsWith('/mine-closure') ||
                 rawHash === '#operational-compliance' || 
                 rawHash === '#compliance' || 
                 rawHash === '#safety-files' || 
                 rawHash === '#seta' ||
-                rawHash.startsWith('#operational')
+                rawHash === '#cross-border-sandbox' ||
+                rawHash === '#cross-border' ||
+                rawHash === '#mine-closure' ||
+                rawHash === '#defensibility-index' ||
+                rawHash.startsWith('#operational') ||
+                rawHash.startsWith('#cross-border')
             ) {
                 return 'operational-compliance';
             }
@@ -13874,10 +13881,17 @@ const App: React.FC = () => {
                 rawHash === '#compliance' || 
                 rawHash === '#safety-files' || 
                 rawHash === '#seta' ||
+                rawHash === '#cross-border-sandbox' ||
+                rawHash === '#cross-border' ||
+                rawHash === '#mine-closure' ||
+                rawHash === '#defensibility-index' ||
                 rawHash.startsWith('#operational') ||
+                rawHash.startsWith('#cross-border') ||
                 (typeof window !== 'undefined' && (
                     window.location.pathname.startsWith('/compliance') ||
-                    window.location.pathname.startsWith('/operational')
+                    window.location.pathname.startsWith('/operational') ||
+                    window.location.pathname.startsWith('/cross-border') ||
+                    window.location.pathname.startsWith('/mine-closure')
                 ));
 
             if (isTenderHash) {
