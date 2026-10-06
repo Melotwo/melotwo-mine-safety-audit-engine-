@@ -2,7 +2,7 @@
  * Global TypeScript types for Melotwo Mine Safety Audit Engine
  */
 
-export type Page = 'home' | 'solutions' | 'inspector' | 'academy' | 'handover' | 'outreach' | 'blog' | 'zambia-assessment' | 'partner-copilot';
+export type Page = 'home' | 'solutions' | 'inspector' | 'academy' | 'handover' | 'outreach' | 'blog' | 'zambia-assessment' | 'partner-copilot' | 'operational-compliance';
 
 export interface AuditRecord {
   id: string;
@@ -269,3 +269,5 @@ export interface PaymentSuccessResult {
   timestamp: string;
   status: 'COMPLETED' | 'PENDING_EFT_CLEARANCE';
 }
+
+export * from './types/complianceEngine';

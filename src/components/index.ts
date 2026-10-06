@@ -43,4 +43,5 @@ export * from './PayPalKeyConfigModal';
 export * from './PayPalEFTCheckoutModal';
 export * from './AppNavbar';
 export * from './CurrencySwitcher';
+export * from './OperationalComplianceHub';
 

@@ -1866,6 +1866,7 @@ import {
   simulateAutomatedCrawl,
   generateTailoredPitch
 } from './src/server/tenderScraperService';
+import { registerComplianceEngineRoutes } from './src/server/complianceEngineServer';
 
 // 1. Scraper Cron / Telemetry Status
 app.get(['/api/tenders/scraper/status', '/api/tenders/scraper/status/'], (req, res) => {
@@ -2584,7 +2585,10 @@ app.post(['/api/eft/reject-order', '/api/eft/reject-order/'], (req, res) => {
   }
 });
 
-// 7. Paystack Migration Deprecation Handler
+// 7. Operational, Safety & SETA/QCTO Skills Compliance Engine (Pillars 1, 2, 3)
+registerComplianceEngineRoutes(app);
+
+// 8. Paystack Migration Deprecation Handler
 // Any legacy requests to /api/paystack are safely migrated to PayPal & EFT
 app.use('/api/paystack', (req, res) => {
   console.log(`[Payment Gateway Migration] Intercepted legacy Paystack request: ${req.url}. Auto-migrating to PayPal & EFT.`);

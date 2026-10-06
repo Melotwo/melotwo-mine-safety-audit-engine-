@@ -21,14 +21,15 @@ import {
   ShieldCheck,
   CheckCircle2,
   FileCheck2,
-  HelpCircle
+  HelpCircle,
+  Cpu
 } from 'lucide-react';
 import { MeloTwoLogo } from './MeloTwoLogo';
 import { CurrencySwitcher } from './CurrencySwitcher';
 import { WhatsAppChatButton } from './WhatsAppChatButton';
 import { StatutoryFactSheet } from './StatutoryFactSheet';
 
-export type Page = 'home' | 'solutions' | 'inspector' | 'academy' | 'handover' | 'outreach' | 'blog' | 'zambia-assessment' | 'partner-copilot';
+export type Page = 'home' | 'solutions' | 'inspector' | 'academy' | 'handover' | 'outreach' | 'blog' | 'zambia-assessment' | 'partner-copilot' | 'operational-compliance';
 
 export interface AppNavbarProps {
   currentPage: Page;
@@ -199,6 +200,17 @@ export const AppNavbar: React.FC<AppNavbarProps> = ({
       activeMatch: currentPage === 'handover'
     },
     {
+      id: 'operational-compliance',
+      name: 'Operational & SETA Compliance Engine',
+      badge: 'MHSA / SETA',
+      badgeColor: 'bg-amber-500/20 text-amber-300 border-amber-500/30',
+      description: 'Statutory appointments, VR machine rule engine, and SETA/QCTO WSP/ATR tracker.',
+      category: 'AUDIT & INSPECTION',
+      icon: <Cpu className="w-4 h-4 text-amber-400" />,
+      action: () => setPage('operational-compliance'),
+      activeMatch: currentPage === 'operational-compliance'
+    },
+    {
       id: 'copilot',
       name: 'Partner Program & Co-Pilot',
       badge: 'Earn 15%',
@@ -363,6 +375,20 @@ export const AppNavbar: React.FC<AppNavbarProps> = ({
                     <div>
                       <div className="font-bold text-white">Hazard Matrix &amp; HIRAs</div>
                       <div className="text-[10px] text-slate-400 font-normal">SANS &amp; MHSA operational risk protocols</div>
+                    </div>
+                  </button>
+
+                  <button
+                    onClick={() => {
+                      setPage('operational-compliance');
+                      setIsSolutionsOpen(false);
+                    }}
+                    className="w-full text-left px-3 py-2 rounded-xl text-xs font-semibold flex items-center gap-2.5 text-slate-300 hover:bg-slate-800 hover:text-white transition cursor-pointer"
+                  >
+                    <Cpu className="w-4 h-4 text-amber-400 shrink-0" />
+                    <div>
+                      <div className="font-bold text-white">Operational &amp; SETA Compliance</div>
+                      <div className="text-[10px] text-slate-400 font-normal">Appointments, VR engine &amp; WSP/ATR</div>
                     </div>
                   </button>
 

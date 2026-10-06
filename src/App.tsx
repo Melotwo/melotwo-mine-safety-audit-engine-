@@ -32,6 +32,7 @@ import { AppNavbar } from './components/AppNavbar';
 import { ZambianMhsCompliancePanel } from './components/ZambianMhsCompliancePanel';
 import { ZambiaComplianceAssessmentModal } from './components/ZambiaComplianceAssessmentModal';
 import { PartnerCoPilotAdminView } from './components/PartnerCoPilotAdminView';
+import { OperationalComplianceHub } from './components/OperationalComplianceHub';
 import { CsvImportModal } from './components/CsvImportModal';
 import { InspectorConflictResolver, OfflineAuditNoteItem, ConflictResolutionChoice, OfflineSyncDashboard, PayPalKeyConfigModal, PayPalEFTCheckoutModal } from './components';
 import { Database, RefreshCw, Upload, LogOut, Sparkles, CheckCircle2, AlertOctagon, Download, ChevronRight, Lock, Terminal, Minimize2, Maximize2, Activity, Scale, Globe, CheckCircle, Target, ShieldAlert, ArrowRight, Check, Truck, Info, RotateCcw, Sliders, XCircle, Building2, MapPin, ChevronDown, ChevronUp, EyeOff, Filter, Layers, FileSpreadsheet, Calculator, BookOpen, Smartphone, Wifi, WifiOff, Save, HardDrive, Users, Droplets, GitCompare, Pencil, X, Key, CreditCard } from 'lucide-react';
@@ -392,7 +393,7 @@ export const appendLedgerRecords = async (
 };
 
 // --- Inline Types ---
-export type Page = 'home' | 'solutions' | 'inspector' | 'academy' | 'handover' | 'outreach' | 'blog' | 'zambia-assessment' | 'partner-copilot';
+export type Page = 'home' | 'solutions' | 'inspector' | 'academy' | 'handover' | 'outreach' | 'blog' | 'zambia-assessment' | 'partner-copilot' | 'operational-compliance';
 
 export type IconComponent = React.FC<React.SVGProps<SVGSVGElement>>;
 
@@ -13700,6 +13701,17 @@ const App: React.FC = () => {
             ) {
                 return 'partner-copilot';
             }
+            if (
+                rawPath.startsWith('/compliance') || 
+                rawPath.startsWith('/operational') || 
+                rawHash === '#operational-compliance' || 
+                rawHash === '#compliance' || 
+                rawHash === '#safety-files' || 
+                rawHash === '#seta' ||
+                rawHash.startsWith('#operational')
+            ) {
+                return 'operational-compliance';
+            }
         }
         return 'home';
     });
@@ -13856,6 +13868,18 @@ const App: React.FC = () => {
                     window.location.pathname.startsWith('/partners')
                 ));
 
+            // 6. Check Operational & SETA Compliance route / hash
+            const isComplianceRoute = 
+                rawHash === '#operational-compliance' || 
+                rawHash === '#compliance' || 
+                rawHash === '#safety-files' || 
+                rawHash === '#seta' ||
+                rawHash.startsWith('#operational') ||
+                (typeof window !== 'undefined' && (
+                    window.location.pathname.startsWith('/compliance') ||
+                    window.location.pathname.startsWith('/operational')
+                ));
+
             if (isTenderHash) {
                 setCurrentPage('home');
                 setIsCostModalOpen(false);
@@ -13884,6 +13908,10 @@ const App: React.FC = () => {
                 setIsCostModalOpen(false);
             } else if (isPartnerRoute) {
                 setCurrentPage('partner-copilot');
+                setIsTenderWizardOpen(false);
+                setIsCostModalOpen(false);
+            } else if (isComplianceRoute) {
+                setCurrentPage('operational-compliance');
                 setIsTenderWizardOpen(false);
                 setIsCostModalOpen(false);
             }
@@ -14071,6 +14099,13 @@ const App: React.FC = () => {
         onLaunchDiagnostic={() => setCurrentPage('zambia-assessment')}
         onOpenTenderWizard={handleOpenTenderWizard}
         onOpenPayPalKeyConfig={() => setIsPayPalKeyConfigOpen(true)}
+      />
+    );
+  } else if (currentPage === 'operational-compliance') {
+    return (
+      <OperationalComplianceHub
+        onBack={() => setCurrentPage('home')}
+        onOpenTenderWizard={handleOpenTenderWizard}
       />
     );
   }

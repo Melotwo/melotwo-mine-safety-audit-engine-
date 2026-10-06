@@ -527,6 +527,16 @@ export const TrainingAcademyPage: React.FC<TrainingAcademyPageProps> = ({ setPag
           <Users className="w-4 h-4 text-amber-500" />
           <span>6. Partner & Affiliate Hub</span>
         </button>
+
+        <button
+          onClick={() => setPage('operational-compliance')}
+          className="flex items-center space-x-2 px-5 py-3 rounded-t-xl font-bold text-xs sm:text-sm whitespace-nowrap transition cursor-pointer bg-amber-50 text-amber-800 hover:bg-amber-100/80 border border-b-0 border-amber-200"
+          title="Open Operational, Safety & SETA Compliance Engine"
+        >
+          <Cpu className="w-4 h-4 text-amber-600" />
+          <span>7. Operational &amp; SETA Engine</span>
+          <span className="text-[10px] bg-amber-200 text-amber-900 px-1.5 py-0.2 rounded font-mono">Pillars 1-3</span>
+        </button>
       </div>
 
       {/* TAB 1: 6-MODULE COURSE PATHWAY */}
