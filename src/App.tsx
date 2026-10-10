@@ -610,13 +610,40 @@ export const MINE_PROFILES_BASELINE: MineProfile[] = [
   }
 ];
 
-// --- Analytics Service Inline Integration ---
-export interface GA4Event {
-  id: string;
-  eventName: string;
-  params?: Record<string, any>;
-  timestamp: string;
-}
+// --- Analytics Service & UTM Integration ---
+import {
+  GA4EventBus,
+  trackGA4Event,
+  subscribeToAnalytics,
+  trackScheduleDemoClick,
+  trackViewZambiaAssessment,
+  trackDownloadPilotPlan,
+  initGlobalAnalyticsListeners
+} from './services/analyticsService';
+import type { GA4Event } from './services/analyticsService';
+import {
+  parseUtmParameters,
+  getStoredUtmParameters,
+  getUtmForAnalytics,
+  buildPreservedUrl,
+  initHistoryUtmPreservation
+} from './utils/urlParams';
+import { downloadOnboardingPilotPlanPdf } from './services/onboardingPlanService';
+
+export type { GA4Event };
+export {
+  GA4EventBus,
+  trackGA4Event,
+  subscribeToAnalytics,
+  trackScheduleDemoClick,
+  trackViewZambiaAssessment,
+  trackDownloadPilotPlan,
+  parseUtmParameters,
+  getStoredUtmParameters,
+  getUtmForAnalytics,
+  buildPreservedUrl,
+  downloadOnboardingPilotPlanPdf
+};
 
 // Dynamically initialize Google Tag (gtag.js)
 export const GA_MEASUREMENT_ID = (import.meta.env && import.meta.env.VITE_GA_MEASUREMENT_ID) || 'G-K7P1HPKS7R';
@@ -642,83 +669,10 @@ if (typeof window !== 'undefined') {
     });
     console.log(`[GA4 Engine] Successfully loaded gtag.js script for ${GA_MEASUREMENT_ID}`);
   }
-}
 
-// Single Event Bus Class for GA4 Telemetry and Dispatching
-class GA4EventBusClass {
-  private listeners = new Set<(event: GA4Event) => void>();
-  private eventHistory: GA4Event[] = [];
-
-  dispatch(eventName: string, params?: Record<string, any>) {
-    const newEvent: GA4Event = {
-      id: `ev-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
-      eventName,
-      params,
-      timestamp: new Date().toISOString()
-    };
-
-    // Store in historical record to prevent 0-events display on late-subscribing components
-    this.eventHistory.push(newEvent);
-    if (this.eventHistory.length > 50) {
-      this.eventHistory.shift();
-    }
-
-    // Dispatch to official gtag if available
-    if (typeof window !== 'undefined' && (window as any).gtag) {
-      try {
-        (window as any).gtag('event', eventName, params);
-      } catch (err) {
-        console.error('[GA4 Engine] Error calling gtag event:', err);
-      }
-    }
-
-    // Broadcast to all active subscribers
-    this.listeners.forEach(listener => {
-      try {
-        listener(newEvent);
-      } catch (e) {
-        console.error("Error in GA4 event bus listener:", e);
-      }
-    });
-  }
-
-  subscribe(callback: (event: GA4Event) => void, replayHistory: boolean = true): () => void {
-    this.listeners.add(callback);
-
-    if (replayHistory) {
-      this.eventHistory.forEach(event => {
-        try {
-          callback(event);
-        } catch (e) {
-          console.error("Error replaying GA4 history event:", e);
-        }
-      });
-    }
-
-    return () => {
-      this.listeners.delete(callback);
-    };
-  }
-
-  getHistory(): GA4Event[] {
-    return [...this.eventHistory];
-  }
-
-  clearHistory() {
-    this.eventHistory = [];
-  }
-}
-
-// Singleton Event Bus Instance
-export const GA4EventBus = new GA4EventBusClass();
-
-// Export original helper functions to maintain full backward-compatibility
-export function trackGA4Event(eventName: string, params?: Record<string, any>) {
-  GA4EventBus.dispatch(eventName, params);
-}
-
-export function subscribeToAnalytics(callback: (event: GA4Event) => void, replayHistory: boolean = true) {
-  return GA4EventBus.subscribe(callback, replayHistory);
+  // Initialize global analytics listeners and UTM history preservation
+  initGlobalAnalyticsListeners();
+  initHistoryUtmPreservation();
 }
 
 // --- Compliance Prompt & Redaction Inline Integration ---

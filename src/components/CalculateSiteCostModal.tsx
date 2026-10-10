@@ -12,10 +12,13 @@ import {
   FileText, 
   ShieldCheck, 
   Sparkles,
-  Info
+  Info,
+  Download
 } from 'lucide-react';
 import { useCurrency } from '../context/CurrencyContext';
 import { CurrencySwitcher } from './CurrencySwitcher';
+import { trackScheduleDemoClick } from '../services/analyticsService';
+import { downloadOnboardingPilotPlanPdf } from '../services/onboardingPlanService';
 
 export type IndustryTierId = 'agriculture' | 'light_industrial' | 'mining_enterprise';
 
