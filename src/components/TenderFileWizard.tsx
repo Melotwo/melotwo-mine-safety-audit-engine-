@@ -38,7 +38,8 @@ import {
   Gauge,
   Droplets,
   RotateCcw,
-  FileArchive
+  FileArchive,
+  Clock
 } from 'lucide-react';
 import jsPDF from 'jspdf';
 import JSZip from 'jszip';
@@ -59,6 +60,8 @@ import {
   clearTenderDraft, 
   checkIfTenderPaidUnlocked, 
   markTenderPaidUnlocked,
+  getTenderPaymentValidationStatus,
+  TenderPaymentStatus,
   calculatePhysicsWear,
   calculateDraftTotalAmount,
   DEFAULT_CONSUMABLES,
@@ -216,8 +219,10 @@ export const TenderFileWizard: React.FC<TenderFileWizardProps> = ({
   const [diagnosticProgress, setDiagnosticProgress] = useState<Record<string, any>>(draftState.diagnosticProgress || { overallScore: 84, riskTier: 'LOW', recommendedBinderType: 'Standard Trade Safety Dossier' });
   const [diagnosticScore, setDiagnosticScore] = useState<number>(draftState.diagnosticScore || 84);
   
-  // Payment & Unlocking state
-  const [isPaidUnlocked, setIsPaidUnlocked] = useState<boolean>(() => checkIfTenderPaidUnlocked() || draftState.isPaidUnlocked);
+  // Payment & Unlocking state strictly tied to verified payment validation
+  const [paymentValidation, setPaymentValidation] = useState<TenderPaymentStatus>(() => getTenderPaymentValidationStatus());
+  const [isPaidUnlocked, setIsPaidUnlocked] = useState<boolean>(() => checkIfTenderPaidUnlocked());
+  const [viewerSection, setViewerSection] = useState<'INDEX' | 'SEC1' | 'SEC3' | 'SEC5' | 'SEC15_18' | 'SEC20'>('INDEX');
   const [isCheckoutModalOpen, setIsCheckoutModalOpen] = useState<boolean>(false);
   const [showVerificationLedgerModal, setShowVerificationLedgerModal] = useState<boolean>(false);
   
@@ -236,12 +241,14 @@ export const TenderFileWizard: React.FC<TenderFileWizardProps> = ({
   // Background Persistence & Cross-Tab/Modal Sync
   useEffect(() => {
     const handleStorageSync = (e: StorageEvent) => {
-      if (e.key === 'melotwo_tender_file_draft' || e.key === 'melotwo_tender_paid_unlocked') {
+      if (e.key === 'melotwo_tender_file_draft' || e.key === 'melotwo_tender_paid_unlocked' || e.key === 'melotwo_eft_orders') {
+        const validatedPaid = checkIfTenderPaidUnlocked();
+        setIsPaidUnlocked(validatedPaid);
+        setPaymentValidation(getTenderPaymentValidationStatus());
         const fresh = loadTenderDraft();
         setSelectedTier(fresh.selectedTier);
         if (fresh.customTierPriceZar) setCustomTierPriceZar(fresh.customTierPriceZar);
         if (fresh.selectedAddOns) setSelectedAddOns(fresh.selectedAddOns);
-        if (fresh.isPaidUnlocked) setIsPaidUnlocked(true);
         if (fresh.resolvedRedFlags) setResolvedRedFlags(fresh.resolvedRedFlags);
         if (fresh.customNotes) setCustomNotes(fresh.customNotes);
         if (fresh.diagnosticProgress) setDiagnosticProgress(fresh.diagnosticProgress);
@@ -455,18 +462,22 @@ export const TenderFileWizard: React.FC<TenderFileWizardProps> = ({
         day: 'numeric'
       });
 
-      const watermarkText = 'PREVIEW DRAFT • TENDER SAFETY FILE • NOT FOR OFFICIAL SUBMISSION UNTIL PURCHASED';
+      const watermarkText = 'PREVIEW DRAFT - TENDER SAFETY FILE NOT FOR OFFICIAL SUBMISSION UNTIL PURCHASED';
 
-      // Diagonal watermark only if unpaid
+      // Diagonal watermark overlay strictly retained if unpaid or pending EFT approval
       const addWatermarkToPage = () => {
-        if (isPaidUnlocked) return; // Clean unwatermarked export!
+        const isVerifiedPaid = checkIfTenderPaidUnlocked() && isPaidUnlocked;
+        if (isVerifiedPaid) return; // Clean unwatermarked export!
         doc.saveGraphicsState();
         doc.setTextColor(239, 68, 68);
         doc.setFont('helvetica', 'bold');
-        doc.setFontSize(10.5);
-        doc.text(watermarkText, 25, 270, { angle: 45 });
-        doc.text(watermarkText, 5, 170, { angle: 45 });
-        doc.text(watermarkText, -15, 70, { angle: 45 });
+        doc.setFontSize(9.5);
+        // Multi-tier repeating diagonal red watermark overlay across the entire page
+        doc.text(watermarkText, 35, 275, { angle: 45 });
+        doc.text(watermarkText, 25, 220, { angle: 45 });
+        doc.text(watermarkText, 15, 165, { angle: 45 });
+        doc.text(watermarkText, 5, 110, { angle: 45 });
+        doc.text(watermarkText, -5, 55, { angle: 45 });
         doc.restoreGraphicsState();
       };
 
@@ -986,12 +997,26 @@ INCLUDED DOSSIER ARTIFACTS:
 
   // Handle Checkout success from PayPalEFTCheckoutModal
   const handleCheckoutSuccess = (result: any) => {
+    // Strictly require a validated payment state (e.g. PayPal completed)
+    const isValidPayment = result?.status === 'COMPLETED' || result?.isPaid === true;
+    if (!isValidPayment) {
+      // Unverified EFT or pending order does NOT bypass payment validation
+      setIsPaidUnlocked(false);
+      setPaymentValidation(getTenderPaymentValidationStatus());
+      return;
+    }
+
     const tierToUnlock = result?.tier || selectedTier;
     const addOnsToUnlock = result?.addOns || selectedAddOns;
+    markTenderPaidUnlocked(tierToUnlock, addOnsToUnlock);
     setIsPaidUnlocked(true);
+    setPaymentValidation({
+      isPaid: true,
+      status: 'PAID_VERIFIED',
+      method: result?.gateway || 'paypal'
+    });
     setSelectedTier(tierToUnlock);
     setSelectedAddOns(addOnsToUnlock);
-    markTenderPaidUnlocked(tierToUnlock, addOnsToUnlock);
     saveTenderDraft({ 
       isPaidUnlocked: true, 
       selectedTier: tierToUnlock,
@@ -2222,25 +2247,33 @@ INCLUDED DOSSIER ARTIFACTS:
             <div className={`p-4 rounded-2xl border flex flex-col sm:flex-row sm:items-center justify-between gap-3 ${
               isPaidUnlocked 
                 ? 'bg-gradient-to-r from-emerald-950/60 via-slate-900 to-slate-950 border-emerald-500/40 text-emerald-300'
-                : 'bg-gradient-to-r from-amber-950/40 via-slate-900 to-slate-950 border-amber-500/40 text-amber-300'
+                : paymentValidation.status === 'EFT_PENDING_APPROVAL'
+                ? 'bg-gradient-to-r from-amber-950/50 via-slate-900 to-slate-950 border-amber-500/50 text-amber-300'
+                : 'bg-gradient-to-r from-red-950/40 via-slate-900 to-slate-950 border-red-500/40 text-rose-300'
             }`}>
               <div className="space-y-1">
                 <div className="flex items-center gap-2">
                   {isPaidUnlocked ? (
                     <CheckCircle2 className="w-5 h-5 text-emerald-400" />
+                  ) : paymentValidation.status === 'EFT_PENDING_APPROVAL' ? (
+                    <Clock className="w-5 h-5 text-amber-400" />
                   ) : (
-                    <Lock className="w-5 h-5 text-amber-400" />
+                    <Lock className="w-5 h-5 text-red-400" />
                   )}
                   <span className="text-sm font-bold uppercase tracking-wider font-mono">
                     {isPaidUnlocked 
                       ? '✓ Unlocked & Verified For Official Submission' 
-                      : `Selected Package: ${selectedTierObj.name}`}
+                      : paymentValidation.status === 'EFT_PENDING_APPROVAL'
+                      ? `EFT Transfer Pending Admin Approval (Ref: ${paymentValidation.reference || 'MT-EFT'})`
+                      : `Selected Package: ${selectedTierObj.name} (Watermarked Preview Active)`}
                   </span>
                 </div>
                 <p className="text-xs text-slate-400">
                   {isPaidUnlocked
-                    ? 'All watermarks removed. Immediate one-click unwatermarked PDF download ready.'
-                    : `Complete 20-Section Red File ready. Upgrade for R${selectedTierObj.priceZar.toLocaleString('en-ZA')} once-off via PayPal or Direct EFT to download official unwatermarked dossier.`}
+                    ? 'All watermarks removed. Immediate one-click unwatermarked PDF & ZIP dossier download ready.'
+                    : paymentValidation.status === 'EFT_PENDING_APPROVAL'
+                    ? 'Your Direct EFT order has been submitted and is awaiting administrator verification. In accordance with statutory rules, all document previews and PDF downloads strictly retain the diagonal PREVIEW DRAFT watermark overlay until payment is confirmed.'
+                    : `Complete 20-Section Red File ready. Clean unwatermarked dossier is strictly locked behind a validated payment state. Upgrade for R${selectedTierObj.priceZar.toLocaleString('en-ZA')} once-off via PayPal or Direct EFT to download official dossier.`}
                 </p>
               </div>
 
@@ -2251,7 +2284,7 @@ INCLUDED DOSSIER ARTIFACTS:
                   className="px-4 py-2.5 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 font-black text-xs uppercase tracking-wider transition shadow-lg shadow-amber-950/40 flex items-center justify-center gap-1.5 cursor-pointer shrink-0"
                 >
                   <CreditCard className="w-4 h-4" />
-                  <span>Unlock File — R{selectedTierObj.priceZar.toLocaleString('en-ZA')}</span>
+                  <span>{paymentValidation.status === 'EFT_PENDING_APPROVAL' ? 'Check EFT / Pay PayPal' : `Unlock Dossier — R${selectedTierObj.priceZar.toLocaleString('en-ZA')}`}</span>
                 </button>
               ) : (
                 <span className="text-xs font-mono font-bold text-emerald-400 bg-emerald-500/10 px-3 py-1 rounded-lg border border-emerald-500/30 shrink-0">
@@ -2308,17 +2341,262 @@ INCLUDED DOSSIER ARTIFACTS:
               </div>
             </div>
 
-            {/* Live Document Preview Box */}
+            {/* Live 20-Section Document Viewer & Preview Box */}
             <div className="p-4 sm:p-5 bg-slate-950/80 border border-slate-800 rounded-2xl space-y-4">
-              <div className="flex items-center justify-between pb-3 border-b border-slate-800">
-                <h4 className="text-xs font-bold text-white uppercase tracking-wider font-mono">
-                  Compiled Document Sections Summary
-                </h4>
-                <span className="text-[10px] text-slate-400 font-mono">
-                  {selectedTierObj.sectionsIncluded} Sections Included
-                </span>
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-3 border-b border-slate-800 gap-2">
+                <div>
+                  <h4 className="text-xs sm:text-sm font-bold text-white uppercase tracking-wider font-mono flex items-center gap-2">
+                    <FileText className="w-4 h-4 text-red-400" />
+                    <span>20-Section Tender Safety File — Document Viewer</span>
+                  </h4>
+                  <p className="text-[11px] text-slate-400">
+                    {isPaidUnlocked 
+                      ? 'Official clean unwatermarked dossier rendered for client submission & DMRE audit inspection.'
+                      : 'Preview draft view. Diagonal watermark overlay is retained until payment verification.'}
+                  </p>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className={`text-[10px] font-mono font-bold uppercase px-2.5 py-0.5 rounded-full border ${
+                    isPaidUnlocked 
+                      ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30'
+                      : 'bg-red-500/10 text-red-400 border-red-500/30'
+                  }`}>
+                    {isPaidUnlocked ? 'Clean Release' : 'Preview Watermark Active'}
+                  </span>
+                  <span className="text-[10px] text-slate-400 font-mono">
+                    {selectedTierObj.sectionsIncluded} Sections
+                  </span>
+                </div>
               </div>
 
+              {/* Document Viewer Navigation Tabs */}
+              <div className="flex items-center gap-1.5 overflow-x-auto pb-1 scrollbar-none text-[11px] font-mono">
+                {[
+                  { id: 'INDEX', label: '1. Index & Cover' },
+                  { id: 'SEC1', label: '2. Sec 01: 37(2) Legal Agreement' },
+                  { id: 'SEC3', label: '3. Sec 03: Legal Appointments' },
+                  { id: 'SEC5', label: '4. Sec 05: Trade SWPs' },
+                  { id: 'SEC15_18', label: '5. Sec 15-18: Telemetry & Wear' },
+                  { id: 'SEC20', label: '6. Sec 20: Audit Ledger QR' }
+                ].map(tab => (
+                  <button
+                    key={tab.id}
+                    type="button"
+                    onClick={() => setViewerSection(tab.id as any)}
+                    className={`px-3 py-1.5 rounded-lg font-bold whitespace-nowrap transition cursor-pointer ${
+                      viewerSection === tab.id
+                        ? 'bg-red-600 text-white shadow-sm shadow-red-950'
+                        : 'bg-slate-900 text-slate-400 hover:text-slate-200 border border-slate-800'
+                    }`}
+                  >
+                    {tab.label}
+                  </button>
+                ))}
+              </div>
+
+              {/* Rendered Document Sheet Container with Diagonal Watermark Overlay */}
+              <div className="relative bg-slate-900 border border-slate-700/80 rounded-xl overflow-hidden shadow-2xl min-h-[300px]">
+                
+                {/* Security Ribbon */}
+                <div className={`px-3 py-1.5 text-[10px] font-mono font-bold uppercase tracking-wider flex items-center justify-between border-b ${
+                  isPaidUnlocked
+                    ? 'bg-emerald-950/60 border-emerald-500/40 text-emerald-300'
+                    : 'bg-red-950/60 border-red-500/40 text-red-300'
+                }`}>
+                  <span className="flex items-center gap-1.5">
+                    {isPaidUnlocked ? (
+                      <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
+                    ) : (
+                      <ShieldAlert className="w-3.5 h-3.5 text-red-400" />
+                    )}
+                    <span>
+                      {isPaidUnlocked
+                        ? 'OFFICIAL DOSSIER RELEASE • ALL WATERMARKS REMOVED • COMPLIANT UNDER MHSA / OHS ACT'
+                        : 'PREVIEW DRAFT OVERLAY ACTIVE — NOT FOR OFFICIAL SUBMISSION UNTIL PURCHASED'}
+                    </span>
+                  </span>
+                  <span className="font-mono text-[9px] text-slate-400">
+                    {isPaidUnlocked ? 'VALIDATED PAYMENT' : paymentValidation.status === 'EFT_PENDING_APPROVAL' ? 'EFT PENDING APPROVAL' : 'UNPAID'}
+                  </span>
+                </div>
+
+                {/* Diagonal Watermark Overlay for Unpaid / Pending EFT */}
+                {!isPaidUnlocked && (
+                  <div 
+                    className="absolute inset-0 pointer-events-none z-20 flex flex-col justify-around select-none overflow-hidden py-4 opacity-25 sm:opacity-30"
+                    aria-hidden="true"
+                  >
+                    <div className="transform -rotate-12 text-center text-red-500 font-black text-xs sm:text-sm md:text-base font-mono tracking-widest whitespace-nowrap">
+                      PREVIEW DRAFT - TENDER SAFETY FILE NOT FOR OFFICIAL SUBMISSION UNTIL PURCHASED
+                    </div>
+                    <div className="transform -rotate-12 text-center text-red-500 font-black text-xs sm:text-sm md:text-base font-mono tracking-widest whitespace-nowrap">
+                      PREVIEW DRAFT - TENDER SAFETY FILE NOT FOR OFFICIAL SUBMISSION UNTIL PURCHASED
+                    </div>
+                    <div className="transform -rotate-12 text-center text-red-500 font-black text-xs sm:text-sm md:text-base font-mono tracking-widest whitespace-nowrap">
+                      PREVIEW DRAFT - TENDER SAFETY FILE NOT FOR OFFICIAL SUBMISSION UNTIL PURCHASED
+                    </div>
+                    <div className="transform -rotate-12 text-center text-red-500 font-black text-xs sm:text-sm md:text-base font-mono tracking-widest whitespace-nowrap">
+                      PREVIEW DRAFT - TENDER SAFETY FILE NOT FOR OFFICIAL SUBMISSION UNTIL PURCHASED
+                    </div>
+                  </div>
+                )}
+
+                {/* Document Sheet Content */}
+                <div className="p-4 sm:p-6 text-xs text-slate-200 space-y-4 max-h-[360px] overflow-y-auto">
+                  {viewerSection === 'INDEX' && (
+                    <div className="space-y-3 font-mono">
+                      <div className="border-b border-slate-800 pb-2">
+                        <div className="text-[10px] text-amber-400 uppercase">Document Class: 20-Section Mining Tender Red File</div>
+                        <h5 className="text-sm font-bold text-white">{profile.companyName}</h5>
+                        <div className="text-[11px] text-slate-400">Project / Tender: {profile.projectTenderName || 'Industrial Site Works'} | Client: {profile.clientPrincipalName || 'Anglo American / Transnet'}</div>
+                      </div>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-[11px]">
+                        <div>• Section 01: OHS Act 37(2) Mandatary Agreement</div>
+                        <div>• Section 02: CIPC Registration &amp; COID Standing</div>
+                        <div>• Section 03: Section 16.2 &amp; Statutory Letters</div>
+                        <div>• Section 04: Baseline Risk Assessment (HIRA)</div>
+                        <div>• Section 05: Safe Work Procedures ({totalSwps} SWPs)</div>
+                        <div>• Section 06: Method Statements ({totalMethodStatements} Scopes)</div>
+                        <div>• Section 07: Fall Protection &amp; Heights Plan</div>
+                        <div>• Section 08: Daily Machine &amp; Tool Inspection Logs</div>
+                        <div>• Section 09: Hazardous Chemical Registers &amp; SDS</div>
+                        <div>• Section 10: PPE Issuance &amp; Degradation Log</div>
+                        <div>• Section 11: Emergency Preparedness Action Plan</div>
+                        <div>• Section 12: Incident Notification GAR 9 Protocols</div>
+                        <div>• Section 13: 12-Week Modular Toolbox Schedule</div>
+                        <div>• Section 14: Employee Inductions &amp; Medicals</div>
+                        <div>• Section 15: Gas Reticulation Infrastructure Log</div>
+                        <div>• Section 16: Underground Turnstile &amp; Blasting Log</div>
+                        <div>• Section 17: Core Drilling Telemetry Log</div>
+                        <div>• Section 18: Automated Physics Wear Modeling</div>
+                        <div>• Section 19: Environmental Waste Log</div>
+                        <div>• Section 20: Cryptographic Audit Ledger &amp; QR Seal</div>
+                      </div>
+                    </div>
+                  )}
+
+                  {viewerSection === 'SEC1' && (
+                    <div className="space-y-3">
+                      <div className="text-center pb-2 border-b border-slate-800 font-mono">
+                        <h5 className="font-bold text-white text-xs uppercase">MANDATORY AGREEMENT IN TERMS OF SECTION 37(2)</h5>
+                        <div className="text-[10px] text-slate-400">OCCUPATIONAL HEALTH AND SAFETY ACT 1993 (ACT NO. 85 OF 1993)</div>
+                      </div>
+                      <div className="space-y-1.5 text-[11px] leading-relaxed text-slate-300">
+                        <p><strong>Principal Client:</strong> {profile.clientPrincipalName} (Designated Mandator)</p>
+                        <p><strong>Mandatary / Contractor:</strong> {profile.companyName} (Reg: {profile.cipcRegNumber}, COID: {profile.coidNumber})</p>
+                        <p>1. The Mandatary acknowledges statutory responsibility under Section 16(1) and commits to adhering to Construction Regulations 2014, SANS standards, and all applicable DMRE mandatory codes of practice.</p>
+                        <p>2. The Mandatary warrants valid registration with the Compensation Commissioner and compliance with SARS requirements (PIN: {profile.sarsPin}).</p>
+                        <p>3. Authorized Site Lead: {profile.fullName} (Designation: Managing Director / Section 16.2).</p>
+                      </div>
+                    </div>
+                  )}
+
+                  {viewerSection === 'SEC3' && (
+                    <div className="space-y-3 font-mono text-[11px]">
+                      <h5 className="font-bold text-white text-xs uppercase border-b border-slate-800 pb-1.5">
+                        SECTION 03: STATUTORY DUTY-BEARER APPOINTMENTS PACK
+                      </h5>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        <div className="p-2.5 bg-slate-950/60 rounded-lg border border-slate-800">
+                          <div className="text-[10px] text-slate-400">OHS Act 16.2 Assistant to CEO</div>
+                          <div className="font-bold text-white">{staff.ceoSupervisorName}</div>
+                          <div className="text-[10px] text-emerald-400">✓ Legal Letter Compiled</div>
+                        </div>
+                        <div className="p-2.5 bg-slate-950/60 rounded-lg border border-slate-800">
+                          <div className="text-[10px] text-slate-400">Construction Manager (CR 8.1)</div>
+                          <div className="font-bold text-white">{staff.constructionManagerName}</div>
+                          <div className="text-[10px] text-emerald-400">✓ Legal Letter Compiled</div>
+                        </div>
+                        <div className="p-2.5 bg-slate-950/60 rounded-lg border border-slate-800">
+                          <div className="text-[10px] text-slate-400">Lead Risk Assessor (CR 9)</div>
+                          <div className="font-bold text-white">{staff.riskAssessorName}</div>
+                          <div className="text-[10px] text-emerald-400">✓ HIRA Protocol Appointed</div>
+                        </div>
+                        <div className="p-2.5 bg-slate-950/60 rounded-lg border border-slate-800">
+                          <div className="text-[10px] text-slate-400">GSR 3 First Aider</div>
+                          <div className="font-bold text-white">{staff.firstAiderName} (Exp: {staff.firstAiderExpiry})</div>
+                          <div className="text-[10px] text-emerald-400">✓ First Aid Register Valid</div>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {viewerSection === 'SEC5' && (
+                    <div className="space-y-3 text-[11px]">
+                      <h5 className="font-bold text-white text-xs font-mono uppercase border-b border-slate-800 pb-1.5">
+                        SECTION 05: SAFE WORK PROCEDURES &amp; METHOD STATEMENTS ({totalSwps} SWPs)
+                      </h5>
+                      <div className="space-y-2">
+                        {activeTradeObjects.map(trade => (
+                          <div key={trade.id} className="p-2.5 bg-slate-950/60 rounded-lg border border-slate-800 flex items-center justify-between">
+                            <div>
+                              <span className="font-bold text-white font-mono">{trade.name}</span>
+                              <div className="text-[10px] text-slate-400">{trade.swps.join(' • ')}</div>
+                            </div>
+                            <span className="text-[10px] text-emerald-400 font-mono shrink-0">Audit-Ready</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {viewerSection === 'SEC15_18' && (
+                    <div className="space-y-3 font-mono text-[11px]">
+                      <h5 className="font-bold text-white text-xs uppercase border-b border-slate-800 pb-1.5">
+                        SECTION 15-18: MINING TELEMETRY &amp; PHYSICS WEAR SIMULATIONS
+                      </h5>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        <div className="p-2.5 bg-slate-950/60 rounded-lg border border-slate-800 space-y-1">
+                          <div className="text-[10px] text-amber-400">Gas Reticulation &amp; Oxygen Systems</div>
+                          <div>Oxygen Tank: {consumables.oxygenSystem.manifoldPressureBar} Bar ({consumables.oxygenSystem.status})</div>
+                          <div>Gas Infrastructure: {consumables.gasInfrastructure.systemType} ({consumables.gasInfrastructure.status})</div>
+                        </div>
+                        <div className="p-2.5 bg-slate-950/60 rounded-lg border border-slate-800 space-y-1">
+                          <div className="text-[10px] text-amber-400">Blasting Heading Clearance</div>
+                          <div>Heading: {accessBlasting.blastingClearance.stopeHeading}</div>
+                          <div>Safe Radius: {accessBlasting.blastingClearance.exclusionRadiusMeters}m | Sentries: {accessBlasting.blastingClearance.sentryGuardsCount}</div>
+                        </div>
+                      </div>
+                      <div className="p-2.5 bg-slate-950/60 rounded-lg border border-slate-800">
+                        <div className="text-[10px] text-cyan-400 mb-1">Predictive Physics Degradation Schedule (5 Components Monitored)</div>
+                        <div className="grid grid-cols-2 sm:grid-cols-3 gap-1.5 text-[10px]">
+                          {wearSimulation.monitoredComponents.slice(0, 3).map(c => (
+                            <div key={c.id} className="text-slate-300">
+                              {c.name}: <strong className="text-white">{c.wearPercentage}% wear</strong> ({c.status})
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {viewerSection === 'SEC20' && (
+                    <div className="space-y-3 font-mono text-[11px]">
+                      <h5 className="font-bold text-white text-xs uppercase border-b border-slate-800 pb-1.5">
+                        SECTION 20: CRYPTOGRAPHIC AUDIT LEDGER SEAL &amp; SACPCMP VERIFICATION
+                      </h5>
+                      <div className="p-3 bg-slate-950/70 rounded-lg border border-slate-800 space-y-2">
+                        <div className="flex justify-between">
+                          <span className="text-slate-400">Verification Ref:</span>
+                          <span className="text-amber-400 font-bold">{verificationRecord?.reference || draftState.verificationCode || 'MT-2026-VERIFY'}</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-slate-400">Immutable Hash:</span>
+                          <span className="text-white truncate max-w-[220px]">{verificationRecord?.hash || 'e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855'}</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-slate-400">Licensing Document Status:</span>
+                          <span className={`font-bold ${isPaidUnlocked ? 'text-emerald-400' : 'text-rose-400'}`}>
+                            {isPaidUnlocked ? 'OFFICIAL UNLOCKED DOSSIER (PAID)' : 'PREVIEW DRAFT (WATERMARKED)'}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Summary Metrics */}
               <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 text-xs">
                 <div className="p-3 bg-slate-900/60 rounded-xl border border-slate-800/80">
                   <div className="text-[10px] text-slate-400 uppercase font-mono">Contractor</div>
@@ -2363,7 +2641,7 @@ INCLUDED DOSSIER ARTIFACTS:
                   onClick={generateTenderSafetyZip}
                   disabled={isGeneratingZip || isGeneratingPdf}
                   className="w-full sm:flex-1 py-3 px-4 bg-slate-800 hover:bg-slate-700 border border-slate-700 hover:border-slate-600 text-white font-bold text-xs uppercase tracking-wider rounded-xl transition shadow-md flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
-                  title="Complete archive containing unwatermarked PDF, wear physics CSV schedule, telemetry JSON logs, and QR code PNG"
+                  title="Complete archive containing unwatermarked PDF if paid, wear physics CSV schedule, telemetry JSON logs, and QR code PNG"
                 >
                   {isGeneratingZip ? (
                     <>
@@ -2373,7 +2651,7 @@ INCLUDED DOSSIER ARTIFACTS:
                   ) : (
                     <>
                       <FileArchive className="w-4 h-4 text-amber-400" />
-                      <span>Download Full Dossier (.ZIP)</span>
+                      <span>{isPaidUnlocked ? 'Download Full Dossier (.ZIP)' : 'Download Watermarked Dossier (.ZIP)'}</span>
                     </>
                   )}
                 </button>
@@ -2463,12 +2741,13 @@ INCLUDED DOSSIER ARTIFACTS:
         isOpen={isCheckoutModalOpen}
         onClose={() => {
           setIsCheckoutModalOpen(false);
-          // Seamless restoration of complete draft state without page reload
+          const validatedPaid = checkIfTenderPaidUnlocked();
+          setIsPaidUnlocked(validatedPaid);
+          setPaymentValidation(getTenderPaymentValidationStatus());
           const fresh = loadTenderDraft();
           setSelectedTier(fresh.selectedTier);
           if (fresh.customTierPriceZar) setCustomTierPriceZar(fresh.customTierPriceZar);
           if (fresh.selectedAddOns) setSelectedAddOns(fresh.selectedAddOns);
-          if (fresh.isPaidUnlocked) setIsPaidUnlocked(true);
           if (fresh.resolvedRedFlags) setResolvedRedFlags(fresh.resolvedRedFlags);
           if (fresh.customNotes) setCustomNotes(fresh.customNotes);
           if (fresh.diagnosticProgress) setDiagnosticProgress(fresh.diagnosticProgress);

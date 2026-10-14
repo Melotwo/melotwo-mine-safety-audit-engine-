@@ -15,7 +15,8 @@ import {
   DollarSign,
   Lock,
   ExternalLink,
-  Sparkles
+  Sparkles,
+  Clock
 } from 'lucide-react';
 import { PayPalScriptProvider, PayPalButtons } from '@paypal/react-paypal-js';
 import { useCurrency } from '../context/CurrencyContext';
@@ -325,10 +326,9 @@ export const PayPalEFTCheckoutModal: React.FC<PayPalEFTCheckoutModalProps> = ({
         popFileDataUrl: popDataUrl || undefined
       });
 
-      // Mark Unlocked in local storage & tender draft
-      markTenderPaidUnlocked(selectedTier, activeAddOns);
+      // Strictly retain watermarked draft state: unverified EFT orders remain locked pending admin review
       saveTenderDraft({
-        isPaidUnlocked: true,
+        isPaidUnlocked: false,
         selectedTier,
         customTierPriceZar: customPrice,
         selectedAddOns: activeAddOns,
@@ -336,25 +336,9 @@ export const PayPalEFTCheckoutModal: React.FC<PayPalEFTCheckoutModalProps> = ({
       });
 
       setEftSuccess(true);
-
-      const result: PaymentSuccessResult & { tier?: ContractorTierId; addOns?: string[] } = {
-        gateway: 'eft',
-        transactionId: eftReference,
-        amount: totalAmountZar,
-        currency: 'ZAR',
-        item: itemTitle,
-        customerName: enterprise,
-        customerEmail: email,
-        timestamp: new Date().toISOString(),
-        status: 'COMPLETED',
-        tier: selectedTier,
-        addOns: activeAddOns
-      };
-
-      setTimeout(() => {
-        onSuccess(result);
-        onClose();
-      }, 1500);
+      // Notice: Do NOT call onSuccess with COMPLETED or auto-close modal.
+      // The user is presented with the explicit EFT confirmation state to download
+      // their Proforma Invoice or close to continue in watermarked preview mode.
     } catch (err: any) {
       setErrorMessage(err.message || 'Failed to submit EFT order. Please try again.');
     } finally {
@@ -890,6 +874,89 @@ export const PayPalEFTCheckoutModal: React.FC<PayPalEFTCheckoutModalProps> = ({
             {activeTab === 'eft' && (() => {
               const activeBank = EFT_BANK_ACCOUNTS[selectedBank] || EFT_BANK_ACCOUNTS.capitec;
 
+              if (eftSuccess) {
+                return (
+                  <div className="p-5 sm:p-6 bg-slate-950 border border-amber-500/40 rounded-2xl space-y-5 text-center animate-fade-in">
+                    <div className="w-14 h-14 mx-auto rounded-2xl bg-amber-500/15 border border-amber-500/40 flex items-center justify-center text-amber-400 shadow-lg shadow-amber-950/40">
+                      <Clock className="w-8 h-8" />
+                    </div>
+
+                    <div className="space-y-1.5">
+                      <span className="text-[10px] font-mono font-bold uppercase tracking-widest px-2.5 py-0.5 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/40">
+                        EFT Order Registered • Pending Admin Verification
+                      </span>
+                      <h4 className="text-base sm:text-lg font-black text-white uppercase tracking-wider font-display">
+                        Beneficiary Ref: {eftReference}
+                      </h4>
+                      <p className="text-xs text-slate-300 max-w-md mx-auto leading-relaxed">
+                        Your Direct EFT order has been registered in the audit queue. Because payment has not yet been verified by our finance desk, your tender file remains protected under a <strong className="text-amber-400 font-bold">PREVIEW DRAFT watermark</strong>.
+                      </p>
+                    </div>
+
+                    <div className="p-4 bg-slate-900/90 rounded-xl border border-slate-800 text-left text-xs space-y-2 max-w-md mx-auto font-mono">
+                      <div className="flex justify-between text-slate-400">
+                        <span>Selected Bank:</span>
+                        <span className="text-white font-bold">{activeBank.bankName}</span>
+                      </div>
+                      <div className="flex justify-between text-slate-400">
+                        <span>Account Number:</span>
+                        <span className="text-white font-bold">{activeBank.accountNumber}</span>
+                      </div>
+                      <div className="flex justify-between text-slate-400">
+                        <span>Branch Code:</span>
+                        <span className="text-white font-bold">{activeBank.branchCode}</span>
+                      </div>
+                      <div className="flex justify-between text-slate-400">
+                        <span>Amount Due:</span>
+                        <span className="text-amber-400 font-bold">R{totalAmountZar.toLocaleString('en-ZA')}</span>
+                      </div>
+                      <div className="flex justify-between text-slate-400">
+                        <span>Payment State:</span>
+                        <span className="text-amber-400 font-bold">PENDING APPROVAL</span>
+                      </div>
+                      <div className="flex justify-between text-slate-400">
+                        <span>Dossier Watermark:</span>
+                        <span className="text-red-400 font-bold">PREVIEW DRAFT ACTIVE</span>
+                      </div>
+                    </div>
+
+                    <div className="p-3 bg-amber-950/30 border border-amber-500/30 rounded-xl text-xs text-amber-200/90 text-left max-w-md mx-auto leading-relaxed">
+                      <strong>Statutory Watermark Rule:</strong> In accordance with statutory audit rules, the clean unwatermarked 20-Section dossier is strictly locked until an administrator marks your EFT payment as verified. You may download your official Proforma Invoice below or continue reviewing the watermarked draft.
+                    </div>
+
+                    <div className="pt-2 flex flex-col sm:flex-row items-center justify-center gap-3">
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          generateEftInvoicePdf({
+                            reference: eftReference,
+                            amountZar: totalAmountZar,
+                            enterpriseName: enterprise || 'Industrial Client',
+                            email: email || 'billing@client.com',
+                            tierOrItem: itemTitle,
+                            selectedBank
+                          });
+                        }}
+                        className="w-full sm:w-auto px-4 py-2.5 bg-amber-500/15 hover:bg-amber-500/25 border border-amber-500/40 text-amber-300 rounded-xl text-xs font-bold transition flex items-center justify-center gap-2 cursor-pointer shadow-md"
+                      >
+                        <Download className="w-4 h-4" />
+                        <span>Download Proforma Invoice (PDF)</span>
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={onClose}
+                        className="w-full sm:w-auto px-5 py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-xl text-xs font-bold transition cursor-pointer"
+                      >
+                        <span>Close &amp; Keep Watermarked Preview</span>
+                      </button>
+                    </div>
+                  </div>
+                );
+              }
+
               return (
               <form onSubmit={handleSubmitEft} className="space-y-5 animate-fade-in">
                 
@@ -905,14 +972,18 @@ export const PayPalEFTCheckoutModal: React.FC<PayPalEFTCheckoutModalProps> = ({
 
                     <button
                       type="button"
-                      onClick={() => generateEftInvoicePdf({
-                        reference: eftReference,
-                        amountZar: totalAmountZar,
-                        enterpriseName: enterprise || 'Industrial Client',
-                        email: email || 'billing@client.com',
-                        tierOrItem: itemTitle,
-                        selectedBank
-                      })}
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        generateEftInvoicePdf({
+                          reference: eftReference,
+                          amountZar: totalAmountZar,
+                          enterpriseName: enterprise || 'Industrial Client',
+                          email: email || 'billing@client.com',
+                          tierOrItem: itemTitle,
+                          selectedBank
+                        });
+                      }}
                       className="px-3 py-1.5 bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/30 text-amber-400 rounded-lg text-xs font-bold transition flex items-center gap-1.5 cursor-pointer w-fit"
                     >
                       <Download className="w-3.5 h-3.5" />

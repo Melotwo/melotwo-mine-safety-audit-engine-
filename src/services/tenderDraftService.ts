@@ -245,10 +245,12 @@ export function loadTenderDraft(): TenderSafetyFileDraftState {
       paidTier = 'tier_enterprise_site_license';
     }
 
+    const isActuallyPaid = checkIfTenderPaidUnlocked();
+
     if (!raw) {
       return {
         ...INITIAL_TENDER_DRAFT,
-        isPaidUnlocked: paidUnlocked,
+        isPaidUnlocked: isActuallyPaid,
         selectedTier: paidTier,
         selectedAddOns: storedAddOns,
         totalAmountZar: calculateDraftTotalAmount(paidTier, INITIAL_TENDER_DRAFT.customTierPriceZar, storedAddOns)
@@ -300,11 +302,12 @@ export function loadTenderDraft(): TenderSafetyFileDraftState {
         ...DEFAULT_WEAR_SIMULATION,
         ...(parsed.wearSimulation || {})
       },
-      isPaidUnlocked: paidUnlocked || parsed.isPaidUnlocked || false
+      // Strictly locked behind validated payment state
+      isPaidUnlocked: isActuallyPaid
     };
   } catch (err) {
     console.warn('[TenderDraftService] Error parsing draft from localStorage:', err);
-    return INITIAL_TENDER_DRAFT;
+    return { ...INITIAL_TENDER_DRAFT, isPaidUnlocked: checkIfTenderPaidUnlocked() };
   }
 }
 
@@ -313,14 +316,17 @@ export function loadTenderDraft(): TenderSafetyFileDraftState {
  */
 export function saveTenderDraft(draft: Partial<TenderSafetyFileDraftState>): TenderSafetyFileDraftState {
   if (typeof localStorage === 'undefined') {
-    return { ...INITIAL_TENDER_DRAFT, ...draft, lastSavedAt: new Date().toISOString() };
+    return { ...INITIAL_TENDER_DRAFT, ...draft, isPaidUnlocked: false, lastSavedAt: new Date().toISOString() };
   }
 
   try {
     const existing = loadTenderDraft();
+    const isActuallyPaid = checkIfTenderPaidUnlocked();
     const updated: TenderSafetyFileDraftState = {
       ...existing,
       ...draft,
+      // Strictly lock isPaidUnlocked behind validated payment verification state
+      isPaidUnlocked: isActuallyPaid,
       lastSavedAt: new Date().toISOString()
     };
 
@@ -328,7 +334,7 @@ export function saveTenderDraft(draft: Partial<TenderSafetyFileDraftState>): Ten
     return updated;
   } catch (err) {
     console.warn('[TenderDraftService] Error saving draft to localStorage:', err);
-    return { ...INITIAL_TENDER_DRAFT, ...draft };
+    return { ...INITIAL_TENDER_DRAFT, ...draft, isPaidUnlocked: false };
   }
 }
 
@@ -342,20 +348,85 @@ export function clearTenderDraft(): TenderSafetyFileDraftState {
   return INITIAL_TENDER_DRAFT;
 }
 
-/**
- * Check if the user has unlocked the file
- */
-export function checkIfTenderPaidUnlocked(): boolean {
-  if (typeof localStorage === 'undefined') return false;
-  return (
-    localStorage.getItem(TENDER_PAID_UNLOCKED_KEY) === 'true' ||
-    localStorage.getItem('melotwo_vip_unlocked') === 'true' ||
-    localStorage.getItem('sans_vip_unlocked') === 'true'
-  );
+export interface TenderPaymentStatus {
+  isPaid: boolean;
+  status: 'PAID_VERIFIED' | 'EFT_PENDING_APPROVAL' | 'UNPAID';
+  method?: 'paypal' | 'eft';
+  reference?: string;
+  verifiedAt?: string;
 }
 
 /**
- * Mark safety file as paid and unlocked with tier and add-ons
+ * Validates whether the 20-Section Tender Safety File has a confirmed payment state:
+ * - Direct validated payment: PayPal completed (`melotwo_tender_paid_unlocked === 'true'`)
+ * - Confirmed admin-approved EFT order (`order.status === 'VERIFIED'` in `melotwo_eft_orders`)
+ * Unpaid or pending EFT orders (`PENDING_VERIFICATION` / `PROVISIONALLY_APPROVED`) strictly return isPaid: false.
+ */
+export function getTenderPaymentValidationStatus(): TenderPaymentStatus {
+  if (typeof localStorage === 'undefined') {
+    return { isPaid: false, status: 'UNPAID' };
+  }
+
+  // 1. Check for confirmed admin-approved EFT orders in local storage
+  try {
+    const rawEft = localStorage.getItem('melotwo_eft_orders');
+    if (rawEft) {
+      const orders = JSON.parse(rawEft);
+      if (Array.isArray(orders)) {
+        const verifiedOrder = orders.find((o: any) => o && o.status === 'VERIFIED');
+        if (verifiedOrder) {
+          return {
+            isPaid: true,
+            status: 'PAID_VERIFIED',
+            method: 'eft',
+            reference: verifiedOrder.reference,
+            verifiedAt: verifiedOrder.verifiedAt
+          };
+        }
+
+        const pendingOrder = orders.find(
+          (o: any) => o && (o.status === 'PENDING_VERIFICATION' || o.status === 'PROVISIONALLY_APPROVED')
+        );
+        if (pendingOrder) {
+          const isDirectPaid = localStorage.getItem(TENDER_PAID_UNLOCKED_KEY) === 'true';
+          if (!isDirectPaid) {
+            return {
+              isPaid: false,
+              status: 'EFT_PENDING_APPROVAL',
+              method: 'eft',
+              reference: pendingOrder.reference
+            };
+          }
+        }
+      }
+    }
+  } catch (e) {
+    console.warn('[TenderDraftService] Error parsing EFT orders:', e);
+  }
+
+  // 2. Direct validated payment (PayPal completed or explicit verified key)
+  const isDirectPaid = localStorage.getItem(TENDER_PAID_UNLOCKED_KEY) === 'true';
+  if (isDirectPaid) {
+    return {
+      isPaid: true,
+      status: 'PAID_VERIFIED',
+      method: 'paypal'
+    };
+  }
+
+  return { isPaid: false, status: 'UNPAID' };
+}
+
+/**
+ * Check if the user has unlocked the file via validated payment
+ * (strictly locked behind isPaid === true or confirmed admin-approved EFT status)
+ */
+export function checkIfTenderPaidUnlocked(): boolean {
+  return getTenderPaymentValidationStatus().isPaid;
+}
+
+/**
+ * Mark safety file as paid and unlocked with tier and add-ons (upon verified payment)
  */
 export function markTenderPaidUnlocked(
   tier: ContractorTierId = 'tier_contractor_pay_per_file',

@@ -138,6 +138,7 @@ export const PartnerCoPilotAdminView: React.FC<PartnerCoPilotAdminViewProps> = (
         const localList: EftOrderSubmission[] = JSON.parse(localStorage.getItem('melotwo_eft_orders') || '[]');
         const updated = localList.map(o => (o.reference === order.reference || o.id === order.id) ? { ...o, status: 'VERIFIED', verifiedAt: new Date().toISOString() } : o);
         localStorage.setItem('melotwo_eft_orders', JSON.stringify(updated));
+        localStorage.setItem('melotwo_tender_paid_unlocked', 'true');
         localStorage.setItem('sans_trial_active', 'true');
         localStorage.setItem('melotwo_vip_unlocked', 'true');
         localStorage.setItem('sans_vip_unlocked', 'true');

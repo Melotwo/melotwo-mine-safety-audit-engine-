@@ -159,7 +159,7 @@ export async function submitEftOrder(submission: {
     notes: submission.notes,
     popFileName: submission.popFileName,
     popFileDataUrl: submission.popFileDataUrl,
-    status: 'PROVISIONALLY_APPROVED',
+    status: 'PENDING_VERIFICATION',
     createdAt: new Date().toISOString(),
     partnerCode: activePartnerCode
   };
