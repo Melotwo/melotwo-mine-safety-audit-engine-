@@ -13,6 +13,7 @@ export interface ContractorTierOption {
   name: string;
   badge: string;
   billingCycle: TierBillingCycle;
+  priceUsd: number;
   basePriceZar: number;
   maxPriceZar: number;
   defaultPriceZar: number;
@@ -63,46 +64,52 @@ export const TENDER_ADDONS: TenderAddOn[] = [
 export const CONTRACTOR_TIERS: ContractorTierOption[] = [
   {
     id: 'tier_contractor_pay_per_file',
-    name: 'Small Contractor Pay-Per-File',
-    badge: 'Immediate Dossier Pack',
+    name: '30-Day Operational Pilot',
+    badge: '30-Day Pilot',
     billingCycle: 'once-off',
-    basePriceZar: 1500,
-    maxPriceZar: 2500,
-    defaultPriceZar: 2500,
-    priceZar: 2500,
-    priceDisplay: 'R1,500 - R2,500 once-off',
-    description: 'Immediate SACPCMP/SANS/Zambian returnable pack PDF/ZIP generation for emerging contractors and site sub-trades.',
+    priceUsd: 650,
+    basePriceZar: 12025,
+    maxPriceZar: 12025,
+    defaultPriceZar: 12025,
+    priceZar: 12025,
+    priceDisplay: '$650 USD (approx. R12,025 once-off)',
+    description: 'Complete 30-Day Operational Pilot featuring cross-border Zambian Mining Act alignment, 20-Section Tender Dossier generation, OCR document parsing, and offline subterranean sync.',
     features: [
-      'Immediate SACPCMP / SANS / Zambian Returnable Pack',
-      'One-Click 20-Section PDF & Full ZIP Dossier Export',
+      'Cross-border Zambian Mining Act alignment',
+      '20-Section Tender Dossier generation',
+      'OCR document parsing',
+      'Offline subterranean sync',
       'Digital Cryptographic Audit Ledger QR Code Seal',
       'Statutory Appointments (OHS 16.2, CR 8.1, CR 8.2)',
       'Baseline HIRA & Trade-Specific Safe Work Procedures',
       'COID & Tax PIN Compliance Verification Linking'
     ],
-    recommendedFor: 'Subcontractors, civils teams & small suppliers bidding on active tenders',
+    recommendedFor: 'Subcontractors, civils teams & small suppliers bidding on active tenders and cross-border pilots',
     sectionsIncluded: 20
   },
   {
     id: 'tier_operational_subscription',
-    name: 'Operational Safety & Wear Simulation Subscription',
-    badge: 'Continuous Sync',
+    name: 'Enterprise Operational Retainer',
+    badge: 'Monthly Retainer',
     billingCycle: 'monthly',
-    basePriceZar: 8500,
-    maxPriceZar: 15000,
-    defaultPriceZar: 8500,
-    priceZar: 8500,
-    priceDisplay: 'R8,500 - R15,000 / month',
-    description: 'Includes real-time auto-save, physics-driven wear simulations, and drilling fluid telemetry logs for continuous compliance.',
+    priceUsd: 1400,
+    basePriceZar: 25900,
+    maxPriceZar: 25900,
+    defaultPriceZar: 25900,
+    priceZar: 25900,
+    priceDisplay: '$1,400 USD/month (approx. R25,900/mo)',
+    description: 'Continuous operational retainer providing multi-rig synchronization, continuous compliance monitoring, Delta Analytics reporting, and priority GRC support.',
     features: [
+      'Multi-rig synchronization',
+      'Continuous compliance monitoring',
+      'Delta Analytics reporting',
+      'Priority GRC support',
       'Continuous Real-Time Local & Cloud Auto-Save Drafts',
       'Physics-Driven Wear Modeling (PPE, Wire Ropes, Drill Crowns)',
       'Core Drilling & Return Fluid Mud Telemetry Logging',
-      'Industrial Consumables & Invisible Gas Infrastructure Registers',
-      'Predictive Component Discard & Silicosis Hazard Alerts',
       'Monthly Statutory Audit Re-Certification & Re-Issuance'
     ],
-    recommendedFor: 'Active operational contractors, drill operators & plant managers',
+    recommendedFor: 'Active operational contractors, drill operators & multi-rig plant operations',
     sectionsIncluded: 20
   },
   {
@@ -110,11 +117,12 @@ export const CONTRACTOR_TIERS: ContractorTierOption[] = [
     name: 'Enterprise Site License',
     badge: 'Subterranean Authority',
     billingCycle: 'annual',
+    priceUsd: 9700,
     basePriceZar: 180000,
     maxPriceZar: 420000,
     defaultPriceZar: 180000,
     priceZar: 180000,
-    priceDisplay: 'R180,000 - R420,000 / year',
+    priceDisplay: '$9,700 USD/yr (approx. R180,000/yr)',
     description: 'Full live telemetry engine, offline subterranean sync, underground access/blasting clearance, and multi-user executive portal.',
     features: [
       'Full Live Telemetry Engine with Real-Time SCADA/Drill Sync',

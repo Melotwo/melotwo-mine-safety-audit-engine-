@@ -4624,42 +4624,42 @@ interface PricingTierConfig {
 export const MELOTWO_PRICING_MATRIX: Record<'professional' | 'enterprise' | 'full_site' | 'audit', PricingTierConfig> = {
     audit: {
         id: 'audit',
-        name: '30-Day Section 54 Readiness Sprint',
-        tagline: 'High-impact 30-day site readiness sprint and statutory Section 54 audit pass.',
-        basePrice: 50000,
+        name: '30-Day Operational Pilot',
+        tagline: 'Cross-border Zambian Mining Act alignment, 20-Section Tender Dossier generation, OCR document parsing, and offline subterranean sync.',
+        basePrice: 12025,
         billingType: 'one-off',
         insuranceOffsetRate: 'Protects directors and Section 3.1(a) duty-bearers from personal liability during official regulatory reviews.',
         auditTrailDefensibility: 'Complete snapshot audit reports structured to meet DMRE & SANS inspectorial standards.',
         features: [
-            '30-Day rapid statutory site readiness audit sprint (R50,000 - R150,000 / site)',
-            'Comprehensive single-event compliance pass & DMRE Section 54/55 risk gap assessment',
-            'Instant PDF report compiles with certified digital inspector & manager signatures',
-            'Post-audit compliance checklist & structured CAPA roadmap output'
+            'Cross-border Zambian Mining Act alignment',
+            '20-Section Tender Dossier generation',
+            'OCR document parsing',
+            'Offline subterranean sync',
+            'Digital Cryptographic Audit Ledger QR Code Seal',
+            'Instant PDF report compiles with certified digital inspector & manager signatures'
         ],
-        calculatePrice: ({ activeModulesCount = 1 }) => {
-            const basePrice = 50000;
-            const additionalModules = Math.max(0, activeModulesCount - 1);
-            const calculated = basePrice + (additionalModules * 20000);
-            return Math.min(150000, Math.max(50000, calculated));
+        calculatePrice: () => {
+            return 12025; // $650 USD
         }
     },
     professional: {
         id: 'professional',
-        name: 'Compliance Site Tier',
-        tagline: 'Entry-tier monthly compliance site subscription for single-operation MHSA & SANS audit workflows.',
-        basePrice: 15000,
+        name: 'Enterprise Operational Retainer',
+        tagline: 'Multi-rig synchronization, continuous compliance monitoring, Delta Analytics reporting, and priority GRC support.',
+        basePrice: 25900,
         billingType: 'monthly',
         insuranceOffsetRate: 'Up to 15% reduction in liability premiums by demonstrating active daily risk-mitigation logs.',
         auditTrailDefensibility: 'Cryptographically hashed inspector entries with permanent metadata, eliminating regulatory sign-off friction.',
         features: [
-            'Standard SANS 10330 / 10142-1 / 10049 / 10108 / 10375 / ISO 42001 automated audit workflows',
-            'Immutable digital ledger for high-stakes forensic inspection defense',
-            'Full compliance telemetry with 1-click PDF export pipelines',
-            'Offline-first data caching with automatic Cloud synchronization'
+            'Multi-rig synchronization',
+            'Continuous compliance monitoring',
+            'Delta Analytics reporting',
+            'Priority GRC support',
+            'Standard SANS 10330 / 10142-1 / 10049 automated audit workflows',
+            'Continuous Real-Time Local & Cloud Auto-Save Drafts'
         ],
-        calculatePrice: ({ activeModulesCount = 1 }) => {
-            const calculated = 15000 + (activeModulesCount * 2000);
-            return Math.min(25000, Math.max(15000, calculated));
+        calculatePrice: () => {
+            return 25900; // $1,400 USD/month
         }
     },
     enterprise: {

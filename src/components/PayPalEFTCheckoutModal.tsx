@@ -81,7 +81,7 @@ export const PayPalEFTCheckoutModal: React.FC<PayPalEFTCheckoutModalProps> = ({
   showTierSelector = true
 }) => {
   const { currency, formatPrice } = useCurrency();
-  const [activeTab, setActiveTab] = useState<PaymentGatewayType>('paypal');
+  const [activeTab, setActiveTab] = useState<PaymentGatewayType>('eft');
   const [paypalConfig, setPaypalConfig] = useState<PayPalConfig>(getStoredPayPalConfig());
 
   // Form states
@@ -95,9 +95,10 @@ export const PayPalEFTCheckoutModal: React.FC<PayPalEFTCheckoutModalProps> = ({
   });
   const [customPrice, setCustomPrice] = useState<number>(() => {
     const draft = loadTenderDraft();
+    const tObj = CONTRACTOR_TIERS.find(t => t.id === (initialTier || draft.selectedTier)) || CONTRACTOR_TIERS[0];
     return typeof initialAmountZar === 'number' && initialAmountZar > 0
       ? initialAmountZar
-      : (draft.customTierPriceZar || 2500);
+      : (draft.customTierPriceZar && draft.customTierPriceZar >= tObj.basePriceZar ? draft.customTierPriceZar : tObj.defaultPriceZar);
   });
   const [activeAddOns, setActiveAddOns] = useState<string[]>(() => {
     return initialAddOns || loadTenderDraft().selectedAddOns || [];
@@ -318,12 +319,14 @@ export const PayPalEFTCheckoutModal: React.FC<PayPalEFTCheckoutModalProps> = ({
       await submitEftOrder({
         reference: eftReference,
         amountZar: totalAmountZar,
+        amountUsd: usdAmount,
         enterpriseName: enterprise,
         email,
         tierOrItem: itemTitle,
         selectedBank,
         popFileName: popFile?.name,
-        popFileDataUrl: popDataUrl || undefined
+        popFileDataUrl: popDataUrl || undefined,
+        proof_of_payment_received: Boolean(popFile || popDataUrl)
       });
 
       // Strictly retain watermarked draft state: unverified EFT orders remain locked pending admin review
@@ -455,51 +458,24 @@ export const PayPalEFTCheckoutModal: React.FC<PayPalEFTCheckoutModalProps> = ({
                       <>
                         <button
                           type="button"
-                          onClick={() => handlePricePreset(1500)}
+                          onClick={() => handlePricePreset(12025)}
                           className={`px-2 py-1 text-[10px] font-mono rounded-lg border transition cursor-pointer ${
-                            customPrice === 1500 ? 'bg-amber-500 text-slate-950 font-bold border-amber-400' : 'bg-slate-900 border-slate-800 text-slate-300 hover:border-slate-700'
+                            customPrice === 12025 ? 'bg-amber-500 text-slate-950 font-bold border-amber-400' : 'bg-slate-900 border-slate-800 text-slate-300 hover:border-slate-700'
                           }`}
                         >
-                          R1,500 (Base)
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => handlePricePreset(2500)}
-                          className={`px-2 py-1 text-[10px] font-mono rounded-lg border transition cursor-pointer ${
-                            customPrice === 2500 ? 'bg-amber-500 text-slate-950 font-bold border-amber-400' : 'bg-slate-900 border-slate-800 text-slate-300 hover:border-slate-700'
-                          }`}
-                        >
-                          R2,500 (Full Dossier)
+                          $650 USD (R12,025 Full Pilot)
                         </button>
                       </>
                     ) : selectedTier === 'tier_operational_subscription' ? (
                       <>
                         <button
                           type="button"
-                          onClick={() => handlePricePreset(8500)}
+                          onClick={() => handlePricePreset(25900)}
                           className={`px-2 py-1 text-[10px] font-mono rounded-lg border transition cursor-pointer ${
-                            customPrice === 8500 ? 'bg-amber-500 text-slate-950 font-bold border-amber-400' : 'bg-slate-900 border-slate-800 text-slate-300 hover:border-slate-700'
+                            customPrice === 25900 ? 'bg-amber-500 text-slate-950 font-bold border-amber-400' : 'bg-slate-900 border-slate-800 text-slate-300 hover:border-slate-700'
                           }`}
                         >
-                          R8,500/mo (Standard)
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => handlePricePreset(12500)}
-                          className={`px-2 py-1 text-[10px] font-mono rounded-lg border transition cursor-pointer ${
-                            customPrice === 12500 ? 'bg-amber-500 text-slate-950 font-bold border-amber-400' : 'bg-slate-900 border-slate-800 text-slate-300 hover:border-slate-700'
-                          }`}
-                        >
-                          R12,500/mo (Multi-Rig)
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => handlePricePreset(15000)}
-                          className={`px-2 py-1 text-[10px] font-mono rounded-lg border transition cursor-pointer ${
-                            customPrice === 15000 ? 'bg-amber-500 text-slate-950 font-bold border-amber-400' : 'bg-slate-900 border-slate-800 text-slate-300 hover:border-slate-700'
-                          }`}
-                        >
-                          R15,000/mo (Full Fleet)
+                          $1,400 USD/mo (R25,900/mo Retainer)
                         </button>
                       </>
                     ) : (
@@ -640,22 +616,6 @@ export const PayPalEFTCheckoutModal: React.FC<PayPalEFTCheckoutModalProps> = ({
             <div className="grid grid-cols-2 gap-3 p-1.5 bg-slate-950 rounded-2xl border border-slate-800">
               <button
                 type="button"
-                onClick={() => setActiveTab('paypal')}
-                className={`py-3 px-4 rounded-xl font-bold text-xs uppercase tracking-wider transition-all flex items-center justify-center gap-2.5 cursor-pointer ${
-                  activeTab === 'paypal'
-                    ? 'bg-gradient-to-r from-sky-500 to-blue-600 text-white shadow-lg shadow-sky-500/20'
-                    : 'text-slate-400 hover:text-slate-200 hover:bg-slate-900/60'
-                }`}
-              >
-                <CreditCard className="w-4 h-4" />
-                <span>PayPal &amp; Card</span>
-                <span className="text-[9px] px-1.5 py-0.5 rounded bg-sky-500/20 text-sky-200 font-mono">
-                  Instant
-                </span>
-              </button>
-
-              <button
-                type="button"
                 onClick={() => setActiveTab('eft')}
                 className={`py-3 px-4 rounded-xl font-bold text-xs uppercase tracking-wider transition-all flex items-center justify-center gap-2.5 cursor-pointer ${
                   activeTab === 'eft'
@@ -664,9 +624,25 @@ export const PayPalEFTCheckoutModal: React.FC<PayPalEFTCheckoutModalProps> = ({
                 }`}
               >
                 <Building2 className="w-4 h-4" />
-                <span>EFT / Bank Wire (ZA)</span>
+                <span>Direct Bank EFT / SWIFT Wire Transfer</span>
                 <span className="text-[9px] px-1.5 py-0.5 rounded bg-slate-800 text-amber-300 font-mono">
-                  Capitec / FNB
+                  Default
+                </span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setActiveTab('paypal')}
+                className={`py-3 px-4 rounded-xl font-bold text-xs uppercase tracking-wider transition-all flex items-center justify-center gap-2.5 cursor-pointer ${
+                  activeTab === 'paypal'
+                    ? 'bg-gradient-to-r from-sky-500 to-blue-600 text-white shadow-lg shadow-sky-500/20'
+                    : 'text-slate-400 hover:text-slate-200 hover:bg-slate-900/60'
+                }`}
+              >
+                <CreditCard className="w-4 h-4" />
+                <span>PayPal &amp; Cards</span>
+                <span className="text-[9px] px-1.5 py-0.5 rounded bg-sky-500/20 text-sky-200 font-mono">
+                  Instant
                 </span>
               </button>
             </div>
@@ -932,8 +908,9 @@ export const PayPalEFTCheckoutModal: React.FC<PayPalEFTCheckoutModalProps> = ({
                           e.stopPropagation();
                           generateEftInvoicePdf({
                             reference: eftReference,
+                            amountUsd: usdAmount,
                             amountZar: totalAmountZar,
-                            enterpriseName: enterprise || 'Industrial Client',
+                            enterpriseName: enterprise || 'Industrial Mining Client',
                             email: email || 'billing@client.com',
                             tierOrItem: itemTitle,
                             selectedBank
@@ -942,7 +919,7 @@ export const PayPalEFTCheckoutModal: React.FC<PayPalEFTCheckoutModalProps> = ({
                         className="w-full sm:w-auto px-4 py-2.5 bg-amber-500/15 hover:bg-amber-500/25 border border-amber-500/40 text-amber-300 rounded-xl text-xs font-bold transition flex items-center justify-center gap-2 cursor-pointer shadow-md"
                       >
                         <Download className="w-4 h-4" />
-                        <span>Download Proforma Invoice (PDF)</span>
+                        <span>Download Official Proforma Invoice ($650 USD / PDF)</span>
                       </button>
 
                       <button
@@ -977,8 +954,9 @@ export const PayPalEFTCheckoutModal: React.FC<PayPalEFTCheckoutModalProps> = ({
                         e.stopPropagation();
                         generateEftInvoicePdf({
                           reference: eftReference,
+                          amountUsd: usdAmount,
                           amountZar: totalAmountZar,
-                          enterpriseName: enterprise || 'Industrial Client',
+                          enterpriseName: enterprise || 'Industrial Mining Client',
                           email: email || 'billing@client.com',
                           tierOrItem: itemTitle,
                           selectedBank
@@ -987,7 +965,7 @@ export const PayPalEFTCheckoutModal: React.FC<PayPalEFTCheckoutModalProps> = ({
                       className="px-3 py-1.5 bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/30 text-amber-400 rounded-lg text-xs font-bold transition flex items-center gap-1.5 cursor-pointer w-fit"
                     >
                       <Download className="w-3.5 h-3.5" />
-                      Download Proforma Invoice (PDF)
+                      Download Proforma Invoice ($650 USD PDF)
                     </button>
                   </div>
 

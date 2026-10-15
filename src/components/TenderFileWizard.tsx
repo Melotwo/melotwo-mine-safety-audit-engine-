@@ -1012,6 +1012,7 @@ INCLUDED DOSSIER ARTIFACTS:
     setIsPaidUnlocked(true);
     setPaymentValidation({
       isPaid: true,
+      hasActiveProofOfPayment: true,
       status: 'PAID_VERIFIED',
       method: result?.gateway || 'paypal'
     });
@@ -1227,51 +1228,24 @@ INCLUDED DOSSIER ARTIFACTS:
                     <>
                       <button
                         type="button"
-                        onClick={() => setCustomTierPriceZar(1500)}
+                        onClick={() => setCustomTierPriceZar(12025)}
                         className={`px-2.5 py-1 text-[10px] font-mono rounded-lg border transition cursor-pointer ${
-                          customTierPriceZar === 1500 ? 'bg-red-600 text-white font-bold border-red-500' : 'bg-slate-900 border-slate-800 text-slate-300 hover:border-slate-700'
+                          customTierPriceZar === 12025 ? 'bg-red-600 text-white font-bold border-red-500' : 'bg-slate-900 border-slate-800 text-slate-300 hover:border-slate-700'
                         }`}
                       >
-                        R1,500 (Base SMME)
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => setCustomTierPriceZar(2500)}
-                        className={`px-2.5 py-1 text-[10px] font-mono rounded-lg border transition cursor-pointer ${
-                          customTierPriceZar === 2500 ? 'bg-red-600 text-white font-bold border-red-500' : 'bg-slate-900 border-slate-800 text-slate-300 hover:border-slate-700'
-                        }`}
-                      >
-                        R2,500 (Full 20-Section Returnable)
+                        $650 USD (R12,025 Full Pilot Pass)
                       </button>
                     </>
                   ) : selectedTier === 'tier_operational_subscription' ? (
                     <>
                       <button
                         type="button"
-                        onClick={() => setCustomTierPriceZar(8500)}
+                        onClick={() => setCustomTierPriceZar(25900)}
                         className={`px-2.5 py-1 text-[10px] font-mono rounded-lg border transition cursor-pointer ${
-                          customTierPriceZar === 8500 ? 'bg-red-600 text-white font-bold border-red-500' : 'bg-slate-900 border-slate-800 text-slate-300 hover:border-slate-700'
+                          customTierPriceZar === 25900 ? 'bg-red-600 text-white font-bold border-red-500' : 'bg-slate-900 border-slate-800 text-slate-300 hover:border-slate-700'
                         }`}
                       >
-                        R8,500/mo (Single Rig)
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => setCustomTierPriceZar(12500)}
-                        className={`px-2.5 py-1 text-[10px] font-mono rounded-lg border transition cursor-pointer ${
-                          customTierPriceZar === 12500 ? 'bg-red-600 text-white font-bold border-red-500' : 'bg-slate-900 border-slate-800 text-slate-300 hover:border-slate-700'
-                        }`}
-                      >
-                        R12,500/mo (Multi-Rig Telemetry)
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => setCustomTierPriceZar(15000)}
-                        className={`px-2.5 py-1 text-[10px] font-mono rounded-lg border transition cursor-pointer ${
-                          customTierPriceZar === 15000 ? 'bg-red-600 text-white font-bold border-red-500' : 'bg-slate-900 border-slate-800 text-slate-300 hover:border-slate-700'
-                        }`}
-                      >
-                        R15,000/mo (Full Fleet Sync)
+                        $1,400 USD/mo (R25,900/mo Retainer)
                       </button>
                     </>
                   ) : (
@@ -2272,8 +2246,8 @@ INCLUDED DOSSIER ARTIFACTS:
                   {isPaidUnlocked
                     ? 'All watermarks removed. Immediate one-click unwatermarked PDF & ZIP dossier download ready.'
                     : paymentValidation.status === 'EFT_PENDING_APPROVAL'
-                    ? 'Your Direct EFT order has been submitted and is awaiting administrator verification. In accordance with statutory rules, all document previews and PDF downloads strictly retain the diagonal PREVIEW DRAFT watermark overlay until payment is confirmed.'
-                    : `Complete 20-Section Red File ready. Clean unwatermarked dossier is strictly locked behind a validated payment state. Upgrade for R${selectedTierObj.priceZar.toLocaleString('en-ZA')} once-off via PayPal or Direct EFT to download official dossier.`}
+                    ? 'Your Direct EFT / Wire Transfer order has been registered in the audit queue. Because statutory audit rules require manual review, all document previews and PDF downloads strictly retain the diagonal PREVIEW DRAFT watermark overlay until payment proof is verified by system admin.'
+                    : `Complete 20-Section Red File ready. Clean un-watermarked dossier is strictly locked behind a validated payment state (isPaid === true or hasActiveProofOfPayment === true). Upgrade for $${selectedTierObj.priceUsd} USD (R${selectedTierObj.priceZar.toLocaleString('en-ZA')}) via Direct EFT or PayPal to unlock the official submission-ready dossier.`}
                 </p>
               </div>
 
@@ -2284,7 +2258,7 @@ INCLUDED DOSSIER ARTIFACTS:
                   className="px-4 py-2.5 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 font-black text-xs uppercase tracking-wider transition shadow-lg shadow-amber-950/40 flex items-center justify-center gap-1.5 cursor-pointer shrink-0"
                 >
                   <CreditCard className="w-4 h-4" />
-                  <span>{paymentValidation.status === 'EFT_PENDING_APPROVAL' ? 'Check EFT / Pay PayPal' : `Unlock Dossier — R${selectedTierObj.priceZar.toLocaleString('en-ZA')}`}</span>
+                  <span>{paymentValidation.status === 'EFT_PENDING_APPROVAL' ? 'Check EFT Status / Wire POP' : `Unlock Dossier — $${selectedTierObj.priceUsd} USD`}</span>
                 </button>
               ) : (
                 <span className="text-xs font-mono font-bold text-emerald-400 bg-emerald-500/10 px-3 py-1 rounded-lg border border-emerald-500/30 shrink-0">

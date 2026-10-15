@@ -240,10 +240,24 @@ export interface EftBankAccountsConfig {
   fnb: EftBankDetails;
 }
 
+export interface ProvisionedAdminAccount {
+  id: string;
+  enterpriseName: string;
+  email: string;
+  role: 'MINE_SHEQ_ADMIN';
+  tierOrItem: string;
+  permissions: string[];
+  status: 'PROVISIONED' | 'ACTIVE';
+  provisionedAt: string;
+  proof_of_payment_received: boolean;
+  reference: string;
+}
+
 export interface EftOrderSubmission {
   id: string;
   reference: string;
   amountZar: number;
+  amountUsd?: number;
   enterpriseName: string;
   email: string;
   tierOrItem: string;
@@ -252,6 +266,11 @@ export interface EftOrderSubmission {
   notes?: string;
   popFileName?: string;
   popFileDataUrl?: string;
+  proof_of_payment_received?: boolean;
+  proofOfPaymentReceived?: boolean;
+  adminAccountProvisioned?: boolean;
+  adminAccount?: ProvisionedAdminAccount;
+  hasActiveProofOfPayment?: boolean;
   status: 'PENDING_VERIFICATION' | 'VERIFIED' | 'PROVISIONALLY_APPROVED' | 'REJECTED';
   createdAt: string;
   verifiedAt?: string;

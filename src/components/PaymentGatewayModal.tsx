@@ -24,6 +24,7 @@ import { PayPalScriptProvider, PayPalButtons } from '@paypal/react-paypal-js';
 import jsPDF from 'jspdf';
 import { useCurrency } from '../context/CurrencyContext';
 import { CurrencySwitcher } from './CurrencySwitcher';
+import { provisionAdminAccount } from '../services/paymentService';
 
 // Official PayPal Client ID from Developer Dashboard
 export const PAYPAL_CLIENT_ID = 
@@ -55,6 +56,40 @@ export interface PaymentPlan {
 
 export const PAYMENT_PLANS: PaymentPlan[] = [
   {
+    id: 'pilot_tier',
+    name: '30-Day Operational Pilot',
+    priceZar: 12025,
+    priceUsd: 650,
+    billingPeriod: 'once-off',
+    badge: '30-Day Pilot',
+    description: 'Cross-border Zambian Mining Act alignment, 20-Section Tender Dossier generation, OCR document parsing, and offline subterranean sync.',
+    features: [
+      'Cross-border Zambian Mining Act alignment',
+      '20-Section Tender Dossier generation',
+      'OCR document parsing',
+      'Offline subterranean sync',
+      'Unrestricted statutory PDF exports',
+      'Digital Cryptographic Audit Ledger Seal'
+    ]
+  },
+  {
+    id: 'monthly_retainer',
+    name: 'Enterprise Operational Retainer',
+    priceZar: 25900,
+    priceUsd: 1400,
+    billingPeriod: 'monthly',
+    badge: 'Monthly Retainer',
+    description: 'Multi-rig synchronization, continuous compliance monitoring, Delta Analytics reporting, and priority GRC support.',
+    features: [
+      'Multi-rig synchronization',
+      'Continuous compliance monitoring',
+      'Delta Analytics reporting',
+      'Priority GRC support',
+      'Physics-driven wear modeling',
+      'Monthly statutory audit re-certification'
+    ]
+  },
+  {
     id: 'trial_unlock',
     name: 'SANS Beta Trial & Audit Shield',
     priceZar: 999,
@@ -67,51 +102,6 @@ export const PAYMENT_PLANS: PaymentPlan[] = [
       'Tender Specification Blueprint Generator',
       'SANS 10108 & SANS 10142-1 checks',
       'Single site license'
-    ]
-  },
-  {
-    id: 'agriculture',
-    name: 'Agriculture / Local Supply',
-    priceZar: 1999,
-    priceUsd: 110,
-    billingPeriod: 'monthly',
-    badge: 'SMB Friendly',
-    description: 'Farms, packhouses, primary food processors & local suppliers under SANS 10330 HACCP.',
-    features: [
-      'SANS 10330 / HACCP basics',
-      'Mobile offline checklist entry',
-      '2 supervisor licenses included',
-      'Daily temperature & cold room logs'
-    ]
-  },
-  {
-    id: 'light_industrial',
-    name: 'Light Industrial / Logistics',
-    priceZar: 4500,
-    priceUsd: 248,
-    billingPeriod: 'monthly',
-    badge: 'Most Popular',
-    description: 'Warehouses, fabrication workshops, logistics depots and fleet servicing plants.',
-    features: [
-      'OHS Act statutory logs & register',
-      'Incident & near-miss tracking',
-      'Shift handover digital sign-offs',
-      '5 site supervisor seats'
-    ]
-  },
-  {
-    id: 'mining_professional',
-    name: 'Mining / Heavy Enterprise',
-    priceZar: 15000,
-    priceUsd: 825,
-    billingPeriod: 'monthly',
-    badge: 'DMRE / MHSA Ready',
-    description: 'Deep subterranean & open-cast mine complexes, heavy smelters & hazardous chemical plants.',
-    features: [
-      'MHSA Section 54/55 audit defense',
-      'SANS 10108 & 60079-0 flameproof logs',
-      'Offline sync with conflict resolver',
-      'Multi-shaft synchronization & ledger'
     ]
   }
 ];
@@ -134,13 +124,13 @@ interface PaymentGatewayModalProps {
 export const PaymentGatewayModal: React.FC<PaymentGatewayModalProps> = ({
   isOpen,
   onClose,
-  initialPlanId = 'trial_unlock',
+  initialPlanId = 'pilot_tier',
   customAmountZar,
   customPlanName,
   onPaymentSuccess
 }) => {
   const { currency, symbol, formatPrice } = useCurrency();
-  const [activeTab, setActiveTab] = useState<'paypal' | 'eft'>('paypal');
+  const [activeTab, setActiveTab] = useState<'paypal' | 'eft'>('eft');
   const [selectedPlanId, setSelectedPlanId] = useState<string>(initialPlanId);
   const [companyName, setCompanyName] = useState('');
   const [customerEmail, setCustomerEmail] = useState('');
@@ -341,14 +331,24 @@ export const PaymentGatewayModal: React.FC<PaymentGatewayModalProps> = ({
           customerEmail,
           reference: eftReference,
           amountZar: effectivePriceZar,
+          amountUsd: effectivePriceUsd,
           planId: selectedPlanId,
           planName: planDisplayName,
+          proof_of_payment_received: true,
           date: new Date().toISOString()
         })
       });
 
       const data = await response.json();
       
+      // Enforce immediate admin account provisioning upon triggering proof_of_payment_received
+      provisionAdminAccount({
+        enterpriseName: companyName,
+        email: customerEmail,
+        reference: eftReference,
+        tierOrItem: planDisplayName
+      });
+
       // Store active state in localStorage
       localStorage.setItem('sans_trial_active', 'true');
       localStorage.setItem('melotwo_vip_unlocked', 'true');
@@ -357,9 +357,9 @@ export const PaymentGatewayModal: React.FC<PaymentGatewayModalProps> = ({
       setEftProofSubmitted(true);
       setPaymentSuccess(true);
       setPaymentDetails({
-        method: 'EFT Bank Transfer',
+        method: 'Direct Bank EFT / SWIFT Wire Transfer',
         id: eftReference,
-        amount: `R${effectivePriceZar.toLocaleString('en-ZA')}`
+        amount: `$${effectivePriceUsd} USD / R${effectivePriceZar.toLocaleString('en-ZA')}`
       });
 
       if (onPaymentSuccess) {

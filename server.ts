@@ -2145,10 +2145,39 @@ const SERVER_BANKING_CONFIG = {
   }
 };
 
+interface ServerAdminAccount {
+  id: string;
+  enterpriseName: string;
+  email: string;
+  role: 'MINE_SHEQ_ADMIN';
+  tierOrItem: string;
+  permissions: string[];
+  status: 'PROVISIONED' | 'ACTIVE';
+  provisionedAt: string;
+  proofOfPaymentReceived: boolean;
+  reference: string;
+}
+
+const serverProvisionedAdmins: ServerAdminAccount[] = [
+  {
+    id: 'ADM-INIT-001',
+    enterpriseName: 'Mponeng Gold Operational Division',
+    email: 'turoka15@gmail.com',
+    role: 'MINE_SHEQ_ADMIN',
+    tierOrItem: '30-Day Operational Pilot',
+    permissions: ['STATUTORY_AUDIT_VERIFY', 'TENDER_DOSSIER_GENERATE', 'SECTION_54_LEGAL_DEFENSE', 'FULL_SYSTEM_ACCESS'],
+    status: 'ACTIVE',
+    provisionedAt: new Date(Date.now() - 86400000).toISOString(),
+    proofOfPaymentReceived: true,
+    reference: 'MT-2026-9482'
+  }
+];
+
 interface ServerEftOrder {
   id: string;
   reference: string;
   amountZar: number;
+  amountUsd?: number;
   enterpriseName: string;
   email: string;
   tierOrItem: string;
@@ -2156,6 +2185,11 @@ interface ServerEftOrder {
   bankName?: string;
   popFileName?: string;
   popFileDataUrl?: string;
+  proof_of_payment_received?: boolean;
+  proofOfPaymentReceived?: boolean;
+  adminAccountProvisioned?: boolean;
+  adminAccount?: ServerAdminAccount;
+  hasActiveProofOfPayment?: boolean;
   status: 'PENDING_VERIFICATION' | 'VERIFIED' | 'PROVISIONALLY_APPROVED' | 'REJECTED';
   notes?: string;
   createdAt: string;
@@ -2166,13 +2200,18 @@ const serverEftOrders: ServerEftOrder[] = [
   {
     id: 'EFT-INIT-001',
     reference: 'MT-2026-9482',
-    amountZar: 25000,
+    amountZar: 12025,
+    amountUsd: 650,
     enterpriseName: 'Mponeng Gold Operational Division',
     email: 'turoka15@gmail.com',
-    tierOrItem: 'Tier 1: Compliance Site Subscription',
+    tierOrItem: '30-Day Operational Pilot',
     selectedBank: 'capitec',
     bankName: 'Capitec Bank',
     popFileName: 'capitec_deposit_receipt_mponeng.pdf',
+    proof_of_payment_received: true,
+    proofOfPaymentReceived: true,
+    adminAccountProvisioned: true,
+    hasActiveProofOfPayment: true,
     status: 'VERIFIED',
     notes: 'Official proforma EFT settled via Capitec Bank (Acc: 1602352133)',
     createdAt: new Date(Date.now() - 86400000 * 2).toISOString(),
@@ -2477,6 +2516,7 @@ app.post(['/api/eft/submit-transfer', '/api/eft/submit-transfer/', '/api/eft/sub
     const { 
       reference, 
       amountZar, 
+      amountUsd,
       enterpriseName, 
       companyName,
       email, 
@@ -2487,7 +2527,9 @@ app.post(['/api/eft/submit-transfer', '/api/eft/submit-transfer/', '/api/eft/sub
       bankName,
       popFileName, 
       popFileDataUrl,
-      notes 
+      notes,
+      proof_of_payment_received,
+      proofOfPaymentReceived
     } = req.body || {};
 
     const clientName = enterpriseName || companyName;
@@ -2499,31 +2541,72 @@ app.post(['/api/eft/submit-transfer', '/api/eft/submit-transfer/', '/api/eft/sub
     const generatedRef = reference || `MT-${currentYear}-${Math.floor(1000 + Math.random() * 9000)}`;
     const chosenBankKey: 'capitec' | 'fnb' = selectedBank === 'fnb' ? 'fnb' : 'capitec';
     const chosenBankName = bankName || SERVER_BANKING_CONFIG[chosenBankKey].bankName;
+    const effectivePlan = String(tierOrItem || planName || '30-Day Operational Pilot');
+    const isPilot = effectivePlan.toLowerCase().includes('pilot') || effectivePlan.toLowerCase().includes('30-day');
+    const zarVal = Number(amountZar) || (isPilot ? 12025 : 25900);
+    const usdVal = Number(amountUsd) || (isPilot ? 650 : 1400);
+
+    const hasPop = Boolean(popFileName || popFileDataUrl || proof_of_payment_received || proofOfPaymentReceived);
+    let provisionedAdmin: ServerAdminAccount | undefined;
+
+    // Enforce immediate admin account provisioning upon triggering proof_of_payment_received
+    if (hasPop) {
+      provisionedAdmin = {
+        id: `ADM-${Date.now()}-${Math.floor(100 + Math.random() * 900)}`,
+        enterpriseName: String(clientName),
+        email: String(email || customerEmail || 'admin@melotwo.co.za'),
+        role: 'MINE_SHEQ_ADMIN',
+        tierOrItem: effectivePlan,
+        permissions: [
+          'STATUTORY_AUDIT_VERIFY',
+          'TENDER_DOSSIER_GENERATE',
+          'SECTION_54_LEGAL_DEFENSE',
+          'SUBTERRANEAN_SYNC_OPERATOR',
+          'FULL_SYSTEM_ACCESS'
+        ],
+        status: 'PROVISIONED',
+        provisionedAt: new Date().toISOString(),
+        proofOfPaymentReceived: true,
+        reference: generatedRef
+      };
+      serverProvisionedAdmins.unshift(provisionedAdmin);
+    }
 
     const newOrder: ServerEftOrder = {
       id: `EFT-${Date.now()}`,
       reference: generatedRef,
-      amountZar: Number(amountZar) || 0,
+      amountZar: zarVal,
+      amountUsd: usdVal,
       enterpriseName: String(clientName),
       email: String(email || customerEmail || ''),
-      tierOrItem: String(tierOrItem || planName || 'SANS Compliance Audit License'),
+      tierOrItem: effectivePlan,
       selectedBank: chosenBankKey,
       bankName: chosenBankName,
       popFileName: popFileName ? String(popFileName) : undefined,
       popFileDataUrl: popFileDataUrl ? String(popFileDataUrl) : undefined,
-      status: 'PROVISIONALLY_APPROVED',
+      proof_of_payment_received: hasPop,
+      proofOfPaymentReceived: hasPop,
+      adminAccountProvisioned: Boolean(hasPop),
+      adminAccount: provisionedAdmin,
+      hasActiveProofOfPayment: false, // Locked behind system admin verification
+      status: 'PENDING_VERIFICATION',
       notes: notes ? String(notes) : `Direct EFT via ${chosenBankName}`,
       createdAt: new Date().toISOString()
     };
 
     serverEftOrders.unshift(newOrder);
 
-    console.log(`[EFT Server] Received transfer & queued for admin review: Ref=${generatedRef}, Client=${clientName}, Bank=${chosenBankName}, Amount=R${newOrder.amountZar}, POP=${popFileName || 'None'}`);
+    console.log(`[EFT Server] Transfer Queued: Ref=${generatedRef}, Client=${clientName}, Bank=${chosenBankName}, Amount=$${usdVal} USD / R${zarVal}, POP_Received=${hasPop}, Admin_Provisioned=${Boolean(provisionedAdmin)}`);
 
     res.json({
       success: true,
       order: newOrder,
-      message: 'EFT registration received and queued for administrative approval. Provisional audit access unlocked.'
+      proof_of_payment_received: hasPop,
+      adminAccountProvisioned: Boolean(hasPop),
+      adminUser: provisionedAdmin,
+      message: hasPop
+        ? 'Proof of payment received. Admin account provisioned immediately. Compliance dossier remains protected under PREVIEW DRAFT watermark until system admin verification.'
+        : 'EFT order registered in audit queue. Watermark overlay active until admin verification.'
     });
   } catch (err: any) {
     res.status(500).json({ error: err.message || 'Failed to submit EFT transfer' });
@@ -2538,6 +2621,48 @@ app.get(['/api/eft/orders', '/api/eft/orders/'], (req, res) => {
   });
 });
 
+// 7b. List Provisioned Admin Accounts
+app.get(['/api/admin/provisioned-accounts', '/api/admin/provisioned-accounts/'], (req, res) => {
+  res.json({
+    total: serverProvisionedAdmins.length,
+    accounts: serverProvisionedAdmins
+  });
+});
+
+// 7c. Direct Admin Account Provisioning Endpoint
+app.post(['/api/admin/provision-account', '/api/admin/provision-account/'], (req, res) => {
+  try {
+    const { enterpriseName, email, reference, tierOrItem } = req.body || {};
+    const ref = String(reference || `MT-${Date.now()}`);
+    const existing = serverProvisionedAdmins.find(a => a.reference === ref);
+    if (existing) {
+      return res.json({ success: true, adminAccount: existing, alreadyProvisioned: true });
+    }
+    const adminAccount: ServerAdminAccount = {
+      id: `ADM-${Date.now()}-${Math.floor(100 + Math.random() * 900)}`,
+      enterpriseName: String(enterpriseName || 'Industrial Enterprise'),
+      email: String(email || 'admin@melotwo.co.za'),
+      role: 'MINE_SHEQ_ADMIN',
+      tierOrItem: String(tierOrItem || '30-Day Operational Pilot'),
+      permissions: [
+        'STATUTORY_AUDIT_VERIFY',
+        'TENDER_DOSSIER_GENERATE',
+        'SECTION_54_LEGAL_DEFENSE',
+        'SUBTERRANEAN_SYNC_OPERATOR',
+        'FULL_SYSTEM_ACCESS'
+      ],
+      status: 'PROVISIONED',
+      provisionedAt: new Date().toISOString(),
+      proofOfPaymentReceived: true,
+      reference: ref
+    };
+    serverProvisionedAdmins.unshift(adminAccount);
+    res.json({ success: true, adminAccount, message: 'Admin account provisioned upon proof of payment.' });
+  } catch (err: any) {
+    res.status(500).json({ error: err.message || 'Failed to provision admin account' });
+  }
+});
+
 // 8. Admin Approve EFT Order
 app.post(['/api/eft/approve-order', '/api/eft/approve-order/'], (req, res) => {
   try {
@@ -2547,15 +2672,21 @@ app.post(['/api/eft/approve-order', '/api/eft/approve-order/'], (req, res) => {
       return res.status(404).json({ error: 'EFT order not found' });
     }
     order.status = 'VERIFIED';
+    order.hasActiveProofOfPayment = true;
     order.verifiedAt = new Date().toISOString();
     if (notes) {
       order.notes = (order.notes ? order.notes + ' | ' : '') + String(notes);
     }
-    console.log(`[EFT Server] Order APPROVED by Admin: Ref=${order.reference}, Client=${order.enterpriseName}`);
+    // Activate provisioned admin
+    const admin = serverProvisionedAdmins.find(a => a.reference === order.reference);
+    if (admin) {
+      admin.status = 'ACTIVE';
+    }
+    console.log(`[EFT Server] Order APPROVED by Admin: Ref=${order.reference}, Client=${order.enterpriseName}, Unwatermarked Dossier UNLOCKED`);
     res.json({
       success: true,
       order,
-      message: `EFT Order ${order.reference} successfully verified and approved.`
+      message: `EFT Order ${order.reference} successfully verified and approved. Unwatermarked official dossiers unlocked.`
     });
   } catch (err: any) {
     res.status(500).json({ error: err.message || 'Failed to approve EFT order' });

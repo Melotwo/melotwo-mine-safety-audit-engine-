@@ -23,6 +23,7 @@ import {
   CrossBorderRegulatoryMappingItem,
   ComplianceGapAlert
 } from '../types/crossBorderCompliance';
+import { checkIfTenderPaidUnlocked } from './tenderDraftService';
 
 // ============================================================================
 // API CLIENT METHODS
@@ -314,6 +315,25 @@ export function exportSafetyFileBinderPdf(binder: SafetyFileBinderDossier): void
   doc.setFont('helvetica', 'normal');
   doc.text(`Certified compiled on ${new Date().toLocaleDateString('en-ZA')} at ${new Date().toLocaleTimeString('en-ZA')}. Valid for 90 days across SADC operations.`, 14, y);
 
+  // Apply diagonal watermark overlay strictly if unpaid or unverified
+  if (!checkIfTenderPaidUnlocked()) {
+    const totalPages = doc.getNumberOfPages();
+    const watermarkText = 'PREVIEW DRAFT - TENDER SAFETY FILE NOT FOR OFFICIAL SUBMISSION UNTIL PURCHASED';
+    for (let p = 1; p <= totalPages; p++) {
+      doc.setPage(p);
+      doc.saveGraphicsState();
+      doc.setTextColor(239, 68, 68);
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(9.5);
+      doc.text(watermarkText, 35, 275, { angle: 45 });
+      doc.text(watermarkText, 25, 220, { angle: 45 });
+      doc.text(watermarkText, 15, 165, { angle: 45 });
+      doc.text(watermarkText, 5, 110, { angle: 45 });
+      doc.text(watermarkText, -5, 55, { angle: 45 });
+      doc.restoreGraphicsState();
+    }
+  }
+
   doc.save(`melotwo-safety-file-${binder.hostSite.toLowerCase()}-audit-ready.pdf`);
 }
 
@@ -546,6 +566,25 @@ export function exportDefensibilityAuditReportPdf(result: DefensibilityIndexResu
   y += 5;
   doc.setFont('helvetica', 'normal');
   doc.text(`Generated on ${new Date().toLocaleDateString('en-ZA')} for ${result.hostEnterpriseName} pre-qualification submission.`, 14, y);
+
+  // Apply diagonal watermark overlay strictly if unpaid or unverified
+  if (!checkIfTenderPaidUnlocked()) {
+    const totalPages = doc.getNumberOfPages();
+    const watermarkText = 'PREVIEW DRAFT - TENDER SAFETY FILE NOT FOR OFFICIAL SUBMISSION UNTIL PURCHASED';
+    for (let p = 1; p <= totalPages; p++) {
+      doc.setPage(p);
+      doc.saveGraphicsState();
+      doc.setTextColor(239, 68, 68);
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(9.5);
+      doc.text(watermarkText, 35, 275, { angle: 45 });
+      doc.text(watermarkText, 25, 220, { angle: 45 });
+      doc.text(watermarkText, 15, 165, { angle: 45 });
+      doc.text(watermarkText, 5, 110, { angle: 45 });
+      doc.text(watermarkText, -5, 55, { angle: 45 });
+      doc.restoreGraphicsState();
+    }
+  }
 
   doc.save(`melotwo-defensibility-${result.hostEnterprise.toLowerCase()}-audit.pdf`);
 }

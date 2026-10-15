@@ -350,6 +350,9 @@ export function clearTenderDraft(): TenderSafetyFileDraftState {
 
 export interface TenderPaymentStatus {
   isPaid: boolean;
+  hasActiveProofOfPayment: boolean;
+  proofOfPaymentReceived?: boolean;
+  adminProvisioned?: boolean;
   status: 'PAID_VERIFIED' | 'EFT_PENDING_APPROVAL' | 'UNPAID';
   method?: 'paypal' | 'eft';
   reference?: string;
@@ -360,11 +363,11 @@ export interface TenderPaymentStatus {
  * Validates whether the 20-Section Tender Safety File has a confirmed payment state:
  * - Direct validated payment: PayPal completed (`melotwo_tender_paid_unlocked === 'true'`)
  * - Confirmed admin-approved EFT order (`order.status === 'VERIFIED'` in `melotwo_eft_orders`)
- * Unpaid or pending EFT orders (`PENDING_VERIFICATION` / `PROVISIONALLY_APPROVED`) strictly return isPaid: false.
+ * Unpaid or pending EFT orders (`PENDING_VERIFICATION` / `PROVISIONALLY_APPROVED`) strictly return isPaid: false and hasActiveProofOfPayment: false.
  */
 export function getTenderPaymentValidationStatus(): TenderPaymentStatus {
   if (typeof localStorage === 'undefined') {
-    return { isPaid: false, status: 'UNPAID' };
+    return { isPaid: false, hasActiveProofOfPayment: false, status: 'UNPAID' };
   }
 
   // 1. Check for confirmed admin-approved EFT orders in local storage
@@ -373,28 +376,36 @@ export function getTenderPaymentValidationStatus(): TenderPaymentStatus {
     if (rawEft) {
       const orders = JSON.parse(rawEft);
       if (Array.isArray(orders)) {
+        // Only orders explicitly verified by system admin unlock official un-watermarked dossiers
         const verifiedOrder = orders.find((o: any) => o && o.status === 'VERIFIED');
         if (verifiedOrder) {
           return {
             isPaid: true,
+            hasActiveProofOfPayment: true,
             status: 'PAID_VERIFIED',
             method: 'eft',
             reference: verifiedOrder.reference,
-            verifiedAt: verifiedOrder.verifiedAt
+            verifiedAt: verifiedOrder.verifiedAt,
+            adminProvisioned: Boolean(verifiedOrder.adminAccountProvisioned)
           };
         }
 
         const pendingOrder = orders.find(
-          (o: any) => o && (o.status === 'PENDING_VERIFICATION' || o.status === 'PROVISIONALLY_APPROVED')
+          (o: any) => o && (o.status === 'PENDING_VERIFICATION' || o.status === 'PROVISIONALLY_APPROVED' || o.proof_of_payment_received)
         );
         if (pendingOrder) {
-          const isDirectPaid = localStorage.getItem(TENDER_PAID_UNLOCKED_KEY) === 'true';
+          const isDirectPaid = localStorage.getItem(TENDER_PAID_UNLOCKED_KEY) === 'true' &&
+            localStorage.getItem('melotwo_tender_active_pop_verified') === 'true';
+          
           if (!isDirectPaid) {
             return {
               isPaid: false,
+              hasActiveProofOfPayment: false, // strictly false until verified by system admin
+              proofOfPaymentReceived: Boolean(pendingOrder.proof_of_payment_received || pendingOrder.popFileName),
               status: 'EFT_PENDING_APPROVAL',
               method: 'eft',
-              reference: pendingOrder.reference
+              reference: pendingOrder.reference,
+              adminProvisioned: Boolean(pendingOrder.adminAccountProvisioned)
             };
           }
         }
@@ -409,20 +420,22 @@ export function getTenderPaymentValidationStatus(): TenderPaymentStatus {
   if (isDirectPaid) {
     return {
       isPaid: true,
+      hasActiveProofOfPayment: true,
       status: 'PAID_VERIFIED',
       method: 'paypal'
     };
   }
 
-  return { isPaid: false, status: 'UNPAID' };
+  return { isPaid: false, hasActiveProofOfPayment: false, status: 'UNPAID' };
 }
 
 /**
  * Check if the user has unlocked the file via validated payment
- * (strictly locked behind isPaid === true or confirmed admin-approved EFT status)
+ * (strictly locked behind isPaid === true or hasActiveProofOfPayment === true verified by system admin)
  */
 export function checkIfTenderPaidUnlocked(): boolean {
-  return getTenderPaymentValidationStatus().isPaid;
+  const status = getTenderPaymentValidationStatus();
+  return status.isPaid === true || status.hasActiveProofOfPayment === true;
 }
 
 /**

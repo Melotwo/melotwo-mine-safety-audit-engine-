@@ -139,6 +139,7 @@ export const PartnerCoPilotAdminView: React.FC<PartnerCoPilotAdminViewProps> = (
         const updated = localList.map(o => (o.reference === order.reference || o.id === order.id) ? { ...o, status: 'VERIFIED', verifiedAt: new Date().toISOString() } : o);
         localStorage.setItem('melotwo_eft_orders', JSON.stringify(updated));
         localStorage.setItem('melotwo_tender_paid_unlocked', 'true');
+        localStorage.setItem('melotwo_tender_active_pop_verified', 'true');
         localStorage.setItem('sans_trial_active', 'true');
         localStorage.setItem('melotwo_vip_unlocked', 'true');
         localStorage.setItem('sans_vip_unlocked', 'true');
@@ -1402,19 +1403,25 @@ export const PartnerCoPilotAdminView: React.FC<PartnerCoPilotAdminViewProps> = (
                               </td>
 
                               <td className="py-3.5 px-4 font-mono font-bold text-white text-sm">
-                                R{Number(order.amountZar).toLocaleString('en-ZA')}
+                                <div>{order.amountUsd ? `$${order.amountUsd} USD` : `$${Math.round(Number(order.amountZar) / 18.5)} USD`}</div>
+                                <div className="text-[10px] text-slate-400 font-normal">R{Number(order.amountZar).toLocaleString('en-ZA')}</div>
                               </td>
 
                               <td className="py-3.5 px-4">
                                 {order.popFileName ? (
-                                  <button
-                                    type="button"
-                                    onClick={() => setPreviewPopOrder(order)}
-                                    className="px-2.5 py-1 bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/30 text-emerald-400 rounded-lg text-xs font-bold transition flex items-center gap-1.5 cursor-pointer"
-                                  >
-                                    <Eye className="w-3.5 h-3.5" />
-                                    <span>{order.popFileName.slice(0, 18)}</span>
-                                  </button>
+                                  <div className="space-y-1">
+                                    <button
+                                      type="button"
+                                      onClick={() => setPreviewPopOrder(order)}
+                                      className="px-2.5 py-1 bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/30 text-emerald-400 rounded-lg text-xs font-bold transition flex items-center gap-1.5 cursor-pointer"
+                                    >
+                                      <Eye className="w-3.5 h-3.5" />
+                                      <span>{order.popFileName.slice(0, 18)}</span>
+                                    </button>
+                                    <span className="inline-flex items-center gap-1 text-[9px] font-mono text-emerald-400 bg-emerald-950/60 px-1.5 py-0.5 rounded border border-emerald-500/30">
+                                      <CheckCircle2 className="w-2.5 h-2.5" /> POP Received &bull; Admin Provisioned
+                                    </span>
+                                  </div>
                                 ) : (
                                   <span className="text-[11px] text-slate-500 italic flex items-center gap-1">
                                     <Clock className="w-3 h-3" /> Slip Pending
