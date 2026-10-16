@@ -10803,6 +10803,78 @@ Safety index and terminal clearance verified. The audit record status has been u
                     </div>
                 </div>
 
+                {/* MeloTwo Safety Terminal: 3 Compliance & Risk Control Modules Quick Nav Strip */}
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-3.5 bg-slate-900/40 border border-slate-800/80 rounded-2xl p-3.5 backdrop-blur-md">
+                    <button
+                        type="button"
+                        onClick={() => {
+                            setPage('operational-compliance');
+                            if (typeof window !== 'undefined') window.location.hash = '#wrac';
+                        }}
+                        className="flex items-start gap-3 p-3 rounded-xl bg-slate-950/70 border border-amber-500/30 hover:border-amber-400 hover:bg-slate-900 transition-all text-left cursor-pointer group"
+                    >
+                        <div className="p-2 bg-amber-500/10 border border-amber-500/30 rounded-lg text-amber-400 shrink-0 group-hover:scale-105 transition-transform">
+                            <ShieldAlert className="w-5 h-5" />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                            <div className="flex items-center justify-between gap-1">
+                                <span className="text-xs font-bold text-white group-hover:text-amber-300 transition-colors">1. WRAC 5x5 Risk Matrix</span>
+                                <span className="text-[9px] font-mono bg-amber-500/20 text-amber-300 px-1.5 py-0.5 rounded font-black">ACTIVE</span>
+                            </div>
+                            <p className="text-[11px] text-slate-400 line-clamp-1 mt-0.5">Dynamic 5x5 Probability vs Severity &amp; Hierarchy Controls</p>
+                            <span className="text-[10px] text-amber-400/90 font-mono mt-1 flex items-center gap-1">
+                                Open Matrix Console <ArrowRight className="w-3 h-3 group-hover:translate-x-1 transition-transform" />
+                            </span>
+                        </div>
+                    </button>
+
+                    <button
+                        type="button"
+                        onClick={() => {
+                            setPage('operational-compliance');
+                            if (typeof window !== 'undefined') window.location.hash = '#fmea';
+                        }}
+                        className="flex items-start gap-3 p-3 rounded-xl bg-slate-950/70 border border-rose-500/30 hover:border-rose-400 hover:bg-slate-900 transition-all text-left cursor-pointer group"
+                    >
+                        <div className="p-2 bg-rose-500/10 border border-rose-500/30 rounded-lg text-rose-400 shrink-0 group-hover:scale-105 transition-transform">
+                            <Cpu className="w-5 h-5" />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                            <div className="flex items-center justify-between gap-1">
+                                <span className="text-xs font-bold text-white group-hover:text-rose-300 transition-colors">2. FMEA Failure Modes &amp; RPN</span>
+                                <span className="text-[9px] font-mono bg-rose-500/20 text-rose-300 px-1.5 py-0.5 rounded font-black">RPN = SxOxD</span>
+                            </div>
+                            <p className="text-[11px] text-slate-400 line-clamp-1 mt-0.5">Failure modes table &amp; mitigation task logger with due dates</p>
+                            <span className="text-[10px] text-rose-400/90 font-mono mt-1 flex items-center gap-1">
+                                Open FMEA Engine <ArrowRight className="w-3 h-3 group-hover:translate-x-1 transition-transform" />
+                            </span>
+                        </div>
+                    </button>
+
+                    <button
+                        type="button"
+                        onClick={() => {
+                            setPage('operational-compliance');
+                            if (typeof window !== 'undefined') window.location.hash = '#section21';
+                        }}
+                        className="flex items-start gap-3 p-3 rounded-xl bg-slate-950/70 border border-cyan-500/30 hover:border-cyan-400 hover:bg-slate-900 transition-all text-left cursor-pointer group"
+                    >
+                        <div className="p-2 bg-cyan-500/10 border border-cyan-500/30 rounded-lg text-cyan-400 shrink-0 group-hover:scale-105 transition-transform">
+                            <Shield className="w-5 h-5 text-cyan-400" />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                            <div className="flex items-center justify-between gap-1">
+                                <span className="text-xs font-bold text-white group-hover:text-cyan-300 transition-colors">3. Section 21 OEM Vault</span>
+                                <span className="text-[9px] font-mono bg-cyan-500/20 text-cyan-300 px-1.5 py-0.5 rounded font-black">DMRE SEC 54</span>
+                            </div>
+                            <p className="text-[11px] text-slate-400 line-clamp-1 mt-0.5">OEM declarations, serial search &amp; Tender Dossier bundling</p>
+                            <span className="text-[10px] text-cyan-400/90 font-mono mt-1 flex items-center gap-1">
+                                Open OEM Vault <ArrowRight className="w-3 h-3 group-hover:translate-x-1 transition-transform" />
+                            </span>
+                        </div>
+                    </button>
+                </div>
+
                 {/* Prominent Site Dashboard Integration: Active Tender Files & Critical Hazard Compliance Status Grid */}
                 <SiteDashboardMetricsHeader
                     selectedSector={selectedSector}
@@ -13668,8 +13740,21 @@ const App: React.FC = () => {
                 rawHash === '#cross-border' ||
                 rawHash === '#mine-closure' ||
                 rawHash === '#defensibility-index' ||
+                rawHash === '#wrac' ||
+                rawHash === '#wrac-matrix' ||
+                rawHash === '#risk-matrix' ||
+                rawHash === '#fmea' ||
+                rawHash === '#rpn' ||
+                rawHash === '#failure-modes' ||
+                rawHash === '#section21' ||
+                rawHash === '#section-21' ||
+                rawHash === '#oem-vault' ||
+                rawHash === '#oem-compliance' ||
                 rawHash.startsWith('#operational') ||
-                rawHash.startsWith('#cross-border')
+                rawHash.startsWith('#cross-border') ||
+                rawHash.startsWith('#wrac') ||
+                rawHash.startsWith('#fmea') ||
+                rawHash.startsWith('#section21')
             ) {
                 return 'operational-compliance';
             }
@@ -13854,8 +13939,21 @@ const App: React.FC = () => {
                 rawHash === '#cross-border' ||
                 rawHash === '#mine-closure' ||
                 rawHash === '#defensibility-index' ||
+                rawHash === '#wrac' ||
+                rawHash === '#wrac-matrix' ||
+                rawHash === '#risk-matrix' ||
+                rawHash === '#fmea' ||
+                rawHash === '#rpn' ||
+                rawHash === '#failure-modes' ||
+                rawHash === '#section21' ||
+                rawHash === '#section-21' ||
+                rawHash === '#oem-vault' ||
+                rawHash === '#oem-compliance' ||
                 rawHash.startsWith('#operational') ||
                 rawHash.startsWith('#cross-border') ||
+                rawHash.startsWith('#wrac') ||
+                rawHash.startsWith('#fmea') ||
+                rawHash.startsWith('#section21') ||
                 (typeof window !== 'undefined' && (
                     window.location.pathname.startsWith('/compliance') ||
                     window.location.pathname.startsWith('/operational') ||

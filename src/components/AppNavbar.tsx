@@ -254,6 +254,54 @@ export const AppNavbar: React.FC<AppNavbarProps> = ({
       icon: <Layers className="w-4 h-4 text-rose-400" />,
       action: () => setPage('solutions'),
       activeMatch: currentPage === 'solutions'
+    },
+    {
+      id: 'wrac-matrix',
+      name: 'WRAC 5x5 Risk Matrix & Controls',
+      badge: 'WRAC 5x5',
+      badgeColor: 'bg-amber-500/20 text-amber-300 border-amber-500/30',
+      description: 'Dynamic 5x5 probability vs severity matrix with statutory control hierarchy.',
+      category: 'AUDIT & INSPECTION',
+      icon: <ShieldAlert className="w-4 h-4 text-amber-400" />,
+      action: () => {
+        setPage('operational-compliance');
+        if (typeof window !== 'undefined') {
+          try { window.location.hash = '#wrac'; } catch {}
+        }
+      },
+      activeMatch: false
+    },
+    {
+      id: 'fmea-engine',
+      name: 'Failure Modes & Effects (FMEA)',
+      badge: 'RPN Engine',
+      badgeColor: 'bg-rose-500/20 text-rose-300 border-rose-500/30',
+      description: 'Equipment failure modes, RPN (S x O x D) calculation, and mitigation logger.',
+      category: 'AUDIT & INSPECTION',
+      icon: <Cpu className="w-4 h-4 text-rose-400" />,
+      action: () => {
+        setPage('operational-compliance');
+        if (typeof window !== 'undefined') {
+          try { window.location.hash = '#fmea'; } catch {}
+        }
+      },
+      activeMatch: false
+    },
+    {
+      id: 'section21-vault',
+      name: 'MHSA Section 21 OEM Compliance Vault',
+      badge: 'OEM Vault',
+      badgeColor: 'bg-cyan-500/20 text-cyan-300 border-cyan-500/30',
+      description: 'Manufacturer safety certificates, rapid serial search for DMRE Section 54 audits.',
+      category: 'REGIONAL & SPECIALIZED',
+      icon: <ShieldCheck className="w-4 h-4 text-cyan-400" />,
+      action: () => {
+        setPage('operational-compliance');
+        if (typeof window !== 'undefined') {
+          try { window.location.hash = '#section21'; } catch {}
+        }
+      },
+      activeMatch: false
     }
   ], [currentPage, setPage, onOpenCostCalculator]);
 

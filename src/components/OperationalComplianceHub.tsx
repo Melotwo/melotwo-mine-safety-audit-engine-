@@ -94,11 +94,24 @@ import {
   resolveComplianceGapAlert,
   exportDefensibilityAuditReportPdf
 } from '../services/complianceEngineService';
+import { WracModule } from './WracModule';
+import { FmeaModule } from './FmeaModule';
+import { Section21OemVault } from './Section21OemVault';
+
+export type CompliancePillarType = 
+  | 'PILLAR_1' 
+  | 'PILLAR_2' 
+  | 'PILLAR_3' 
+  | 'PILLAR_4' 
+  | 'PILLAR_5'
+  | 'PILLAR_6'
+  | 'PILLAR_7'
+  | 'PILLAR_8';
 
 export interface OperationalComplianceHubProps {
   onBack?: () => void;
   onOpenTenderWizard?: () => void;
-  initialPillar?: 'PILLAR_1' | 'PILLAR_2' | 'PILLAR_3' | 'PILLAR_4' | 'PILLAR_5';
+  initialPillar?: CompliancePillarType;
 }
 
 export const OperationalComplianceHub: React.FC<OperationalComplianceHubProps> = ({
@@ -106,21 +119,33 @@ export const OperationalComplianceHub: React.FC<OperationalComplianceHubProps> =
   onOpenTenderWizard,
   initialPillar
 }) => {
-  // Navigation Tabs for the 5 Core Functional Pillars
-  const [activePillar, setActivePillar] = useState<'PILLAR_1' | 'PILLAR_2' | 'PILLAR_3' | 'PILLAR_4' | 'PILLAR_5'>(
+  // Navigation Tabs for the Core Functional Pillars (Pillars 1 to 8)
+  const [activePillar, setActivePillar] = useState<CompliancePillarType>(
     initialPillar || 'PILLAR_1'
   );
 
-  // Check URL hash for direct pillar navigation on mount
+  // Check URL hash for direct pillar navigation on mount and hashchange
   useEffect(() => {
-    if (typeof window !== 'undefined') {
-      const hash = window.location.hash;
-      if (hash === '#mine-closure' || hash === '#closure') {
-        setActivePillar('PILLAR_4');
-      } else if (hash === '#cross-border-sandbox' || hash === '#defensibility-index' || hash === '#cross-border') {
-        setActivePillar('PILLAR_5');
+    const handleHash = () => {
+      if (typeof window !== 'undefined') {
+        const hash = window.location.hash.toLowerCase();
+        if (hash === '#mine-closure' || hash === '#closure') {
+          setActivePillar('PILLAR_4');
+        } else if (hash === '#cross-border-sandbox' || hash === '#defensibility-index' || hash === '#cross-border') {
+          setActivePillar('PILLAR_5');
+        } else if (hash === '#wrac' || hash === '#risk-matrix' || hash === '#wrac-matrix') {
+          setActivePillar('PILLAR_6');
+        } else if (hash === '#fmea' || hash === '#rpn' || hash === '#failure-modes') {
+          setActivePillar('PILLAR_7');
+        } else if (hash === '#section21' || hash === '#section-21' || hash === '#oem-vault' || hash === '#oem-compliance') {
+          setActivePillar('PILLAR_8');
+        }
       }
-    }
+    };
+
+    handleHash();
+    window.addEventListener('hashchange', handleHash);
+    return () => window.removeEventListener('hashchange', handleHash);
   }, []);
 
   // Pillar 1 States: Safety Files & Statutory Appointments
@@ -432,10 +457,10 @@ export const OperationalComplianceHub: React.FC<OperationalComplianceHubProps> =
             </div>
             <h1 className="text-xl sm:text-2xl font-black text-white tracking-tight flex items-center gap-2">
               <ShieldCheck className="w-6 h-6 text-amber-400" />
-              Operational, Safety &amp; SETA Compliance Engine
+              MeloTwo Safety Terminal &amp; Risk Compliance Hub
             </h1>
             <p className="text-xs text-slate-400 font-sans max-w-2xl">
-              Automated statutory legal appointments, VR operator simulator machine authorization rule engine, and verified SETA/QCTO trade learnership tracker.
+              Centralized industrial compliance: 5x5 WRAC Risk Matrix, FMEA Reliability RPN Engine, MHSA Section 21 OEM Vault, statutory legal appointments, and verified SETA/QCTO trade certification.
             </p>
           </div>
 
@@ -520,6 +545,51 @@ export const OperationalComplianceHub: React.FC<OperationalComplianceHubProps> =
           >
             <Globe className="w-4 h-4 shrink-0 text-cyan-400" />
             <span>Pillar 5: Tier-1 Pre-Qual &amp; Cross-Border Sandbox</span>
+          </button>
+
+          <button
+            onClick={() => {
+              setActivePillar('PILLAR_6');
+              if (typeof window !== 'undefined') window.location.hash = '#wrac';
+            }}
+            className={`px-3.5 py-2.5 rounded-xl text-xs font-bold transition flex items-center gap-2 shrink-0 cursor-pointer ${
+              activePillar === 'PILLAR_6'
+                ? 'bg-amber-500 text-slate-950 shadow-lg shadow-amber-500/20 font-black'
+                : 'bg-slate-900 hover:bg-slate-800 text-slate-300 border border-slate-800'
+            }`}
+          >
+            <ShieldAlert className="w-4 h-4 shrink-0 text-amber-400" />
+            <span>Pillar 6: WRAC 5x5 Matrix</span>
+          </button>
+
+          <button
+            onClick={() => {
+              setActivePillar('PILLAR_7');
+              if (typeof window !== 'undefined') window.location.hash = '#fmea';
+            }}
+            className={`px-3.5 py-2.5 rounded-xl text-xs font-bold transition flex items-center gap-2 shrink-0 cursor-pointer ${
+              activePillar === 'PILLAR_7'
+                ? 'bg-amber-500 text-slate-950 shadow-lg shadow-amber-500/20 font-black'
+                : 'bg-slate-900 hover:bg-slate-800 text-slate-300 border border-slate-800'
+            }`}
+          >
+            <Cpu className="w-4 h-4 shrink-0 text-rose-400" />
+            <span>Pillar 7: FMEA Reliability &amp; RPN</span>
+          </button>
+
+          <button
+            onClick={() => {
+              setActivePillar('PILLAR_8');
+              if (typeof window !== 'undefined') window.location.hash = '#section21';
+            }}
+            className={`px-3.5 py-2.5 rounded-xl text-xs font-bold transition flex items-center gap-2 shrink-0 cursor-pointer ${
+              activePillar === 'PILLAR_8'
+                ? 'bg-amber-500 text-slate-950 shadow-lg shadow-amber-500/20 font-black'
+                : 'bg-slate-900 hover:bg-slate-800 text-slate-300 border border-slate-800'
+            }`}
+          >
+            <ShieldCheck className="w-4 h-4 shrink-0 text-cyan-400" />
+            <span>Pillar 8: MHSA Section 21 OEM Vault</span>
           </button>
         </div>
       </div>
@@ -2042,6 +2112,30 @@ export const OperationalComplianceHub: React.FC<OperationalComplianceHubProps> =
               </div>
             )}
           </div>
+        )}
+
+        {/* ================================================================= */}
+        {/* PILLAR 6: WORKPLACE RISK ASSESSMENT & CONTROL (WRAC 5x5 MATRIX)   */}
+        {/* ================================================================= */}
+        {activePillar === 'PILLAR_6' && (
+          <WracModule onNotify={showToast} />
+        )}
+
+        {/* ================================================================= */}
+        {/* PILLAR 7: FAILURE MODES AND EFFECTS ANALYSIS (FMEA ENGINE)        */}
+        {/* ================================================================= */}
+        {activePillar === 'PILLAR_7' && (
+          <FmeaModule onNotify={showToast} />
+        )}
+
+        {/* ================================================================= */}
+        {/* PILLAR 8: MHSA SECTION 21 SUPPLIER & OEM COMPLIANCE VAULT         */}
+        {/* ================================================================= */}
+        {activePillar === 'PILLAR_8' && (
+          <Section21OemVault 
+            onNotify={showToast}
+            onOpenTenderWizard={onOpenTenderWizard}
+          />
         )}
 
       </div>

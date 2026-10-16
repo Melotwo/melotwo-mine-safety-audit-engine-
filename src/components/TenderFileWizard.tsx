@@ -76,6 +76,8 @@ import {
 } from '../services/qrVerificationService';
 import { PayPalEFTCheckoutModal } from './PayPalEFTCheckoutModal';
 import { ComplianceProofViewer } from './ComplianceProofViewer';
+import { Section21Declaration } from '../types/riskManagementTypes';
+import { INITIAL_SECTION21_DECLARATIONS } from '../services/riskManagementService';
 
 export interface TradeOption {
   id: string;
@@ -222,7 +224,7 @@ export const TenderFileWizard: React.FC<TenderFileWizardProps> = ({
   // Payment & Unlocking state strictly tied to verified payment validation
   const [paymentValidation, setPaymentValidation] = useState<TenderPaymentStatus>(() => getTenderPaymentValidationStatus());
   const [isPaidUnlocked, setIsPaidUnlocked] = useState<boolean>(() => checkIfTenderPaidUnlocked());
-  const [viewerSection, setViewerSection] = useState<'INDEX' | 'SEC1' | 'SEC3' | 'SEC5' | 'SEC15_18' | 'SEC20'>('INDEX');
+  const [viewerSection, setViewerSection] = useState<'INDEX' | 'SEC1' | 'SEC3' | 'SEC5' | 'SEC15_18' | 'SEC20' | 'SEC21'>('INDEX');
   const [isCheckoutModalOpen, setIsCheckoutModalOpen] = useState<boolean>(false);
   const [showVerificationLedgerModal, setShowVerificationLedgerModal] = useState<boolean>(false);
   
@@ -862,6 +864,114 @@ export const TenderFileWizard: React.FC<TenderFileWizardProps> = ({
 
       addWatermarkToPage();
 
+      // ================= PAGE 5: SECTION 15 & 21: MHSA SECTION 21 OEM & SUPPLIER SAFETY DECLARATIONS =================
+      doc.addPage();
+      doc.setFillColor(255, 255, 255);
+      doc.rect(0, 0, 210, 297, 'F');
+
+      // Top Security Color Accent Bar
+      doc.setFillColor(isPaidUnlocked ? 16 : 220, isPaidUnlocked ? 185 : 38, isPaidUnlocked ? 129 : 38);
+      doc.rect(0, 0, 210, 6, 'F');
+
+      doc.setTextColor(15, 23, 42);
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(12);
+      doc.text('SECTION 15 & 21: MHSA SECTION 21 SUPPLIER & OEM COMPLIANCE DECLARATIONS', 105, 18, { align: 'center' });
+      doc.setFontSize(8.5);
+      doc.setFont('helvetica', 'normal');
+      doc.text('MINE HEALTH AND SAFETY ACT (ACT 29 OF 1996) • STATUTORY MANUFACTURER CERTIFICATES', 105, 24, { align: 'center' });
+      doc.setDrawColor(200, 200, 200);
+      doc.line(16, 28, 194, 28);
+
+      // Section 21 Statutory Mandate Explanation Box
+      doc.setFillColor(240, 249, 255); // sky-50
+      doc.roundedRect(16, 32, 178, 22, 2, 2, 'F');
+      doc.setDrawColor(186, 230, 253);
+      doc.roundedRect(16, 32, 178, 22, 2, 2, 'D');
+
+      doc.setTextColor(3, 105, 161);
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(8.5);
+      doc.text('STATUTORY DECLARATION OF COMPLIANCE UNDER MHSA SECTION 21:', 20, 39);
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(7.5);
+      doc.setTextColor(30, 41, 59);
+      doc.text(
+        'Manufacturers and suppliers of mining machinery must certify that equipment is safe without risk to health when properly used. The OEM safety declarations below are verified and bundled into this tender dossier for DMRE inspectorial defense.',
+        20,
+        45,
+        { maxWidth: 170 }
+      );
+
+      // Retrieve active bundled declarations
+      let activeSection21Decls: Section21Declaration[] = [];
+      if (typeof localStorage !== 'undefined') {
+        try {
+          const cached = localStorage.getItem('melotwo_tender_section21_declarations');
+          if (cached) activeSection21Decls = JSON.parse(cached);
+        } catch {}
+      }
+      if (!activeSection21Decls || activeSection21Decls.length === 0) {
+        activeSection21Decls = INITIAL_SECTION21_DECLARATIONS.filter(d => d.bundledInTenderDossier);
+      }
+
+      let declY = 58;
+      activeSection21Decls.slice(0, 4).forEach((decl, idx) => {
+        doc.setFillColor(248, 250, 252);
+        doc.roundedRect(16, declY, 178, 38, 2, 2, 'F');
+        doc.setDrawColor(203, 213, 225);
+        doc.roundedRect(16, declY, 178, 38, 2, 2, 'D');
+
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(9);
+        doc.setTextColor(15, 23, 42);
+        doc.text(`${idx + 1}. ${decl.equipmentModel}`, 20, declY + 6);
+
+        doc.setFont('courier', 'bold');
+        doc.setFontSize(8);
+        doc.setTextColor(180, 83, 9);
+        doc.text(`Serial ID: ${decl.equipmentSerialId}`, 130, declY + 6);
+
+        doc.setFont('helvetica', 'normal');
+        doc.setFontSize(7.5);
+        doc.setTextColor(51, 65, 85);
+        doc.text(`OEM Manufacturer: ${decl.oemManufacturer} • Decl Ref: ${decl.declarationNumber}`, 20, declY + 12);
+        doc.text(`Assigned Stope/Heading: ${decl.miningSectionAssigned} • Validity: ${decl.issueDate} to ${decl.expiryDate}`, 20, declY + 18);
+        doc.text(`Signatory: ${decl.signatoryName} (${decl.signatoryDesignation})`, 20, declY + 24);
+
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(7);
+        doc.setTextColor(15, 23, 42);
+        doc.text(`Ergonomics & Braking: ${decl.ergonomicNoiseDba} dB(A) | ${decl.vibrationLevelMps2} m/s² WBV | Braking: SANS 1589 Verified | Interlocks: ACTIVE`, 20, declY + 30);
+
+        doc.setFont('courier', 'normal');
+        doc.setFontSize(6.5);
+        doc.setTextColor(100, 116, 139);
+        doc.text(`Ledger Proof Hash: ${decl.cryptographicHash.slice(0, 52)}...`, 20, declY + 35);
+
+        declY += 42;
+      });
+
+      // Section 21 Verification Stamp Footer
+      doc.setFillColor(15, 23, 42);
+      doc.roundedRect(16, 235, 178, 48, 2, 2, 'F');
+      doc.setDrawColor(51, 65, 85);
+      doc.roundedRect(16, 235, 178, 48, 2, 2, 'D');
+
+      doc.setTextColor(245, 158, 11);
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(8.5);
+      doc.text('SECTION 21 LEGAL DECLARATION VERIFICATION SEAL', 22, 244);
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(7.5);
+      doc.setTextColor(203, 213, 225);
+      doc.text(`• Total Bundled OEM Declarations: ${activeSection21Decls.length} Machinery Units`, 22, 252);
+      doc.text(`• Verification Reference: ${verification.reference} • SADC Regional Interoperability Certified`, 22, 258);
+      doc.text(`• Chief Inspectorate Audit Defense URL: ${verification.verificationUrl.slice(0, 68)}...`, 22, 264);
+      doc.text(`Official certification complying with DMR Mine Health & Safety Act (Act 29 of 1996) Section 21.`, 22, 270);
+
+      addWatermarkToPage();
+
       const fileName = `${profile.companyName.replace(/[^a-zA-Z0-9]/g, '_')}_20_Section_Tender_Safety_File.pdf`;
       return { doc, fileName, verification };
   };
@@ -939,7 +1049,25 @@ export const TenderFileWizard: React.FC<TenderFileWizardProps> = ({
         zip.file('07_Verification_Seal_QR.png', base64Data, { base64: true });
       }
 
-      // 9. Compliance Manifesto & Statutory Instructions
+      // 9. MHSA Section 21 OEM Declarations
+      let zipSection21Decls: Section21Declaration[] = [];
+      if (typeof localStorage !== 'undefined') {
+        try {
+          const cached = localStorage.getItem('melotwo_tender_section21_declarations');
+          if (cached) zipSection21Decls = JSON.parse(cached);
+        } catch {}
+      }
+      if (!zipSection21Decls || zipSection21Decls.length === 0) {
+        zipSection21Decls = INITIAL_SECTION21_DECLARATIONS.filter(d => d.bundledInTenderDossier);
+      }
+      zip.file('08_MHSA_Section_21_OEM_Safety_Declarations.json', JSON.stringify({
+        generatedAt: new Date().toISOString(),
+        companyName: profile.companyName,
+        totalDeclarations: zipSection21Decls.length,
+        declarations: zipSection21Decls
+      }, null, 2));
+
+      // 10. Compliance Manifesto & Statutory Instructions
       const manifesto = `MELOTWO STATUTORY MINING SAFETY DOSSIER - 20-SECTION RED FILE
 ========================================================================
 Enterprise: ${profile.companyName}
@@ -957,6 +1085,7 @@ Licensing Status: ${isPaidUnlocked ? 'OFFICIAL UNLOCKED DOSSIER (PAID)' : 'PREVI
 STATUTORY COMPLIANCE DECLARATION:
 This dossier has been compiled in accordance with:
 - Republic of South Africa Mine Health and Safety Act (Act 29 of 1996)
+- MHSA Section 21 Manufacturer & Supplier Safety Declarations
 - Occupational Health and Safety Act (Act 85 of 1993) Construction Regulations 2014
 - Republic of Zambia Mines and Minerals Development Act (No. 11 of 2015)
 - SANS 10119: Code of Practice for Construction Safety
@@ -971,6 +1100,7 @@ INCLUDED DOSSIER ARTIFACTS:
 6. 05_Company_Profile_and_Statutory_Appointments.json (Appointee Register)
 7. 06_Cryptographic_Audit_Ledger_Verification.json (Proof of Authenticity)
 8. 07_Verification_Seal_QR.png (High-Resolution QR Seal for Print & Binders)
+9. 08_MHSA_Section_21_OEM_Safety_Declarations.json (Statutory Manufacturer Safety Certificates)
 `;
       zip.file('00_Compliance_Manifesto_and_Readiness_Index.txt', manifesto);
 

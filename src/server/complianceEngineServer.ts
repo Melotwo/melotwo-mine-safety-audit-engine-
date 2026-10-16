@@ -25,6 +25,16 @@ import {
   CrossBorderRegulatoryMappingItem,
   ComplianceGapAlert
 } from '../types/crossBorderCompliance';
+import {
+  WracAssessmentItem,
+  FmeaItem,
+  Section21Declaration
+} from '../types/riskManagementTypes';
+import {
+  INITIAL_WRAC_ASSESSMENTS,
+  INITIAL_FMEA_ITEMS,
+  INITIAL_SECTION21_DECLARATIONS
+} from '../services/riskManagementService';
 
 // ============================================================================
 // IN-MEMORY STORAGE & SEED DATA
@@ -2017,6 +2027,147 @@ export function registerComplianceEngineRoutes(app: Express) {
       });
     } catch (err: any) {
       res.status(500).json({ error: err.message || 'Failed to resolve compliance gap' });
+    }
+  });
+
+  // ==========================================================================
+  // MODULE 1: WORKPLACE RISK ASSESSMENT & CONTROL (WRAC) ENDPOINTS
+  // ==========================================================================
+  let serverWracAssessments: WracAssessmentItem[] = [...INITIAL_WRAC_ASSESSMENTS];
+
+  app.get(['/api/compliance/wrac/assessments', '/api/compliance/wrac/assessments/'], (req: Request, res: Response) => {
+    res.json({
+      success: true,
+      total: serverWracAssessments.length,
+      assessments: serverWracAssessments
+    });
+  });
+
+  app.post(['/api/compliance/wrac/assessments', '/api/compliance/wrac/assessments/'], (req: Request, res: Response) => {
+    try {
+      const item: WracAssessmentItem = req.body;
+      if (!item || !item.hazard) {
+        return res.status(400).json({ error: 'Hazard description is required' });
+      }
+      const existingIdx = serverWracAssessments.findIndex(a => a.id === item.id);
+      if (existingIdx >= 0) {
+        serverWracAssessments[existingIdx] = item;
+      } else {
+        serverWracAssessments.unshift(item);
+      }
+      res.json({ success: true, item, assessments: serverWracAssessments });
+    } catch (err: any) {
+      res.status(500).json({ error: err.message || 'Failed to save WRAC assessment' });
+    }
+  });
+
+  app.delete(['/api/compliance/wrac/assessments/:id', '/api/compliance/wrac/assessments/:id/'], (req: Request, res: Response) => {
+    try {
+      const { id } = req.params;
+      serverWracAssessments = serverWracAssessments.filter(a => a.id !== id);
+      res.json({ success: true, id, message: 'WRAC assessment deleted' });
+    } catch (err: any) {
+      res.status(500).json({ error: err.message || 'Failed to delete WRAC assessment' });
+    }
+  });
+
+  // ==========================================================================
+  // MODULE 2: FAILURE MODES AND EFFECTS ANALYSIS (FMEA) ENDPOINTS
+  // ==========================================================================
+  let serverFmeaItems: FmeaItem[] = [...INITIAL_FMEA_ITEMS];
+
+  app.get(['/api/compliance/fmea/items', '/api/compliance/fmea/items/'], (req: Request, res: Response) => {
+    res.json({
+      success: true,
+      total: serverFmeaItems.length,
+      items: serverFmeaItems
+    });
+  });
+
+  app.post(['/api/compliance/fmea/items', '/api/compliance/fmea/items/'], (req: Request, res: Response) => {
+    try {
+      const item: FmeaItem = req.body;
+      if (!item || !item.failureMode) {
+        return res.status(400).json({ error: 'Failure mode description is required' });
+      }
+      const existingIdx = serverFmeaItems.findIndex(f => f.id === item.id);
+      if (existingIdx >= 0) {
+        serverFmeaItems[existingIdx] = item;
+      } else {
+        serverFmeaItems.unshift(item);
+      }
+      res.json({ success: true, item, items: serverFmeaItems });
+    } catch (err: any) {
+      res.status(500).json({ error: err.message || 'Failed to save FMEA item' });
+    }
+  });
+
+  app.put(['/api/compliance/fmea/items/:id/mitigation', '/api/compliance/fmea/items/:id/mitigation/'], (req: Request, res: Response) => {
+    try {
+      const { id } = req.params;
+      const target = serverFmeaItems.find(f => f.id === id);
+      if (!target) {
+        return res.status(404).json({ error: `FMEA item ${id} not found` });
+      }
+      const updates = req.body || {};
+      Object.assign(target, updates, { lastUpdated: new Date().toISOString().split('T')[0] });
+      if (target.revisedSeverity && target.revisedOccurrence && target.revisedDetection) {
+        target.revisedRpn = target.revisedSeverity * target.revisedOccurrence * target.revisedDetection;
+      }
+      res.json({ success: true, item: target, message: 'Mitigation updated successfully' });
+    } catch (err: any) {
+      res.status(500).json({ error: err.message || 'Failed to update FMEA mitigation' });
+    }
+  });
+
+  // ==========================================================================
+  // MODULE 3: MHSA SECTION 21 SUPPLIER & OEM COMPLIANCE VAULT ENDPOINTS
+  // ==========================================================================
+  let serverSection21Declarations: Section21Declaration[] = [...INITIAL_SECTION21_DECLARATIONS];
+
+  app.get(['/api/compliance/section21/declarations', '/api/compliance/section21/declarations/'], (req: Request, res: Response) => {
+    res.json({
+      success: true,
+      total: serverSection21Declarations.length,
+      declarations: serverSection21Declarations
+    });
+  });
+
+  app.post(['/api/compliance/section21/declarations', '/api/compliance/section21/declarations/'], (req: Request, res: Response) => {
+    try {
+      const decl: Section21Declaration = req.body;
+      if (!decl || !decl.equipmentSerialId) {
+        return res.status(400).json({ error: 'Equipment Serial ID is required' });
+      }
+      const existingIdx = serverSection21Declarations.findIndex(d => d.id === decl.id);
+      if (existingIdx >= 0) {
+        serverSection21Declarations[existingIdx] = decl;
+      } else {
+        serverSection21Declarations.unshift(decl);
+      }
+      res.json({ success: true, declaration: decl, declarations: serverSection21Declarations });
+    } catch (err: any) {
+      res.status(500).json({ error: err.message || 'Failed to save Section 21 declaration' });
+    }
+  });
+
+  app.post(['/api/compliance/section21/bundle-to-tender', '/api/compliance/section21/bundle-to-tender/'], (req: Request, res: Response) => {
+    try {
+      const { id, bundled } = req.body || {};
+      const target = serverSection21Declarations.find(d => d.id === id);
+      if (!target) {
+        return res.status(404).json({ error: `Declaration ${id} not found` });
+      }
+      target.bundledInTenderDossier = Boolean(bundled);
+      res.json({
+        success: true,
+        declaration: target,
+        message: target.bundledInTenderDossier
+          ? `Equipment ${target.equipmentSerialId} bundled into 20-Section Tender Dossier.`
+          : `Equipment ${target.equipmentSerialId} removed from Tender Dossier bundle.`
+      });
+    } catch (err: any) {
+      res.status(500).json({ error: err.message || 'Failed to update bundling status' });
     }
   });
 }
