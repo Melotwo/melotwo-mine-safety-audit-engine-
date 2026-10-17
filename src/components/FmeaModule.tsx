@@ -19,7 +19,8 @@ import {
   Wrench,
   Activity,
   Zap,
-  RotateCcw
+  RotateCcw,
+  Lock
 } from 'lucide-react';
 import { FmeaItem, FmeaRpnLevel } from '../types/riskManagementTypes';
 import {
@@ -27,7 +28,8 @@ import {
   fetchFmeaItems,
   saveFmeaItem,
   updateFmeaMitigation,
-  exportFmeaReportPdf
+  exportFmeaReportPdf,
+  clearFmeaGccLockout
 } from '../services/riskManagementService';
 
 export interface FmeaModuleProps {
@@ -40,6 +42,12 @@ export const FmeaModule: React.FC<FmeaModuleProps> = ({ onNotify }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedSystemFilter, setSelectedSystemFilter] = useState('ALL');
   const [selectedRpnFilter, setSelectedRpnFilter] = useState<string>('ALL');
+
+  // GCC Engineer Statutory Lockout Clearance Modal
+  const [clearingLockoutItem, setClearingLockoutItem] = useState<FmeaItem | null>(null);
+  const [gccEngineerInput, setGccEngineerInput] = useState('Johan van der Merwe (GCC Mechanical Engineer #M88219)');
+  const [gccCertIdInput, setGccCertIdInput] = useState('GCC-MEC-2026-CERT-9041');
+  const [gccDirectiveInput, setGccDirectiveInput] = useState('Physical interlocks, secondary brake deceleration curves, and hydraulic pressure reliefs verified compliant with MHSA Section 2.13.1. Lockout revoked.');
 
   // Modal State for New FMEA Item
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
@@ -83,6 +91,17 @@ export const FmeaModule: React.FC<FmeaModuleProps> = ({ onNotify }) => {
     const data = await fetchFmeaItems();
     setFmeaItems(data);
     setLoading(false);
+  };
+
+  const handleExecuteGccClearance = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!clearingLockoutItem) return;
+    await clearFmeaGccLockout(clearingLockoutItem.id, gccEngineerInput, gccCertIdInput);
+    setClearingLockoutItem(null);
+    await loadItems();
+    if (onNotify) {
+      onNotify(`GCC clearance granted for ${clearingLockoutItem.equipmentSystem}. Operational lockout revoked.`);
+    }
   };
 
   const handleOpenAddModal = () => {
@@ -482,6 +501,21 @@ export const FmeaModule: React.FC<FmeaModuleProps> = ({ onNotify }) => {
                         <div className="text-[9px] font-mono text-slate-400 mt-0.5">
                           {item.rpnLevel}
                         </div>
+                        {(item.isStatutoryLockedOut || item.rpn >= 200 || item.severity >= 8) && (
+                          <div className="mt-1">
+                            {item.isStatutoryLockedOut === false ? (
+                              <span className="inline-flex items-center gap-1 text-[9px] font-mono text-emerald-400 bg-emerald-500/10 border border-emerald-500/30 px-1.5 py-0.5 rounded">
+                                <ShieldCheck className="w-3 h-3 text-emerald-400" />
+                                <span>GCC Cleared</span>
+                              </span>
+                            ) : (
+                              <span className="inline-flex items-center gap-1 text-[9px] font-mono text-rose-300 bg-rose-600/30 border border-rose-500/50 px-1.5 py-0.5 rounded animate-pulse font-bold">
+                                <Lock className="w-3 h-3 text-rose-400" />
+                                <span>SEC 2.13 LOCKOUT</span>
+                              </span>
+                            )}
+                          </div>
+                        )}
                       </td>
 
                       {/* Mitigation Action & Assignee */}
@@ -524,6 +558,16 @@ export const FmeaModule: React.FC<FmeaModuleProps> = ({ onNotify }) => {
 
                       {/* Actions */}
                       <td className="py-3 px-3 text-right whitespace-nowrap">
+                        {item.isStatutoryLockedOut !== false && (item.rpn >= 200 || item.severity >= 8) && (
+                          <button
+                            type="button"
+                            onClick={() => setClearingLockoutItem(item)}
+                            className="px-2.5 py-1 bg-rose-600/30 hover:bg-rose-600/50 text-rose-300 border border-rose-500/60 rounded-lg text-[11px] font-bold mr-1.5 transition cursor-pointer"
+                            title="Execute mandatory GCC Mechanical/Electrical Engineer digital clearance"
+                          >
+                            GCC Clearance
+                          </button>
+                        )}
                         <button
                           onClick={() => handleOpenMitigationDrawer(item)}
                           className="px-2.5 py-1 bg-amber-500/10 hover:bg-amber-500/20 text-amber-300 border border-amber-500/30 rounded-lg text-[11px] font-bold mr-1.5 transition cursor-pointer"
@@ -1001,6 +1045,111 @@ export const FmeaModule: React.FC<FmeaModuleProps> = ({ onNotify }) => {
                   className="px-5 py-2 bg-rose-500 hover:bg-rose-400 text-white font-black text-xs uppercase tracking-wider rounded-xl transition shadow-lg shadow-rose-950/40 cursor-pointer"
                 >
                   {editingItem?.id ? 'Update Failure Mode' : 'Save Failure Mode to FMEA'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* GCC Engineer Statutory Lockout Clearance Modal */}
+      {clearingLockoutItem && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/85 backdrop-blur-md animate-fade-in font-sans">
+          <div className="relative w-full max-w-lg bg-[#0f172a] border border-rose-500/50 rounded-3xl p-6 shadow-2xl space-y-4">
+            <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+              <div className="flex items-center gap-2">
+                <div className="p-2 bg-rose-500/10 border border-rose-500/30 rounded-xl text-rose-400">
+                  <Lock className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="text-base font-bold text-white">MHSA Section 2.13 Statutory Lockout Clearance</h3>
+                  <span className="text-[10px] font-mono text-rose-400 block">
+                    Engineering Release Certificate • {clearingLockoutItem.lockoutReference || 'MHSA-SEC2.13-LOCKOUT'}
+                  </span>
+                </div>
+              </div>
+              <button
+                onClick={() => setClearingLockoutItem(null)}
+                className="text-slate-400 hover:text-white p-1 rounded-lg hover:bg-slate-800 transition cursor-pointer"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="p-3 bg-rose-950/30 border border-rose-500/30 rounded-2xl space-y-1">
+              <div className="flex items-center justify-between text-xs">
+                <span className="font-bold text-white">{clearingLockoutItem.equipmentSystem}</span>
+                <span className="text-rose-400 font-mono font-bold">RPN: {clearingLockoutItem.rpn} (Severity: {clearingLockoutItem.severity}/10)</span>
+              </div>
+              <p className="text-[11px] text-slate-400 leading-relaxed">
+                Failure Mode: {clearingLockoutItem.failureMode} • Subsystem: {clearingLockoutItem.subsystem}. Operation is legally prohibited under MHSA Sec 2.13.1 until a designated GCC Engineer certifies failsafe interlocks and tests.
+              </p>
+            </div>
+
+            <form onSubmit={handleExecuteGccClearance} className="space-y-4 text-xs">
+              <div>
+                <label className="block text-xs font-bold text-slate-300 mb-1">
+                  Appointed GCC Mechanical / Electrical Engineer
+                </label>
+                <input
+                  type="text"
+                  value={gccEngineerInput}
+                  onChange={e => setGccEngineerInput(e.target.value)}
+                  className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-rose-400 font-semibold"
+                  required
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-slate-300 mb-1">
+                  Government Certificate of Competency (GCC) Registration #
+                </label>
+                <input
+                  type="text"
+                  value={gccCertIdInput}
+                  onChange={e => setGccCertIdInput(e.target.value)}
+                  className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-rose-400 font-mono"
+                  required
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-slate-300 mb-1">
+                  Statutory Engineering Clearance Directives
+                </label>
+                <textarea
+                  rows={3}
+                  value={gccDirectiveInput}
+                  onChange={e => setGccDirectiveInput(e.target.value)}
+                  className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-rose-400"
+                  required
+                />
+              </div>
+
+              <div className="p-3 bg-slate-950 rounded-xl border border-slate-800 text-[10px] text-slate-400 space-y-1">
+                <div className="text-slate-300 font-bold flex items-center gap-1.5">
+                  <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
+                  <span>Statutory Engineering Audit Trail Anchor</span>
+                </div>
+                <p className="font-mono text-[9px] text-slate-500">
+                  Logs cryptographic GCC digital signature into statutory equipment file for DMRE Section 54/55 audits.
+                </p>
+              </div>
+
+              <div className="pt-3 border-t border-slate-800 flex items-center justify-end gap-3">
+                <button
+                  type="button"
+                  onClick={() => setClearingLockoutItem(null)}
+                  className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-xl text-xs font-bold transition cursor-pointer"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="px-5 py-2 bg-gradient-to-r from-rose-600 to-amber-600 hover:from-rose-500 hover:to-amber-500 text-white font-black text-xs uppercase tracking-wider rounded-xl transition shadow-lg shadow-rose-950/40 cursor-pointer flex items-center gap-1.5"
+                >
+                  <ShieldCheck className="w-4 h-4" />
+                  <span>Execute GCC Clearance</span>
                 </button>
               </div>
             </form>

@@ -50,6 +50,14 @@ export interface WracAssessmentItem {
   status: 'ACTIVE' | 'REVIEW_REQUIRED' | 'VERIFIED';
   lastReviewedDate: string;
   standardsReference?: string;
+  // SANS 31000 / MHSA 11(1) 0-1h Auto-CAPA Escalation for Critical Risk (17-25)
+  requiresAutoCapa?: boolean;
+  autoCapaTicketId?: string;
+  autoCapaEscalatedAt?: string;
+  autoCapaStatus?: 'OPEN_ESCALATED' | 'CR91_SIGNED_OFF' | 'RESOLVED';
+  cr91Signatory?: string;
+  cr91SignedAt?: string;
+  cr91DigitalSeal?: string;
 }
 
 // ============================================================================
@@ -81,6 +89,13 @@ export interface FmeaItem {
   revisedDetection?: number;
   revisedRpn?: number;
   lastUpdated: string;
+  // MHSA Section 2.13.1 / 2.13.3.1 Statutory Operational Lockout (RPN > 200 or Severity >= 8)
+  isStatutoryLockedOut?: boolean;
+  lockoutReference?: string;
+  gccClearanceEngineer?: string;
+  gccClearanceCertificateId?: string;
+  gccClearedAt?: string;
+  gccDigitalSignature?: string;
 }
 
 // ============================================================================

@@ -31,7 +31,7 @@ import { CurrencySwitcher } from './CurrencySwitcher';
 import { WhatsAppChatButton } from './WhatsAppChatButton';
 import { StatutoryFactSheet } from './StatutoryFactSheet';
 
-export type Page = 'home' | 'solutions' | 'inspector' | 'academy' | 'handover' | 'outreach' | 'blog' | 'zambia-assessment' | 'partner-copilot' | 'operational-compliance';
+export type Page = 'home' | 'solutions' | 'inspector' | 'academy' | 'handover' | 'outreach' | 'blog' | 'zambia-assessment' | 'partner-copilot' | 'operational-compliance' | 'pricing' | 'fmea' | 'wrac' | 'section21';
 
 export interface AppNavbarProps {
   currentPage: Page;
@@ -302,6 +302,22 @@ export const AppNavbar: React.FC<AppNavbarProps> = ({
         }
       },
       activeMatch: false
+    },
+    {
+      id: 'pricing-calculator',
+      name: 'MeloTwo Commercial Pricing & Proposal Calculator',
+      badge: 'Tier 1–3 / FX',
+      badgeColor: 'bg-amber-500/20 text-amber-300 border-amber-500/30',
+      description: 'Calculate multi-shaft costs, USD/ZAR 18.50 FX anchor, duty-bearers & Aion Risk credit proposal.',
+      category: 'MANAGEMENT & TRAINING',
+      icon: <Calculator className="w-4 h-4 text-amber-400" />,
+      action: () => {
+        setPage('pricing');
+        if (typeof window !== 'undefined') {
+          try { window.location.hash = '#pricing'; } catch {}
+        }
+      },
+      activeMatch: currentPage === 'pricing'
     }
   ], [currentPage, setPage, onOpenCostCalculator]);
 
@@ -624,6 +640,27 @@ export const AppNavbar: React.FC<AppNavbarProps> = ({
               <span>Blog</span>
             </button>
 
+            {/* 5. MeloTwo Commercial Pricing & Proposal Calculator Link */}
+            <button
+              onClick={() => {
+                setPage('pricing');
+                if (typeof window !== 'undefined') {
+                  try { window.location.hash = '#pricing'; } catch {}
+                }
+              }}
+              className={`px-3 py-1.5 rounded-xl text-xs font-bold transition flex items-center gap-1.5 cursor-pointer ${
+                currentPage === 'pricing'
+                  ? 'bg-amber-500 text-slate-950 shadow-sm font-black'
+                  : 'text-slate-300 hover:text-white hover:bg-slate-800/80'
+              }`}
+            >
+              <Calculator className="w-3.5 h-3.5 text-amber-400" />
+              <span>Pricing</span>
+              <span className="text-[9px] px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-300 font-mono hidden xl:inline font-bold">
+                Tier 1–3
+              </span>
+            </button>
+
           </div>
 
           {/* ZONE 3: RIGHT UTILITY & HIGH-CONVERTING CTAs */}
@@ -846,6 +883,38 @@ export const AppNavbar: React.FC<AppNavbarProps> = ({
                 <span>Blog &amp; Knowledge Base</span>
               </div>
               <ChevronRight className="w-3.5 h-3.5 text-slate-500" />
+            </button>
+
+            <button
+              onClick={() => {
+                setPage('pricing');
+                if (typeof window !== 'undefined') window.location.hash = '#pricing';
+                setIsMobileMenuOpen(false);
+              }}
+              className={`w-full text-left px-3 py-2 rounded-xl text-xs font-bold flex items-center justify-between ${
+                currentPage === 'pricing' ? 'bg-amber-500 text-slate-950 font-black' : 'text-slate-300 hover:bg-slate-800'
+              }`}
+            >
+              <div className="flex items-center gap-2">
+                <Calculator className="w-4 h-4 text-amber-400" />
+                <span>Pricing &amp; Proposal Calculator</span>
+              </div>
+              <span className="text-[9px] px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-300 font-mono">Tier 1–3</span>
+            </button>
+
+            <button
+              onClick={() => {
+                setPage('operational-compliance');
+                if (typeof window !== 'undefined') window.location.hash = '#fmea';
+                setIsMobileMenuOpen(false);
+              }}
+              className="w-full text-left px-3 py-2 rounded-xl text-xs font-bold flex items-center justify-between text-slate-300 hover:bg-slate-800"
+            >
+              <div className="flex items-center gap-2">
+                <Cpu className="w-4 h-4 text-rose-400" />
+                <span>FMEA Failure Modes Engine (RPN)</span>
+              </div>
+              <span className="text-[9px] px-1.5 py-0.5 rounded bg-rose-500/20 text-rose-300 font-mono">SxOxD</span>
             </button>
           </div>
 

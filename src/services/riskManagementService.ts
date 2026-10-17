@@ -100,7 +100,7 @@ export const CONTROL_HIERARCHY_CONFIG: Record<ControlHierarchyType, ControlHiera
 export function calculateWracRisk(
   probability: WracProbability,
   severity: WracSeverity
-): { score: number; level: WracRiskLevel; colorClass: string; action: string } {
+): { score: number; level: WracRiskLevel; colorClass: string; action: string; triggersAutoCapa: boolean } {
   const score = probability * severity;
 
   if (score >= 17) {
@@ -108,28 +108,32 @@ export function calculateWracRisk(
       score,
       level: 'CRITICAL',
       colorClass: 'bg-red-600 text-white border-red-500',
-      action: 'CRITICAL / STOP WORK: Unacceptable risk. Immediate Section 54 barrier. Work cannot proceed without executive GM authorization.'
+      action: 'CRITICAL / STOP WORK: Unacceptable risk. Mandatory 0-1 Hour High-Severity Auto-CAPA ticket triggered. Requires appointed CR 9.1 Risk Assessor digital sign-off before operational execution clearance.',
+      triggersAutoCapa: true
     };
   } else if (score >= 10) {
     return {
       score,
       level: 'HIGH',
       colorClass: 'bg-amber-500 text-slate-950 border-amber-400 font-bold',
-      action: 'HIGH RISK: Substantial mitigation required. Section Engineer or Mine Overseer sign-off mandatory before shift commencement.'
+      action: 'HIGH RISK: Substantial mitigation required. Section Engineer or Mine Overseer sign-off mandatory before shift commencement.',
+      triggersAutoCapa: false
     };
   } else if (score >= 5) {
     return {
       score,
       level: 'MEDIUM',
       colorClass: 'bg-yellow-400 text-slate-950 border-yellow-300 font-semibold',
-      action: 'MEDIUM RISK: Manage through routine SWPs and engineering maintenance controls. Shift supervisor oversight required.'
+      action: 'MEDIUM RISK: Manage through routine SWPs and engineering maintenance controls. Shift supervisor oversight required.',
+      triggersAutoCapa: false
     };
   } else {
     return {
       score,
       level: 'LOW',
       colorClass: 'bg-emerald-500 text-slate-950 border-emerald-400 font-semibold',
-      action: 'LOW / ACCEPTABLE: Manage with basic pre-shift inspections and standard PPE donning.'
+      action: 'LOW / ACCEPTABLE: Manage with basic pre-shift inspections and standard PPE donning.',
+      triggersAutoCapa: false
     };
   }
 }
@@ -138,39 +142,52 @@ export function calculateRpn(
   severity: number,
   occurrence: number,
   detection: number
-): { rpn: number; level: FmeaRpnLevel; colorClass: string; alertMessage: string } {
+): { rpn: number; level: FmeaRpnLevel; colorClass: string; alertMessage: string; triggersGccLockout: boolean } {
   const clampedS = Math.min(10, Math.max(1, severity || 1));
   const clampedO = Math.min(10, Math.max(1, occurrence || 1));
   const clampedD = Math.min(10, Math.max(1, detection || 1));
   const rpn = clampedS * clampedO * clampedD;
+  const isGccLockout = rpn >= 200 || clampedS >= 8;
 
   if (rpn >= 200) {
     return {
       rpn,
       level: 'CRITICAL',
       colorClass: 'bg-rose-500/20 text-rose-300 border-rose-500/50',
-      alertMessage: 'CRITICAL RPN (≥200): Mandatory engineering redesign or immediate mechanical interlock required.'
+      alertMessage: 'CRITICAL RPN (≥200): MHSA Section 2.13.1 / 2.13.3.1 Statutory Operational Lockout enforced. Formal digital clearance from an appointed GCC Mechanical/Electrical Engineer required.',
+      triggersGccLockout: true
+    };
+  } else if (clampedS >= 8) {
+    return {
+      rpn,
+      level: rpn >= 100 ? 'HIGH' : 'MEDIUM',
+      colorClass: 'bg-rose-500/10 text-rose-300 border-rose-500/40',
+      alertMessage: `HIGH SEVERITY (${clampedS}/10): Statutory operational lockout active under MHSA Sec 2.13. Requires GCC Engineer clearance.`,
+      triggersGccLockout: true
     };
   } else if (rpn >= 100) {
     return {
       rpn,
       level: 'HIGH',
       colorClass: 'bg-amber-500/20 text-amber-300 border-amber-500/50',
-      alertMessage: 'HIGH RPN (100-199): High priority mitigation task assigned to mechanical/electrical engineer.'
+      alertMessage: 'HIGH RPN (100-199): High priority mitigation task assigned to mechanical/electrical engineer.',
+      triggersGccLockout: false
     };
   } else if (rpn >= 40) {
     return {
       rpn,
       level: 'MEDIUM',
       colorClass: 'bg-yellow-500/20 text-yellow-300 border-yellow-500/50',
-      alertMessage: 'MODERATE RPN (40-99): Standard planned preventive maintenance (PPM) schedule applies.'
+      alertMessage: 'MODERATE RPN (40-99): Standard planned preventive maintenance (PPM) schedule applies.',
+      triggersGccLockout: false
     };
   } else {
     return {
       rpn,
       level: 'LOW',
       colorClass: 'bg-emerald-500/20 text-emerald-300 border-emerald-500/50',
-      alertMessage: 'LOW RPN (<40): Acceptable baseline equipment reliability condition.'
+      alertMessage: 'LOW RPN (<40): Acceptable baseline equipment reliability condition.',
+      triggersGccLockout: false
     };
   }
 }
@@ -590,6 +607,8 @@ export async function saveWracAssessment(item: Partial<WracAssessmentItem>): Pro
   const resSev = (item.residualSeverity || 2) as WracSeverity;
   const resRisk = calculateWracRisk(resProb, resSev);
 
+  const isAutoCapa = initRisk.triggersAutoCapa;
+
   const completeItem: WracAssessmentItem = {
     id: item.id || `WRAC-${Date.now().toString().slice(-6)}`,
     activityOrArea: item.activityOrArea || 'General Underground Operations',
@@ -609,7 +628,14 @@ export async function saveWracAssessment(item: Partial<WracAssessmentItem>): Pro
     monitoringFrequency: item.monitoringFrequency || 'PER_SHIFT',
     status: item.status || 'ACTIVE',
     lastReviewedDate: new Date().toISOString().split('T')[0],
-    standardsReference: item.standardsReference || 'MHSA Act 29 / SANS 31000'
+    standardsReference: item.standardsReference || 'MHSA Act 29 / SANS 31000',
+    requiresAutoCapa: isAutoCapa,
+    autoCapaTicketId: item.autoCapaTicketId || (isAutoCapa ? `CAPA-CR9.1-${Math.floor(1000 + Math.random() * 9000)}` : undefined),
+    autoCapaEscalatedAt: item.autoCapaEscalatedAt || (isAutoCapa ? new Date().toISOString() : undefined),
+    autoCapaStatus: item.autoCapaStatus || (isAutoCapa ? 'OPEN_ESCALATED' : undefined),
+    cr91Signatory: item.cr91Signatory || '',
+    cr91SignedAt: item.cr91SignedAt || '',
+    cr91DigitalSeal: item.cr91DigitalSeal || ''
   };
 
   try {
@@ -695,6 +721,8 @@ export async function saveFmeaItem(item: Partial<FmeaItem>): Promise<FmeaItem> {
     revRpn = item.revisedSeverity * item.revisedOccurrence * item.revisedDetection;
   }
 
+  const isLocked = rpnCalc.triggersGccLockout;
+
   const completeItem: FmeaItem = {
     id: item.id || `FMEA-${Date.now().toString().slice(-6)}`,
     equipmentSystem: item.equipmentSystem || 'Mobile Trackless Machinery',
@@ -717,7 +745,13 @@ export async function saveFmeaItem(item: Partial<FmeaItem>): Promise<FmeaItem> {
     revisedOccurrence: item.revisedOccurrence,
     revisedDetection: item.revisedDetection,
     revisedRpn: revRpn,
-    lastUpdated: new Date().toISOString().split('T')[0]
+    lastUpdated: new Date().toISOString().split('T')[0],
+    isStatutoryLockedOut: item.isStatutoryLockedOut !== undefined ? item.isStatutoryLockedOut : isLocked,
+    lockoutReference: item.lockoutReference || (isLocked ? `MHSA-SEC2.13-LOCK-${Math.floor(1000 + Math.random() * 9000)}` : undefined),
+    gccClearanceEngineer: item.gccClearanceEngineer || '',
+    gccClearanceCertificateId: item.gccClearanceCertificateId || '',
+    gccClearedAt: item.gccClearedAt || '',
+    gccDigitalSignature: item.gccDigitalSignature || ''
   };
 
   try {
@@ -770,6 +804,52 @@ export async function updateFmeaMitigation(
   }
 
   return await saveFmeaItem(merged);
+}
+
+export async function signOffWracCapa(
+  itemId: string,
+  cr91Signatory: string,
+  notes?: string
+): Promise<WracAssessmentItem | null> {
+  const current = await fetchWracAssessments();
+  const target = current.find(a => a.id === itemId);
+  if (!target) return null;
+
+  const updated: WracAssessmentItem = {
+    ...target,
+    autoCapaStatus: 'CR91_SIGNED_OFF',
+    cr91Signatory: cr91Signatory || 'Appointed CR 9.1 Risk Assessor',
+    cr91SignedAt: new Date().toISOString(),
+    cr91DigitalSeal: `SHA256:CR91:${Math.random().toString(36).substring(2, 10).toUpperCase()}:${Date.now()}`,
+    status: 'VERIFIED',
+    controlDescription: notes ? `${target.controlDescription} | CR 9.1 Directive: ${notes}` : target.controlDescription,
+    lastReviewedDate: new Date().toISOString().split('T')[0]
+  };
+
+  return await saveWracAssessment(updated);
+}
+
+export async function clearFmeaGccLockout(
+  itemId: string,
+  gccClearanceEngineer: string,
+  certId?: string
+): Promise<FmeaItem | null> {
+  const current = await fetchFmeaItems();
+  const target = current.find(f => f.id === itemId);
+  if (!target) return null;
+
+  const updated: FmeaItem = {
+    ...target,
+    isStatutoryLockedOut: false,
+    gccClearanceEngineer: gccClearanceEngineer || 'Appointed GCC Mechanical/Electrical Engineer',
+    gccClearanceCertificateId: certId || `GCC-CERT-${Math.floor(1000 + Math.random() * 9000)}`,
+    gccClearedAt: new Date().toISOString(),
+    gccDigitalSignature: `GCC-SIG-${Math.random().toString(36).substring(2, 12).toUpperCase()}`,
+    taskStatus: 'IN_PROGRESS',
+    lastUpdated: new Date().toISOString().split('T')[0]
+  };
+
+  return await saveFmeaItem(updated);
 }
 
 // ----------------------------------------------------------------------------

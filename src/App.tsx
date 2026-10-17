@@ -33,6 +33,10 @@ import { ZambianMhsCompliancePanel } from './components/ZambianMhsCompliancePane
 import { ZambiaComplianceAssessmentModal } from './components/ZambiaComplianceAssessmentModal';
 import { PartnerCoPilotAdminView } from './components/PartnerCoPilotAdminView';
 import { OperationalComplianceHub } from './components/OperationalComplianceHub';
+import { MeloTwoPricingCalculator } from './components/MeloTwoPricingCalculator';
+import { FmeaModule } from './components/FmeaModule';
+import { WracModule } from './components/WracModule';
+import { Section21OemVault } from './components/Section21OemVault';
 import { CsvImportModal } from './components/CsvImportModal';
 import { InspectorConflictResolver, OfflineAuditNoteItem, ConflictResolutionChoice, OfflineSyncDashboard, PayPalKeyConfigModal, PayPalEFTCheckoutModal } from './components';
 import { Database, RefreshCw, Upload, LogOut, Sparkles, CheckCircle2, AlertOctagon, Download, ChevronRight, Lock, Terminal, Minimize2, Maximize2, Activity, Scale, Globe, CheckCircle, Target, ShieldAlert, ArrowRight, Check, Truck, Info, RotateCcw, Sliders, XCircle, Building2, MapPin, ChevronDown, ChevronUp, EyeOff, Filter, Layers, FileSpreadsheet, Calculator, BookOpen, Smartphone, Wifi, WifiOff, Save, HardDrive, Users, Droplets, GitCompare, Pencil, X, Key, CreditCard } from 'lucide-react';
@@ -392,8 +396,7 @@ export const appendLedgerRecords = async (
   }
 };
 
-// --- Inline Types ---
-export type Page = 'home' | 'solutions' | 'inspector' | 'academy' | 'handover' | 'outreach' | 'blog' | 'zambia-assessment' | 'partner-copilot' | 'operational-compliance';
+export type Page = 'home' | 'solutions' | 'inspector' | 'academy' | 'handover' | 'outreach' | 'blog' | 'zambia-assessment' | 'partner-copilot' | 'operational-compliance' | 'pricing' | 'fmea' | 'wrac' | 'section21';
 
 export type IconComponent = React.FC<React.SVGProps<SVGSVGElement>>;
 
@@ -5719,6 +5722,9 @@ const LandingPage: React.FC<LandingPageProps> = ({
     const [operationName, setOperationName] = useState('');
     const [selectedStandard, setSelectedStandard] = useState<'sans-10330' | 'sans-10142' | 'sans-10049' | 'sans-10108' | 'iso-42001' | 'sans-10375'>('sans-10330');
     const [leadEmail, setLeadEmail] = useState('');
+
+    // Commercial Pricing View Mode (Standard Cards vs Interactive MeloTwo Calculator)
+    const [pricingViewMode, setPricingViewMode] = useState<'cards' | 'interactive'>('cards');
     
     // Generator state
     const [sandboxGenerating, setSandboxGenerating] = useState(false);
@@ -6703,12 +6709,230 @@ const LandingPage: React.FC<LandingPageProps> = ({
 
             </div>
 
+            {/* ========================================================================= */}
+            {/* STATUTORY RISK ESCALATION & ENGINEERING GOVERNANCE SUITE (WRAC, FMEA, S21) */}
+            {/* ========================================================================= */}
+            <div className="mb-20 scroll-mt-24 border-t border-slate-800/80 pt-16" id="statutory-governance-terminal">
+                <div className="bg-gradient-to-b from-slate-950 via-slate-900 to-slate-950 border border-slate-800 rounded-3xl p-6 sm:p-10 shadow-2xl relative overflow-hidden">
+                    <div className="absolute top-0 right-0 w-96 h-96 bg-amber-500/5 rounded-full blur-3xl pointer-events-none" />
+                    
+                    <div className="relative z-10 space-y-6">
+                        <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 border-b border-slate-800 pb-6">
+                            <div>
+                                <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-amber-500/10 border border-amber-500/30 text-amber-400 text-[10px] font-black uppercase font-mono tracking-wider mb-2">
+                                    <ShieldAlert className="w-3.5 h-3.5 text-amber-400" />
+                                    Statutory Risk Escalation &amp; Engineering Governance Suite
+                                </div>
+                                <h2 className="text-2xl sm:text-3xl font-black text-white tracking-tight">
+                                    MHSA Section 3.1(a), GCC Engineering Lockouts &amp; OEM Vault
+                                </h2>
+                                <p className="text-slate-400 text-xs sm:text-sm mt-1.5 max-w-2xl font-medium">
+                                    Deploy automated risk escalation matrices, GCC statutory lockout clearances, and OEM compliance records for Department of Mineral Resources and Energy (DMRE) audits.
+                                </p>
+                            </div>
+
+                            <div className="flex items-center gap-2 shrink-0">
+                                <button
+                                    type="button"
+                                    onClick={() => {
+                                        setPage('operational-compliance');
+                                        if (typeof window !== 'undefined') window.location.hash = '#operational-compliance';
+                                    }}
+                                    className="px-4 py-2.5 bg-amber-500 hover:bg-amber-400 text-slate-950 font-black text-xs uppercase tracking-wider rounded-xl transition shadow-lg shadow-amber-500/20 flex items-center gap-2 cursor-pointer"
+                                >
+                                    <ShieldCheck className="w-4 h-4 text-slate-950" />
+                                    <span>Open Safety Terminal Hub</span>
+                                </button>
+                            </div>
+                        </div>
+
+                        {/* 4-Module Command Grid */}
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                            
+                            {/* Card 1: FMEA Failure Modes Engine */}
+                            <div className="bg-slate-900/90 border border-rose-500/30 hover:border-rose-400/60 rounded-2xl p-5 flex flex-col justify-between transition-all duration-300 hover:shadow-xl hover:shadow-rose-950/40 group">
+                                <div className="space-y-3">
+                                    <div className="flex items-center justify-between">
+                                        <div className="p-2.5 rounded-xl bg-rose-500/10 border border-rose-500/20 text-rose-400 group-hover:scale-105 transition-transform">
+                                            <Cpu className="w-5 h-5" />
+                                        </div>
+                                        <span className="text-[9px] font-mono font-black uppercase px-2 py-0.5 rounded bg-rose-500/20 text-rose-300 border border-rose-500/30">
+                                            RPN = S×O×D
+                                        </span>
+                                    </div>
+                                    <div>
+                                        <h3 className="text-sm font-bold text-white group-hover:text-rose-300 transition-colors">
+                                            1. FMEA Failure Modes &amp; Effects
+                                        </h3>
+                                        <p className="text-[11px] text-slate-400 mt-1 leading-relaxed">
+                                            Calculates RPN. Triggers mandatory GCC statutory engineering lockouts for RPN &gt; 200 or Severity ≥ 8 under MHSA Sec 2.13.1 / 2.13.3.1.
+                                        </p>
+                                    </div>
+                                    <div className="space-y-1 text-[10px] text-slate-300 font-mono bg-slate-950/60 p-2.5 rounded-xl border border-slate-800">
+                                        <div className="flex justify-between">
+                                            <span className="text-slate-400">Clearance Gate:</span>
+                                            <span className="text-rose-400 font-bold">GCC Mech/Elec</span>
+                                        </div>
+                                        <div className="flex justify-between">
+                                            <span className="text-slate-400">Lockout Protocol:</span>
+                                            <span className="text-amber-400 font-bold">Digital Isolation</span>
+                                        </div>
+                                    </div>
+                                </div>
+                                <button
+                                    type="button"
+                                    onClick={() => {
+                                        setPage('operational-compliance');
+                                        if (typeof window !== 'undefined') window.location.hash = '#fmea';
+                                    }}
+                                    className="mt-4 w-full py-2.5 px-3 bg-rose-600/20 hover:bg-rose-600 text-rose-200 hover:text-white border border-rose-500/40 rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5 cursor-pointer"
+                                >
+                                    <span>Launch FMEA Engine</span>
+                                    <ArrowRight className="w-3.5 h-3.5" />
+                                </button>
+                            </div>
+
+                            {/* Card 2: WRAC 5x5 Matrix */}
+                            <div className="bg-slate-900/90 border border-amber-500/30 hover:border-amber-400/60 rounded-2xl p-5 flex flex-col justify-between transition-all duration-300 hover:shadow-xl hover:shadow-amber-950/40 group">
+                                <div className="space-y-3">
+                                    <div className="flex items-center justify-between">
+                                        <div className="p-2.5 rounded-xl bg-amber-500/10 border border-amber-500/20 text-amber-400 group-hover:scale-105 transition-transform">
+                                            <ShieldAlert className="w-5 h-5" />
+                                        </div>
+                                        <span className="text-[9px] font-mono font-black uppercase px-2 py-0.5 rounded bg-amber-500/20 text-amber-300 border border-amber-500/30">
+                                            SANS 31000
+                                        </span>
+                                    </div>
+                                    <div>
+                                        <h3 className="text-sm font-bold text-white group-hover:text-amber-300 transition-colors">
+                                            2. WRAC 5x5 Risk Matrix
+                                        </h3>
+                                        <p className="text-[11px] text-slate-400 mt-1 leading-relaxed">
+                                            MHSA Sec 11(1) Hierarchy of Controls. Critical scores (17-25) trigger 0-1h Auto-CAPA tickets requiring CR 9.1 sign-off.
+                                        </p>
+                                    </div>
+                                    <div className="space-y-1 text-[10px] text-slate-300 font-mono bg-slate-950/60 p-2.5 rounded-xl border border-slate-800">
+                                        <div className="flex justify-between">
+                                            <span className="text-slate-400">Offline Telemetry:</span>
+                                            <span className="text-emerald-400 font-bold">2,000m Stope Cache</span>
+                                        </div>
+                                        <div className="flex justify-between">
+                                            <span className="text-slate-400">Surface Sync:</span>
+                                            <span className="text-cyan-400 font-bold">&lt; 3s Auto-Sync</span>
+                                        </div>
+                                    </div>
+                                </div>
+                                <button
+                                    type="button"
+                                    onClick={() => {
+                                        setPage('operational-compliance');
+                                        if (typeof window !== 'undefined') window.location.hash = '#wrac';
+                                    }}
+                                    className="mt-4 w-full py-2.5 px-3 bg-amber-500/20 hover:bg-amber-500 text-amber-200 hover:text-slate-950 border border-amber-500/40 rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5 cursor-pointer"
+                                >
+                                    <span>Launch WRAC Matrix</span>
+                                    <ArrowRight className="w-3.5 h-3.5" />
+                                </button>
+                            </div>
+
+                            {/* Card 3: MHSA Section 21 OEM Vault */}
+                            <div className="bg-slate-900/90 border border-cyan-500/30 hover:border-cyan-400/60 rounded-2xl p-5 flex flex-col justify-between transition-all duration-300 hover:shadow-xl hover:shadow-cyan-950/40 group">
+                                <div className="space-y-3">
+                                    <div className="flex items-center justify-between">
+                                        <div className="p-2.5 rounded-xl bg-cyan-500/10 border border-cyan-500/20 text-cyan-400 group-hover:scale-105 transition-transform">
+                                            <ShieldCheck className="w-5 h-5" />
+                                        </div>
+                                        <span className="text-[9px] font-mono font-black uppercase px-2 py-0.5 rounded bg-cyan-500/20 text-cyan-300 border border-cyan-500/30">
+                                            SHA-256 SEALS
+                                        </span>
+                                    </div>
+                                    <div>
+                                        <h3 className="text-sm font-bold text-white group-hover:text-cyan-300 transition-colors">
+                                            3. Section 21 OEM Vault
+                                        </h3>
+                                        <p className="text-[11px] text-slate-400 mt-1 leading-relaxed">
+                                            Centralizes Sandvik, Epiroc, Komatsu, Joy Global declarations (dB(A), aw(8), brake declivity) with QR public proofs for 90s DMRE audit sign-off.
+                                        </p>
+                                    </div>
+                                    <div className="space-y-1 text-[10px] text-slate-300 font-mono bg-slate-950/60 p-2.5 rounded-xl border border-slate-800">
+                                        <div className="flex justify-between">
+                                            <span className="text-slate-400">The Red File:</span>
+                                            <span className="text-rose-400 font-bold">Page 5 Bundling</span>
+                                        </div>
+                                        <div className="flex justify-between">
+                                            <span className="text-slate-400">Public Verification:</span>
+                                            <span className="text-cyan-400 font-bold">QR / Cryptographic</span>
+                                        </div>
+                                    </div>
+                                </div>
+                                <button
+                                    type="button"
+                                    onClick={() => {
+                                        setPage('operational-compliance');
+                                        if (typeof window !== 'undefined') window.location.hash = '#section21';
+                                    }}
+                                    className="mt-4 w-full py-2.5 px-3 bg-cyan-500/20 hover:bg-cyan-500 text-cyan-200 hover:text-slate-950 border border-cyan-500/40 rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5 cursor-pointer"
+                                >
+                                    <span>Launch OEM Vault</span>
+                                    <ArrowRight className="w-3.5 h-3.5" />
+                                </button>
+                            </div>
+
+                            {/* Card 4: Commercial Pricing & Proposal Calculator */}
+                            <div className="bg-slate-900/90 border border-emerald-500/30 hover:border-emerald-400/60 rounded-2xl p-5 flex flex-col justify-between transition-all duration-300 hover:shadow-xl hover:shadow-emerald-950/40 group">
+                                <div className="space-y-3">
+                                    <div className="flex items-center justify-between">
+                                        <div className="p-2.5 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 group-hover:scale-105 transition-transform">
+                                            <Calculator className="w-5 h-5" />
+                                        </div>
+                                        <span className="text-[9px] font-mono font-black uppercase px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
+                                            USD/ZAR 18.50
+                                        </span>
+                                    </div>
+                                    <div>
+                                        <h3 className="text-sm font-bold text-white group-hover:text-emerald-300 transition-colors">
+                                            4. Commercial Pricing Calculator
+                                        </h3>
+                                        <p className="text-[11px] text-slate-400 mt-1 leading-relaxed">
+                                            Tier 1 Pilot (R1,999/mo), Tier 2 Mid (R8,500/mo), Tier 3 Enterprise (R180k/yr). 100% pilot fee credit toward enterprise execution within 30 days.
+                                        </p>
+                                    </div>
+                                    <div className="space-y-1 text-[10px] text-slate-300 font-mono bg-slate-950/60 p-2.5 rounded-xl border border-slate-800">
+                                        <div className="flex justify-between">
+                                            <span className="text-slate-400">Aion Risk Review:</span>
+                                            <span className="text-emerald-400 font-bold">100% Pilot Credit</span>
+                                        </div>
+                                        <div className="flex justify-between">
+                                            <span className="text-slate-400">Proposal Output:</span>
+                                            <span className="text-amber-400 font-bold">1-Click PDF Quoting</span>
+                                        </div>
+                                    </div>
+                                </div>
+                                <button
+                                    type="button"
+                                    onClick={() => {
+                                        setPricingViewMode('interactive');
+                                        const el = document.getElementById('pricing-section');
+                                        if (el) el.scrollIntoView({ behavior: 'smooth' });
+                                    }}
+                                    className="mt-4 w-full py-2.5 px-3 bg-emerald-500/20 hover:bg-emerald-500 text-emerald-200 hover:text-slate-950 border border-emerald-500/40 rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5 cursor-pointer"
+                                >
+                                    <span>Open Pricing Calculator</span>
+                                    <ArrowRight className="w-3.5 h-3.5" />
+                                </button>
+                            </div>
+
+                        </div>
+                    </div>
+                </div>
+            </div>
+
             {/* MeloTwo Premium Pricing Section */}
             <div className="mb-24 scroll-mt-24 border-t border-slate-100 pt-20" id="pricing-section">
-                <div className="text-center max-w-3xl mx-auto mb-16">
+                <div className="text-center max-w-3xl mx-auto mb-10">
                     <div className="flex flex-wrap items-center justify-center gap-2 mb-3">
                         <span className="text-[10px] font-black text-amber-600 tracking-widest uppercase bg-amber-500/10 border border-amber-500/20 px-3.5 py-1.5 rounded-full font-mono">
-                            Four-Tier Industrial Licensing
+                            Commercial Pricing &amp; Proposal Architecture
                         </span>
                         <CurrencySwitcher variant="compact" />
                     </div>
@@ -6718,7 +6942,48 @@ const LandingPage: React.FC<LandingPageProps> = ({
                     <p className="text-gray-500 text-sm mt-3 leading-relaxed">
                         Select the tier aligned with your operational footprint or inspection cycle. Calculate real-time costs, add shafts/contractors, and generate defensible regulatory proofs in {currency}.
                     </p>
+
+                    {/* View Switcher: Standard Cards vs Interactive Commercial Calculator */}
+                    <div className="mt-6 flex items-center justify-center gap-2 p-1.5 bg-slate-900/90 border border-slate-800 rounded-2xl w-fit mx-auto shadow-lg">
+                        <button
+                            type="button"
+                            onClick={() => setPricingViewMode('cards')}
+                            className={`px-4 py-2 rounded-xl text-xs font-bold transition cursor-pointer flex items-center gap-2 ${
+                                pricingViewMode === 'cards'
+                                    ? 'bg-amber-500 text-slate-950 font-black shadow-md'
+                                    : 'text-slate-400 hover:text-white'
+                            }`}
+                        >
+                            <Layers className="w-3.5 h-3.5" />
+                            <span>Standard Plan Tiers</span>
+                        </button>
+                        <button
+                            type="button"
+                            onClick={() => setPricingViewMode('interactive')}
+                            className={`px-4 py-2 rounded-xl text-xs font-bold transition cursor-pointer flex items-center gap-2 ${
+                                pricingViewMode === 'interactive'
+                                    ? 'bg-amber-500 text-slate-950 font-black shadow-md'
+                                    : 'text-slate-400 hover:text-white'
+                            }`}
+                        >
+                            <Calculator className="w-3.5 h-3.5" />
+                            <span>Interactive MeloTwo Pricing Calculator &amp; Proposal Builder</span>
+                            <span className="text-[9px] px-1.5 py-0.5 rounded bg-amber-400/20 text-amber-300 font-mono font-bold">
+                                Tier 1–3 / FX
+                            </span>
+                        </button>
+                    </div>
                 </div>
+
+                {/* If Interactive Mode Selected: Display MeloTwoPricingCalculator */}
+                {pricingViewMode === 'interactive' ? (
+                    <div className="max-w-7xl mx-auto animate-fade-in">
+                        <MeloTwoPricingCalculator
+                            onOpenTenderWizard={onOpenTenderWizard}
+                        />
+                    </div>
+                ) : (
+                    <>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 max-w-7xl mx-auto items-stretch">
                     {/* Tier Entry Offer: 30-Day Section 54 Readiness Sprint */}
@@ -7046,6 +7311,36 @@ const LandingPage: React.FC<LandingPageProps> = ({
                         </button>
                     </div>
                 </div>
+
+                {/* Switch to Interactive Calculator CTA strip */}
+                <div className="mt-8 max-w-4xl mx-auto p-4 rounded-2xl bg-gradient-to-r from-slate-900 via-slate-800 to-slate-900 border border-amber-500/30 flex flex-col sm:flex-row items-center justify-between gap-4 text-center sm:text-left shadow-lg">
+                    <div className="flex items-center gap-3">
+                        <div className="p-2.5 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-400 shrink-0">
+                            <Calculator className="w-5 h-5" />
+                        </div>
+                        <div>
+                            <h4 className="text-xs font-bold text-white uppercase tracking-wider">
+                                Need Multi-Shaft Duty-Bearer Sizing or USD/ZAR 18.50 Proposal?
+                            </h4>
+                            <p className="text-[11px] text-slate-400 mt-0.5">
+                                Switch to the interactive commercial pricing calculator with 100% pilot fee credit for Aion Risk reviews.
+                            </p>
+                        </div>
+                    </div>
+                    <button
+                        type="button"
+                        onClick={() => {
+                            setPricingViewMode('interactive');
+                            const el = document.getElementById('pricing-section');
+                            if (el) el.scrollIntoView({ behavior: 'smooth' });
+                        }}
+                        className="px-4 py-2 bg-amber-500 hover:bg-amber-400 text-slate-950 font-black text-xs uppercase tracking-wider rounded-xl transition shadow cursor-pointer shrink-0"
+                    >
+                        Switch to Interactive Mode →
+                    </button>
+                </div>
+                </>
+                )}
             </div>
 
             {/* MeloTwo S-Tier Solutions Section */}
@@ -13758,6 +14053,16 @@ const App: React.FC = () => {
             ) {
                 return 'operational-compliance';
             }
+            if (
+                rawPath.startsWith('/pricing') || 
+                rawHash === '#pricing' || 
+                rawHash === '#pricing-calculator' || 
+                rawHash === '#calculator-pricing' || 
+                rawHash === '#quote' ||
+                rawHash === '#melotwo-pricing'
+            ) {
+                return 'pricing';
+            }
         }
         return 'home';
     });
@@ -13961,6 +14266,14 @@ const App: React.FC = () => {
                     window.location.pathname.startsWith('/mine-closure')
                 ));
 
+            const isPricingRoute = 
+                rawHash === '#pricing' ||
+                rawHash === '#pricing-calculator' ||
+                rawHash === '#calculator-pricing' ||
+                rawHash === '#quote' ||
+                rawHash === '#melotwo-pricing' ||
+                (typeof window !== 'undefined' && window.location.pathname.startsWith('/pricing'));
+
             if (isTenderHash) {
                 setCurrentPage('home');
                 setIsCostModalOpen(false);
@@ -14009,6 +14322,15 @@ const App: React.FC = () => {
                 setCurrentPage('operational-compliance');
                 setIsTenderWizardOpen(false);
                 setIsCostModalOpen(false);
+            } else if (isPricingRoute) {
+                setCurrentPage('pricing');
+                setIsTenderWizardOpen(false);
+                setIsCostModalOpen(false);
+                trackGA4Event('hash_deep_link_triggered', {
+                    hash: window.location.hash,
+                    target: 'melotwo_pricing_calculator'
+                });
+                window.scrollTo({ top: 0, behavior: 'smooth' });
             }
         };
 
@@ -14202,6 +14524,114 @@ const App: React.FC = () => {
         onBack={() => setCurrentPage('home')}
         onOpenTenderWizard={handleOpenTenderWizard}
       />
+    );
+  } else if (currentPage === 'pricing') {
+    return (
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-slate-200">
+          <div className="flex items-center gap-3">
+            <button
+              onClick={() => setCurrentPage('home')}
+              className="px-3.5 py-2 bg-slate-900 text-white text-xs font-bold rounded-xl hover:bg-slate-800 transition flex items-center gap-1.5 cursor-pointer shadow-sm"
+            >
+              <RotateCcw className="w-3.5 h-3.5" />
+              <span>Back to Dashboard</span>
+            </button>
+            <span className="text-slate-300 text-xs hidden sm:inline">•</span>
+            <span className="text-xs font-bold text-slate-700 hidden sm:inline">
+              MeloTwo Commercial Pricing Architecture &amp; Client Proposal Engine
+            </span>
+          </div>
+          <button
+            onClick={handleOpenTenderWizard}
+            className="px-4 py-2 bg-red-600 hover:bg-red-500 text-white text-xs font-black rounded-xl transition uppercase tracking-wider flex items-center justify-center gap-1.5 cursor-pointer shadow-sm"
+          >
+            <FileSpreadsheet className="w-3.5 h-3.5" />
+            <span>Tender Safety File</span>
+          </button>
+        </div>
+        <MeloTwoPricingCalculator
+          onOpenTenderWizard={handleOpenTenderWizard}
+        />
+      </div>
+    );
+  } else if (currentPage === 'fmea') {
+    return (
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-slate-200">
+          <div className="flex items-center gap-3">
+            <button
+              onClick={() => setCurrentPage('home')}
+              className="px-3.5 py-2 bg-slate-900 text-white text-xs font-bold rounded-xl hover:bg-slate-800 transition flex items-center gap-1.5 cursor-pointer shadow-sm"
+            >
+              <RotateCcw className="w-3.5 h-3.5" />
+              <span>Back to Dashboard</span>
+            </button>
+            <span className="text-slate-300 text-xs hidden sm:inline">•</span>
+            <button
+              onClick={() => {
+                setCurrentPage('operational-compliance');
+                if (typeof window !== 'undefined') window.location.hash = '#fmea';
+              }}
+              className="text-xs font-bold text-amber-600 hover:text-amber-700 underline cursor-pointer"
+            >
+              Switch to Operational Compliance Terminal Hub
+            </button>
+          </div>
+          <button
+            onClick={handleOpenTenderWizard}
+            className="px-4 py-2 bg-red-600 hover:bg-red-500 text-white text-xs font-black rounded-xl transition uppercase tracking-wider flex items-center justify-center gap-1.5 cursor-pointer shadow-sm"
+          >
+            <FileSpreadsheet className="w-3.5 h-3.5" />
+            <span>Tender Safety File</span>
+          </button>
+        </div>
+        <FmeaModule />
+      </div>
+    );
+  } else if (currentPage === 'wrac') {
+    return (
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-slate-200">
+          <button
+            onClick={() => setCurrentPage('home')}
+            className="px-3.5 py-2 bg-slate-900 text-white text-xs font-bold rounded-xl hover:bg-slate-800 transition flex items-center gap-1.5 cursor-pointer shadow-sm"
+          >
+            <RotateCcw className="w-3.5 h-3.5" />
+            <span>Back to Dashboard</span>
+          </button>
+          <button
+            onClick={handleOpenTenderWizard}
+            className="px-4 py-2 bg-red-600 hover:bg-red-500 text-white text-xs font-black rounded-xl transition uppercase tracking-wider flex items-center justify-center gap-1.5 cursor-pointer shadow-sm"
+          >
+            <FileSpreadsheet className="w-3.5 h-3.5" />
+            <span>Tender Safety File</span>
+          </button>
+        </div>
+        <WracModule />
+      </div>
+    );
+  } else if (currentPage === 'section21') {
+    return (
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-slate-200">
+          <button
+            onClick={() => setCurrentPage('home')}
+            className="px-3.5 py-2 bg-slate-900 text-white text-xs font-bold rounded-xl hover:bg-slate-800 transition flex items-center gap-1.5 cursor-pointer shadow-sm"
+          >
+            <RotateCcw className="w-3.5 h-3.5" />
+            <span>Back to Dashboard</span>
+          </button>
+          <button
+            onClick={handleOpenTenderWizard}
+            className="px-4 py-2 bg-red-600 hover:bg-red-500 text-white text-xs font-black rounded-xl transition uppercase tracking-wider flex items-center justify-center gap-1.5 cursor-pointer shadow-sm"
+          >
+            <FileSpreadsheet className="w-3.5 h-3.5" />
+            <span>Tender Safety File</span>
+          </button>
+        </div>
+        <Section21OemVault onOpenTenderWizard={handleOpenTenderWizard} />
+      </div>
     );
   }
 }, [currentPage, setCurrentPage, setIsDemoModalOpen, setDemoModalTier, isAdmin, handleOpenTenderWizard, handleOpenCostModal]);

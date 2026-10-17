@@ -31,7 +31,8 @@ import {
   fetchWracAssessments,
   saveWracAssessment,
   deleteWracAssessment,
-  exportWracMatrixPdf
+  exportWracMatrixPdf,
+  signOffWracCapa
 } from '../services/riskManagementService';
 
 export interface WracModuleProps {
@@ -79,6 +80,11 @@ export const WracModule: React.FC<WracModuleProps> = ({ onNotify }) => {
   const [formResponsible, setFormResponsible] = useState('Section Safety Officer / Appointee');
   const [formFrequency, setFormFrequency] = useState<'CONTINUOUS' | 'PER_SHIFT' | 'DAILY' | 'WEEKLY' | 'MONTHLY'>('PER_SHIFT');
 
+  // CR 9.1 Auto-CAPA Sign-Off Modal State
+  const [signingCapaItem, setSigningCapaItem] = useState<WracAssessmentItem | null>(null);
+  const [cr91AssessorInput, setCr91AssessorInput] = useState('Sipho Sithole (Appointed CR 9.1 Risk Assessor)');
+  const [cr91DirectiveInput, setCr91DirectiveInput] = useState('Critical Section 54 barrier verified. Mandatory positive isolation and engineering controls approved for safe operational execution.');
+
   useEffect(() => {
     loadAssessments();
   }, []);
@@ -88,6 +94,17 @@ export const WracModule: React.FC<WracModuleProps> = ({ onNotify }) => {
     const data = await fetchWracAssessments();
     setAssessments(data);
     setLoading(false);
+  };
+
+  const handleExecuteCr91SignOff = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!signingCapaItem) return;
+    await signOffWracCapa(signingCapaItem.id, cr91AssessorInput, cr91DirectiveInput);
+    setSigningCapaItem(null);
+    await loadAssessments();
+    if (onNotify) {
+      onNotify(`CR 9.1 Risk Assessor digital sign-off recorded for ${signingCapaItem.hazard}. Execution cleared.`);
+    }
   };
 
   const handleOpenAddModal = (p?: WracProbability, s?: WracSeverity) => {
@@ -232,6 +249,10 @@ export const WracModule: React.FC<WracModuleProps> = ({ onNotify }) => {
               </span>
               <span className="text-[10px] font-mono text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-2 py-0.5 rounded-full">
                 Hierarchy of Controls Compliant
+              </span>
+              <span className="text-[10px] font-mono text-cyan-400 bg-cyan-500/10 border border-cyan-500/20 px-2 py-0.5 rounded-full flex items-center gap-1">
+                <span className="w-1.5 h-1.5 rounded-full bg-cyan-400 animate-pulse" />
+                2,000m Subterranean Offline (IndexedDB) • &lt;3s Surface Wi-Fi Auto-Sync
               </span>
             </div>
 
@@ -583,6 +604,26 @@ export const WracModule: React.FC<WracModuleProps> = ({ onNotify }) => {
                             P{item.initialProbability}×S{item.initialSeverity}
                           </span>
                         </div>
+                        {item.initialRiskScore >= 17 && (
+                          <div className="mt-1.5">
+                            {item.autoCapaStatus === 'CR91_SIGNED_OFF' ? (
+                              <span className="inline-flex items-center gap-1 text-[9px] font-mono text-emerald-400 bg-emerald-500/10 border border-emerald-500/30 px-1.5 py-0.5 rounded">
+                                <CheckCircle2 className="w-3 h-3 text-emerald-400" />
+                                <span>CR 9.1 Signed Off</span>
+                              </span>
+                            ) : (
+                              <button
+                                type="button"
+                                onClick={() => setSigningCapaItem(item)}
+                                className="inline-flex items-center gap-1 text-[9px] font-mono text-red-200 bg-red-600/40 hover:bg-red-600/60 border border-red-500/60 px-2 py-0.5 rounded-lg cursor-pointer animate-pulse font-bold transition"
+                                title="0-1h High-Severity Auto-CAPA ticket triggered. Mandatory appointed CR 9.1 Risk Assessor digital sign-off required."
+                              >
+                                <AlertTriangle className="w-3 h-3 text-red-400" />
+                                <span>0-1h Auto-CAPA: Sign Off</span>
+                              </button>
+                            )}
+                          </div>
+                        )}
                       </td>
 
                       {/* Hierarchy & Description */}
@@ -891,6 +932,98 @@ export const WracModule: React.FC<WracModuleProps> = ({ onNotify }) => {
                   className="px-5 py-2 bg-amber-500 hover:bg-amber-400 text-slate-950 font-black text-xs uppercase tracking-wider rounded-xl transition shadow-lg shadow-amber-950/40 cursor-pointer"
                 >
                   {editingItem?.id ? 'Update Assessment' : 'Save to WRAC Register'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* CR 9.1 Risk Assessor Auto-CAPA Sign-Off Modal */}
+      {signingCapaItem && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/85 backdrop-blur-md animate-fade-in font-sans">
+          <div className="relative w-full max-w-lg bg-[#0f172a] border border-red-500/50 rounded-3xl p-6 shadow-2xl space-y-4">
+            <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+              <div className="flex items-center gap-2">
+                <div className="p-2 bg-red-500/10 border border-red-500/30 rounded-xl text-red-400">
+                  <ShieldAlert className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="text-base font-bold text-white">CR 9.1 Risk Assessor Statutory Sign-Off</h3>
+                  <span className="text-[10px] font-mono text-red-400 block">
+                    0-1h High-Severity Auto-CAPA Escalation ({signingCapaItem.autoCapaTicketId || 'CAPA-CR9.1-ACTIVE'})
+                  </span>
+                </div>
+              </div>
+              <button
+                onClick={() => setSigningCapaItem(null)}
+                className="text-slate-400 hover:text-white p-1 rounded-lg hover:bg-slate-800 transition cursor-pointer"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="p-3 bg-red-950/30 border border-red-500/30 rounded-2xl space-y-1">
+              <div className="flex items-center justify-between text-xs">
+                <span className="font-bold text-white">{signingCapaItem.hazard}</span>
+                <span className="text-red-400 font-mono font-bold">Initial Score: {signingCapaItem.initialRiskScore}/25 (CRITICAL)</span>
+              </div>
+              <p className="text-[11px] text-slate-400 leading-relaxed">
+                Location: {signingCapaItem.activityOrArea} • Work is stopped under Section 54 mandate until positive physical isolation and statutory controls are confirmed by an appointed CR 9.1 Risk Assessor.
+              </p>
+            </div>
+
+            <form onSubmit={handleExecuteCr91SignOff} className="space-y-4 text-xs">
+              <div>
+                <label className="block text-xs font-bold text-slate-300 mb-1">
+                  Appointed CR 9.1 Risk Assessor Name &amp; Designation
+                </label>
+                <input
+                  type="text"
+                  value={cr91AssessorInput}
+                  onChange={e => setCr91AssessorInput(e.target.value)}
+                  className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-red-400 font-semibold"
+                  required
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-slate-300 mb-1">
+                  Statutory Engineering Directives &amp; Execution Clearance
+                </label>
+                <textarea
+                  rows={3}
+                  value={cr91DirectiveInput}
+                  onChange={e => setCr91DirectiveInput(e.target.value)}
+                  className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-red-400"
+                  required
+                />
+              </div>
+
+              <div className="p-3 bg-slate-950 rounded-xl border border-slate-800 text-[10px] text-slate-400 space-y-1">
+                <div className="text-slate-300 font-bold flex items-center gap-1.5">
+                  <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
+                  <span>Digital Cryptographic Audit Seal Attached</span>
+                </div>
+                <p className="font-mono text-[9px] text-slate-500">
+                  Generates tamper-evident timestamped signature logged into subterranean IndexedDB persistence register.
+                </p>
+              </div>
+
+              <div className="pt-3 border-t border-slate-800 flex items-center justify-end gap-3">
+                <button
+                  type="button"
+                  onClick={() => setSigningCapaItem(null)}
+                  className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-xl text-xs font-bold transition cursor-pointer"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="px-5 py-2 bg-gradient-to-r from-red-600 to-rose-600 hover:from-red-500 hover:to-rose-500 text-white font-black text-xs uppercase tracking-wider rounded-xl transition shadow-lg shadow-red-950/40 cursor-pointer flex items-center gap-1.5"
+                >
+                  <ShieldCheck className="w-4 h-4" />
+                  <span>Execute CR 9.1 Sign-Off</span>
                 </button>
               </div>
             </form>
