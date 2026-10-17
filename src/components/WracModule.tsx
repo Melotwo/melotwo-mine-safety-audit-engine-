@@ -646,6 +646,14 @@ export const WracModule: React.FC<WracModuleProps> = ({ onNotify }) => {
                             P{item.residualProbability}×S{item.residualSeverity}
                           </span>
                         </div>
+                        {item.initialRiskScore > 0 && (
+                          <div className="text-[9px] font-mono text-emerald-400 mt-1 flex items-center gap-1 font-bold">
+                            <TrendingDown className="w-3 h-3 text-emerald-400" />
+                            <span>
+                              {Math.round(((item.initialRiskScore - item.residualRiskScore) / item.initialRiskScore) * 100)}% Reduction
+                            </span>
+                          </div>
+                        )}
                       </td>
 
                       {/* Responsible */}
