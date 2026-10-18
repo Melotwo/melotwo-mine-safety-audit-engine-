@@ -398,6 +398,8 @@ export const appendLedgerRecords = async (
 
 export type Page = 'home' | 'solutions' | 'inspector' | 'academy' | 'handover' | 'outreach' | 'blog' | 'zambia-assessment' | 'partner-copilot' | 'operational-compliance' | 'pricing' | 'fmea' | 'wrac' | 'section21';
 
+export type RegionalJurisdiction = 'south_africa' | 'zambia' | 'all_sadc';
+
 export type IconComponent = React.FC<React.SVGProps<SVGSVGElement>>;
 
 export interface AffiliateLink {
@@ -8846,6 +8848,60 @@ export const SafetyInspectorPage: React.FC<SafetyInspectorPageProps> = ({ setPag
         window.dispatchEvent(new Event('melotwo_site_changed'));
     };
 
+    // Regional Jurisdiction & Compliance Framework Scope State
+    const [selectedJurisdiction, setSelectedJurisdiction] = useState<RegionalJurisdiction>(() => {
+        if (typeof window !== 'undefined') {
+            const saved = localStorage.getItem('melotwo_selected_jurisdiction');
+            if (saved === 'south_africa' || saved === 'zambia' || saved === 'all_sadc') {
+                return saved as RegionalJurisdiction;
+            }
+        }
+        return 'south_africa';
+    });
+
+    // Expandable drawer state for Zambian / Cross-Border regional compliance modules
+    const [isRegionalDrawerExpanded, setIsRegionalDrawerExpanded] = useState<boolean>(() => {
+        if (typeof window !== 'undefined') {
+            const savedJurisdiction = localStorage.getItem('melotwo_selected_jurisdiction');
+            if (savedJurisdiction === 'zambia' || savedJurisdiction === 'all_sadc') {
+                return true;
+            }
+            const savedDrawer = localStorage.getItem('melotwo_regional_drawer_expanded');
+            if (savedDrawer !== null) {
+                return savedDrawer === 'true';
+            }
+        }
+        return false; // Default: collapsed for South Africa (MHSA / SANS)
+    });
+
+    const handleSelectJurisdiction = (jur: RegionalJurisdiction) => {
+        setSelectedJurisdiction(jur);
+        if (typeof window !== 'undefined') {
+            localStorage.setItem('melotwo_selected_jurisdiction', jur);
+        }
+        if (jur === 'zambia' || jur === 'all_sadc') {
+            setIsRegionalDrawerExpanded(true);
+            if (typeof window !== 'undefined') {
+                localStorage.setItem('melotwo_regional_drawer_expanded', 'true');
+            }
+        } else {
+            setIsRegionalDrawerExpanded(false);
+            if (typeof window !== 'undefined') {
+                localStorage.setItem('melotwo_regional_drawer_expanded', 'false');
+            }
+        }
+    };
+
+    const handleToggleRegionalDrawer = () => {
+        setIsRegionalDrawerExpanded(prev => {
+            const next = !prev;
+            if (typeof window !== 'undefined') {
+                localStorage.setItem('melotwo_regional_drawer_expanded', next.toString());
+            }
+            return next;
+        });
+    };
+
     // Sector-specific profile states
     const [selectedSector, setSelectedSector] = useState<string>(() => {
         return localStorage.getItem('melotwo_inspector_active_sector') || 'mining';
@@ -9103,7 +9159,7 @@ export const SafetyInspectorPage: React.FC<SafetyInspectorPageProps> = ({ setPag
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [showIsoCrossMap, setShowIsoCrossMap] = useState<boolean>(false);
-    const [isChecklistCollapsed, setIsChecklistCollapsed] = useState<boolean>(true);
+    const [isChecklistCollapsed, setIsChecklistCollapsed] = useState<boolean>(false);
 
     const [selectedRcaLog, setSelectedRcaLog] = useState<any | null>(null);
     const [selectedRcaLog2, setSelectedRcaLog2] = useState<any | null>(null);
@@ -11199,6 +11255,103 @@ Safety index and terminal clearance verified. The audit record status has been u
                     }}
                 />
 
+                {/* 1. REGIONAL JURISDICTION SWITCHER (Top-Level Scope & Module Visibility Toggle) */}
+                <div id="regional-jurisdiction-switcher" className="bg-slate-900/95 border border-slate-800 rounded-3xl p-5 backdrop-blur-xl shadow-xl">
+                    <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+                        <div className="flex items-center gap-3.5">
+                            <div className="p-3 bg-amber-500/10 border border-amber-500/25 rounded-2xl text-amber-400 shrink-0">
+                                <Globe className="w-5 h-5" />
+                            </div>
+                            <div>
+                                <div className="flex items-center gap-2 flex-wrap">
+                                    <span className="text-[10px] font-bold text-amber-400 font-mono uppercase tracking-widest block">
+                                        Regional Jurisdiction &amp; Standards Scope
+                                    </span>
+                                    <span className="text-[9px] font-mono px-2 py-0.5 rounded-full border bg-slate-950 text-slate-400 border-slate-800">
+                                        {selectedJurisdiction === 'south_africa' ? 'South Africa Active (Default)' : selectedJurisdiction === 'zambia' ? 'Zambia Active' : 'SADC Multi-Standard'}
+                                    </span>
+                                    <span className="text-[9px] font-mono text-slate-500">
+                                        (Saved to localStorage)
+                                    </span>
+                                </div>
+                                <h3 className="text-base font-extrabold text-white tracking-tight flex items-center gap-2">
+                                    <span>Jurisdiction &amp; Regional Module Visibility Switcher</span>
+                                </h3>
+                            </div>
+                        </div>
+
+                        {/* Top-Level 3-Way Selector Toggle */}
+                        <div className="flex flex-wrap sm:flex-nowrap items-center gap-1.5 bg-slate-950 p-1.5 rounded-2xl border border-slate-800/90 shadow-inner">
+                            <button
+                                type="button"
+                                id="btn-jurisdiction-south-africa"
+                                onClick={() => handleSelectJurisdiction('south_africa')}
+                                className={`px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-2 whitespace-nowrap ${
+                                    selectedJurisdiction === 'south_africa'
+                                        ? 'bg-amber-500 text-slate-950 font-black shadow-lg shadow-amber-500/20'
+                                        : 'text-slate-400 hover:text-slate-200 hover:bg-slate-900'
+                                }`}
+                                title="Primary South African Statutory Standard (DMRE MHSA, SANS 10108, SANS 10142-1)"
+                            >
+                                <span className="text-sm">🇿🇦</span>
+                                <span>South Africa (MHSA / SANS)</span>
+                            </button>
+
+                            <button
+                                type="button"
+                                id="btn-jurisdiction-zambia"
+                                onClick={() => handleSelectJurisdiction('zambia')}
+                                className={`px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-2 whitespace-nowrap ${
+                                    selectedJurisdiction === 'zambia'
+                                        ? 'bg-amber-500 text-slate-950 font-black shadow-lg shadow-amber-500/20'
+                                        : 'text-slate-400 hover:text-slate-200 hover:bg-slate-900'
+                                }`}
+                                title="Zambia Mining Safety Regulations (MSR Part 33) & ZEMA SI 112 Effluent Discharge Limits"
+                            >
+                                <span className="text-sm">🇿🇲</span>
+                                <span>Zambia (MSR / ZEMA)</span>
+                            </button>
+
+                            <button
+                                type="button"
+                                id="btn-jurisdiction-all-sadc"
+                                onClick={() => handleSelectJurisdiction('all_sadc')}
+                                className={`px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-2 whitespace-nowrap ${
+                                    selectedJurisdiction === 'all_sadc'
+                                        ? 'bg-amber-500 text-slate-950 font-black shadow-lg shadow-amber-500/20'
+                                        : 'text-slate-400 hover:text-slate-200 hover:bg-slate-900'
+                                }`}
+                                title="Unified SADC Mining & Environmental Standards: Dual Cross-Border Statutory Alignment"
+                            >
+                                <span className="text-sm">🌐</span>
+                                <span>All SADC Standards</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    {/* Regional Scope Summary Strip */}
+                    <div className="mt-3.5 pt-3 border-t border-slate-800/80 flex flex-wrap items-center justify-between text-xs font-mono text-slate-400 gap-2">
+                        <div className="flex items-center gap-2">
+                            <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+                            <span>
+                                {selectedJurisdiction === 'south_africa' && (
+                                    <>Active Framework: <strong className="text-white font-sans">DMRE Mine Health &amp; Safety Act (MHSA 1996)</strong> &bull; SANS Codes. <span className="text-amber-400">Zambian MSR/ZEMA effluent engine collapsed into expandable drawer</span>.</>
+                                )}
+                                {selectedJurisdiction === 'zambia' && (
+                                    <>Active Framework: <strong className="text-white font-sans">Mines Safety Department (MSD Kitwe)</strong> &bull; Mining Regulations 1971 &bull; ZEMA SI 112 Aquatic Effluent Discharge Limits.</>
+                                )}
+                                {selectedJurisdiction === 'all_sadc' && (
+                                    <>Active Framework: <strong className="text-white font-sans">Unified SADC Cross-Border Mining Corridor</strong> &bull; Dual South African SANS &amp; Zambian ZEMA/MSR compliance engines active.</>
+                                )}
+                            </span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                            <span className="text-[10px] text-slate-500 uppercase font-bold">Persistence Key:</span>
+                            <span className="text-[10px] bg-slate-950 border border-slate-800 px-2 py-0.5 rounded-lg text-amber-300 font-bold">melotwo_selected_jurisdiction = &quot;{selectedJurisdiction}&quot;</span>
+                        </div>
+                    </div>
+                </div>
+
                 {/* Enterprise Auditing Profile Selector & Daily Monitoring Tools */}
                 <div id="daily-monitoring-tools" className="bg-slate-900 border border-slate-800/85 rounded-2xl p-5 backdrop-blur-xl">
                     <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
@@ -12289,112 +12442,6 @@ Safety index and terminal clearance verified. The audit record status has been u
                                     }}
                                 />
 
-                        {/* SANS Compliance Standards Checklist Card (Collapsible Accordion) */}
-                        <div className="bg-slate-900 border border-slate-800 rounded-3xl p-6 backdrop-blur-xl flex flex-col gap-4">
-                            <div className="flex flex-col sm:flex-row sm:items-center justify-between border-b border-slate-800/80 pb-3 gap-3">
-                                <div>
-                                    <div className="flex items-center gap-2">
-                                        <h3 className="text-sm font-bold text-white uppercase tracking-wider flex items-center gap-2">
-                                            <CheckCircle2 className="w-4 h-4 text-amber-500" />
-                                            SANS Sector Checklist
-                                        </h3>
-                                        <span className="text-[10px] font-mono font-bold bg-amber-500/10 border border-amber-500/20 text-amber-400 px-2 py-0.5 rounded">
-                                            {activeChecklist.filter(c => c.checked).length} / {activeChecklist.length} PASSED
-                                        </span>
-                                    </div>
-                                    <p className="text-[10px] text-slate-400 mt-0.5 font-mono">
-                                        Mandatory standards under {activeProfile.standard}
-                                    </p>
-                                </div>
-                                <div className="flex flex-wrap items-center gap-2">
-                                    <button
-                                        onClick={handleExportSectorChecklistPDF}
-                                        id="btn-export-sector-checklist-pdf"
-                                        className="text-[9px] font-bold text-slate-200 hover:text-white bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded-lg px-2.5 py-1 transition-all flex items-center gap-1 cursor-pointer"
-                                        title="Export current sector SANS checklist as PDF report"
-                                    >
-                                        <Download className="w-3 h-3 text-amber-400" />
-                                        Export PDF
-                                    </button>
-                                    <button
-                                        onClick={() => {
-                                            setSectorChecklists(prev => ({
-                                                ...prev,
-                                                [selectedSector]: prev[selectedSector].map(item => ({ ...item, checked: true }))
-                                            }));
-                                        }}
-                                        className="text-[9px] font-bold text-emerald-400 hover:text-emerald-300 bg-emerald-500/10 border border-emerald-500/20 rounded-lg px-2 py-1 transition-all cursor-pointer"
-                                    >
-                                        Pass All
-                                    </button>
-                                    <button
-                                        onClick={() => {
-                                            setSectorChecklists(prev => ({
-                                                ...prev,
-                                                [selectedSector]: prev[selectedSector].map(item => ({ ...item, checked: false }))
-                                            }));
-                                        }}
-                                        className="text-[9px] font-bold text-amber-400 hover:text-amber-300 bg-amber-500/10 border border-amber-500/20 rounded-lg px-2 py-1 transition-all cursor-pointer"
-                                    >
-                                        Reset
-                                    </button>
-                                    <button
-                                        onClick={() => setIsChecklistCollapsed(!isChecklistCollapsed)}
-                                        className="text-[9px] font-bold text-slate-300 hover:text-white bg-slate-950 hover:bg-slate-800 border border-slate-800 rounded-lg px-2.5 py-1 transition-all cursor-pointer flex items-center gap-1"
-                                        title={isChecklistCollapsed ? "Expand Checklist" : "Collapse Checklist"}
-                                    >
-                                        {isChecklistCollapsed ? <ChevronDown className="w-3.5 h-3.5 text-amber-400" /> : <ChevronUp className="w-3.5 h-3.5 text-amber-400" />}
-                                        <span>{isChecklistCollapsed ? 'Expand' : 'Collapse'}</span>
-                                    </button>
-                                </div>
-                            </div>
-
-                            {!isChecklistCollapsed && (
-                                <div className="flex flex-col gap-2.5">
-                                    {activeChecklist.map((item) => (
-                                        <div
-                                            key={item.id}
-                                            onClick={() => {
-                                                setSectorChecklists(prev => ({
-                                                    ...prev,
-                                                    [selectedSector]: prev[selectedSector].map(chk =>
-                                                        chk.id === item.id ? { ...chk, checked: !chk.checked } : chk
-                                                    )
-                                                }));
-                                            }}
-                                            className={`flex items-start gap-3 p-3 rounded-xl border transition-all cursor-pointer select-none ${
-                                                item.checked
-                                                    ? 'bg-emerald-500/5 border-emerald-500/25 text-slate-300'
-                                                    : 'bg-slate-950/40 border-slate-800/80 text-slate-400 hover:border-slate-800'
-                                            }`}
-                                        >
-                                            <div className={`mt-0.5 w-4 h-4 rounded border flex items-center justify-center transition-colors ${
-                                                item.checked
-                                                    ? 'bg-emerald-500 border-emerald-600 text-slate-950'
-                                                    : 'border-slate-700 bg-slate-900 group-hover:border-slate-500'
-                                            }`}>
-                                                {item.checked && (
-                                                    <svg className="w-3 h-3 stroke-[3]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                                        <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-                                                    </svg>
-                                                )}
-                                            </div>
-                                            <div className="flex-1 flex justify-between items-center gap-4">
-                                                <span className="text-xs leading-snug">{item.text}</span>
-                                                <span className={`text-[9px] font-mono font-bold tracking-wider uppercase px-2 py-0.5 rounded border whitespace-nowrap ${
-                                                    item.checked
-                                                        ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400'
-                                                        : 'bg-amber-500/10 border-amber-500/20 text-amber-400'
-                                                }`}>
-                                                    {item.checked ? 'SANS MET' : 'CRITICAL REQ'}
-                                                </span>
-                                            </div>
-                                        </div>
-                                    ))}
-                                </div>
-                            )}
-                        </div>
-
                         {/* Editable Reviewed Parameters Panel */}
                         <div id="review-form-section" className="bg-slate-900 border border-slate-800 rounded-3xl p-6 backdrop-blur-xl flex flex-col gap-4">
                             <div className="flex items-center justify-between border-b border-slate-800/80 pb-3">
@@ -12844,20 +12891,213 @@ Safety index and terminal clearance verified. The audit record status has been u
                         {/* Red Team Operational Analytics Widget */}
                         <AuditHistoryChart />
 
-                        {/* Zambian MHS & ZEMA Effluent Compliance Panel (Active for Mining / Zambian Operations) */}
-                        {(selectedSector === 'mining' || (selectedSector as string) === 'zambia_mhs') && (
-                            <ZambianMhsCompliancePanel 
-                                onOpenDiagnostic={() => setPage('zambia-assessment')}
-                                onApplyDirective={(directive) => {
-                                    setParsedNotes((prev) => prev ? `${prev}\n\n${directive}` : directive);
-                                    setTimeout(() => {
-                                        document.getElementById('terminal-audit-form-section')?.scrollIntoView({ behavior: 'smooth' });
-                                    }, 100);
-                                }}
-                            />
-                        )}
-
                     </div>
+                </div>
+
+                {/* 2. SANS SECTOR CHECKLIST (Full Horizontal Focus & Dynamic Verification Matrix) */}
+                <div id="sans-sector-checklist-section" className="bg-slate-900 border border-slate-800 rounded-3xl p-6 backdrop-blur-xl shadow-xl flex flex-col gap-4 w-full">
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between border-b border-slate-800/80 pb-3 gap-3">
+                        <div>
+                            <div className="flex items-center gap-2 flex-wrap">
+                                <h3 className="text-sm font-bold text-white uppercase tracking-wider flex items-center gap-2">
+                                    <CheckCircle2 className="w-4 h-4 text-amber-500" />
+                                    <span>SANS Sector Checklist &bull; {activeProfile.name}</span>
+                                </h3>
+                                <span className="text-[10px] font-mono font-bold bg-amber-500/10 border border-amber-500/20 text-amber-400 px-2.5 py-0.5 rounded-full">
+                                    {activeChecklist.filter(c => c.checked).length} / {activeChecklist.length} PASSED
+                                </span>
+                                <span className="text-[9px] font-mono font-bold px-2 py-0.5 rounded-full border bg-slate-950 text-slate-400 border-slate-800">
+                                    Full Horizontal Focus
+                                </span>
+                            </div>
+                            <p className="text-[11px] text-slate-400 mt-1 font-mono">
+                                Mandatory statutory verification vectors under {activeProfile.standard} ({activeProfile.authority})
+                            </p>
+                        </div>
+                        <div className="flex flex-wrap items-center gap-2">
+                            <button
+                                onClick={handleExportSectorChecklistPDF}
+                                id="btn-export-sector-checklist-pdf"
+                                className="text-[10px] font-bold text-slate-200 hover:text-white bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded-xl px-3 py-1.5 transition-all flex items-center gap-1.5 cursor-pointer shadow-sm"
+                                title="Export current sector SANS checklist as PDF report"
+                            >
+                                <Download className="w-3.5 h-3.5 text-amber-400" />
+                                <span>Export Checklist PDF</span>
+                            </button>
+                            <button
+                                onClick={() => {
+                                    setSectorChecklists(prev => ({
+                                        ...prev,
+                                        [selectedSector]: prev[selectedSector].map(item => ({ ...item, checked: true }))
+                                    }));
+                                }}
+                                className="text-[10px] font-bold text-emerald-400 hover:text-emerald-300 bg-emerald-500/10 border border-emerald-500/20 rounded-xl px-3 py-1.5 transition-all cursor-pointer"
+                            >
+                                Pass All
+                            </button>
+                            <button
+                                onClick={() => {
+                                    setSectorChecklists(prev => ({
+                                        ...prev,
+                                        [selectedSector]: prev[selectedSector].map(item => ({ ...item, checked: false }))
+                                    }));
+                                }}
+                                className="text-[10px] font-bold text-amber-400 hover:text-amber-300 bg-amber-500/10 border border-amber-500/20 rounded-xl px-3 py-1.5 transition-all cursor-pointer"
+                            >
+                                Reset
+                            </button>
+                            <button
+                                onClick={() => setIsChecklistCollapsed(!isChecklistCollapsed)}
+                                className="text-[10px] font-bold text-slate-300 hover:text-white bg-slate-950 hover:bg-slate-850 border border-slate-800 rounded-xl px-3 py-1.5 transition-all cursor-pointer flex items-center gap-1.5"
+                                title={isChecklistCollapsed ? "Expand Checklist" : "Collapse Checklist"}
+                            >
+                                {isChecklistCollapsed ? <ChevronDown className="w-3.5 h-3.5 text-amber-400" /> : <ChevronUp className="w-3.5 h-3.5 text-amber-400" />}
+                                <span>{isChecklistCollapsed ? 'Expand Checklist' : 'Collapse Checklist'}</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    {!isChecklistCollapsed && (
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3 pt-1">
+                            {activeChecklist.map((item) => (
+                                <div
+                                    key={item.id}
+                                    onClick={() => {
+                                        setSectorChecklists(prev => ({
+                                            ...prev,
+                                            [selectedSector]: prev[selectedSector].map(chk =>
+                                                chk.id === item.id ? { ...chk, checked: !chk.checked } : chk
+                                            )
+                                        }));
+                                    }}
+                                    className={`flex items-start gap-3 p-3.5 rounded-2xl border transition-all cursor-pointer select-none hover:scale-[1.01] ${
+                                        item.checked
+                                            ? 'bg-emerald-500/5 border-emerald-500/30 text-slate-200 shadow-sm shadow-emerald-500/5'
+                                            : 'bg-slate-950/60 border-slate-800/90 text-slate-400 hover:border-slate-700'
+                                    }`}
+                                >
+                                    <div className={`mt-0.5 w-4 h-4 rounded border flex items-center justify-center transition-colors shrink-0 ${
+                                        item.checked
+                                            ? 'bg-emerald-500 border-emerald-600 text-slate-950'
+                                            : 'border-slate-700 bg-slate-900 group-hover:border-slate-500'
+                                    }`}>
+                                        {item.checked && (
+                                            <svg className="w-3 h-3 stroke-[3]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                                            </svg>
+                                        )}
+                                    </div>
+                                    <div className="flex-1 flex flex-col justify-between gap-2">
+                                        <span className="text-xs leading-snug font-medium">{item.text}</span>
+                                        <div className="flex items-center justify-between">
+                                            <span className={`text-[9px] font-mono font-bold tracking-wider uppercase px-2 py-0.5 rounded border whitespace-nowrap ${
+                                                item.checked
+                                                    ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400'
+                                                    : 'bg-amber-500/10 border-amber-500/20 text-amber-400'
+                                            }`}>
+                                                {item.checked ? '✓ SANS MET' : '⚠ CRITICAL REQ'}
+                                            </span>
+                                            <span className="text-[9px] font-mono text-slate-500">
+                                                {item.id.toUpperCase()}
+                                            </span>
+                                        </div>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    )}
+                </div>
+
+                {/* 3. CROSS-BORDER & REGIONAL COMPLIANCE MODULES (Zambia MSR / ZEMA SI 112) ACCORDION DRAWER */}
+                <div 
+                    id="regional-compliance-drawer" 
+                    className={`bg-slate-900 border rounded-3xl transition-all duration-300 backdrop-blur-xl overflow-hidden shadow-xl ${
+                        isRegionalDrawerExpanded ? 'border-amber-500/40 shadow-amber-500/5 ring-1 ring-amber-500/20' : 'border-slate-800 hover:border-slate-700/80'
+                    }`}
+                >
+                    {/* Drawer Header & Expand/Collapse Toggle Button */}
+                    <div 
+                        onClick={handleToggleRegionalDrawer}
+                        className="flex flex-col sm:flex-row sm:items-center justify-between p-5 cursor-pointer select-none transition-colors hover:bg-slate-800/40 gap-4"
+                    >
+                        <div className="flex items-center gap-3.5">
+                            <div className={`p-3 rounded-2xl border transition-colors shrink-0 ${
+                                isRegionalDrawerExpanded 
+                                    ? 'bg-amber-500/20 text-amber-300 border-amber-500/40' 
+                                    : 'bg-slate-950 text-slate-400 border-slate-800'
+                            }`}>
+                                <Globe className="w-5 h-5 text-amber-400" />
+                            </div>
+                            <div>
+                                <div className="flex items-center gap-2 flex-wrap">
+                                    <h3 className="text-sm font-bold text-white tracking-wide">
+                                        Cross-Border &amp; Regional Compliance Modules (Zambia MSR / ZEMA SI 112)
+                                    </h3>
+                                    <span className="text-[9px] font-mono font-bold px-2 py-0.5 rounded-full border bg-amber-500/10 border-amber-500/30 text-amber-400">
+                                        Zambia MSR / ZEMA SI 112
+                                    </span>
+                                    {selectedJurisdiction === 'south_africa' && !isRegionalDrawerExpanded && (
+                                        <span className="text-[9px] font-mono px-2 py-0.5 rounded-full bg-slate-950 text-slate-500 border border-slate-800">
+                                            Collapsed (South Africa Active)
+                                        </span>
+                                    )}
+                                    {selectedJurisdiction === 'zambia' && (
+                                        <span className="text-[9px] font-mono px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/30">
+                                            Active Regime
+                                        </span>
+                                    )}
+                                </div>
+                                <p className="text-[11px] text-slate-400 mt-1">
+                                    Zambian Mine Health, Safety &amp; ZEMA Aquatic Effluent Discharge Engine (MSD Kitwe MSR-33 statutory appointments &amp; tailings decant limits).
+                                </p>
+                            </div>
+                        </div>
+
+                        <div className="flex items-center gap-3 shrink-0 self-end sm:self-center">
+                            <span className="text-[10px] font-bold font-mono text-slate-400 uppercase tracking-wider hidden md:inline">
+                                {isRegionalDrawerExpanded ? 'Active View' : 'Click Arrow to Open'}
+                            </span>
+                            <button
+                                type="button"
+                                id="btn-toggle-regional-drawer"
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleToggleRegionalDrawer();
+                                }}
+                                className={`px-3 py-1.5 rounded-xl border transition-all cursor-pointer flex items-center gap-2 text-xs font-bold ${
+                                    isRegionalDrawerExpanded
+                                        ? 'bg-amber-500 text-slate-950 border-amber-400 shadow-md shadow-amber-500/20'
+                                        : 'bg-slate-950 text-slate-300 hover:text-white border-slate-800 hover:border-slate-700'
+                                }`}
+                                title={isRegionalDrawerExpanded ? "Collapse Cross-Border & Regional Compliance Modules" : "Expand Cross-Border & Regional Compliance Modules (Zambia MSR / ZEMA SI 112)"}
+                                aria-expanded={isRegionalDrawerExpanded}
+                            >
+                                <span>{isRegionalDrawerExpanded ? 'Collapse Drawer' : 'Expand Module'}</span>
+                                {isRegionalDrawerExpanded ? (
+                                    <ChevronUp className="w-4 h-4 stroke-[2.5]" />
+                                ) : (
+                                    <ChevronDown className="w-4 h-4 text-amber-400 stroke-[2.5]" />
+                                )}
+                            </button>
+                        </div>
+                    </div>
+
+                    {/* Expandable Content Body */}
+                    {isRegionalDrawerExpanded && (
+                        <div className="p-6 pt-0 border-t border-slate-800/80 mt-1 animate-fade-in">
+                            <div className="pt-4">
+                                <ZambianMhsCompliancePanel 
+                                    onOpenDiagnostic={() => setPage('zambia-assessment')}
+                                    onApplyDirective={(directive) => {
+                                        setParsedNotes((prev) => prev ? `${prev}\n\n${directive}` : directive);
+                                        setTimeout(() => {
+                                            document.getElementById('terminal-audit-form-section')?.scrollIntoView({ behavior: 'smooth' });
+                                        }, 100);
+                                    }}
+                                />
+                            </div>
+                        </div>
+                    )}
                 </div>
 
                 {/* AUTOMATED INCIDENT RCA & TELEMETRY CORRELATOR */}
@@ -13308,11 +13548,16 @@ Safety index and terminal clearance verified. The audit record status has been u
                 <div id="synchronized-ledger-section" className="bg-slate-900 border border-slate-800 rounded-3xl p-6 backdrop-blur-xl">
                     <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-4 border-b border-slate-800 pb-4 mb-5">
                         <div>
-                            <h3 className="text-sm font-bold text-white uppercase tracking-wider flex items-center gap-2">
-                                <Database className="w-4 h-4 text-amber-500" />
-                                Synchronized Compliance Ledger Logs
-                            </h3>
-                            <p className="text-[11px] text-slate-400 mt-0.5">Real-time status of mine terminals, SANS directives, and POPIA data vectors.</p>
+                            <div className="flex items-center gap-2 flex-wrap">
+                                <h3 className="text-sm font-bold text-white uppercase tracking-wider flex items-center gap-2">
+                                    <Database className="w-4 h-4 text-amber-500" />
+                                    <span>Synchronized Compliance Ledger Logs &bull; Local Sandbox Ledger</span>
+                                </h3>
+                                <span className="text-[9px] font-mono font-bold px-2.5 py-0.5 rounded-full border bg-slate-950 text-amber-400 border-slate-800">
+                                    {selectedJurisdiction === 'south_africa' ? '🇿🇦 SANS & POPIA (South Africa)' : selectedJurisdiction === 'zambia' ? '🇿🇲 ZEMA SI 112 & MSR (Zambia)' : '🌐 SADC Unified Framework'}
+                                </span>
+                            </div>
+                            <p className="text-[11px] text-slate-400 mt-0.5">Real-time status of mine terminals, SANS directives, and POPIA data vectors across full horizontal ledger focus.</p>
                         </div>
                         <div className="flex items-center gap-2 sm:gap-3 flex-wrap">
                             <button
