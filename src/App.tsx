@@ -8481,6 +8481,48 @@ export const SECTOR_PROFILES: Record<string, {
             { name: 'Unscrubbed PII Telemetry', text: 'PII DATA BREACH: Continuous learning pipeline ingested unscrubbed operator biometric logs into cloud fine-tuning buffer without POPIA hashing.' },
             { name: 'AIMS Verification Pass', text: 'ISO 42001 VERIFICATION: Automated collision avoidance vision model passed all adversarial robustness tests. Human-in-the-loop override verified at 45ms.' }
         ]
+    },
+    infosec: {
+        id: 'infosec',
+        name: 'Information Security (ISMS)',
+        company: 'MeloTwo Cyber Defense & Industrial Networks',
+        region: 'National / Cross-Border',
+        authority: 'SANAS / ISO & Information Regulator',
+        standard: 'ISO/IEC 27001:2022 (ISMS)',
+        standardCode: 'ISO 27001',
+        defaultOperator: 'Durell Bhramadu',
+        defaultTerminal: 'SEC-ISMS-SOC1',
+        defaultCategory: 'Information Security',
+        defaultSeverity: 'High',
+        defaultScenario: 'ISMS SECURITY AUDIT: SCADA Industrial Control Network DMZ Gateway. Ingress port scan revealed active unauthorized SSH port open on PLC concentration switch. Telemetry encryption certificate expired 48h ago. Zero-trust MFA authentication and automated ransomware containment trip-switch tested.',
+        systemPrompt: 'You are an ISO/IEC 27001 Lead Auditor. Evaluate this SCADA OT network isolation, credential governance, and cyber resilience scenario under ISO/IEC 27001 Annex A controls. Draft a formal statutory non-conformity report and remediation directive.',
+        baseSafetyIndex: 88.5,
+        quickTemplates: [
+            { name: 'SCADA DMZ Breach Vector', text: 'SECURITY AUDIT: SCADA industrial network DMZ gateway. Unauthorized ingress port 22 open on underground PLC telemetry node. Air-gap isolation compromised.' },
+            { name: 'Expired Cryptographic Cert', text: 'CERTIFICATE AUDIT: SHA-256 digital signature seal on Shift Handover ledger expired. Automated API bearer token rotation stalled for 72 hours.' },
+            { name: 'ISMS Defense Pass', text: 'ISO 27001 COMPLIANCE PASS: Full perimeter penetration test passed. Zero-trust MFA enforced across 100% of mine engineer accounts. RTO verified under 45 minutes.' }
+        ]
+    },
+    privacy_popia: {
+        id: 'privacy_popia',
+        name: 'Privacy Information & POPIA',
+        company: 'MeloTwo Data Protection & Medical Registry',
+        region: 'National / SADC',
+        authority: 'Information Regulator South Africa',
+        standard: 'ISO/IEC 27701:2019 & POPIA',
+        standardCode: 'ISO 27701',
+        defaultOperator: 'Durell Bhramadu',
+        defaultTerminal: 'PRIV-PIMS-POPIA',
+        defaultCategory: 'Privacy & Data Protection',
+        defaultSeverity: 'High',
+        defaultScenario: 'PIMS PRIVACY & POPIA AUDIT: Occupational Health Silicosis Biometric Passport Registry. Unencrypted medical surveillance files with employee South African ID numbers transmitted via plain HTTP to regional contractor. Cross-border Zambia data export lacks Section 72 transborder transfer agreement.',
+        systemPrompt: 'You are an ISO/IEC 27701 Privacy Information Management & POPIA Statutory Auditor. Evaluate this personal data processing, medical record privacy, and cross-border data transfer scenario. Draft a formal POPIA Section 19 enforcement order.',
+        baseSafetyIndex: 92.0,
+        quickTemplates: [
+            { name: 'Medical ID Exposure', text: 'POPIA SECTION 19 BREACH: Unencrypted employee silicosis medical chest X-ray dossiers and RSA ID numbers discovered in public-readable S3 archive bucket.' },
+            { name: 'Transborder SADC Transfer', text: 'TRANSBORDER AUDIT: Copperbelt employee biometric attendance logs transferred from Zambia to Johannesburg data center without Section 72 adequacy agreement.' },
+            { name: 'PIMS Privacy Pass', text: 'ISO 27701 AUDIT PASS: Automated PII telemetry redaction functioning 100%. Data subject access request (DSAR) SLA verified at 48 hours. Consent registry signed.' }
+        ]
     }
 };
 
@@ -8907,6 +8949,25 @@ export const SafetyInspectorPage: React.FC<SafetyInspectorPageProps> = ({ setPag
         return localStorage.getItem('melotwo_inspector_active_sector') || 'mining';
     });
 
+    // Framework Scope Filter: 'ALL' | 'SANS' | 'ISO'
+    const [profileFilterCategory, setProfileFilterCategory] = useState<'ALL' | 'SANS' | 'ISO'>(() => {
+        if (typeof window !== 'undefined' && window.location.hash.includes('iso')) {
+            return 'ISO';
+        }
+        return 'ALL';
+    });
+
+    useEffect(() => {
+        const handleHashChange = () => {
+            if (typeof window !== 'undefined' && window.location.hash.includes('iso')) {
+                setProfileFilterCategory('ISO');
+                setSelectedSector('ai_governance');
+            }
+        };
+        window.addEventListener('hashchange', handleHashChange);
+        return () => window.removeEventListener('hashchange', handleHashChange);
+    }, []);
+
     const DEFAULT_CHECKLISTS = {
         mining: [
             { id: 'min1', text: 'Enforce methane concentration measurements under 1.0% v/v', checked: true },
@@ -8943,6 +9004,18 @@ export const SafetyInspectorPage: React.FC<SafetyInspectorPageProps> = ({ setPag
             { id: 'ai2', text: 'Audit POPIA data scrubbing pipeline before AI model training', checked: false },
             { id: 'ai3', text: 'Verify emergency human override latency stays under 100ms', checked: true },
             { id: 'ai4', text: 'Log ISO/IEC 42001 Clause 6 Systemic Impact Assessment', checked: true }
+        ],
+        infosec: [
+            { id: 'sec1', text: 'Enforce Annex A.5.15 Zero-Trust MFA & RBAC credentials rotation', checked: false },
+            { id: 'sec2', text: 'Audit Annex A.8.20 Surface IT & SCADA OT network DMZ air-gap isolation', checked: false },
+            { id: 'sec3', text: 'Cryptographic SHA-256 digital seals on Section 21 OEM certificates & handovers', checked: true },
+            { id: 'sec4', text: 'Verify tested Disaster Recovery & ransomware isolation runbook with < 1h RTO', checked: true }
+        ],
+        privacy_popia: [
+            { id: 'priv1', text: 'Verify lawful basis and consent registry for employee silicosis biometric records', checked: false },
+            { id: 'priv2', text: 'Continuous automated PII pseudonymization & cryptographic hashing on telemetry streams', checked: false },
+            { id: 'priv3', text: 'Audit POPIA Section 72 transborder data flow controls between RSA, Zambia & SADC', checked: true },
+            { id: 'priv4', text: 'Test 72-hour Information Regulator security compromise notification & DSAR pipeline', checked: true }
         ]
     };
 
@@ -10998,11 +11071,15 @@ Safety index and terminal clearance verified. The audit record status has been u
                             <Shield className="w-8 h-8 text-amber-500" />
                         </div>
                         <div>
-                            <div className="flex items-center gap-2">
+                            <div className="flex items-center gap-2 flex-wrap">
                                 <h2 className="text-xl md:text-2xl font-black text-white tracking-tight">MELOTWO OPERATIONAL GATE</h2>
                                 <span className="bg-slate-800 text-[10px] text-slate-400 px-2 py-0.5 rounded font-mono border border-slate-700/50">v2.10</span>
+                                <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-purple-500/20 border border-purple-500/40 text-purple-300 text-[10px] font-black uppercase tracking-wider font-mono shadow-sm">
+                                    <ShieldCheck className="w-3.5 h-3.5 text-purple-400" />
+                                    <span>ISO 42001 | ISO 27001 | ISO 27701 Auditing Certified</span>
+                                </span>
                             </div>
-                            <p className="text-xs text-slate-400 mt-1 leading-relaxed">Centralized site audit console with synchronized Google Workspace SANS & POPIA compliance ledgering.</p>
+                            <p className="text-xs text-slate-400 mt-1 leading-relaxed">Centralized site audit console with synchronized Google Workspace SANS, MHSA &amp; Enterprise Risk &amp; Regulatory Compliance (ISO 42001, 27001, 27701) ledgering.</p>
                         </div>
                     </div>
 
@@ -11355,48 +11432,189 @@ Safety index and terminal clearance verified. The audit record status has been u
                 {/* Enterprise Auditing Profile Selector & Daily Monitoring Tools */}
                 <div id="daily-monitoring-tools" className="bg-slate-900 border border-slate-800/85 rounded-2xl p-5 backdrop-blur-xl">
                     <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
-                        {/* Selector Tabs */}
+                        {/* Selector Tabs & Standards Filter */}
                         <div className="flex-1">
-                            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-2.5">
-                                Select Active Business Profile & SANS Industry Sector
-                            </span>
-                            <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
-                                {Object.values(SECTOR_PROFILES).map((profile) => {
-                                    const isActive = selectedSector === profile.id;
-                                    return (
-                                        <button
-                                            key={profile.id}
-                                            onClick={() => {
-                                                setSelectedSector(profile.id);
-                                                applySectorDefaults(profile.id);
-                                            }}
-                                            className={`flex flex-col items-start gap-1 p-3.5 rounded-xl border text-left transition-all cursor-pointer ${
-                                                isActive
-                                                    ? 'bg-amber-500/10 border-amber-500 text-white shadow-lg shadow-amber-500/5'
-                                                    : 'bg-slate-950 border-slate-800/80 hover:border-slate-700 hover:bg-slate-900 text-slate-400 hover:text-slate-200'
-                                            }`}
-                                        >
-                                            <div className="flex items-center gap-2 w-full">
-                                                <div className={`p-1.5 rounded-lg border flex items-center justify-center ${
-                                                    isActive ? 'bg-amber-500/20 border-amber-500/30' : 'bg-slate-900 border-slate-800'
-                                                }`}>
-                                                    {profile.id === 'mining' && <Shield className={`w-3.5 h-3.5 ${isActive ? 'text-amber-500' : 'text-slate-400'}`} />}
-                                                    {profile.id === 'electrical' && <Zap className={`w-3.5 h-3.5 ${isActive ? 'text-amber-500' : 'text-slate-400'}`} />}
-                                                    {profile.id === 'catering' && <Activity className={`w-3.5 h-3.5 ${isActive ? 'text-amber-500' : 'text-slate-400'}`} />}
-                                                    {profile.id === 'sheq' && <CheckCircle2 className={`w-3.5 h-3.5 ${isActive ? 'text-amber-500' : 'text-slate-400'}`} />}
+                            <div className="flex flex-wrap items-center justify-between gap-2 mb-3">
+                                <div>
+                                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">
+                                        Select Active Profile &amp; Regulatory Standard
+                                    </span>
+                                    <span className="text-[10px] text-slate-500 font-mono">
+                                        SANS, MHSA &amp; ISO 42001 / 27001 / 27701 certified audit checklists
+                                    </span>
+                                </div>
+
+                                {/* Framework Filter Tabs */}
+                                <div className="flex flex-wrap items-center gap-1.5">
+                                    <button
+                                        type="button"
+                                        id="btn-filter-all-frameworks"
+                                        onClick={() => setProfileFilterCategory('ALL')}
+                                        className={`px-2.5 py-1 rounded-lg text-[10px] font-bold font-mono transition-all cursor-pointer ${
+                                            profileFilterCategory === 'ALL'
+                                                ? 'bg-slate-700 text-white border border-slate-600 shadow-sm'
+                                                : 'bg-slate-950 text-slate-400 border border-slate-800 hover:text-slate-200'
+                                        }`}
+                                    >
+                                        All ({Object.keys(SECTOR_PROFILES).length})
+                                    </button>
+                                    <button
+                                        type="button"
+                                        id="btn-filter-sans-frameworks"
+                                        onClick={() => setProfileFilterCategory('SANS')}
+                                        className={`px-2.5 py-1 rounded-lg text-[10px] font-bold font-mono transition-all cursor-pointer ${
+                                            profileFilterCategory === 'SANS'
+                                                ? 'bg-amber-500/20 text-amber-300 border border-amber-500/40 shadow-sm'
+                                                : 'bg-slate-950 text-slate-400 border border-slate-800 hover:text-amber-400'
+                                        }`}
+                                    >
+                                        SANS &amp; MHSA
+                                    </button>
+                                    <button
+                                        type="button"
+                                        id="btn-filter-iso-frameworks"
+                                        onClick={() => setProfileFilterCategory('ISO')}
+                                        className={`px-2.5 py-1 rounded-lg text-[10px] font-bold font-mono transition-all cursor-pointer flex items-center gap-1 ${
+                                            profileFilterCategory === 'ISO'
+                                                ? 'bg-purple-500/25 text-purple-300 border border-purple-500/40 shadow-sm'
+                                                : 'bg-slate-950 text-slate-400 border border-slate-800 hover:text-purple-300'
+                                        }`}
+                                    >
+                                        <ShieldCheck className="w-3 h-3 text-purple-400" />
+                                        <span>ISO Auditing (3)</span>
+                                    </button>
+                                </div>
+                            </div>
+
+                            {/* ISO Quick-Toggle Selector Strip */}
+                            <div className="flex flex-wrap items-center gap-1.5 mb-2.5 p-2 bg-slate-950/70 rounded-xl border border-slate-800/80">
+                                <span className="text-[9px] text-slate-400 font-mono font-bold uppercase tracking-wider flex items-center gap-1 mr-1">
+                                    <ShieldCheck className="w-3 h-3 text-purple-400" />
+                                    <span>ISO Audit Toggles:</span>
+                                </span>
+                                <button
+                                    type="button"
+                                    id="toggle-iso-42001"
+                                    onClick={() => {
+                                        setSelectedSector('ai_governance');
+                                        applySectorDefaults('ai_governance');
+                                    }}
+                                    className={`px-2.5 py-1 rounded-lg text-[10px] font-mono font-bold transition-all cursor-pointer flex items-center gap-1 border ${
+                                        selectedSector === 'ai_governance'
+                                            ? 'bg-purple-500 text-white border-purple-400 shadow-md shadow-purple-500/20 font-black'
+                                            : 'bg-purple-500/10 text-purple-300 border-purple-500/30 hover:bg-purple-500/20'
+                                    }`}
+                                >
+                                    <Cpu className="w-3 h-3" />
+                                    <span>ISO 42001 (AIMS)</span>
+                                    {selectedSector === 'ai_governance' && <span className="text-[8px] bg-white text-purple-900 px-1 rounded font-black">ACTIVE</span>}
+                                </button>
+                                <button
+                                    type="button"
+                                    id="toggle-iso-27001"
+                                    onClick={() => {
+                                        setSelectedSector('infosec');
+                                        applySectorDefaults('infosec');
+                                    }}
+                                    className={`px-2.5 py-1 rounded-lg text-[10px] font-mono font-bold transition-all cursor-pointer flex items-center gap-1 border ${
+                                        selectedSector === 'infosec'
+                                            ? 'bg-cyan-500 text-slate-950 border-cyan-400 shadow-md shadow-cyan-500/20 font-black'
+                                            : 'bg-cyan-500/10 text-cyan-300 border-cyan-500/30 hover:bg-cyan-500/20'
+                                    }`}
+                                >
+                                    <Lock className="w-3 h-3" />
+                                    <span>ISO 27001 (ISMS)</span>
+                                    {selectedSector === 'infosec' && <span className="text-[8px] bg-slate-950 text-cyan-300 px-1 rounded font-black">ACTIVE</span>}
+                                </button>
+                                <button
+                                    type="button"
+                                    id="toggle-iso-27701"
+                                    onClick={() => {
+                                        setSelectedSector('privacy_popia');
+                                        applySectorDefaults('privacy_popia');
+                                    }}
+                                    className={`px-2.5 py-1 rounded-lg text-[10px] font-mono font-bold transition-all cursor-pointer flex items-center gap-1 border ${
+                                        selectedSector === 'privacy_popia'
+                                            ? 'bg-indigo-600 text-white border-indigo-400 shadow-md shadow-indigo-600/20 font-black'
+                                            : 'bg-indigo-500/10 text-indigo-300 border-indigo-500/30 hover:bg-indigo-500/20'
+                                    }`}
+                                >
+                                    <CheckCircle2 className="w-3 h-3" />
+                                    <span>ISO 27701 (PIMS / POPIA)</span>
+                                    {selectedSector === 'privacy_popia' && <span className="text-[8px] bg-white text-indigo-900 px-1 rounded font-black">ACTIVE</span>}
+                                </button>
+                            </div>
+
+                            {/* Profiles Grid */}
+                            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2">
+                                {Object.values(SECTOR_PROFILES)
+                                    .filter(profile => {
+                                        if (profileFilterCategory === 'SANS') {
+                                            return ['mining', 'electrical', 'catering', 'sheq', 'lifting'].includes(profile.id);
+                                        }
+                                        if (profileFilterCategory === 'ISO') {
+                                            return ['ai_governance', 'infosec', 'privacy_popia'].includes(profile.id);
+                                        }
+                                        return true;
+                                    })
+                                    .map((profile) => {
+                                        const isActive = selectedSector === profile.id;
+                                        const isIsoProfile = ['ai_governance', 'infosec', 'privacy_popia'].includes(profile.id);
+                                        return (
+                                            <button
+                                                key={profile.id}
+                                                id={`btn-profile-${profile.id}`}
+                                                onClick={() => {
+                                                    setSelectedSector(profile.id);
+                                                    applySectorDefaults(profile.id);
+                                                }}
+                                                className={`flex flex-col items-start gap-1 p-3 rounded-xl border text-left transition-all cursor-pointer relative group ${
+                                                    isActive
+                                                        ? isIsoProfile
+                                                            ? 'bg-purple-950/40 border-purple-400 text-white shadow-lg shadow-purple-500/10'
+                                                            : 'bg-amber-500/10 border-amber-500 text-white shadow-lg shadow-amber-500/5'
+                                                        : 'bg-slate-950 border-slate-800/80 hover:border-slate-700 hover:bg-slate-900 text-slate-400 hover:text-slate-200'
+                                                }`}
+                                            >
+                                                <div className="flex items-center gap-2 w-full">
+                                                    <div className={`p-1.5 rounded-lg border flex items-center justify-center ${
+                                                        isActive
+                                                            ? isIsoProfile ? 'bg-purple-500/20 border-purple-400/40' : 'bg-amber-500/20 border-amber-500/30'
+                                                            : 'bg-slate-900 border-slate-800'
+                                                    }`}>
+                                                        {profile.id === 'mining' && <Shield className={`w-3.5 h-3.5 ${isActive ? 'text-amber-500' : 'text-slate-400'}`} />}
+                                                        {profile.id === 'electrical' && <Zap className={`w-3.5 h-3.5 ${isActive ? 'text-amber-500' : 'text-slate-400'}`} />}
+                                                        {profile.id === 'catering' && <Activity className={`w-3.5 h-3.5 ${isActive ? 'text-amber-500' : 'text-slate-400'}`} />}
+                                                        {profile.id === 'sheq' && <CheckCircle2 className={`w-3.5 h-3.5 ${isActive ? 'text-amber-500' : 'text-slate-400'}`} />}
+                                                        {profile.id === 'lifting' && <Layers className={`w-3.5 h-3.5 ${isActive ? 'text-amber-500' : 'text-slate-400'}`} />}
+                                                        {profile.id === 'ai_governance' && <Cpu className={`w-3.5 h-3.5 ${isActive ? 'text-purple-300' : 'text-purple-400'}`} />}
+                                                        {profile.id === 'infosec' && <Lock className={`w-3.5 h-3.5 ${isActive ? 'text-cyan-300' : 'text-cyan-400'}`} />}
+                                                        {profile.id === 'privacy_popia' && <ShieldCheck className={`w-3.5 h-3.5 ${isActive ? 'text-indigo-300' : 'text-indigo-400'}`} />}
+                                                    </div>
+                                                    <div className="flex flex-col min-w-0">
+                                                        <span className={`text-[10px] font-mono font-bold tracking-tight truncate ${
+                                                            isIsoProfile ? 'text-purple-300' : 'text-slate-300'
+                                                        }`}>
+                                                            {profile.standardCode}
+                                                        </span>
+                                                    </div>
+                                                    {isIsoProfile && (
+                                                        <span className="ml-auto text-[8px] font-mono font-bold px-1 py-0.2 rounded bg-purple-500/20 text-purple-300 border border-purple-500/30">
+                                                            ISO
+                                                        </span>
+                                                    )}
                                                 </div>
-                                                <span className="text-[10px] font-mono font-bold tracking-tight text-slate-300">
-                                                    {profile.standardCode}
-                                                </span>
-                                            </div>
-                                            <div className="mt-1.5">
-                                                <span className="text-[11px] font-bold block truncate leading-none">
-                                                    {profile.name}
-                                                </span>
-                                            </div>
-                                        </button>
-                                    );
-                                })}
+                                                <div className="mt-1 w-full">
+                                                    <span className="text-[11px] font-bold block truncate leading-tight">
+                                                        {profile.name}
+                                                    </span>
+                                                    <span className="text-[9px] text-slate-500 block truncate font-mono mt-0.5">
+                                                        {profile.authority}
+                                                    </span>
+                                                </div>
+                                            </button>
+                                        );
+                                    })}
                             </div>
                         </div>
 
@@ -12900,8 +13118,8 @@ Safety index and terminal clearance verified. The audit record status has been u
                         <div>
                             <div className="flex items-center gap-2 flex-wrap">
                                 <h3 className="text-sm font-bold text-white uppercase tracking-wider flex items-center gap-2">
-                                    <CheckCircle2 className="w-4 h-4 text-amber-500" />
-                                    <span>SANS Sector Checklist &bull; {activeProfile.name}</span>
+                                    <CheckCircle2 className={`w-4 h-4 ${activeProfile.standard.includes('ISO') ? 'text-purple-400' : 'text-amber-500'}`} />
+                                    <span>{activeProfile.standard.includes('ISO') ? 'ISO Standards Audit Checklist' : 'SANS Sector Checklist'} &bull; {activeProfile.name}</span>
                                 </h3>
                                 <span className="text-[10px] font-mono font-bold bg-amber-500/10 border border-amber-500/20 text-amber-400 px-2.5 py-0.5 rounded-full">
                                     {activeChecklist.filter(c => c.checked).length} / {activeChecklist.length} PASSED
@@ -12995,7 +13213,7 @@ Safety index and terminal clearance verified. The audit record status has been u
                                                     ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400'
                                                     : 'bg-amber-500/10 border-amber-500/20 text-amber-400'
                                             }`}>
-                                                {item.checked ? '✓ SANS MET' : '⚠ CRITICAL REQ'}
+                                                {item.checked ? (activeProfile.standard.includes('ISO') ? '✓ ISO MET' : '✓ SANS MET') : '⚠ CRITICAL REQ'}
                                             </span>
                                             <span className="text-[9px] font-mono text-slate-500">
                                                 {item.id.toUpperCase()}

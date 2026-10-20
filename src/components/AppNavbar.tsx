@@ -318,6 +318,78 @@ export const AppNavbar: React.FC<AppNavbarProps> = ({
         }
       },
       activeMatch: currentPage === 'pricing'
+    },
+    {
+      id: 'iso-governance-hub',
+      name: 'ISO 42001 / 27001 / 27701 Audit Suite',
+      badge: 'ISO Certified',
+      badgeColor: 'bg-purple-500/20 text-purple-300 border-purple-500/30',
+      description: 'Durell Bhramadu audited AI Risk (42001), InfoSec (27001) & Privacy POPIA (27701).',
+      category: 'AUDIT & INSPECTION',
+      icon: <ShieldCheck className="w-4 h-4 text-purple-400" />,
+      action: () => {
+        setPage('inspector');
+        if (typeof window !== 'undefined') {
+          try {
+            localStorage.setItem('melotwo_inspector_active_sector', 'ai_governance');
+          } catch {}
+        }
+      },
+      activeMatch: false
+    },
+    {
+      id: 'iso-42001-tool',
+      name: 'ISO 42001 AI Risk Governance (AIMS)',
+      badge: 'ISO 42001',
+      badgeColor: 'bg-purple-500/20 text-purple-300 border-purple-500/30',
+      description: 'Model drift detection, systemic AI risk & emergency human-in-the-loop override.',
+      category: 'AUDIT & INSPECTION',
+      icon: <Cpu className="w-4 h-4 text-purple-400" />,
+      action: () => {
+        setPage('inspector');
+        if (typeof window !== 'undefined') {
+          try {
+            localStorage.setItem('melotwo_inspector_active_sector', 'ai_governance');
+          } catch {}
+        }
+      },
+      activeMatch: false
+    },
+    {
+      id: 'iso-27001-tool',
+      name: 'ISO 27001 Information Security (ISMS)',
+      badge: 'ISO 27001',
+      badgeColor: 'bg-cyan-500/20 text-cyan-300 border-cyan-500/30',
+      description: 'Zero-trust RBAC/MFA, SCADA DMZ isolation, cryptographic SHA-256 seal auditing.',
+      category: 'AUDIT & INSPECTION',
+      icon: <ShieldCheck className="w-4 h-4 text-cyan-400" />,
+      action: () => {
+        setPage('inspector');
+        if (typeof window !== 'undefined') {
+          try {
+            localStorage.setItem('melotwo_inspector_active_sector', 'infosec');
+          } catch {}
+        }
+      },
+      activeMatch: false
+    },
+    {
+      id: 'iso-27701-tool',
+      name: 'ISO 27701 Privacy & POPIA (PIMS)',
+      badge: 'ISO 27701 / POPIA',
+      badgeColor: 'bg-indigo-500/20 text-indigo-300 border-indigo-500/30',
+      description: 'Employee medical consent registry, PII redaction & transborder data protection.',
+      category: 'AUDIT & INSPECTION',
+      icon: <CheckCircle2 className="w-4 h-4 text-indigo-400" />,
+      action: () => {
+        setPage('inspector');
+        if (typeof window !== 'undefined') {
+          try {
+            localStorage.setItem('melotwo_inspector_active_sector', 'privacy_popia');
+          } catch {}
+        }
+      },
+      activeMatch: false
     }
   ], [currentPage, setPage, onOpenCostCalculator]);
 
@@ -350,7 +422,12 @@ export const AppNavbar: React.FC<AppNavbarProps> = ({
               <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500" />
             </span>
             <span className="text-slate-300 font-semibold truncate hidden sm:inline">
-              MHSA &amp; SANS Compliance Engine
+              MHSA, SANS &amp; Enterprise Risk Compliance
+            </span>
+            <span className="text-slate-500 hidden md:inline">•</span>
+            <span className="hidden lg:inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-purple-500/15 border border-purple-500/30 text-purple-300 text-[10px] font-bold">
+              <ShieldCheck className="w-3 h-3 text-purple-400" />
+              <span>ISO 42001 | ISO 27001 | ISO 27701 Auditing Certified</span>
             </span>
             <span className="text-slate-500 hidden md:inline">•</span>
             <span className="text-slate-400 hidden md:inline">
@@ -493,6 +570,31 @@ export const AppNavbar: React.FC<AppNavbarProps> = ({
                     </div>
                   </button>
 
+                  <button
+                    onClick={() => {
+                      setPage('inspector');
+                      if (typeof window !== 'undefined') {
+                        try {
+                          localStorage.setItem('melotwo_inspector_active_sector', 'ai_governance');
+                          window.location.hash = '#iso-audit';
+                        } catch {}
+                      }
+                      setIsSolutionsOpen(false);
+                    }}
+                    className="w-full text-left px-3 py-2 rounded-xl text-xs font-semibold flex items-center gap-2.5 text-slate-300 hover:bg-slate-800 hover:text-white transition cursor-pointer"
+                  >
+                    <ShieldCheck className="w-4 h-4 text-purple-400 shrink-0" />
+                    <div>
+                      <div className="font-bold text-white flex items-center gap-1.5 flex-wrap">
+                        <span>ISO Risk &amp; Governance</span>
+                        <span className="text-[9px] px-1.5 py-0.5 rounded bg-purple-500/20 text-purple-300 border border-purple-500/30 font-mono">
+                          ISO 42001 | 27001 | 27701
+                        </span>
+                      </div>
+                      <div className="text-[10px] text-slate-400 font-normal">AI Governance, ISMS &amp; POPIA Auditing</div>
+                    </div>
+                  </button>
+
                   <div className="border-t border-slate-800 my-1" />
 
                   <div className="px-1 py-1">
@@ -558,7 +660,12 @@ export const AppNavbar: React.FC<AppNavbarProps> = ({
 
                   {/* Results Count & Section Header */}
                   <div className="flex items-center justify-between px-1 pb-1.5 text-[10px] uppercase tracking-wider text-slate-400 font-mono border-b border-slate-800">
-                    <span>Specialized Safety Tools</span>
+                    <span className="flex items-center gap-1.5 flex-wrap">
+                      <span>Specialized Safety Tools</span>
+                      <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-purple-500/20 text-purple-300 border border-purple-500/30 font-bold lowercase tracking-normal">
+                        ISO 42001 | 27001 | 27701
+                      </span>
+                    </span>
                     <span>{filteredTools.length} Available</span>
                   </div>
 
